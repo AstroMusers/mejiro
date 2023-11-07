@@ -1,0 +1,20 @@
+{
+  "sci_data_set_name": "data_set_name",
+  "sci_targname": "target_name",
+  "sci_ra": "ra",
+  "sci_dec": "dec",
+  "sci_refnum": "refnum",
+  "sci_start_time": "start_time",
+  "sci_stop_time": "end_time",
+  "sci_actual_duration": "actual_duration",
+  "sci_instrume": "instrument",
+  "sci_aper_1234": "aper",
+  "sice_spec_1234": "spec",
+  "sci_central_wavelength": "central_wavelength",
+  "sci_pep_id": "proposal_id",
+  "sci_pi_last_name": "pi_last_name",
+  "sci_release_date": "release_date",
+  "sci_preview_name": "preview_name",
+  "scp_scan_type": "scan_type",
+  "sci_hlsp": "num_high_level_science_products"
+}
