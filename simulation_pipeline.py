@@ -84,13 +84,13 @@ for data_set_name in tqdm(data_set_list):
 
     modeled_lenses_dir = os.path.join(repo_path, 'data', 'modeled_lenses')
 
-    with open(os.path.join(modeled_lenses_dir, data_set_name + '_lens'), 'rb') as lens_file:
+    with open(os.path.join(modeled_lenses_dir, data_set_name, f'{data_set_name}_lens'), 'rb') as lens_file:
         kwargs_lens = pickle.load(lens_file)
 
-    with open(os.path.join(modeled_lenses_dir, data_set_name + '_lens_light'), 'rb') as lens_light_file:
+    with open(os.path.join(modeled_lenses_dir, data_set_name, f'{data_set_name}_lens_light'), 'rb') as lens_light_file:
         kwargs_lens_light = pickle.load(lens_light_file)
 
-    with open(os.path.join(modeled_lenses_dir, data_set_name + '_source'), 'rb') as source_file:
+    with open(os.path.join(modeled_lenses_dir, data_set_name, f'{data_set_name}_source'), 'rb') as source_file:
         kwargs_source_light = pickle.load(source_file)
 
     # mass model

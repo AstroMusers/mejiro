@@ -336,12 +336,12 @@ for data_set_name in tqdm(data_set_list):
 
     fitting_seq = FittingSequence(kwargs_data_joint, kwargs_model, kwargs_constraints, kwargs_likelihood, kwargs_params)
 
-    pso = ['PSO', {'sigma_scale': 1., 'n_particles': 100, 'n_iterations': 100}]
+    # pso = ['PSO', {'sigma_scale': 1., 'n_particles': 100, 'n_iterations': 100}]
     # pso = ['PSO', {'sigma_scale': 1., 'n_particles': 200, 'n_iterations': 200}]
-    # pso = ['PSO', {'sigma_scale': 1., 'n_particles': 400, 'n_iterations': 400}]
-    mcmc = ['MCMC', {'n_burn': 20, 'n_run': 20, 'walkerRatio': 4, 'sigma_scale': .1}]
+    pso = ['PSO', {'sigma_scale': 1., 'n_particles': 400, 'n_iterations': 400}]
+    # mcmc = ['MCMC', {'n_burn': 20, 'n_run': 20, 'walkerRatio': 4, 'sigma_scale': .1}]
     # mcmc = ['MCMC', {'n_burn': 100, 'n_run': 100, 'walkerRatio': 10, 'sigma_scale': .1}]
-    # mcmc = ['MCMC', {'n_burn': 200, 'n_run': 600, 'n_walkers': 200, 'sigma_scale': .1}]
+    mcmc = ['MCMC', {'n_burn': 200, 'n_run': 600, 'n_walkers': 200, 'sigma_scale': .1}]
     fitting_kwargs_list = [pso, mcmc]
 
     chain_list = fitting_seq.fit_sequence(fitting_kwargs_list)
