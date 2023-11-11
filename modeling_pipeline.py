@@ -52,13 +52,14 @@ csv_filepath = os.path.join(repo_path, 'data', 'SLACS', 'SLACS.csv')
 dataset_dict_list = csv_utils.csv_to_dict_list(csv_filepath)
 
 for data_set_name in tqdm(data_set_list):
-    start_time = time.time()
+
+    execution_start_time = time.time()
 
     dataset = [d for d in dataset_dict_list if d.get('data_set_name') == data_set_name][0]
 
     target_name = dataset.get('target_name')
 
-    figure_dir = os.path.join(repo_path, 'figures', 'pipeline', data_set_name)
+    figure_dir = os.path.join(repo_path, 'figures', 'modeling', data_set_name)
     utils.create_directory_if_not_exists(figure_dir)
 
     ra, dec = float(dataset.get('ra')), float(dataset.get('dec'))
@@ -280,7 +281,7 @@ for data_set_name in tqdm(data_set_list):
                     'lens_light_model_list': lens_light_model_list}
 
     kwargs_likelihood = {'source_marg': False}
-    kwargs_numerics = {'supersampling_factor': 4, 'supersampling_convolution': False}
+    kwargs_numerics = {'supersampling_factor': 1, 'supersampling_convolution': False}
 
     multi_band_list = [[kwargs_data, kwargs_psf, kwargs_numerics]]
     # if you have multiple bands to be modeled simultaneously, you can append them to the multi_band_list
@@ -326,9 +327,9 @@ for data_set_name in tqdm(data_set_list):
 
     fitting_seq = FittingSequence(kwargs_data_joint, kwargs_model, kwargs_constraints, kwargs_likelihood, kwargs_params)
 
-    pso = ['PSO', {'sigma_scale': 1., 'n_particles': 200, 'n_iterations': 200}]
-    # pso = ['PSO', {'sigma_scale': 1., 'n_particles': 400, 'n_iterations': 400}]
-    mcmc = ['MCMC', {'n_burn': 20, 'n_run': 20, 'walkerRatio': 4, 'sigma_scale': .1}]
+    # pso = ['PSO', {'sigma_scale': 1., 'n_particles': 200, 'n_iterations': 200}]
+    pso = ['PSO', {'sigma_scale': 1., 'n_particles': 400, 'n_iterations': 400}]
+    # mcmc = ['MCMC', {'n_burn': 20, 'n_run': 20, 'walkerRatio': 4, 'sigma_scale': .1}]
     # mcmc = ['MCMC', {'n_burn': 100, 'n_run': 100, 'walkerRatio': 10, 'sigma_scale': .1}]
     mcmc = ['MCMC', {'n_burn': 200, 'n_run': 600, 'n_walkers': 200, 'sigma_scale': .1}]
     fitting_kwargs_list = [pso, mcmc]
@@ -397,7 +398,7 @@ for data_set_name in tqdm(data_set_list):
     source_model_class = LightModel(light_model_list=source_model_list)
     lens_light_model_class = LightModel(light_model_list=lens_light_model_list)
 
-    kwargs_numerics = {'supersampling_factor': 4, 'supersampling_convolution': False}
+    kwargs_numerics = {'supersampling_factor': 1, 'supersampling_convolution': False}
 
     imageModel = ImageModel(data_class, psf_class, lens_model_class, source_model_class, lens_light_model_class, kwargs_numerics=kwargs_numerics)
 
@@ -410,11 +411,10 @@ for data_set_name in tqdm(data_set_list):
     axes.get_xaxis().set_visible(False)
     axes.get_yaxis().set_visible(False)
     axes.autoscale(False)
-    f.title(f'{data_set_name}')
     f.savefig(os.path.join(figure_dir, f'{data_set_name}_clean_model.png'))
 
-    end_time = time.time()
-    execution_time = round(end_time - start_time)
+    execution_end_time = time.time()
+    execution_time = round(execution_end_time - execution_start_time)
     execution_times.append(timedelta(seconds=execution_time))
 
 plt.hist(execution_times)
