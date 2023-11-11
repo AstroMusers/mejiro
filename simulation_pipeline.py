@@ -319,3 +319,7 @@ for data_set_name in tqdm(data_set_list):
     end_time = time.time()
     execution_time = round(end_time - start_time)
     execution_times.append(timedelta(seconds=execution_time))
+
+plt.hist(execution_times)
+plt.savefig('simulation_pipeline_execution_times.png')
+np.save('simulation_pipeline_execution_times', execution_times)
