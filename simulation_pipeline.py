@@ -56,7 +56,8 @@ dataset_dict_list = csv_utils.csv_to_dict_list(csv_filepath)
 oversample_factor = 3
 
 for data_set_name in tqdm(data_set_list):
-    start_time = time.time()
+
+    execution_start_time = time.time()
 
     dataset = [d for d in dataset_dict_list if d.get('data_set_name') == data_set_name][0]
 
@@ -316,10 +317,11 @@ for data_set_name in tqdm(data_set_list):
     pandeia_array_path = os.path.join(repo_path, 'arrays', 'SLACS', data_set_name + '_pandeia_' + str(oversample_factor) + '.npy')
     np.save(pandeia_array_path, detector)
 
-    end_time = time.time()
-    execution_time = round(end_time - start_time)
-    execution_times.append(timedelta(seconds=execution_time))
+    execution_end_time = time.time()
+    execution_time = execution_end_time - execution_start_time
+    execution_times.append(execution_time)
 
-plt.hist(execution_times)
+plt.scatter(np.arange(0, len(execution_times)), execution_times)
+plt.title('Simulation pipeline execution times')
 plt.savefig('simulation_pipeline_execution_times.png')
 np.save('simulation_pipeline_execution_times', execution_times)

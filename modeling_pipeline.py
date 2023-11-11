@@ -81,6 +81,7 @@ for data_set_name in tqdm(data_set_list):
     plt.title(dataset.get('target_name'))
     plt.legend()
     plt.savefig(os.path.join(figure_dir, f'{data_set_name}_original_image.png'))
+    plt.close()
 
     sky_coords = SkyCoord(ra, dec, unit='deg', frame='icrs')
     size = u.Quantity((5, 5), u.arcsec)
@@ -109,40 +110,46 @@ for data_set_name in tqdm(data_set_list):
     plt.imshow(cut_mask, origin='lower')
     plt.title('Calculating background RMS')
     plt.savefig(os.path.join(figure_dir, f'{data_set_name}_rms_calculation.png'))
+    plt.close()
 
-    mean, median, std = sigma_clipped_stats(data, sigma=3.0) 
+    # masking
+    if data_set_name not in ['J9OP05010']:
 
-    daofind = DAOStarFinder(fwhm=2.0, threshold=5.*std)  
-    sources = daofind(data - median)  
+        mean, median, std = sigma_clipped_stats(data, sigma=3.0) 
 
-    positions = np.transpose((sources['xcentroid'], sources['ycentroid']))
-    apertures = CircularAperture(positions, r=4.0)
-    norm = ImageNormalize(stretch=SqrtStretch())
-    plt.imshow(data, cmap='Greys', origin='lower', norm=norm, interpolation='nearest')
-    apertures.plot(color='blue', lw=1.5, alpha=0.5)
-    plt.title(dataset.get('target_name'))
-    plt.savefig(os.path.join(figure_dir, f'{data_set_name}_points_to_mask.png'))
+        daofind = DAOStarFinder(fwhm=2.0, threshold=5.*std)  
+        sources = daofind(data - median)  
 
-    # identify those bright spots well outside of the centered lensing galaxy
-    num_sources_masked = 0
-    masks = []
-    for source in sources:
-        if source['xcentroid'] > 60 or source['xcentroid'] < 40 or source['ycentroid'] > 60 or source['ycentroid'] < 40:
-            mask_center_x = source['xcentroid']
-            mask_center_y = source['ycentroid']
+        positions = np.transpose((sources['xcentroid'], sources['ycentroid']))
+        apertures = CircularAperture(positions, r=4.0)
+        norm = ImageNormalize(stretch=SqrtStretch())
+        plt.imshow(data, cmap='Greys', origin='lower', norm=norm, interpolation='nearest')
+        apertures.plot(color='blue', lw=1.5, alpha=0.5)
+        plt.title(dataset.get('target_name'))
+        plt.savefig(os.path.join(figure_dir, f'{data_set_name}_points_to_mask.png'))
+        plt.close()
 
-            # build mask
-            center = PixCoord(mask_center_x, mask_center_y)
-            region = CirclePixelRegion(center, 2.)
-            mask = region.to_mask(mode='center')
-            data = data - (mask.to_image(data.shape) * data) + (mask.to_image(data.shape) * mean)
+        # identify those bright spots well outside of the centered lensing galaxy
+        num_sources_masked = 0
+        masks = []
+        for source in sources:
+            if source['xcentroid'] > 60 or source['xcentroid'] < 40 or source['ycentroid'] > 60 or source['ycentroid'] < 40:
+                mask_center_x = source['xcentroid']
+                mask_center_y = source['ycentroid']
 
-            num_sources_masked += 1
+                # build mask
+                center = PixCoord(mask_center_x, mask_center_y)
+                region = CirclePixelRegion(center, 2.)
+                mask = region.to_mask(mode='center')
+                data = data - (mask.to_image(data.shape) * data) + (mask.to_image(data.shape) * mean)
 
-    plt.imshow(data)
-    plt.title(dataset.get('target_name'))
-    plt.colorbar()
-    plt.savefig(os.path.join(figure_dir, f'{data_set_name}_masked.png'))
+                num_sources_masked += 1
+
+        plt.imshow(data)
+        plt.title(dataset.get('target_name'))
+        plt.colorbar()
+        plt.savefig(os.path.join(figure_dir, f'{data_set_name}_masked.png'))
+        plt.close()
 
     # data specifics
     start_time = datetime.fromisoformat(dataset.get('start_time'))
@@ -190,6 +197,7 @@ for data_set_name in tqdm(data_set_list):
     title2 = 'Raw'
     ax2.set_title(title2)
     plt.savefig(os.path.join(figure_dir, f'{data_set_name}_psf'))
+    plt.close()
 
     # if kernel needs to be cut down, lenstronomy has a method for that
     kernel_size = psf_header.get('NAXIS1')  # PSF kernel size (odd number required).
@@ -324,14 +332,16 @@ for data_set_name in tqdm(data_set_list):
     title2 = 'Image'
     ax2.set_title(title2)
     plt.savefig(os.path.join(figure_dir, f'{data_set_name}_fitting_params.png'))
+    plt.close()
 
     fitting_seq = FittingSequence(kwargs_data_joint, kwargs_model, kwargs_constraints, kwargs_likelihood, kwargs_params)
 
+    pso = ['PSO', {'sigma_scale': 1., 'n_particles': 100, 'n_iterations': 100}]
     # pso = ['PSO', {'sigma_scale': 1., 'n_particles': 200, 'n_iterations': 200}]
-    pso = ['PSO', {'sigma_scale': 1., 'n_particles': 400, 'n_iterations': 400}]
-    # mcmc = ['MCMC', {'n_burn': 20, 'n_run': 20, 'walkerRatio': 4, 'sigma_scale': .1}]
+    # pso = ['PSO', {'sigma_scale': 1., 'n_particles': 400, 'n_iterations': 400}]
+    mcmc = ['MCMC', {'n_burn': 20, 'n_run': 20, 'walkerRatio': 4, 'sigma_scale': .1}]
     # mcmc = ['MCMC', {'n_burn': 100, 'n_run': 100, 'walkerRatio': 10, 'sigma_scale': .1}]
-    mcmc = ['MCMC', {'n_burn': 200, 'n_run': 600, 'n_walkers': 200, 'sigma_scale': .1}]
+    # mcmc = ['MCMC', {'n_burn': 200, 'n_run': 600, 'n_walkers': 200, 'sigma_scale': .1}]
     fitting_kwargs_list = [pso, mcmc]
 
     chain_list = fitting_seq.fit_sequence(fitting_kwargs_list)
@@ -351,6 +361,7 @@ for data_set_name in tqdm(data_set_list):
     f.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0., hspace=0.05)
     # f.show()
     f.savefig(os.path.join(figure_dir, f'{data_set_name}_p1.png'))
+    plt.close()
 
     f, axes = plt.subplots(2, 3, figsize=(16, 8), sharex='none', sharey='none')
 
@@ -364,13 +375,16 @@ for data_set_name in tqdm(data_set_list):
     f.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0., hspace=0.05)
     # f.show()
     f.savefig(os.path.join(figure_dir, f'{data_set_name}_p2.png'))
+    plt.close()
 
     sampler_type, samples_mcmc, param_mcmc, dist_mcmc  = chain_list[1]
     param_class = fitting_seq.param_class
 
+    i = 0
     for i in range(len(chain_list)):
         f, axes = chain_plot.plot_chain_list(chain_list, i)
         f.savefig(os.path.join(figure_dir, f'{data_set_name}_p' + str(i + 3) + '.png'))
+        plt.close()
 
     n_sample = len(samples_mcmc)
     samples_mcmc_cut = samples_mcmc[int(n_sample*1/2.):]
@@ -383,7 +397,8 @@ for data_set_name in tqdm(data_set_list):
 
     cache_path = os.path.join(repo_path, 'data', 'cache')
 
-    modeled_lenses_dir = os.path.join(repo_path, 'data', 'modeled_lenses')
+    modeled_lenses_dir = os.path.join(repo_path, 'data', 'modeled_lenses', data_set_name)
+    utils.create_directory_if_not_exists(modeled_lenses_dir)
 
     with open(os.path.join(modeled_lenses_dir, data_set_name + '_lens'), 'ab') as lens_file:
         pickle.dump(kwargs_macromodel_lens, lens_file)
@@ -412,11 +427,14 @@ for data_set_name in tqdm(data_set_list):
     axes.get_yaxis().set_visible(False)
     axes.autoscale(False)
     f.savefig(os.path.join(figure_dir, f'{data_set_name}_clean_model.png'))
+    plt.close()
 
     execution_end_time = time.time()
-    execution_time = round(execution_end_time - execution_start_time)
-    execution_times.append(timedelta(seconds=execution_time))
+    execution_time = execution_end_time - execution_start_time
+    execution_times.append(execution_time)
 
-plt.hist(execution_times)
+plt.scatter(np.arange(0, len(execution_times)), execution_times)
+plt.title('Modeling pipeline execution times')
 plt.savefig('modeling_pipeline_execution_times.png')
+plt.close()
 np.save('modeling_pipeline_execution_times', execution_times)
