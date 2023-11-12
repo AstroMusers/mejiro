@@ -166,12 +166,13 @@ for data_set_name in tqdm(data_set_list):
                             kwargs_lens_light=kwargs_lens_light_amp)
 
     # correct for spreading counts across more pixels TODO CONFIRM THIS
-    image = image / (oversample_factor ** 2)
+    # image = image / (oversample_factor ** 2)
 
     plt.imshow(np.log10(image))
     plt.title(f'Lenstronomy model of {target_name}')
     # plt.show()
     plt.savefig(os.path.join(figure_dir, f'{data_set_name}_lenstronomy_model.png'))
+    plt.close()
 
     model_array_path = os.path.join(repo_path, 'arrays', 'SLACS', data_set_name + '_hst_counts_' + str(oversample_factor) + '.npy')
     np.save(model_array_path, image)
@@ -196,6 +197,7 @@ for data_set_name in tqdm(data_set_list):
     axes.set_ylabel('Arcseconds')
     # f.show()
     f.savefig(os.path.join(figure_dir, f'{data_set_name}_caustics.png'))
+    plt.close()
 
     # get original Hubble image
     with fits.open(dataset.get('cutout_filepath')) as hdu_list:
@@ -228,6 +230,7 @@ for data_set_name in tqdm(data_set_list):
     # plt.legend()
     # plt.show()
     plt.savefig(os.path.join(figure_dir, f'{data_set_name}_actual_hubble_image.png'))
+    plt.close()
 
     # simulated Hubble image
     HST_wfc3_f160w = HST(band='WFC3_F160W', psf_type='GAUSSIAN', coadd_years=None)
@@ -245,6 +248,7 @@ for data_set_name in tqdm(data_set_list):
     plt.imshow(np.log10(hst_image), aspect='equal', cmap='cividis')
     plt.title(f'Lenstronomy simulation of Hubble F160W image of {target_name}')
     plt.savefig(os.path.join(figure_dir, f'{data_set_name}_simulated_hubble_image.png'))
+    plt.close()
 
     # load lenstronomy model
     model = np.load(model_array_path)
@@ -263,6 +267,7 @@ for data_set_name in tqdm(data_set_list):
     plt.title('Magnitude array')
     plt.colorbar()
     plt.savefig(os.path.join(figure_dir, f'{data_set_name}_magnitude_array.png'))
+    plt.close()
 
     calc = build_default_calc('roman','wfi','imaging')
 
@@ -273,10 +278,10 @@ for data_set_name in tqdm(data_set_list):
     # change filter
     calc['configuration']['instrument']['filter'] = 'f106'
 
-    # adjust brightness (np.interp for now)
+    # adjust brightness (np.interp for now) TODO get rid of
     max = np.max(model)
     min = np.min(model)
-    model = np.interp(model, (min, max), (0.00001, 0.001))
+    # model = np.interp(model, (min, max), (0.00001, 0.001))
 
     i = 0
 
@@ -309,9 +314,10 @@ for data_set_name in tqdm(data_set_list):
     detector = np.flipud(detector)
     # detector = np.fliplr(detector)
 
-    plt.imshow(detector)
+    plt.imshow(np.log10(detector))
     plt.title(f'Pandeia simulation of {target_name} (F106)')
     plt.savefig(os.path.join(figure_dir, f'{data_set_name}_pandeia_{oversample_factor}.png'))
+    plt.close()
 
     # save this numpy array
     pandeia_array_path = os.path.join(repo_path, 'arrays', 'SLACS', data_set_name + '_pandeia_' + str(oversample_factor) + '.npy')
@@ -321,7 +327,4 @@ for data_set_name in tqdm(data_set_list):
     execution_time = execution_end_time - execution_start_time
     execution_times.append(execution_time)
 
-plt.scatter(np.arange(0, len(execution_times)), execution_times)
-plt.title('Simulation pipeline execution times')
-plt.savefig('simulation_pipeline_execution_times.png')
 np.save('simulation_pipeline_execution_times', execution_times)

@@ -433,8 +433,4 @@ for data_set_name in tqdm(data_set_list):
     execution_time = execution_end_time - execution_start_time
     execution_times.append(execution_time)
 
-plt.scatter(np.arange(0, len(execution_times)), execution_times)
-plt.title('Modeling pipeline execution times')
-plt.savefig('modeling_pipeline_execution_times.png')
-plt.close()
 np.save('modeling_pipeline_execution_times', execution_times)
