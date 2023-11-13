@@ -23,7 +23,7 @@ oversample_factor = 1
 image_output_directory = os.path.join(repo_path, 'arrays', 'cnn_training')
 
 # generate image filepaths
-image_filepaths = [os.path.join(image_output_directory, f'{i}.png') for i in range(num_images)]
+image_filepaths = [os.path.join(image_output_directory, f'model_{i}.png') for i in range(num_images)]
 
 # generate random lists of parameters
 # deflector model
@@ -44,10 +44,10 @@ list_deflector_gamma2 = norm(loc=0.0, scale=0.05).rvs(size=num_images)
 
 # deflector light
 list_deflector_light_amp = uniform(loc=100, scale=10).rvs(size=num_images)
-list_deflector_light_R_sersic = truncnorm(-3, 3, loc=0.5, scale=0.05).rvs(size=num_images)
+list_deflector_light_R_sersic = truncnorm(-3, 3, loc=0.5, scale=0.1).rvs(size=num_images)
 list_deflector_light_n_sersic = truncnorm(-6., np.inf, loc=3., scale=0.5).rvs(size=num_images)
-list_deflector_light_e1 = norm(loc=0.0, scale=0.2).rvs(size=num_images)
-list_deflector_light_e2 = norm(loc=0.0, scale=0.2).rvs(size=num_images)
+list_deflector_light_e1 = norm(loc=0.0, scale=0.1).rvs(size=num_images)
+list_deflector_light_e2 = norm(loc=0.0, scale=0.1).rvs(size=num_images)
 list_deflector_light_center_x = list_deflector_center_x
 list_deflector_light_center_y = list_deflector_center_y
 
