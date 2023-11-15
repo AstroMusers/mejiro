@@ -1,12 +1,10 @@
 import os
 import sys
-import json
 import math
 import time
 import pickle
 import copy
 import corner
-from datetime import timedelta
 from pprint import pprint
 from tqdm import tqdm
 import matplotlib
@@ -26,7 +24,6 @@ from astropy.nddata.utils import Cutout2D
 
 from pandeia.engine.perform_calculation import perform_calculation
 from pandeia.engine.calc_utils import get_telescope_config, get_instrument_config, build_default_calc, build_default_source
-from pandeia.engine.io_utils import read_json, write_json
 
 from lenstronomy.LightModel.Profiles.gaussian import GaussianEllipse
 gauss = GaussianEllipse()
@@ -37,13 +34,13 @@ from lenstronomy.Data.pixel_grid import PixelGrid
 from lenstronomy.LensModel.lens_model import LensModel
 from lenstronomy.LightModel.light_model import LightModel
 from lenstronomy.Data.psf import PSF
-from lenstronomy.SimulationAPI.ObservationConfig.Roman import Roman
 from lenstronomy.SimulationAPI.ObservationConfig.HST import HST
 from lenstronomy.Util import data_util
 from lenstronomy.Plots import lens_plot
 from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
 
-from utils import csv_utils, utils
+from utils import csv_utils
+from package.utils import utils
 
 repo_path = os.getcwd()
 
@@ -174,7 +171,7 @@ for data_set_name in tqdm(data_set_list):
     plt.savefig(os.path.join(figure_dir, f'{data_set_name}_lenstronomy_model.png'))
     plt.close()
 
-    model_array_path = os.path.join(repo_path, 'arrays', 'SLACS', data_set_name + '_hst_counts_' + str(oversample_factor) + '.npy')
+    model_array_path = os.path.join(repo_path, 'output/arrays', 'SLACS', data_set_name + '_hst_counts_' + str(oversample_factor) + '.npy')
     np.save(model_array_path, image)
 
     # source plane coordinates of source
@@ -320,7 +317,7 @@ for data_set_name in tqdm(data_set_list):
     plt.close()
 
     # save this numpy array
-    pandeia_array_path = os.path.join(repo_path, 'arrays', 'SLACS', data_set_name + '_pandeia_' + str(oversample_factor) + '.npy')
+    pandeia_array_path = os.path.join(repo_path, 'output/arrays', 'SLACS', data_set_name + '_pandeia_' + str(oversample_factor) + '.npy')
     np.save(pandeia_array_path, detector)
 
     execution_end_time = time.time()

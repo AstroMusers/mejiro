@@ -1,20 +1,19 @@
 import os
-import sys
-import time
-from datetime import timedelta, datetime
-from pprint import pprint
-import numpy as np
 import pickle
-from tqdm import tqdm
+import time
+from datetime import datetime
 
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
+from tqdm import tqdm
+
 matplotlib.rcParams['axes.grid'] = False
 matplotlib.rcParams['image.origin'] = 'lower'
 
 from matplotlib import rc
-rc('font',**{'family':'sans-serif','sans-serif':['Source Sans Pro']})
-# rc('font',**{'family':'serif','serif':['Times']})
+
+rc('font', **{'family': 'sans-serif', 'sans-serif': ['Source Sans Pro']})
 rc('text', usetex=True)
 
 from astropy.io import fits
@@ -27,16 +26,14 @@ from astropy.stats import sigma_clipped_stats
 from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
 from photutils.aperture import CircularAperture
-from regions.core import PixCoord
 from regions.shapes.circle import CirclePixelRegion
 from photutils.detection import DAOStarFinder
 from regions import CircleAnnulusPixelRegion
-from regions import PixCoord, EllipsePixelRegion
+from regions import PixCoord
 
 from lenstronomy.Workflow.fitting_sequence import FittingSequence
 from lenstronomy.Plots import chain_plot
 from lenstronomy.Plots.model_plot import ModelPlot
-import lenstronomy.Util.util as util
 from lenstronomy.Util import kernel_util
 from lenstronomy.LensModel.lens_model import LensModel
 from lenstronomy.LightModel.light_model import LightModel
@@ -44,7 +41,7 @@ from lenstronomy.ImSim.image_model import ImageModel
 from lenstronomy.Data.imaging_data import ImageData
 from lenstronomy.Data.pixel_grid import PixelGrid
 
-from utils import csv_utils, psf_utils, utils
+from package.utils import csv_utils, psf_utils, utils
 
 repo_path = os.getcwd()
 
@@ -65,7 +62,7 @@ for data_set_name in tqdm(data_set_list):
 
     target_name = dataset.get('target_name')
 
-    figure_dir = os.path.join(repo_path, 'figures', 'modeling', data_set_name)
+    figure_dir = os.path.join(repo_path, 'figures', 'model', data_set_name)
     utils.create_directory_if_not_exists(figure_dir)
 
     ra, dec = float(dataset.get('ra')), float(dataset.get('dec'))
@@ -121,16 +118,16 @@ for data_set_name in tqdm(data_set_list):
     # masking
     if data_set_name not in ['J9OP05010']:
 
-        mean, median, std = sigma_clipped_stats(data, sigma=3.) 
+        mean, median, std = sigma_clipped_stats(data, sigma=3.)
 
-        daofind = DAOStarFinder(fwhm=1.2, threshold=5*std) 
-        sources = daofind(data - median)  
+        daofind = DAOStarFinder(fwhm=1.2, threshold=5 * std)
+        sources = daofind(data - median)
 
         positions = np.transpose((sources['xcentroid'], sources['ycentroid']))
         apertures = CircularAperture(positions, r=4.0)
         norm = ImageNormalize(stretch=SqrtStretch())
         plt.imshow(data, cmap='Greys', origin='lower', norm=norm,
-                interpolation='nearest')
+                   interpolation='nearest')
         apertures.plot(color='blue', lw=1.5, alpha=0.5)
         plt.title(dataset.get('target_name'))
         plt.savefig(os.path.join(figure_dir, f'{data_set_name}_points_to_mask.png'))
@@ -158,7 +155,7 @@ for data_set_name in tqdm(data_set_list):
             for item_num, item in enumerate(row):
                 if item == 1:
                     mask_array[row_num][item_num] = 0
-                if item ==0:
+                if item == 0:
                     mask_array[row_num][item_num] = 1
         data = data * mask_array  # set masked pixels to zero
         array_to_add = mask.to_image(data.shape)
@@ -169,7 +166,8 @@ for data_set_name in tqdm(data_set_list):
         num_sources_masked = 0
         masks = []
         for source in sources:
-            if source['xcentroid'] > 60 or source['xcentroid'] < 40 or source['ycentroid'] > 60 or source['ycentroid'] < 40:
+            if source['xcentroid'] > 60 or source['xcentroid'] < 40 or source['ycentroid'] > 60 or source[
+                'ycentroid'] < 40:
                 mask_center_x = source['xcentroid']
                 mask_center_y = source['ycentroid']
 
@@ -191,7 +189,7 @@ for data_set_name in tqdm(data_set_list):
                     for item_num, item in enumerate(row):
                         if item == 1:
                             mask_array[row_num][item_num] = 0
-                        if item ==0:
+                        if item == 0:
                             mask_array[row_num][item_num] = 1
                 data = data * mask_array  # set masked pixels to zero
                 array_to_add = mask.to_image(data.shape)
@@ -210,7 +208,8 @@ for data_set_name in tqdm(data_set_list):
     start_time = datetime.fromisoformat(dataset.get('start_time'))
     stop_time = datetime.fromisoformat(dataset.get('stop_time'))
     background_rms = rms  # background noise per pixel
-    exp_time = (stop_time - start_time).seconds  # exposure time (arbitrary units, flux per pixel is in units #photons/exp_time unit)
+    exp_time = (
+            stop_time - start_time).seconds  # exposure time (arbitrary units, flux per pixel is in units #photons/exp_time unit)
     pixel_scale = float(header.get('D001SCAL'))  # pixel size in arcsec (area per pixel = pixel_scale**2)
 
     # read out matrix elements and convert them in units of arc seconds
@@ -221,8 +220,8 @@ for data_set_name in tqdm(data_set_list):
 
     # generate pixel-to-coordinate transform matrix and its inverse
     pix2coord_transform_undistorted = np.array([[CD1_1, CD1_2], [CD2_1, CD2_2]])
-    det = CD1_1*CD2_2 - CD1_2*CD2_1
-    coord2pix_transform_undistorted = np.array([[CD2_2, -CD1_2], [-CD2_1, CD1_1]])/det
+    det = CD1_1 * CD2_2 - CD1_2 * CD2_1
+    coord2pix_transform_undistorted = np.array([[CD2_2, -CD1_2], [-CD2_1, CD1_1]]) / det
 
     # read out pixel size of image
     # nx, ny = header.get('NAXIS1'), header.get('NAXIS2')
@@ -260,19 +259,20 @@ for data_set_name in tqdm(data_set_list):
     psf_pix_map = kernel_util.degrade_kernel(psf_data - np.min(psf_data), 2)
 
     kwargs_psf = {
-        'psf_type':'PIXEL',
+        'psf_type': 'PIXEL',
         'kernel_point_source': psf_pix_map,
         'point_source_supersampling_factor': 2
     }
     psf_class = psf_utils.get_psf_class(kwargs_psf)
 
     kwargs_data = {'background_rms': background_rms,  # rms of background noise
-                'exposure_time': exp_time,  # exposure time (or a map per pixel)
-                'ra_at_xy_0': ra_at_xy_0,  # RA at (0,0) pixel
-                'dec_at_xy_0': dec_at_xy_0,  # DEC at (0,0) pixel 
-                'transform_pix2angle': pix2coord_transform_undistorted,  # matrix to translate shift in pixel in shift in relative RA/DEC (2x2 matrix), units of arcseconds
-                'image_data': data
-                }
+                   'exposure_time': exp_time,  # exposure time (or a map per pixel)
+                   'ra_at_xy_0': ra_at_xy_0,  # RA at (0,0) pixel
+                   'dec_at_xy_0': dec_at_xy_0,  # DEC at (0,0) pixel
+                   'transform_pix2angle': pix2coord_transform_undistorted,
+                   # matrix to translate shift in pixel in shift in relative RA/DEC (2x2 matrix), units of arcseconds
+                   'image_data': data
+                   }
 
     data_class = ImageData(**kwargs_data)
     data_class.update_data(data)
@@ -311,10 +311,14 @@ for data_set_name in tqdm(data_set_list):
     kwargs_upper_source = []
 
     fixed_source.append({})
-    kwargs_source_init.append({'R_sersic': 0.2, 'n_sersic': 1., 'e1': 0., 'e2': 0., 'center_x': 0., 'center_y': 0, 'amp': 5.})
-    kwargs_source_sigma.append({'R_sersic': 0.1, 'n_sersic': 0.5, 'e1': 0.05, 'e2': 0.05, 'center_x': 0.2, 'center_y': 0.2, 'amp': 1.})
-    kwargs_lower_source.append({'R_sersic': 0.001, 'n_sersic': .5, 'e1': -0.5, 'e2': -0.5, 'center_x': -10, 'center_y': -10, 'amp': 5.})
-    kwargs_upper_source.append({'R_sersic': 10., 'n_sersic': 5., 'e1': 0.5, 'e2': 0.5, 'center_x': 10, 'center_y': 10, 'amp': 10.})
+    kwargs_source_init.append(
+        {'R_sersic': 0.2, 'n_sersic': 1., 'e1': 0., 'e2': 0., 'center_x': 0., 'center_y': 0, 'amp': 5.})
+    kwargs_source_sigma.append(
+        {'R_sersic': 0.1, 'n_sersic': 0.5, 'e1': 0.05, 'e2': 0.05, 'center_x': 0.2, 'center_y': 0.2, 'amp': 1.})
+    kwargs_lower_source.append(
+        {'R_sersic': 0.001, 'n_sersic': .5, 'e1': -0.5, 'e2': -0.5, 'center_x': -10, 'center_y': -10, 'amp': 5.})
+    kwargs_upper_source.append(
+        {'R_sersic': 10., 'n_sersic': 5., 'e1': 0.5, 'e2': 0.5, 'center_x': 10, 'center_y': 10, 'amp': 10.})
 
     source_params = [kwargs_source_init, kwargs_source_sigma, fixed_source, kwargs_lower_source, kwargs_upper_source]
 
@@ -328,16 +332,21 @@ for data_set_name in tqdm(data_set_list):
     kwargs_upper_lens_light = []
 
     fixed_lens_light.append({})
-    kwargs_lens_light_init.append({'R_sersic': 0.5, 'n_sersic': 2, 'e1': 0, 'e2': 0, 'center_x': 0., 'center_y': 0, 'amp': 16})
-    kwargs_lens_light_sigma.append({'R_sersic': 0.3, 'n_sersic': 1, 'e1': 0.05, 'e2': 0.05, 'center_x': 0.1, 'center_y': 0.1, 'amp': 10})
-    kwargs_lower_lens_light.append({'R_sersic': 0.001, 'n_sersic': .5, 'e1': -0.5, 'e2': -0.5, 'center_x': -10, 'center_y': -10, 'amp': 0})
-    kwargs_upper_lens_light.append({'R_sersic': 10., 'n_sersic': 5., 'e1': 0.5, 'e2': 0.5, 'center_x': 10, 'center_y': 10, 'amp': 100})
+    kwargs_lens_light_init.append(
+        {'R_sersic': 0.5, 'n_sersic': 2, 'e1': 0, 'e2': 0, 'center_x': 0., 'center_y': 0, 'amp': 16})
+    kwargs_lens_light_sigma.append(
+        {'R_sersic': 0.3, 'n_sersic': 1, 'e1': 0.05, 'e2': 0.05, 'center_x': 0.1, 'center_y': 0.1, 'amp': 10})
+    kwargs_lower_lens_light.append(
+        {'R_sersic': 0.001, 'n_sersic': .5, 'e1': -0.5, 'e2': -0.5, 'center_x': -10, 'center_y': -10, 'amp': 0})
+    kwargs_upper_lens_light.append(
+        {'R_sersic': 10., 'n_sersic': 5., 'e1': 0.5, 'e2': 0.5, 'center_x': 10, 'center_y': 10, 'amp': 100})
 
-    lens_light_params = [kwargs_lens_light_init, kwargs_lens_light_sigma, fixed_lens_light, kwargs_lower_lens_light, kwargs_upper_lens_light]
+    lens_light_params = [kwargs_lens_light_init, kwargs_lens_light_sigma, fixed_lens_light, kwargs_lower_lens_light,
+                         kwargs_upper_lens_light]
 
     kwargs_params = {'lens_model': lens_params,
-                    'source_model': source_params,
-                    'lens_light_model': lens_light_params}  # NB add special params here if using them
+                     'source_model': source_params,
+                     'lens_light_model': lens_light_params}  # NB add special params here if using them
 
     kwargs_model = {'lens_model_list': lens_model_list,
                     'source_light_model_list': source_model_list,
@@ -349,10 +358,12 @@ for data_set_name in tqdm(data_set_list):
     multi_band_list = [[kwargs_data, kwargs_psf, kwargs_numerics]]
     # if you have multiple bands to be modeled simultaneously, you can append them to the multi_band_list
 
-    kwargs_data_joint = {'multi_band_list': multi_band_list, 
-                        'multi_band_type': 'single-band'  # 'multi-linear': every imaging band has independent solutions of the surface brightness, 'joint-linear': there is one joint solution of the linear coefficients demanded across the bands.
-                        }
-    kwargs_constraints = {'linear_solver': True}  # optional, if 'linear_solver': False, lenstronomy does not apply a linear inversion of the 'amp' parameters during fitting but instead samples them.
+    kwargs_data_joint = {'multi_band_list': multi_band_list,
+                         'multi_band_type': 'single-band'
+                         # 'multi-linear': every imaging band has independent solutions of the surface brightness, 'joint-linear': there is one joint solution of the linear coefficients demanded across the bands.
+                         }
+    kwargs_constraints = {
+        'linear_solver': True}  # optional, if 'linear_solver': False, lenstronomy does not apply a linear inversion of the 'amp' parameters during fitting but instead samples them.
 
     kwargs_pixel = {'nx': nx, 'ny': ny,  # number of pixels per axis
                     'ra_at_xy_0': ra_at_xy_0,  # RA at pixel (0,0)
@@ -373,7 +384,7 @@ for data_set_name in tqdm(data_set_list):
 
     # generate image
     image_sim = imageModel.image(kwargs_lens=kwargs_lens_init, kwargs_source=kwargs_source_init,
-                                kwargs_lens_light=kwargs_lens_light_init)
+                                 kwargs_lens_light=kwargs_lens_light_init)
 
     _, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
     ax1.matshow(image_sim, origin='lower')
@@ -402,13 +413,14 @@ for data_set_name in tqdm(data_set_list):
     chain_list = fitting_seq.fit_sequence(fitting_kwargs_list)
     kwargs_result = fitting_seq.best_fit()
 
-    modelPlot = ModelPlot(multi_band_list, kwargs_model, kwargs_result, arrow_size=0.02, cmap_string="gist_heat", linear_solver=kwargs_constraints.get('linear_solver', True))
-        
+    modelPlot = ModelPlot(multi_band_list, kwargs_model, kwargs_result, arrow_size=0.02, cmap_string="gist_heat",
+                          linear_solver=kwargs_constraints.get('linear_solver', True))
+
     f, axes = plt.subplots(2, 3, figsize=(16, 8), sharex='none', sharey='none')
 
-    modelPlot.data_plot(ax=axes[0,0])
-    modelPlot.model_plot(ax=axes[0,1])
-    modelPlot.normalized_residual_plot(ax=axes[0,2], v_min=-6, v_max=6)
+    modelPlot.data_plot(ax=axes[0, 0])
+    modelPlot.model_plot(ax=axes[0, 1])
+    modelPlot.normalized_residual_plot(ax=axes[0, 2], v_min=-6, v_max=6)
     modelPlot.source_plot(ax=axes[1, 0], deltaPix_source=pixel_scale, numPix=nx)
     modelPlot.convergence_plot(ax=axes[1, 1], v_max=1)
     modelPlot.magnification_plot(ax=axes[1, 2])
@@ -420,19 +432,21 @@ for data_set_name in tqdm(data_set_list):
 
     f, axes = plt.subplots(2, 3, figsize=(16, 8), sharex='none', sharey='none')
 
-    modelPlot.decomposition_plot(ax=axes[0,0], text='Lens light', lens_light_add=True, unconvolved=True)
-    modelPlot.decomposition_plot(ax=axes[1,0], text='Lens light convolved', lens_light_add=True)
-    modelPlot.decomposition_plot(ax=axes[0,1], text='Source light', source_add=True, unconvolved=True)
-    modelPlot.decomposition_plot(ax=axes[1,1], text='Source light convolved', source_add=True)
-    modelPlot.decomposition_plot(ax=axes[0,2], text='All components', source_add=True, lens_light_add=True, unconvolved=True)
-    modelPlot.decomposition_plot(ax=axes[1,2], text='All components convolved', source_add=True, lens_light_add=True, point_source_add=True)
+    modelPlot.decomposition_plot(ax=axes[0, 0], text='Lens light', lens_light_add=True, unconvolved=True)
+    modelPlot.decomposition_plot(ax=axes[1, 0], text='Lens light convolved', lens_light_add=True)
+    modelPlot.decomposition_plot(ax=axes[0, 1], text='Source light', source_add=True, unconvolved=True)
+    modelPlot.decomposition_plot(ax=axes[1, 1], text='Source light convolved', source_add=True)
+    modelPlot.decomposition_plot(ax=axes[0, 2], text='All components', source_add=True, lens_light_add=True,
+                                 unconvolved=True)
+    modelPlot.decomposition_plot(ax=axes[1, 2], text='All components convolved', source_add=True, lens_light_add=True,
+                                 point_source_add=True)
     f.tight_layout()
     f.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0., hspace=0.05)
     # f.show()
     f.savefig(os.path.join(figure_dir, f'{data_set_name}_p2.png'))
     plt.close()
 
-    sampler_type, samples_mcmc, param_mcmc, dist_mcmc  = chain_list[1]
+    sampler_type, samples_mcmc, param_mcmc, dist_mcmc = chain_list[1]
     param_class = fitting_seq.param_class
 
     i = 0
@@ -442,7 +456,7 @@ for data_set_name in tqdm(data_set_list):
         plt.close()
 
     n_sample = len(samples_mcmc)
-    samples_mcmc_cut = samples_mcmc[int(n_sample*1/2.):]
+    samples_mcmc_cut = samples_mcmc[int(n_sample * 1 / 2.):]
 
     kwargs_macromodel_lens = kwargs_result.get('kwargs_lens')
     kwargs_macromodel_lens_light = kwargs_result.get('kwargs_lens_light')
@@ -470,7 +484,8 @@ for data_set_name in tqdm(data_set_list):
 
     kwargs_numerics = {'supersampling_factor': 1, 'supersampling_convolution': False}
 
-    imageModel = ImageModel(data_class, psf_class, lens_model_class, source_model_class, lens_light_model_class, kwargs_numerics=kwargs_numerics)
+    imageModel = ImageModel(data_class, psf_class, lens_model_class, source_model_class, lens_light_model_class,
+                            kwargs_numerics=kwargs_numerics)
 
     # generate image
     image_sim = imageModel.image(kwargs_macromodel_lens, kwargs_macromodel_source, kwargs_macromodel_lens_light)
