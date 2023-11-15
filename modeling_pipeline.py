@@ -12,6 +12,11 @@ import matplotlib.pyplot as plt
 matplotlib.rcParams['axes.grid'] = False
 matplotlib.rcParams['image.origin'] = 'lower'
 
+from matplotlib import rc
+rc('font',**{'family':'sans-serif','sans-serif':['Source Sans Pro']})
+# rc('font',**{'family':'serif','serif':['Times']})
+rc('text', usetex=True)
+
 from astropy.io import fits
 from astropy import units as u
 from astropy.coordinates import SkyCoord
@@ -25,6 +30,7 @@ from photutils.aperture import CircularAperture
 from regions.core import PixCoord
 from regions.shapes.circle import CirclePixelRegion
 from photutils.detection import DAOStarFinder
+from regions import CircleAnnulusPixelRegion
 from regions import PixCoord, EllipsePixelRegion
 
 from lenstronomy.Workflow.fitting_sequence import FittingSequence
@@ -45,7 +51,7 @@ repo_path = os.getcwd()
 csv_filepath = os.path.join(repo_path, 'data', 'SLACS', 'SLACS.csv')
 dataset_dict_list = csv_utils.csv_to_dict_list(csv_filepath)
 
-data_set_list = ['J9OP02010', 'J9EM25AFQ', 'J9OP04010', 'J9OP05010', 'J9EM0SEEQ', 'J9OP06010']
+data_set_list = ['J9EM0SEEQ']  # 'J9OP02010', 'J9EM25AFQ', 'J9OP04010', 'J9OP05010', 'J9EM0SEEQ', 'J9OP06010'
 execution_times = []
 
 csv_filepath = os.path.join(repo_path, 'data', 'SLACS', 'SLACS.csv')
@@ -115,19 +121,49 @@ for data_set_name in tqdm(data_set_list):
     # masking
     if data_set_name not in ['J9OP05010']:
 
-        mean, median, std = sigma_clipped_stats(data, sigma=3.0) 
+        mean, median, std = sigma_clipped_stats(data, sigma=3.) 
 
-        daofind = DAOStarFinder(fwhm=2.0, threshold=5.*std)  
+        daofind = DAOStarFinder(fwhm=1.2, threshold=5*std) 
         sources = daofind(data - median)  
 
         positions = np.transpose((sources['xcentroid'], sources['ycentroid']))
         apertures = CircularAperture(positions, r=4.0)
         norm = ImageNormalize(stretch=SqrtStretch())
-        plt.imshow(data, cmap='Greys', origin='lower', norm=norm, interpolation='nearest')
+        plt.imshow(data, cmap='Greys', origin='lower', norm=norm,
+                interpolation='nearest')
         apertures.plot(color='blue', lw=1.5, alpha=0.5)
         plt.title(dataset.get('target_name'))
         plt.savefig(os.path.join(figure_dir, f'{data_set_name}_points_to_mask.png'))
         plt.close()
+
+        # CUSTOM MASK FOR WUPRS LENS
+        mask_center_x = 28
+        mask_center_y = 15
+
+        # build mask
+        center = PixCoord(mask_center_x, mask_center_y)
+        radius = 2.5
+
+        # get mean of region around
+        annulus = CircleAnnulusPixelRegion(center=center, inner_radius=radius, outer_radius=4)
+        annulus_array = annulus.to_mask(mode='center').to_image(data.shape)
+        annulus_array *= data
+        annulus_pixels = annulus_array[annulus_array != 0]
+        annulus_mean = np.mean(annulus_pixels)
+
+        region = CirclePixelRegion(center=center, radius=radius)
+        mask = region.to_mask(mode='center')
+        mask_array = mask.to_image(data.shape)  # returns 2d np array with ones for masked pixels, else zero
+        for row_num, row in enumerate(mask_array):
+            for item_num, item in enumerate(row):
+                if item == 1:
+                    mask_array[row_num][item_num] = 0
+                if item ==0:
+                    mask_array[row_num][item_num] = 1
+        data = data * mask_array  # set masked pixels to zero
+        array_to_add = mask.to_image(data.shape)
+        array_to_add[array_to_add == 1] = annulus_mean
+        data += array_to_add
 
         # identify those bright spots well outside of the centered lensing galaxy
         num_sources_masked = 0
@@ -139,9 +175,28 @@ for data_set_name in tqdm(data_set_list):
 
                 # build mask
                 center = PixCoord(mask_center_x, mask_center_y)
-                region = CirclePixelRegion(center, 2.)
+                radius = 2
+
+                # get mean of region around
+                annulus = CircleAnnulusPixelRegion(center=center, inner_radius=radius, outer_radius=4)
+                annulus_array = annulus.to_mask(mode='center').to_image(data.shape)
+                annulus_array *= data
+                annulus_pixels = annulus_array[annulus_array != 0]
+                annulus_mean = np.mean(annulus_pixels)
+
+                region = CirclePixelRegion(center=center, radius=radius)
                 mask = region.to_mask(mode='center')
-                data = data - (mask.to_image(data.shape) * data) + (mask.to_image(data.shape) * mean)
+                mask_array = mask.to_image(data.shape)  # returns 2d np array with ones for masked pixels, else zero
+                for row_num, row in enumerate(mask_array):
+                    for item_num, item in enumerate(row):
+                        if item == 1:
+                            mask_array[row_num][item_num] = 0
+                        if item ==0:
+                            mask_array[row_num][item_num] = 1
+                data = data * mask_array  # set masked pixels to zero
+                array_to_add = mask.to_image(data.shape)
+                array_to_add[array_to_add == 1] = annulus_mean
+                data += array_to_add
 
                 num_sources_masked += 1
 
@@ -337,11 +392,11 @@ for data_set_name in tqdm(data_set_list):
     fitting_seq = FittingSequence(kwargs_data_joint, kwargs_model, kwargs_constraints, kwargs_likelihood, kwargs_params)
 
     # pso = ['PSO', {'sigma_scale': 1., 'n_particles': 100, 'n_iterations': 100}]
-    # pso = ['PSO', {'sigma_scale': 1., 'n_particles': 200, 'n_iterations': 200}]
-    pso = ['PSO', {'sigma_scale': 1., 'n_particles': 400, 'n_iterations': 400}]
+    pso = ['PSO', {'sigma_scale': 1., 'n_particles': 200, 'n_iterations': 200}]
+    # pso = ['PSO', {'sigma_scale': 1., 'n_particles': 400, 'n_iterations': 400}]
     # mcmc = ['MCMC', {'n_burn': 20, 'n_run': 20, 'walkerRatio': 4, 'sigma_scale': .1}]
-    # mcmc = ['MCMC', {'n_burn': 100, 'n_run': 100, 'walkerRatio': 10, 'sigma_scale': .1}]
-    mcmc = ['MCMC', {'n_burn': 200, 'n_run': 600, 'n_walkers': 200, 'sigma_scale': .1}]
+    mcmc = ['MCMC', {'n_burn': 100, 'n_run': 100, 'walkerRatio': 10, 'sigma_scale': .1}]
+    # mcmc = ['MCMC', {'n_burn': 200, 'n_run': 600, 'n_walkers': 200, 'sigma_scale': .1}]
     fitting_kwargs_list = [pso, mcmc]
 
     chain_list = fitting_seq.fit_sequence(fitting_kwargs_list)
