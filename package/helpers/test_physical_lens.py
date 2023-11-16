@@ -1,4 +1,6 @@
+import math
 import numpy as np
+from copy import deepcopy
 
 from astropy.cosmology import FlatLambdaCDM
 from lenstronomy.LensModel.lens_model import LensModel
@@ -6,6 +8,10 @@ from lenstronomy.LightModel.light_model import LightModel
 from lenstronomy.SimulationAPI.sim_api import SimAPI
 from lenstronomy.SimulationAPI.ObservationConfig.Roman import Roman
 from lenstronomy.Plots import plot_util
+from lenstronomy.ImSim.image_model import ImageModel
+from lenstronomy.Data.pixel_grid import PixelGrid
+from lenstronomy.Data.psf import PSF
+from lenstronomy.Util import data_util
 
 
 class TestPhysicalLens:
@@ -37,8 +43,15 @@ class TestPhysicalLens:
         # light model: sersic ellipse profile
         lens_light_model_list = ['SERSIC_ELLIPSE']
         self.lens_light_model_class = LightModel(lens_light_model_list)
-        kwargs_sersic_lens = {'magnitude': 23, 'R_sersic': 0.6, 'n_sersic': 2, 'e1': -0.1, 'e2': 0.1, 'center_x': 0.05,
-                              'center_y': 0}
+        kwargs_sersic_lens = {
+            'magnitude': 23, 
+            'R_sersic': 0.6, 
+            'n_sersic': 2, 
+            'e1': -0.1, 
+            'e2': 0.1, 
+            'center_x': 0.05,
+            'center_y': 0
+        }
         self.kwargs_lens_light = [kwargs_sersic_lens]
 
         # SOURCE
@@ -46,8 +59,15 @@ class TestPhysicalLens:
         source_model_list = ['SERSIC_ELLIPSE']
         source_redshift_list = [self.z_source]
         self.source_model_class = LightModel(source_model_list)
-        kwargs_sersic = {'magnitude': 27, 'R_sersic': 0.1, 'n_sersic': 1, 'e1': -0.1, 'e2': 0.1, 'center_x': 0.1,
-                         'center_y': 0}
+        kwargs_sersic = {
+            'magnitude': 27, 
+            'R_sersic': 0.1, 
+            'n_sersic': 1, 
+            'e1': -0.1, 
+            'e2': 0.1, 
+            'center_x': 0.1,
+            'center_y': 0
+        }
         self.kwargs_source = [kwargs_sersic]
 
         # set up model
@@ -64,13 +84,59 @@ class TestPhysicalLens:
 
         self.ra_at_xy_0, self.dec_at_xy_0 = None, None
 
-    def get_array(self, side=5.):
+    def get_array(self, num_pix, side=5.):
+        delta_pix = side / num_pix  # size of pixel in angular coordinates
+
+        # specify coordinate in angles (RA/DEC) at the position of the pixel edge (0,0)
+        self.ra_at_xy_0, self.dec_at_xy_0 = -delta_pix * math.ceil(num_pix / 2), -delta_pix * math.ceil(num_pix / 2)
+
+        # define linear translation matrix of a shift in pixel in a shift in coordinates
+        transform_pix2angle = np.array([[1, 0], [0, 1]]) * delta_pix
+
+        kwargs_pixel = {'nx': num_pix, 'ny': num_pix,  # number of pixels per axis
+                        'ra_at_xy_0': self.ra_at_xy_0,
+                        'dec_at_xy_0': self.dec_at_xy_0,
+                        'transform_pix2angle': transform_pix2angle}
+        pixel_grid = PixelGrid(**kwargs_pixel)
+
+        # define PSF
+        kwargs_psf = {'psf_type': 'NONE'}
+        psf_class = PSF(**kwargs_psf)
+
+        # define numerics
+        kwargs_numerics = {
+            'supersampling_factor': 1,
+            'supersampling_convolution': False
+        }
+
+        # convert from magnitude to amplitude for light models
+        lenstronomy_roman_config = Roman(band='F106', psf_type='PIXEL', survey_mode='wide_area').kwargs_single_band()
+        magnitude_zero_point = lenstronomy_roman_config.get('magnitude_zero_point')
+        kwargs_lens_light_amp = data_util.magnitude2amplitude(self.lens_light_model_class, self.kwargs_lens_light, magnitude_zero_point)
+        kwargs_source_amp = data_util.magnitude2amplitude(self.source_model_class, self.kwargs_source, magnitude_zero_point)
+
+        # convert from physical to lensing units
+        sim_g = SimAPI(numpix=num_pix, kwargs_single_band=lenstronomy_roman_config, kwargs_model=self.kwargs_model)
+        kwargs_lens_lensing_units = sim_g.physical2lensing_conversion(kwargs_mass=self.kwargs_lens)
+
+        image_model = ImageModel(data_class=pixel_grid,
+                                 psf_class=psf_class,
+                                 lens_model_class=self.lens_model_class,
+                                 source_model_class=self.source_model_class,
+                                 lens_light_model_class=self.lens_light_model_class,
+                                 kwargs_numerics=kwargs_numerics)
+
+        return image_model.image(kwargs_lens=kwargs_lens_lensing_units,
+                                 kwargs_source=kwargs_source_amp,
+                                 kwargs_lens_light=kwargs_lens_light_amp)
+    
+
+    def get_roman_sim(self, side=5.):
         kwargs_numerics = {'point_source_supersampling_factor': 1}
 
         roman_g = Roman(band='F062', psf_type='PIXEL', survey_mode='wide_area')
         roman_r = Roman(band='F106', psf_type='PIXEL', survey_mode='wide_area')
         roman_i = Roman(band='F184', psf_type='PIXEL', survey_mode='wide_area')
-        roman = [roman_g, roman_r, roman_i]
 
         kwargs_b_band = roman_g.kwargs_single_band()
         kwargs_g_band = roman_r.kwargs_single_band()
@@ -114,7 +180,6 @@ class TestPhysicalLens:
         image_r += sim_r.noise_for_model(model=image_r)
 
         image = image_g
-
         rgb_image = np.zeros((image_g.shape[0], image_g.shape[1], 3), dtype=float)
 
         # scale_max=10000
@@ -127,6 +192,5 @@ class TestPhysicalLens:
         rgb_image[:, :, 0] = plot_util.sqrt(image_b, scale_min=0, scale_max=_scale_max(image_b))
         rgb_image[:, :, 1] = plot_util.sqrt(image_g, scale_min=0, scale_max=_scale_max(image_g))
         rgb_image[:, :, 2] = plot_util.sqrt(image_r, scale_min=0, scale_max=_scale_max(image_r))
-        data_class = sim_b.data_class
 
-        return image, rgb_image, data_class
+        return image, rgb_image, sim_b.data_class
