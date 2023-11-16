@@ -25,9 +25,9 @@ def fft(filepath, title, array):
     plt.show()
 
 
-def residual(filepath, title, array1, array2):
+def residual(filepath, title, array1, array2, vmin=-6, vmax=6):
     residual = (array1 - array2) / array1
-    plt.imshow(residual, cmap='bwr')
+    plt.imshow(residual, cmap='bwr', vmin=vmin, vmax=vmax)
     plt.title(title)
     plt.colorbar()
     __savefig(filepath)

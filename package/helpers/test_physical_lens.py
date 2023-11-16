@@ -170,6 +170,7 @@ class TestPhysicalLens:
         # convert from physical to lensing units
         kwargs_lens_lensing_units = sim_b.physical2lensing_conversion(kwargs_mass=self.kwargs_lens)
 
+        # create images in each filter
         image_b = imsim_b.image(kwargs_lens_lensing_units, kwargs_source_g, kwargs_lens_light_g)
         image_g = imsim_g.image(kwargs_lens_lensing_units, kwargs_source_r, kwargs_lens_light_r)
         image_r = imsim_r.image(kwargs_lens_lensing_units, kwargs_source_i, kwargs_lens_light_i)

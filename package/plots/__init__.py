@@ -15,7 +15,7 @@ matplotlib.rcParams['image.origin'] = 'lower'
 def __savefig(filepath):
     if filepath is not None:
         # check if the specified directory exists; if not, create it
-        file_dir = path.basename(filepath)
+        file_dir = path.dirname(filepath)
         util.create_directory_if_not_exists(file_dir)
 
         # save figure
