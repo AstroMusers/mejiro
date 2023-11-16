@@ -1,14 +1,8 @@
-import math
 import numpy as np
 
 from astropy.cosmology import FlatLambdaCDM
-from lenstronomy.ImSim.image_model import ImageModel
-from lenstronomy.Data.pixel_grid import PixelGrid
 from lenstronomy.LensModel.lens_model import LensModel
 from lenstronomy.LightModel.light_model import LightModel
-from lenstronomy.Data.psf import PSF
-from lenstronomy.Cosmo.lens_cosmo import LensCosmo
-from lenstronomy.Util import data_util
 from lenstronomy.SimulationAPI.sim_api import SimAPI
 from lenstronomy.SimulationAPI.ObservationConfig.Roman import Roman
 from lenstronomy.Plots import plot_util
@@ -25,13 +19,13 @@ class TestPhysicalLens:
         # LENS
         # mass model: singular isothermal ellipsoid with a shear
         lens_model_list = ['SIE', 'SHEAR']
-        lens_redshift_list = [self.z_lens]
+        lens_redshift_list = [self.z_lens, self.z_lens]
         self.lens_model_class = LensModel(lens_model_list)
         kwargs_mass = {
             'sigma_v': 250,  # velocity dispersion in units km/s
-            'center_x': 0, 
-            'center_y': 0, 
-            'e1': 0.1, 
+            'center_x': 0,
+            'center_y': 0,
+            'e1': 0.1,
             'e2': 0
         }
         kwargs_shear = {
@@ -43,7 +37,7 @@ class TestPhysicalLens:
         # light model: sersic ellipse profile
         lens_light_model_list = ['SERSIC_ELLIPSE']
         self.lens_light_model_class = LightModel(lens_light_model_list)
-        kwargs_sersic_lens = {'magnitude': 20, 'R_sersic': 0.6, 'n_sersic': 2, 'e1': -0.1, 'e2': 0.1, 'center_x': 0.05,
+        kwargs_sersic_lens = {'magnitude': 23, 'R_sersic': 0.6, 'n_sersic': 2, 'e1': -0.1, 'e2': 0.1, 'center_x': 0.05,
                               'center_y': 0}
         self.kwargs_lens_light = [kwargs_sersic_lens]
 
@@ -52,7 +46,7 @@ class TestPhysicalLens:
         source_model_list = ['SERSIC_ELLIPSE']
         source_redshift_list = [self.z_source]
         self.source_model_class = LightModel(source_model_list)
-        kwargs_sersic = {'magnitude': 21, 'R_sersic': 0.1, 'n_sersic': 1, 'e1': -0.1, 'e2': 0.1, 'center_x': 0.1,
+        kwargs_sersic = {'magnitude': 27, 'R_sersic': 0.1, 'n_sersic': 1, 'e1': -0.1, 'e2': 0.1, 'center_x': 0.1,
                          'center_y': 0}
         self.kwargs_source = [kwargs_sersic]
 
@@ -64,14 +58,14 @@ class TestPhysicalLens:
             'source_light_model_list': source_model_list,
             'source_redshift_list': source_redshift_list,
             'cosmo': cosmo,
-            'z_source_convention': 3,  # source redshfit to which the reduced deflections are computed, is the maximal redshift of the ray-tracing
-        }   
+            'z_source': self.z_source,
+            'z_source_convention': 3,  # source redshift to which the reduced deflections are computed, is the maximal redshift of the ray-tracing
+        }
 
         self.ra_at_xy_0, self.dec_at_xy_0 = None, None
 
-
-    def get_array(self, side=5.):    
-        kwargs_numerics = {'point_source_supersampling_factor': 1}   
+    def get_array(self, side=5.):
+        kwargs_numerics = {'point_source_supersampling_factor': 1}
 
         roman_g = Roman(band='F062', psf_type='PIXEL', survey_mode='wide_area')
         roman_r = Roman(band='F106', psf_type='PIXEL', survey_mode='wide_area')
@@ -85,16 +79,16 @@ class TestPhysicalLens:
         # set number of pixels from pixel scale
         pixel_scale = kwargs_g_band['pixel_scale']
         numpix = int(round(side / pixel_scale))
-        
+
         sim_b = SimAPI(numpix=numpix, kwargs_single_band=kwargs_b_band, kwargs_model=self.kwargs_model)
         sim_g = SimAPI(numpix=numpix, kwargs_single_band=kwargs_g_band, kwargs_model=self.kwargs_model)
         sim_r = SimAPI(numpix=numpix, kwargs_single_band=kwargs_r_band, kwargs_model=self.kwargs_model)
 
-        imSim_b = sim_b.image_model_class(kwargs_numerics)
-        imSim_g = sim_g.image_model_class(kwargs_numerics)
-        imSim_r = sim_r.image_model_class(kwargs_numerics)
+        imsim_b = sim_b.image_model_class(kwargs_numerics)
+        imsim_g = sim_g.image_model_class(kwargs_numerics)
+        imsim_r = sim_r.image_model_class(kwargs_numerics)
 
-        # TODO TEMP
+        # TODO TEMP for now, just set flat spectrum i.e. same brightness across filters
         kwargs_lens_light_mag_g = self.kwargs_lens_light
         kwargs_lens_light_mag_r = self.kwargs_lens_light
         kwargs_lens_light_mag_i = self.kwargs_lens_light
@@ -103,29 +97,36 @@ class TestPhysicalLens:
         kwargs_source_mag_i = self.kwargs_source
 
         # turn magnitude kwargs into lenstronomy kwargs
-        kwargs_lens_light_g, kwargs_source_g = sim_b.magnitude2amplitude(kwargs_lens_light_mag_g, kwargs_source_mag_g)
-        kwargs_lens_light_r, kwargs_source_r = sim_g.magnitude2amplitude(kwargs_lens_light_mag_r, kwargs_source_mag_r)
-        kwargs_lens_light_i, kwargs_source_i = sim_r.magnitude2amplitude(kwargs_lens_light_mag_i, kwargs_source_mag_i)
+        kwargs_lens_light_g, kwargs_source_g, _ = sim_b.magnitude2amplitude(kwargs_lens_light_mag_g, kwargs_source_mag_g, None)
+        kwargs_lens_light_r, kwargs_source_r, _ = sim_g.magnitude2amplitude(kwargs_lens_light_mag_r, kwargs_source_mag_r, None)
+        kwargs_lens_light_i, kwargs_source_i, _ = sim_r.magnitude2amplitude(kwargs_lens_light_mag_i, kwargs_source_mag_i, None)
 
-        image_b = imSim_b.image(self.kwargs_lens, kwargs_source_g, kwargs_lens_light_g)
-        image_g = imSim_g.image(self.kwargs_lens, kwargs_source_r, kwargs_lens_light_r)
-        image_r = imSim_r.image(self.kwargs_lens, kwargs_source_i, kwargs_lens_light_i)
+        # convert from physical to lensing units
+        kwargs_lens_lensing_units = sim_b.physical2lensing_conversion(kwargs_mass=self.kwargs_lens)
+
+        image_b = imsim_b.image(kwargs_lens_lensing_units, kwargs_source_g, kwargs_lens_light_g)
+        image_g = imsim_g.image(kwargs_lens_lensing_units, kwargs_source_r, kwargs_lens_light_r)
+        image_r = imsim_r.image(kwargs_lens_lensing_units, kwargs_source_i, kwargs_lens_light_i)
 
         # add noise
         image_b += sim_b.noise_for_model(model=image_b)
         image_g += sim_g.noise_for_model(model=image_g)
         image_r += sim_r.noise_for_model(model=image_r)
 
-        img = np.zeros((image_g.shape[0], image_g.shape[1], 3), dtype=float)
-        #scale_max=10000
-        def _scale_max(image): 
-            flat=image.flatten()
+        image = image_g
+
+        rgb_image = np.zeros((image_g.shape[0], image_g.shape[1], 3), dtype=float)
+
+        # scale_max=10000
+        def _scale_max(image):
+            flat = image.flatten()
             flat.sort()
-            scale_max = flat[int(len(flat)*0.95)]
+            scale_max = flat[int(len(flat) * 0.95)]
             return scale_max
-        img[:,:,0] = plot_util.sqrt(image_b, scale_min=0, scale_max=_scale_max(image_b))
-        img[:,:,1] = plot_util.sqrt(image_g, scale_min=0, scale_max=_scale_max(image_g))
-        img[:,:,2] = plot_util.sqrt(image_r, scale_min=0, scale_max=_scale_max(image_r))
+
+        rgb_image[:, :, 0] = plot_util.sqrt(image_b, scale_min=0, scale_max=_scale_max(image_b))
+        rgb_image[:, :, 1] = plot_util.sqrt(image_g, scale_min=0, scale_max=_scale_max(image_g))
+        rgb_image[:, :, 2] = plot_util.sqrt(image_r, scale_min=0, scale_max=_scale_max(image_r))
         data_class = sim_b.data_class
 
-        return img, data_class
+        return image, rgb_image, data_class
