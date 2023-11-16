@@ -35,7 +35,7 @@ def residual(filepath, title, array1, array2):
 
 
 def execution_time_scatter(filepath, title, execution_times):
-    plt.hist(np.arange(0, len(execution_times), execution_times))
+    plt.scatter(np.arange(0, len(execution_times)), execution_times)
     plt.title(title)
     __savefig(filepath)
     plt.show()
