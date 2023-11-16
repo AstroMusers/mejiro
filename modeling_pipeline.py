@@ -224,8 +224,6 @@ for data_set_name in tqdm(data_set_list):
     coord2pix_transform_undistorted = np.array([[CD2_2, -CD1_2], [-CD2_1, CD1_1]]) / det
 
     # read out pixel size of image
-    # nx, ny = header.get('NAXIS1'), header.get('NAXIS2')
-    # but these values are for the original fits file, so use updated values
     nx, ny = data.shape
     x_c = int(nx / 2)
     y_c = int(ny / 2)
@@ -277,80 +275,18 @@ for data_set_name in tqdm(data_set_list):
     data_class = ImageData(**kwargs_data)
     data_class.update_data(data)
 
-    # lens params
-    lens_model_list = ['SIE', 'SHEAR']
+    # TODO insert
+    from params import modeling
 
-    fixed_lens = []
-    kwargs_lens_init = []
-    kwargs_lens_sigma = []
-    kwargs_lower_lens = []
-    kwargs_upper_lens = []
+    model_params = modeling.simple
 
-    fixed_lens.append({})  # fix the power-law index of the lens model to be isothermal
-    kwargs_lens_init.append({'theta_E': 1., 'e1': 0., 'e2': 0., 'center_x': 0., 'center_y': 0.})
-    kwargs_lens_sigma.append({'theta_E': 0.5, 'e1': 0.05, 'e2': 0.05, 'center_x': 0.05, 'center_y': 0.05})
-    kwargs_lower_lens.append({'theta_E': 0.5, 'e1': -0.5, 'e2': -0.5, 'center_x': -10., 'center_y': -10.})
-    kwargs_upper_lens.append({'theta_E': 3., 'e1': 0.5, 'e2': 0.5, 'center_x': 10., 'center_y': 10.})
+    kwargs_params = {'lens_model': model_params.lens_params,
+                     'source_model': model_params.source_params,
+                     'lens_light_model': model_params.lens_light_params}  # NB add special params here if using them
 
-    # fixed_lens.append({})
-    fixed_lens.append({'ra_0': 0., 'dec_0': 0.})
-    kwargs_lens_init.append({'gamma1': 0., 'gamma2': 0.})
-    kwargs_lens_sigma.append({'gamma1': 0.1, 'gamma2': 0.1})
-    kwargs_lower_lens.append({'gamma1': -0.2, 'gamma2': -0.2})
-    kwargs_upper_lens.append({'gamma1': 0.2, 'gamma2': 0.2})
-
-    lens_params = [kwargs_lens_init, kwargs_lens_sigma, fixed_lens, kwargs_lower_lens, kwargs_upper_lens]
-
-    # source params
-    source_model_list = ['SERSIC_ELLIPSE']
-
-    fixed_source = []
-    kwargs_source_init = []
-    kwargs_source_sigma = []
-    kwargs_lower_source = []
-    kwargs_upper_source = []
-
-    fixed_source.append({})
-    kwargs_source_init.append(
-        {'R_sersic': 0.2, 'n_sersic': 1., 'e1': 0., 'e2': 0., 'center_x': 0., 'center_y': 0, 'amp': 5.})
-    kwargs_source_sigma.append(
-        {'R_sersic': 0.1, 'n_sersic': 0.5, 'e1': 0.05, 'e2': 0.05, 'center_x': 0.2, 'center_y': 0.2, 'amp': 1.})
-    kwargs_lower_source.append(
-        {'R_sersic': 0.001, 'n_sersic': .5, 'e1': -0.5, 'e2': -0.5, 'center_x': -10, 'center_y': -10, 'amp': 5.})
-    kwargs_upper_source.append(
-        {'R_sersic': 10., 'n_sersic': 5., 'e1': 0.5, 'e2': 0.5, 'center_x': 10, 'center_y': 10, 'amp': 10.})
-
-    source_params = [kwargs_source_init, kwargs_source_sigma, fixed_source, kwargs_lower_source, kwargs_upper_source]
-
-    # lens light params
-    lens_light_model_list = ['SERSIC_ELLIPSE']
-
-    fixed_lens_light = []
-    kwargs_lens_light_init = []
-    kwargs_lens_light_sigma = []
-    kwargs_lower_lens_light = []
-    kwargs_upper_lens_light = []
-
-    fixed_lens_light.append({})
-    kwargs_lens_light_init.append(
-        {'R_sersic': 0.5, 'n_sersic': 2, 'e1': 0, 'e2': 0, 'center_x': 0., 'center_y': 0, 'amp': 16})
-    kwargs_lens_light_sigma.append(
-        {'R_sersic': 0.3, 'n_sersic': 1, 'e1': 0.05, 'e2': 0.05, 'center_x': 0.1, 'center_y': 0.1, 'amp': 10})
-    kwargs_lower_lens_light.append(
-        {'R_sersic': 0.001, 'n_sersic': .5, 'e1': -0.5, 'e2': -0.5, 'center_x': -10, 'center_y': -10, 'amp': 0})
-    kwargs_upper_lens_light.append(
-        {'R_sersic': 10., 'n_sersic': 5., 'e1': 0.5, 'e2': 0.5, 'center_x': 10, 'center_y': 10, 'amp': 100})
-
-    lens_light_params = [kwargs_lens_light_init, kwargs_lens_light_sigma, fixed_lens_light, kwargs_lower_lens_light,
-                         kwargs_upper_lens_light]
-
-    kwargs_params = {'lens_model': lens_params,
-                     'source_model': source_params,
-                     'lens_light_model': lens_light_params}  # NB add special params here if using them
-
-    kwargs_model = {'lens_model_list': lens_model_list,
-                    'source_light_model_list': source_model_list,
-                    'lens_light_model_list': lens_light_model_list}
+    kwargs_model = {'lens_model_list': model_params.lens_model_list,
+                    'source_light_model_list': model_params.source_model_list,
+                    'lens_light_model_list': model_params.lens_light_model_list}
 
     kwargs_likelihood = {'source_marg': False}
     kwargs_numerics = {'supersampling_factor': 1, 'supersampling_convolution': False}
@@ -371,9 +307,9 @@ for data_set_name in tqdm(data_set_list):
                     'transform_pix2angle': pix2coord_transform_undistorted}
     pixel_grid = PixelGrid(**kwargs_pixel)
 
-    lens_model_class = LensModel(lens_model_list=lens_model_list)
-    source_model_class = LightModel(light_model_list=source_model_list)
-    lens_light_model_class = LightModel(light_model_list=lens_light_model_list)
+    lens_model_class = LensModel(lens_model_list=model_params.lens_model_list)
+    source_model_class = LightModel(light_model_list=model_params.source_model_list)
+    lens_light_model_class = LightModel(light_model_list=model_params.lens_light_model_list)
 
     imageModel = ImageModel(data_class=pixel_grid,
                             psf_class=psf_class,
@@ -383,8 +319,9 @@ for data_set_name in tqdm(data_set_list):
                             kwargs_numerics=kwargs_numerics)
 
     # generate image
-    image_sim = imageModel.image(kwargs_lens=kwargs_lens_init, kwargs_source=kwargs_source_init,
-                                 kwargs_lens_light=kwargs_lens_light_init)
+    image_sim = imageModel.image(kwargs_lens=model_params.kwargs_lens_init,
+                                 kwargs_source=model_params.kwargs_source_init,
+                                 kwargs_lens_light=model_params.kwargs_lens_light_init)
 
     _, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
     ax1.matshow(image_sim, origin='lower')
@@ -478,9 +415,9 @@ for data_set_name in tqdm(data_set_list):
     with open(os.path.join(modeled_lenses_dir, data_set_name + '_source'), 'ab') as source_file:
         pickle.dump(kwargs_macromodel_source, source_file)
 
-    lens_model_class = LensModel(lens_model_list=lens_model_list)
-    source_model_class = LightModel(light_model_list=source_model_list)
-    lens_light_model_class = LightModel(light_model_list=lens_light_model_list)
+    lens_model_class = LensModel(lens_model_list=model_params.lens_model_list)
+    source_model_class = LightModel(light_model_list=model_params.source_model_list)
+    lens_light_model_class = LightModel(light_model_list=model_params.lens_light_model_list)
 
     kwargs_numerics = {'supersampling_factor': 1, 'supersampling_convolution': False}
 
