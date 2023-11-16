@@ -3,7 +3,7 @@ from csv import DictReader, DictWriter
 
 import pandas as pd
 
-from package.utils import utils
+from package.utils import util
 
 
 def dataset_list_to_csv(dataset_list, csv_filepath):

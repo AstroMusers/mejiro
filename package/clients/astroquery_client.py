@@ -4,7 +4,7 @@ import warnings
 from astroquery.mast import Observations
 from tqdm import tqdm
 
-from package.utils import utils
+from package.utils import util
 
 
 def download_datasets(data_uri_list, download_path):

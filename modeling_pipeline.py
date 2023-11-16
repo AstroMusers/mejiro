@@ -41,7 +41,7 @@ from lenstronomy.ImSim.image_model import ImageModel
 from lenstronomy.Data.imaging_data import ImageData
 from lenstronomy.Data.pixel_grid import PixelGrid
 
-from package.utils import csv_utils, psf_utils, utils
+from package.utils import csv_util, psf_util, util
 
 repo_path = os.getcwd()
 

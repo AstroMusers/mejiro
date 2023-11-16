@@ -7,14 +7,16 @@ A pipeline to
 ## Environment
 
 Packages requiring installation are:
-
-* `jupyter`
-* `lenstronomy`
-* Pandeia via `pip install pandeia.engine==3.0`
-* [`hydra`](https://hydra.cc/docs/intro/) via `pip install hydra-core`
-* `tqdm`
-* `regions` via `pip install regions`
-* `photutils`
+* `conda`
+  * `jupyter`
+  * `lenstronomy`
+  * `tqdm`
+  * `photutils`
+  * `acstools`
+* `pip`
+  * Pandeia via `pip install pandeia.engine==3.0`
+  * [`hydra`](https://hydra.cc/docs/intro/) via `pip install hydra-core`
+  * `regions` via `pip install regions`
 
 where my Miniconda installations are configured to default to the `conda-forge` channel over `defaults`.
 

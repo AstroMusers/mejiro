@@ -9,7 +9,7 @@ from astropy.nddata.utils import Cutout2D
 from astropy.wcs import WCS
 from tqdm import tqdm
 
-from package.utils import utils
+from package.utils import util
 
 
 def produce_cutouts(collection_name, data_path, dataset_list, num_pix):
