@@ -14,6 +14,8 @@ matplotlib.rcParams['axes.grid'] = False
 matplotlib.rcParams['image.origin'] = 'lower'
 
 
+# TODO execution time-dependence of whatever other parameters I can vary
+
 def fft(filepath, title, array):
     fft = fft2(array)
     plt.matshow(np.abs(fft), norm=matplotlib.colors.LogNorm())
@@ -32,8 +34,15 @@ def residual(filepath, title, array1, array2):
     plt.show()
 
 
-def execution_time(filepath, title, execution_times):
-    plt.hist(np.arange(0, len(execution_times)), execution_times)
+def execution_time_scatter(filepath, title, execution_times):
+    plt.hist(np.arange(0, len(execution_times), execution_times))
+    plt.title(title)
+    __savefig(filepath)
+    plt.show()
+
+
+def execution_time_hist(filepath, title, execution_times):
+    plt.hist(execution_times)
     plt.title(title)
     __savefig(filepath)
     plt.show()

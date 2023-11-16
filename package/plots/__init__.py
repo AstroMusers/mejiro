@@ -20,4 +20,4 @@ def __savefig(filepath):
 
         # save figure
         plt.savefig(filepath, bbox_inches='tight')
-    plt.close()
+        plt.close()
