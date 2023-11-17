@@ -44,7 +44,7 @@ class TestPhysicalLens:
         lens_light_model_list = ['SERSIC_ELLIPSE']
         self.lens_light_model_class = LightModel(lens_light_model_list)
         kwargs_sersic_lens = {
-            'magnitude': 23, 
+            'magnitude': 22,  # 23
             'R_sersic': 0.6, 
             'n_sersic': 2, 
             'e1': -0.1, 
@@ -60,7 +60,7 @@ class TestPhysicalLens:
         source_redshift_list = [self.z_source]
         self.source_model_class = LightModel(source_model_list)
         kwargs_sersic = {
-            'magnitude': 27, 
+            'magnitude': 26,  # 27
             'R_sersic': 0.1, 
             'n_sersic': 1, 
             'e1': -0.1, 
