@@ -1,10 +1,11 @@
 /.idea
 /grp
 /pandeia_data-1.7_roman
+/data
 /figures/SLACS/mosaic_pieces
 
 # Byte-compiled / optimized / DLL files
-__pycache__/
+/__pycache__
 *.py[cod]
 *$py.class
 
