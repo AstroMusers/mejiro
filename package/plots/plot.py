@@ -13,6 +13,9 @@ matplotlib.rcParams['axes.grid'] = False
 matplotlib.rcParams['image.origin'] = 'lower'
 
 
+# TODO add method 98th percentile linear scaling
+
+
 def log10(filepath, title, array, cmap='viridis', colorbar=False):
     plt.imshow(np.log10(array), cmap=cmap)
     plt.title(title)
