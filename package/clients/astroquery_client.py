@@ -8,7 +8,7 @@ from package.utils import util
 
 
 def download_datasets(data_uri_list, download_path):
-    utils.create_directory_if_not_exists(download_path)
+    util.create_directory_if_not_exists(download_path)
 
     print('Ready to download ' + str(len(data_uri_list)) + ' files.\n')
 

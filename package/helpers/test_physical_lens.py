@@ -44,7 +44,7 @@ class TestPhysicalLens:
         lens_light_model_list = ['SERSIC_ELLIPSE']
         self.lens_light_model_class = LightModel(lens_light_model_list)
         kwargs_sersic_lens = {
-            'magnitude': 22,  # 23
+            'magnitude': 22,
             'R_sersic': 0.6, 
             'n_sersic': 2, 
             'e1': -0.1, 
@@ -60,7 +60,7 @@ class TestPhysicalLens:
         source_redshift_list = [self.z_source]
         self.source_model_class = LightModel(source_model_list)
         kwargs_sersic = {
-            'magnitude': 26,  # 27
+            'magnitude': 26,
             'R_sersic': 0.1, 
             'n_sersic': 1, 
             'e1': -0.1, 
@@ -84,7 +84,7 @@ class TestPhysicalLens:
 
         self.ra_at_xy_0, self.dec_at_xy_0 = None, None
 
-    def get_array(self, num_pix, side=5.):
+    def get_array(self, num_pix, kwargs_psf, side=5.):
         delta_pix = side / num_pix  # size of pixel in angular coordinates
 
         # specify coordinate in angles (RA/DEC) at the position of the pixel edge (0,0)
@@ -99,8 +99,7 @@ class TestPhysicalLens:
                         'transform_pix2angle': transform_pix2angle}
         pixel_grid = PixelGrid(**kwargs_pixel)
 
-        # define PSF
-        kwargs_psf = {'psf_type': 'NONE'}
+        # define PSF, e.g. kwargs_psf = {'psf_type': 'NONE'}, {'psf_type': 'GAUSSIAN', 'fwhm': psf_fwhm}
         psf_class = PSF(**kwargs_psf)
 
         # define numerics
@@ -131,7 +130,7 @@ class TestPhysicalLens:
                                  kwargs_lens_light=kwargs_lens_light_amp)
     
 
-    def get_roman_sim(self, side=5.):
+    def get_roman_sim(self, noise=True, side=5.):
         kwargs_numerics = {'point_source_supersampling_factor': 1}
 
         roman_g = Roman(band='F062', psf_type='PIXEL', survey_mode='wide_area')
@@ -176,11 +175,15 @@ class TestPhysicalLens:
         image_r = imsim_r.image(kwargs_lens_lensing_units, kwargs_source_i, kwargs_lens_light_i)
 
         # add noise
-        image_b += sim_b.noise_for_model(model=image_b)
-        image_g += sim_g.noise_for_model(model=image_g)
-        image_r += sim_r.noise_for_model(model=image_r)
+        if noise:
+            image_b += sim_b.noise_for_model(model=image_b)
+            image_g += sim_g.noise_for_model(model=image_g)
+            image_r += sim_r.noise_for_model(model=image_r)
 
+        # pick an image to return as the single filter image
         image = image_g
+
+        # assemble the color image
         rgb_image = np.zeros((image_g.shape[0], image_g.shape[1], 3), dtype=float)
 
         # scale_max=10000
