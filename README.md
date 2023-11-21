@@ -1,6 +1,6 @@
 # Overview
 
-A pipeline to generate realistic simulated Roman Space Telescope WFI images of galaxy-galaxy strong gravitational lenses built on [`lenstronomy`](https://github.com/lenstronomy/lenstronomy) and [Pandeia](https://outerspace.stsci.edu/display/PEN)
+Pipeline to generate realistic simulated Roman Space Telescope WFI images of galaxy-galaxy strong gravitational lenses built on [`lenstronomy`](https://github.com/lenstronomy/lenstronomy) and [Pandeia](https://outerspace.stsci.edu/display/PEN)
 
 # Execution notes
 
@@ -17,6 +17,7 @@ Packages requiring installation are:
   * Pandeia via `pip install pandeia.engine==3.0`
   * [`hydra`](https://hydra.cc/docs/intro/) via `pip install hydra-core`
   * `regions` via `pip install regions`
+
 where my Miniconda installations are configured to default to the `conda-forge` channel over `defaults`.
 
 ## Configuration files
