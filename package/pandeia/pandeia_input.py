@@ -64,10 +64,8 @@ def add_point_sources(calc, array, lens, band='f106', oversample_factor=1):
             calc['scene'][i]['spectrum']['normalization']['type'] = 'at_lambda'
 
             # set position
-            calc['scene'][i]['position']['x_offset'] = (item_number * (1 / 9) * (
-                        1 / oversample_factor)) + lens.ra_at_xy_0  # arcsec
-            calc['scene'][i]['position']['y_offset'] = (row_number * (1 / 9) * (
-                        1 / oversample_factor)) + lens.dec_at_xy_0  # arcsec
+            calc['scene'][i]['position']['x_offset'] = (item_number * (1 / 9) * (1 / oversample_factor)) + lens.ra_at_xy_0  # arcsec
+            calc['scene'][i]['position']['y_offset'] = (row_number * (1 / 9) * (1 / oversample_factor)) + lens.dec_at_xy_0  # arcsec
 
             i += 1
     print(f'Point source conversion complete: {i} point sources')

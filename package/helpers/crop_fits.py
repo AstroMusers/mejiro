@@ -18,7 +18,7 @@ def produce_cutouts(collection_name, data_path, dataset_list, num_pix):
 
     # create a directory in cutouts directory if one doesn't already exist
     cutout_directory = os.path.join(data_path, 'cutouts', collection_name)
-    utils.create_directory_if_not_exists(cutout_directory)
+    util.create_directory_if_not_exists(cutout_directory)
 
     for dataset in tqdm(dataset_list):
         dataset_name = dataset.get('data_set_name')

@@ -17,7 +17,7 @@ repo_path = os.getcwd()  # TODO fix
 num_images = 25
 oversample_factor = 1
 
-image_output_directory = os.path.join(repo_path, 'output/arrays', 'cnn_training')
+image_output_directory = os.path.join(repo_path, 'output', 'arrays', 'cnn_training')
 
 # generate image filepaths
 image_filepaths = [os.path.join(image_output_directory, f'model_{i}.png') for i in range(num_images)]

@@ -14,9 +14,11 @@ matplotlib.rcParams['axes.grid'] = False
 matplotlib.rcParams['image.origin'] = 'lower'
 
 
+# TODO method for overplotting lens params e.g. caustics, source and lens position
 # def overplot_lens_params(filepath, title, array, cmap='viridis', colorbar=False, colorbar_label=None):
 
 # TODO use **kwargs for params like colorbar label, title, filepath, colorbar boolean, etc.
+# TODO make sure the plot can be shown in a nb as well as saved
 
 
 def percentile(filepath, title, array, cmap='binary', percentile=98, colorbar=False):
