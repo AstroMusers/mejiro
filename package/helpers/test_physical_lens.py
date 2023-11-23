@@ -12,6 +12,7 @@ from lenstronomy.ImSim.image_model import ImageModel
 from lenstronomy.Data.pixel_grid import PixelGrid
 from lenstronomy.Data.psf import PSF
 from lenstronomy.Util import data_util
+from lenstronomy.Data.coord_transforms import Coordinates
 
 
 class TestPhysicalLens:
@@ -83,21 +84,11 @@ class TestPhysicalLens:
         }
 
         self.ra_at_xy_0, self.dec_at_xy_0 = None, None
+        self.pixel_grid, self.transform_pix2angle, self.coords = None, None, None
+
 
     def get_array(self, num_pix, kwargs_psf, side=5.):
-        delta_pix = side / num_pix  # size of pixel in angular coordinates
-
-        # specify coordinate in angles (RA/DEC) at the position of the pixel edge (0,0)
-        self.ra_at_xy_0, self.dec_at_xy_0 = -delta_pix * math.ceil(num_pix / 2), -delta_pix * math.ceil(num_pix / 2)
-
-        # define linear translation matrix of a shift in pixel in a shift in coordinates
-        transform_pix2angle = np.array([[1, 0], [0, 1]]) * delta_pix
-
-        kwargs_pixel = {'nx': num_pix, 'ny': num_pix,  # number of pixels per axis
-                        'ra_at_xy_0': self.ra_at_xy_0,
-                        'dec_at_xy_0': self.dec_at_xy_0,
-                        'transform_pix2angle': transform_pix2angle}
-        pixel_grid = PixelGrid(**kwargs_pixel)
+        _set_up_pixel_grid(self, num_pix, side)
 
         # define PSF, e.g. kwargs_psf = {'psf_type': 'NONE'}, {'psf_type': 'GAUSSIAN', 'fwhm': psf_fwhm}
         psf_class = PSF(**kwargs_psf)
@@ -118,7 +109,7 @@ class TestPhysicalLens:
         sim_g = SimAPI(numpix=num_pix, kwargs_single_band=lenstronomy_roman_config, kwargs_model=self.kwargs_model)
         kwargs_lens_lensing_units = sim_g.physical2lensing_conversion(kwargs_mass=self.kwargs_lens)
 
-        image_model = ImageModel(data_class=pixel_grid,
+        image_model = ImageModel(data_class=self.pixel_grid,
                                  psf_class=psf_class,
                                  lens_model_class=self.lens_model_class,
                                  source_model_class=self.source_model_class,
@@ -128,7 +119,17 @@ class TestPhysicalLens:
         return image_model.image(kwargs_lens=kwargs_lens_lensing_units,
                                  kwargs_source=kwargs_source_amp,
                                  kwargs_lens_light=kwargs_lens_light_amp)
-    
+
+
+    def get_source_pixel_coords(self):
+        source_ra, source_dec = self.kwargs_lens[0]['center_x'], self.kwargs_lens[0]['center_y']
+        return self.coords.map_coord2pix(ra=source_ra, dec=source_dec)
+
+
+    def get_lens_pixel_coords(self):
+        lens_ra, lens_dec = self.kwargs_source[0]['center_x'], self.kwargs_source[0]['center_y']
+        return self.coords.map_coord2pix(ra=lens_ra, dec=lens_dec)
+
 
     def get_roman_sim(self, noise=True, side=5.):
         kwargs_numerics = {'point_source_supersampling_factor': 1}
@@ -198,3 +199,20 @@ class TestPhysicalLens:
         rgb_image[:, :, 2] = plot_util.sqrt(image_r, scale_min=0, scale_max=_scale_max(image_r))
 
         return image, rgb_image, sim_b.data_class
+
+def _set_up_pixel_grid(self, num_pix, side):
+        delta_pix = side / num_pix  # size of pixel in angular coordinates
+
+        # specify coordinate in angles (RA/DEC) at the position of the pixel edge (0,0)
+        self.ra_at_xy_0, self.dec_at_xy_0 = -delta_pix * math.ceil(num_pix / 2), -delta_pix * math.ceil(num_pix / 2)
+
+        # define linear translation matrix of a shift in pixel in a shift in coordinates
+        self.transform_pix2angle = np.array([[1, 0], [0, 1]]) * delta_pix
+
+        kwargs_pixel = {'nx': num_pix, 'ny': num_pix,  # number of pixels per axis
+                        'ra_at_xy_0': self.ra_at_xy_0,
+                        'dec_at_xy_0': self.dec_at_xy_0,
+                        'transform_pix2angle': self.transform_pix2angle}
+        
+        self.pixel_grid = PixelGrid(**kwargs_pixel)
+        self.coords = Coordinates(self.transform_pix2angle, self.ra_at_xy_0, self.dec_at_xy_0)
