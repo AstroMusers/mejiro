@@ -12,6 +12,15 @@ matplotlib.rcParams['axes.grid'] = False
 matplotlib.rcParams['image.origin'] = 'lower'
 
 
+def __kwargs_handler(kwargs):
+    if 'colorbar' in kwargs:
+        if kwargs['colorbar']:
+            plt.colorbar()
+            if 'colorbar_label' in kwargs:
+                if kwargs['colorbar_label']:
+                    # TODO this is horrible, fix this
+
+
 def __savefig(filepath):
     if filepath is not None:
         # check if the specified directory exists; if not, create it

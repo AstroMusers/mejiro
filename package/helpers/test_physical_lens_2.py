@@ -15,11 +15,11 @@ from lenstronomy.Util import data_util
 from lenstronomy.Data.coord_transforms import Coordinates
 
 
-class TestPhysicalLens:
+class TestPhysicalLens2:
     def __init__(self):
         # define redshifts and cosmology
-        self.z_lens = 0.5
-        self.z_source = 1.5
+        self.z_lens = 0.3
+        self.z_source = 1.1
         cosmo = FlatLambdaCDM(H0=70, Om0=0.3, Ob0=0.05)
         # lens_cosmo = LensCosmo(z_lens=self.z_lens, z_source=self.z_source, cosmo=cosmo)
 
@@ -29,9 +29,9 @@ class TestPhysicalLens:
         lens_redshift_list = [self.z_lens, self.z_lens]
         self.lens_model_class = LensModel(lens_model_list)
         kwargs_mass = {
-            'sigma_v': 250,  # velocity dispersion in units km/s
-            'center_x': 0,
-            'center_y': 0,
+            'sigma_v': 280,  # velocity dispersion in units km/s
+            'center_x': -0.1,
+            'center_y': 0.1,
             'e1': 0.1,
             'e2': 0
         }
@@ -48,10 +48,10 @@ class TestPhysicalLens:
             'magnitude': 22,
             'R_sersic': 0.6, 
             'n_sersic': 2, 
-            'e1': -0.1, 
-            'e2': 0.1, 
-            'center_x': 0.05,
-            'center_y': 0
+            'e1': 0.4, 
+            'e2': -0.2, 
+            'center_x': -0.1,
+            'center_y': 0.1
         }
         self.kwargs_lens_light = [kwargs_sersic_lens]
 
@@ -61,13 +61,13 @@ class TestPhysicalLens:
         source_redshift_list = [self.z_source]
         self.source_model_class = LightModel(source_model_list)
         kwargs_sersic = {
-            'magnitude': 26,
-            'R_sersic': 0.1, 
-            'n_sersic': 1, 
+            'magnitude': 25,
+            'R_sersic': 0.3, 
+            'n_sersic': 3, 
             'e1': -0.1, 
             'e2': 0.1, 
             'center_x': 0.1,
-            'center_y': 0
+            'center_y': -0.1
         }
         self.kwargs_source = [kwargs_sersic]
 
@@ -123,12 +123,12 @@ class TestPhysicalLens:
 
 
     def get_source_pixel_coords(self):
-        source_ra, source_dec = self.kwargs_lens[0]['center_x'], self.kwargs_lens[0]['center_y']
+        source_ra, source_dec = self.kwargs_source[0]['center_x'], self.kwargs_source[0]['center_y']
         return self.coords.map_coord2pix(ra=source_ra, dec=source_dec)
 
 
     def get_lens_pixel_coords(self):
-        lens_ra, lens_dec = self.kwargs_source[0]['center_x'], self.kwargs_source[0]['center_y']
+        lens_ra, lens_dec = self.kwargs_lens[0]['center_x'], self.kwargs_lens[0]['center_y']
         return self.coords.map_coord2pix(ra=lens_ra, dec=lens_dec)
 
 
