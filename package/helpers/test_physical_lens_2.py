@@ -88,7 +88,7 @@ class TestPhysicalLens2:
         self.pixel_grid, self.transform_pix2angle, self.coords = None, None, None
 
 
-    def get_array(self, num_pix, kwargs_psf, side=5.):
+    def get_array(self, num_pix, kwargs_psf={'psf_type': 'NONE'}, side=5.):
         _set_up_pixel_grid(self, num_pix, side)
 
         # define PSF, e.g. kwargs_psf = {'psf_type': 'NONE'}, {'psf_type': 'GAUSSIAN', 'fwhm': psf_fwhm}
