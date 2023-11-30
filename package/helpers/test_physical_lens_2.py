@@ -83,12 +83,13 @@ class TestPhysicalLens2:
             'z_source_convention': 3,  # source redshift to which the reduced deflections are computed, is the maximal redshift of the ray-tracing
         }
 
-        self.delta_pix = None
+        self.delta_pix, self.num_pix = None, None
         self.ra_at_xy_0, self.dec_at_xy_0 = None, None
         self.pixel_grid, self.transform_pix2angle, self.coords = None, None, None
 
 
     def get_array(self, num_pix, kwargs_psf={'psf_type': 'NONE'}, side=5.):
+        self.num_pix = num_pix
         _set_up_pixel_grid(self, num_pix, side)
 
         # define PSF, e.g. kwargs_psf = {'psf_type': 'NONE'}, {'psf_type': 'GAUSSIAN', 'fwhm': psf_fwhm}
