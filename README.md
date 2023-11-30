@@ -13,6 +13,7 @@ Packages requiring installation are:
   * `tqdm`
   * `photutils`
   * `acstools`
+  * `astroquery`
 * `pip`
   * Pandeia via `pip install pandeia.engine==3.0`
   * [`hydra`](https://hydra.cc/docs/intro/) via `pip install hydra-core`
