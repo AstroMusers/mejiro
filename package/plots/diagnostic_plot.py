@@ -1,18 +1,9 @@
-import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import colors
 import numpy as np
-
-from matplotlib import rc
 from scipy.fft import fft2
 
 from package.plots import plot_util
-
-rc('font', **{'family':'serif', 'serif':['Computer Modern Roman'], 'monospace': ['Computer Modern Typewriter']})
-rc('text', usetex=True)
-
-matplotlib.rcParams['axes.grid'] = False
-matplotlib.rcParams['image.origin'] = 'lower'
 
 
 # TODO execution time-dependence of whatever other parameters I can vary

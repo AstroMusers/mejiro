@@ -3,15 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
 
-from matplotlib import rc
-
 from package.plots import plot_util
-
-rc('font', **{'family': 'sans-serif', 'sans-serif': ['Source Sans Pro']})
-rc('text', usetex=True)
-
-matplotlib.rcParams['axes.grid'] = False
-matplotlib.rcParams['image.origin'] = 'lower'
 
 
 # TODO method for overplotting lens params e.g. caustics, source and lens position
