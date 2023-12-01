@@ -10,5 +10,5 @@ dependencies:
   - photutils
   - tqdm
   - pip:
-    - pandeia-engine==3.0
-    - regions
+      - pandeia-engine==3.0
+      - regions

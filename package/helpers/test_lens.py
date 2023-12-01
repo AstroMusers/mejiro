@@ -1,11 +1,11 @@
 import math
-import numpy as np
 
-from lenstronomy.ImSim.image_model import ImageModel
+import numpy as np
 from lenstronomy.Data.pixel_grid import PixelGrid
+from lenstronomy.Data.psf import PSF
+from lenstronomy.ImSim.image_model import ImageModel
 from lenstronomy.LensModel.lens_model import LensModel
 from lenstronomy.LightModel.light_model import LightModel
-from lenstronomy.Data.psf import PSF
 
 
 class TestLens:

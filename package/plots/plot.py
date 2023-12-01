@@ -1,6 +1,5 @@
 import matplotlib
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 import numpy as np
 
 from package.plots import plot_util
@@ -24,7 +23,6 @@ def percentile(filepath, title, array, cmap='binary', percentile=98, colorbar=Fa
         plt.colorbar()
     plot_util.__savefig(filepath)
     plt.show()
-
 
 
 def log10(filepath, title, array, cmap='viridis', colorbar=False):

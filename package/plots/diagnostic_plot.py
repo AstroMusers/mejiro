@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
-from matplotlib import colors
 import numpy as np
+from matplotlib import colors
 from scipy.fft import fft2
 
 from package.plots import plot_util

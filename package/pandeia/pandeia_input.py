@@ -1,13 +1,12 @@
 import datetime
-import numpy as np
 import time
 
-from tqdm import tqdm
-
-from lenstronomy.Util import data_util
+import numpy as np
 from lenstronomy.SimulationAPI.ObservationConfig.Roman import Roman
-from pandeia.engine.perform_calculation import perform_calculation
+from lenstronomy.Util import data_util
 from pandeia.engine.calc_utils import build_default_calc, build_default_source
+from pandeia.engine.perform_calculation import perform_calculation
+from tqdm import tqdm
 
 from package.helpers.roman_params import RomanParameters
 
@@ -39,7 +38,7 @@ def get_pandeia_results(calc):
     print('Pandeia calculation complete')
 
     stop = time.time()
-    execution_time = str(datetime.timedelta(seconds = round(stop - start)))
+    execution_time = str(datetime.timedelta(seconds=round(stop - start)))
 
     return results, execution_time
 
@@ -57,12 +56,12 @@ def get_calculation_dict(init=True):
     return {
         'noise': {
             'crs': init,
-            'dark': init, 
+            'dark': init,
             'excess': False,  # Roman's detectors are H4RG which do not have excess noise parameters
-            'ffnoise': init, 
-            'readnoise': init, 
+            'ffnoise': init,
+            'readnoise': init,
             'scatter': init
-        }, 
+        },
         'effects': {
             'saturation': init
         }
@@ -86,8 +85,10 @@ def _add_point_sources(csv, calc, array, lens, band='f106', oversample_factor=1)
             calc['scene'][i]['spectrum']['normalization']['type'] = 'at_lambda'
 
             # set position
-            calc['scene'][i]['position']['x_offset'] = (item_number * (1 / 9) * (1 / oversample_factor)) + lens.ra_at_xy_0  # arcsec
-            calc['scene'][i]['position']['y_offset'] = (row_number * (1 / 9) * (1 / oversample_factor)) + lens.dec_at_xy_0  # arcsec
+            calc['scene'][i]['position']['x_offset'] = (item_number * (1 / 9) * (
+                        1 / oversample_factor)) + lens.ra_at_xy_0  # arcsec
+            calc['scene'][i]['position']['y_offset'] = (row_number * (1 / 9) * (
+                        1 / oversample_factor)) + lens.dec_at_xy_0  # arcsec
 
             i += 1
     print(f'Point source conversion complete: {i} point sources')
@@ -95,8 +96,9 @@ def _add_point_sources(csv, calc, array, lens, band='f106', oversample_factor=1)
     return calc
 
 
-def _convert_cps_to_magnitude(array, band):   
-    lenstronomy_roman_config = Roman(band=band.upper(), psf_type='PIXEL', survey_mode='wide_area').kwargs_single_band()  # band e.g. 'F106'
+def _convert_cps_to_magnitude(array, band):
+    lenstronomy_roman_config = Roman(band=band.upper(), psf_type='PIXEL',
+                                     survey_mode='wide_area').kwargs_single_band()  # band e.g. 'F106'
     magnitude_zero_point = lenstronomy_roman_config.get('magnitude_zero_point')
 
     i = 0

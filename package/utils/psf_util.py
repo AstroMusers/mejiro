@@ -1,5 +1,4 @@
 from lenstronomy.Data.psf import PSF
-from lenstronomy.Util import kernel_util
 
 
 def get_pixel_kwargs_psf(kernel):

@@ -1,5 +1,5 @@
-import photutils
 import pandeia.engine
+import photutils
 
 photutils.test()
 
