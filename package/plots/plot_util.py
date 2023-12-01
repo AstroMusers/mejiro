@@ -1,5 +1,6 @@
-import matplotlib.pyplot as plt
 from os import path
+
+import matplotlib.pyplot as plt
 
 from package.utils import util
 
@@ -22,4 +23,3 @@ def __savefig(filepath):
         # save figure
         plt.savefig(filepath, bbox_inches='tight')
         plt.close()
-        

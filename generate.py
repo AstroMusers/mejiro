@@ -1,17 +1,14 @@
 import csv
-import os
 import math
+import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-
-from lenstronomy.Data.psf import PSF
 from lenstronomy.Data.pixel_grid import PixelGrid
+from lenstronomy.Data.psf import PSF
 from lenstronomy.ImSim.image_model import ImageModel
-
-from tqdm import tqdm
-
 from params import generate
+from tqdm import tqdm
 
 repo_path = os.getcwd()  # TODO fix
 num_images = 25
@@ -60,7 +57,6 @@ pixel_grid = PixelGrid(**kwargs_pixel)
 
 # generate images
 for i in tqdm(range(num_images)):
-
     imageModel = ImageModel(data_class=pixel_grid,
                             psf_class=psf_class,
                             lens_model_class=model.lens_model_class,
@@ -85,7 +81,6 @@ for i in tqdm(range(num_images)):
     plt.close()
 
 # write all parameters to CSV
-
 
 
 headers = ['filepath', 'ra_at_xy_0', 'dec_at_xy_0'] + deflector_headers + deflector_light_headers + source_light_headers

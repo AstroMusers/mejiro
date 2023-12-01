@@ -13,7 +13,6 @@ from package.utils import util
 
 
 def produce_cutouts(collection_name, data_path, dataset_list, num_pix):
-
     print('Cropping to ' + str(num_pix) + ' pixels')
 
     # create a directory in cutouts directory if one doesn't already exist
@@ -45,7 +44,8 @@ def produce_cutouts(collection_name, data_path, dataset_list, num_pix):
                 size = u.Quantity((num_pix, num_pix), u.pixel)
                 cutout_obj = Cutout2D(data, mast_coords, size, wcs=wcs)  # NB this has updated wcs
 
-                cutout_filename = 'cutout_' + dataset.get('aper') + '_' + dataset.get('spec') + '_' + dataset_name + '.fits'
+                cutout_filename = 'cutout_' + dataset.get('aper') + '_' + dataset.get(
+                    'spec') + '_' + dataset_name + '.fits'
                 cutout_filepath = os.path.join(cutout_directory, cutout_filename)
 
                 # update wcs in header

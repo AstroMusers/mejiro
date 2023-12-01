@@ -3,15 +3,13 @@ from csv import DictReader, DictWriter
 
 import pandas as pd
 
-from package.utils import util
-
 
 def dataset_list_to_csv(dataset_list, csv_filepath):
     dict_list = []
 
     for dataset in dataset_list:
         dict_list.append(dataset.__dict__)
-    
+
     dict_list_to_csv(dict_list, csv_filepath)
 
 
@@ -31,7 +29,7 @@ def csv_to_dict_list(csv_filepath):
     with open(csv_filepath, mode='r', encoding='utf-8-sig') as f:
         dict_reader = DictReader(f)
         list_to_return = list(dict_reader)
-     
+
     return list_to_return
 
 

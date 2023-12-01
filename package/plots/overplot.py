@@ -1,9 +1,7 @@
-import numpy as np
 import matplotlib
-import matplotlib.pyplot as plt
 from matplotlib import rc
 
-rc('font', **{'family':'serif', 'serif':['Computer Modern Roman'], 'monospace': ['Computer Modern Typewriter']})
+rc('font', **{'family': 'serif', 'serif': ['Computer Modern Roman'], 'monospace': ['Computer Modern Typewriter']})
 rc('text', usetex=True)
 
 matplotlib.rcParams['axes.grid'] = False
@@ -59,9 +57,10 @@ def _get_caustics_critical_curves(lens):
         _type_: dec_critical_list
         _type_: ra_caustic_list
         _type_: dec_caustic_list
-    """    
+    """
     model_extension = LensModelExtensions(lens.lens_model_class)
 
     frame_size = lens.delta_pix * lens.num_pix
 
-    return model_extension.critical_curve_caustics(lens.kwargs_lens_lensing_units, compute_window=frame_size, grid_scale=lens.delta_pix, center_x=0., center_y=0.)
+    return model_extension.critical_curve_caustics(lens.kwargs_lens_lensing_units, compute_window=frame_size,
+                                                   grid_scale=lens.delta_pix, center_x=0., center_y=0.)

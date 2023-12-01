@@ -1,7 +1,9 @@
 from __future__ import division, absolute_import, print_function
-import requests
+
 import json
 import os.path
+
+import requests
 
 from .. import utils
 
@@ -44,7 +46,7 @@ def _api_request(payload):
 
 def lookup_name(name):
     payload = {'service': 'Mast.Name.Lookup',
-                    'params': {'input': name, 'format':'json'}}
+               'params': {'input': name, 'format': 'json'}}
     response = _api_request(payload)
     if len(response['resolvedCoordinate']) == 0:
         raise ValueError("Could not resolve target name {}".format(name))
@@ -56,7 +58,7 @@ def lookup_name(name):
 def cone_search(ra, dec, radius_arcsec=0.2):
     payload = {
         'service': 'Mast.Caom.Cone',
-        'params': {'ra': ra, 'dec': dec, 'radius':0.2},
+        'params': {'ra': ra, 'dec': dec, 'radius': 0.2},
         'format': 'json',
         'pagesize': 2000,
         'page': 1,
