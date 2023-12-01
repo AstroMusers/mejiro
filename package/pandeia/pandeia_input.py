@@ -21,6 +21,9 @@ def build_pandeia_calc(csv, array, lens, band='f106', oversample_factor=1):
     # set filter
     calc['configuration']['instrument']['filter'] = band.lower()  # e.g. 'f106'
 
+    # turn on noise sources
+    calc['calculation'] = get_calculation_dict(init=True)
+
     # convert array from counts/sec to astronomical magnitude
     mag_array = _convert_cps_to_magnitude(array, band)
 
