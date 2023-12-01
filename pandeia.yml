@@ -1,0 +1,15 @@
+name: pandeia
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - acstools
+  - astroquery
+  - jupyter
+  - lenstronomy
+  - photutils
+  - tqdm
+  - pip:
+    - hydra-core
+    - pandeia-engine==3.0
+    - regions

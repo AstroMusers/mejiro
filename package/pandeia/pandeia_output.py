@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from pprint import pprint
 
 
 class PandeiaOutput:
@@ -32,4 +33,8 @@ class PandeiaOutput:
     def get_image(self):
         image = self.results['2d']['detector']
         return np.flipud(image)
+    
+
+    def print_scalars(self):
+        pprint(self.results['scalar'])
     
