@@ -18,7 +18,7 @@ def fft(filepath, title, array):
     plt.show()
 
 
-def residual(filepath, title, array1, array2, normalization=1):
+def residual(array1, array2, title='', normalization=1):
     residual = (array1 - array2) / normalization
     abs_min, abs_max = abs(np.min(residual)), abs(np.max(residual))
     limit = np.max([abs_min, abs_max])
@@ -28,7 +28,7 @@ def residual(filepath, title, array1, array2, normalization=1):
     im = ax.imshow(residual, cmap='bwr', norm=colors.AsinhNorm(linear_width=linear_width, vmin=-limit, vmax=limit))
     ax.set_title(title)
     fig.colorbar(im, ax=ax)
-    plot_util.__savefig(filepath)
+
     plt.show()
 
 

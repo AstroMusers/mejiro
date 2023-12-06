@@ -6,6 +6,8 @@ dependencies:
   - astroquery
   - jupyter
   - lenstronomy
+  - pip
   - tqdm
   - pip:
       - pandeia-engine==3.0
+      - pyhalo

@@ -27,12 +27,14 @@ def main():
         lens = test_physical_lens.TestPhysicalLens()
         model = lens.get_array(num_pix=45 * oversample_factor)
 
+        # build Pandeia input
         calc = pandeia_input.build_pandeia_calc(csv=csv,
                                                 array=model, 
                                                 lens=lens, 
                                                 band='f106', 
                                                 oversample_factor=oversample_factor)
-        
+
+        # do Pandeia calculation        
         results, execution_time = pandeia_input.get_pandeia_results(calc)
 
         pandeia_output = PandeiaOutput(results)
@@ -45,6 +47,7 @@ def main():
         with open(os.path.join(pickle_dir, f'test_physical_lens_results_{oversample_factor}'), 'ab') as results_file:
             pickle.dump(results, results_file)
 
+    # save list of execution times
     np.save(os.path.join(array_dir, 'test_physical_lens_execution_times.npy'), execution_times)
 
 
