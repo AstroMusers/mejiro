@@ -1,0 +1,1 @@
+The file `nfw_core_truncated.py` needs to be added to the local `lenstronomy` installation to generate the CDM subhalos. For me, the location is `/data/bwedig/.conda/envs/pandeia/lib/python3.9/site-packages/lenstronomy/LensModel/Profiles/nfw_core_truncated.py`

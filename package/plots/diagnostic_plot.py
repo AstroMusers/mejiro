@@ -32,15 +32,15 @@ def residual(array1, array2, title='', normalization=1):
     plt.show()
 
 
-def execution_time_scatter(filepath, title, execution_times):
+def execution_time_scatter(execution_times, title=''):
     plt.scatter(np.arange(0, len(execution_times)), execution_times)
     plt.title(title)
-    plot_util.__savefig(filepath)
+
     plt.show()
 
 
-def execution_time_hist(filepath, title, execution_times):
+def execution_time_hist(execution_times, title=''):
     plt.hist(execution_times)
     plt.title(title)
-    plot_util.__savefig(filepath)
+
     plt.show()

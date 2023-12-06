@@ -86,6 +86,7 @@ class Lens:
         self.delta_pix, self.num_pix = None, None
         self.ra_at_xy_0, self.dec_at_xy_0 = None, None
         self.pixel_grid, self.transform_pix2angle, self.coords = None, None, None
+        self.lenstronomy_roman_config = None
 
 
     def add_subhalos(self, halo_lens_model_list, halo_redshift_list, kwargs_halos):
@@ -108,6 +109,11 @@ class Lens:
             # source redshift to which the reduced deflections are computed, is the maximal redshift of the ray-tracing
         }
 
+    def update_classes(self):
+        self.lens_model_class = LensModel(self.lens_model_list)
+        self.lens_light_model_class = LightModel(self.lens_light_model_list)
+        self.source_model_class = LightModel(self.source_model_list)
+
 
     def get_array(self, num_pix, kwargs_psf={'psf_type': 'NONE'}, side=5.):
         self.num_pix = num_pix
@@ -123,16 +129,19 @@ class Lens:
         }
 
         # convert from magnitude to amplitude for light models
-        lenstronomy_roman_config = Roman(band='F106', psf_type='PIXEL', survey_mode='wide_area').kwargs_single_band()
-        magnitude_zero_point = lenstronomy_roman_config.get('magnitude_zero_point')
-        kwargs_lens_light_amp = data_util.magnitude2amplitude(self.lens_light_model_class, self.kwargs_lens_light,
-                                                              magnitude_zero_point)
-        kwargs_source_amp = data_util.magnitude2amplitude(self.source_model_class, self.kwargs_source,
-                                                          magnitude_zero_point)
+        self.lenstronomy_roman_config = Roman(band='F106',
+                                              psf_type='PIXEL', 
+                                              survey_mode='wide_area').kwargs_single_band()
+        magnitude_zero_point = self.lenstronomy_roman_config.get('magnitude_zero_point')
+        self.kwargs_lens_light_amp = data_util.magnitude2amplitude(self.lens_light_model_class, 
+                                                                   self.kwargs_lens_light,
+                                                                   magnitude_zero_point)
+        self.kwargs_source_amp = data_util.magnitude2amplitude(self.source_model_class, 
+                                                               self.kwargs_source,
+                                                               magnitude_zero_point)
 
         # convert from physical to lensing units
-        sim_g = SimAPI(numpix=num_pix, kwargs_single_band=lenstronomy_roman_config, kwargs_model=self.kwargs_model)
-        self.kwargs_lens_lensing_units = sim_g.physical2lensing_conversion(kwargs_mass=self.kwargs_lens)
+        _mass_physical_to_lensing_units(self)
 
         image_model = ImageModel(data_class=self.pixel_grid,
                                  psf_class=psf_class,
@@ -142,8 +151,8 @@ class Lens:
                                  kwargs_numerics=kwargs_numerics)
 
         return image_model.image(kwargs_lens=self.kwargs_lens_lensing_units,
-                                 kwargs_source=kwargs_source_amp,
-                                 kwargs_lens_light=kwargs_lens_light_amp)
+                                 kwargs_source=self.kwargs_source_amp,
+                                 kwargs_lens_light=self.kwargs_lens_light_amp)
 
     def get_source_pixel_coords(self):
         source_ra, source_dec = self.kwargs_lens[0]['center_x'], self.kwargs_lens[0]['center_y']
@@ -243,3 +252,9 @@ def _set_up_pixel_grid(self, num_pix, side):
 
     self.pixel_grid = PixelGrid(**kwargs_pixel)
     self.coords = Coordinates(self.transform_pix2angle, self.ra_at_xy_0, self.dec_at_xy_0)
+
+
+def _mass_physical_to_lensing_units(self):
+    sim_g = SimAPI(numpix=self.num_pix, kwargs_single_band=self.lenstronomy_roman_config, kwargs_model=self.kwargs_model)
+    self.kwargs_lens_lensing_units = sim_g.physical2lensing_conversion(kwargs_mass=self.kwargs_lens)
+    
