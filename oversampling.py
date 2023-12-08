@@ -2,6 +2,7 @@ import os
 import sys
 import numpy as np
 import pickle
+from tqdm import tqdm
 
 from package.helpers import test_physical_lens
 from package.pandeia import pandeia_input
@@ -20,12 +21,12 @@ def main():
     array_dir = os.path.join(repo_path, 'output', 'arrays', 'test_physical_lens')
     pickle_dir = os.path.join(repo_path, 'output', 'pickles', 'test_physical_lens')
 
-    oversample_factor_list = [1, 3, 5, 7, 9, 11]
+    oversample_factor_list = [1, 3, 5, 7, 9]
     execution_times = []
 
-    for oversample_factor in oversample_factor_list:
+    for oversample_factor in tqdm(oversample_factor_list):
         lens = test_physical_lens.TestPhysicalLens()
-        model = lens.get_array(num_pix=45 * oversample_factor)
+        model = lens.get_array(num_pix=48 * oversample_factor, side=5.3)
 
         # build Pandeia input
         calc = pandeia_input.build_pandeia_calc(csv=csv,
@@ -44,8 +45,8 @@ def main():
         np.save(os.path.join(array_dir, f'test_physical_lens_image_{oversample_factor}'), pandeia_output.get_image())
 
         # save results
-        with open(os.path.join(pickle_dir, f'test_physical_lens_results_{oversample_factor}'), 'ab') as results_file:
-            pickle.dump(results, results_file)
+        # with open(os.path.join(pickle_dir, f'test_physical_lens_results_{oversample_factor}'), 'ab') as results_file:
+        #     pickle.dump(results, results_file)
 
     # save list of execution times
     np.save(os.path.join(array_dir, 'test_physical_lens_execution_times.npy'), execution_times)

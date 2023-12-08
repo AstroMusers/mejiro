@@ -15,8 +15,8 @@ def build_pandeia_calc(csv, array, lens, band='f106', oversample_factor=1):
     calc = build_default_calc('roman', 'wfi', 'imaging')
 
     # set scene size settings
-    calc['configuration']['dynamic_scene'] = True
-    # calc['configuration']['max_scene_size'] = 5
+    # calc['configuration']['dynamic_scene'] = True
+    calc['configuration']['max_scene_size'] = 5
 
     # set filter
     calc['configuration']['instrument']['filter'] = band.lower()  # e.g. 'f106'

@@ -158,7 +158,7 @@ class Lens:
                                                                magnitude_zero_point)
 
         # convert from physical to lensing units
-        self._mass_physical_to_lensing_units(self)
+        self._mass_physical_to_lensing_units()
 
         image_model = ImageModel(data_class=self.pixel_grid,
                                  psf_class=psf_class,

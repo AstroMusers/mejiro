@@ -41,6 +41,10 @@ def main():
     for i, row in tqdm(df.iterrows(), total=limit):
         start = time.time()
 
+        # select only the cool ones lmao
+        if row['numbimag'] == 1.0:
+            continue
+
         if i == limit:
             break
 
