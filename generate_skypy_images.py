@@ -39,14 +39,17 @@ def main():
     # build list of Lenses from SkyPy output
     print('Building lenses from SkyPy pipeline output')
     for i, row in tqdm(df.iterrows(), total=limit):
+        # print(f'New loop: i={i}, limit={limit}')
         start = time.time()
-
-        # select only the cool ones lmao
-        if row['numbimag'] == 1.0:
-            continue
 
         if i == limit:
             break
+
+        # select only the cool ones lmao
+        if row['numbimag'] == 1.0:
+            # print('Skipping uncool lens')
+            limit += 1
+            continue
 
         lens = Lens(z_lens = row['redslens'], 
                     z_source=row['redssour'], 
@@ -62,7 +65,7 @@ def main():
         try:
             lens.add_subhalos(*pyhalo.generate_CDM_halos(lens.z_lens, lens.z_source))
         except:
-            print(lens.z_lens, lens.z_source)
+            # print(f'\nSkipping {lens.z_lens}, {lens.z_source}')
             limit += 1
             continue
 
@@ -75,14 +78,17 @@ def main():
     # generate Pandeia images
     print('Generating Pandeia images')
     for i, lens in tqdm(enumerate(lens_list)):
-        model = lens.get_array(num_pix=90, side=10.)
+        grid_oversample = 3
+        num_samples = 10000
+
+        model = lens.get_array(num_pix=90 * grid_oversample, side=10.)
 
         # build Pandeia input
         calc = pandeia_input.build_pandeia_calc(csv=csv,
                                                 array=model, 
                                                 lens=lens, 
                                                 band='f106', 
-                                                oversample_factor=1)
+                                                num_samples=num_samples)
 
         # do Pandeia calculation        
         results, execution_time = pandeia_input.get_pandeia_results(calc)
