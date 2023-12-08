@@ -30,13 +30,13 @@ def build_pandeia_calc(csv, array, lens, band='f106', num_samples=None, oversamp
     # add point sources to Pandeia input ('calc')
     norm_wave = _get_norm_wave(csv, band)
     if num_samples:
-        calc = _phonion_sample(calc, mag_array, lens, num_samples, norm_wave)
+        calc, num_point_sources = _phonion_sample(calc, mag_array, lens, num_samples, norm_wave)
     elif oversample_factor:
-        calc = _phonion_grid(calc, mag_array, lens, oversample_factor, norm_wave)
+        calc, num_point_sources = _phonion_grid(calc, mag_array, lens, oversample_factor, norm_wave)
     else:
         raise Exception('Either provide num_samples to use sampling method or oversample_factor to use grid method')
 
-    return calc
+    return calc, num_point_sources
 
 
 def get_pandeia_results(calc):
@@ -99,7 +99,7 @@ def _phonion_sample(calc, mag_array, lens, num_samples, norm_wave):
         i += 1
     print(f'Point source conversion complete: placed {i} point sources')
 
-    return calc
+    return calc, i
 
 
 def _phonion_grid(calc, mag_array, lens, oversample_factor, norm_wave):
@@ -127,7 +127,7 @@ def _phonion_grid(calc, mag_array, lens, oversample_factor, norm_wave):
             i += 1
     print(f'Point source conversion complete: placed {i} point sources')
 
-    return calc
+    return calc, i
 
 
 def _get_mag_array(lens, array, num_samples, band):

@@ -22,7 +22,7 @@ def main():
 
     num_samples = 10000
     grid_oversample_list = [1, 3, 5, 7, 9]
-    execution_times = []
+    execution_times, point_source_count = [], []
 
     for grid_oversample in tqdm(grid_oversample_list):
         # use test lens
@@ -35,7 +35,7 @@ def main():
         model = lens.get_array(num_pix=45 * grid_oversample, side=5.)
 
         # build Pandeia input
-        calc = pandeia_input.build_pandeia_calc(csv=csv,
+        calc, num_point_sources = pandeia_input.build_pandeia_calc(csv=csv,
                                                 array=model, 
                                                 lens=lens, 
                                                 band='f106', 
@@ -44,12 +44,14 @@ def main():
         # do Pandeia calculation        
         image, execution_time = pandeia_input.get_pandeia_image(calc)
         execution_times.append(execution_time)
+        point_source_count.append(num_point_sources)
         
         # save detector image
         np.save(os.path.join(array_dir, f'grid_oversampling_{grid_oversample}'), image)
 
     # save execution times
     np.save(os.path.join(array_dir, 'execution_times_grid_oversampling.npy'), execution_times)
+    np.save(os.path.join(array_dir, 'point_source_count_grid_oversampling.npy'), point_source_count)
 
 
 if __name__ == '__main__':

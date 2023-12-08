@@ -21,8 +21,9 @@ def main():
     array_dir = os.path.join(repo_path, 'output', 'arrays', 'diagnostics', 'num_samples')
 
     num_samples_list = [10e2, 5*10e2, 10e3, 5*10e3, 10e4, 5*10e4, 10e5]
+    num_samples_list = [int(i) for i in num_samples_list]  # convert to list of int as scientific notation in Python gives float
     grid_oversample = 5
-    execution_times = []
+    execution_times, point_source_count = [], []
 
     for num_samples in tqdm(num_samples_list):
         # use test lens
@@ -35,7 +36,7 @@ def main():
         model = lens.get_array(num_pix=45 * grid_oversample, side=5.)
 
         # build Pandeia input
-        calc = pandeia_input.build_pandeia_calc(csv=csv,
+        calc, num_point_sources = pandeia_input.build_pandeia_calc(csv=csv,
                                                 array=model, 
                                                 lens=lens, 
                                                 band='f106', 
@@ -44,12 +45,14 @@ def main():
         # do Pandeia calculation        
         image, execution_time = pandeia_input.get_pandeia_image(calc)
         execution_times.append(execution_time)
+        point_source_count.append(num_point_sources)
         
         # save detector image
         np.save(os.path.join(array_dir, f'num_samples_{num_samples}'), image)
 
-    # save execution times
+    # save execution times and point source counts
     np.save(os.path.join(array_dir, 'execution_times_num_samples.npy'), execution_times)
+    np.save(os.path.join(array_dir, 'point_source_count_num_samples.npy'), point_source_count)
 
 
 if __name__ == '__main__':
