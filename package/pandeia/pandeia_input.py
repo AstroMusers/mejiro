@@ -93,8 +93,8 @@ def _phonion_sample(calc, mag_array, lens, num_samples, norm_wave):
         ra, dec = lens.pixel_grid.map_pix2coord(x=x, y=y)
 
         # set position
-        calc['scene'][i]['position']['x_offset'] = ra
-        calc['scene'][i]['position']['y_offset'] = dec
+        calc['scene'][i]['position']['x_offset'] = dec
+        calc['scene'][i]['position']['y_offset'] = ra
 
         i += 1
     print(f'Point source conversion complete: placed {i} point sources')

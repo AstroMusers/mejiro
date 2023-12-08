@@ -13,7 +13,7 @@ from package.helpers import pyhalo
 from package.pandeia import pandeia_input
 from package.pandeia.pandeia_output import PandeiaOutput
 
-np.random.seed(92)
+# np.random.seed(92)
 
 
 def main():
