@@ -22,7 +22,7 @@ def main():
 
     num_samples_list = [10e2, 5*10e2, 10e3, 5*10e3, 10e4, 5*10e4, 10e5]
     num_samples_list = [int(i) for i in num_samples_list]  # convert to list of int as scientific notation in Python gives float
-    grid_oversample = 5
+    grid_oversample = 9
     execution_times, point_source_count = [], []
 
     for num_samples in tqdm(num_samples_list):

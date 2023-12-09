@@ -20,8 +20,8 @@ def main():
     csv = os.path.join(repo_path, 'data', 'roman_spacecraft_and_instrument_parameters.csv')
     array_dir = os.path.join(repo_path, 'output', 'arrays', 'diagnostics', 'grid_oversampling')
 
-    num_samples = 10000
-    grid_oversample_list = [1, 3, 5, 7, 9]
+    num_samples = 100000
+    grid_oversample_list = [1, 3, 5, 7, 9, 11]
     execution_times, point_source_count = [], []
 
     for grid_oversample in tqdm(grid_oversample_list):
