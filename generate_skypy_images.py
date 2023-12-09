@@ -26,19 +26,19 @@ def main():
 
     csv = os.path.join(repo_path, 'data', 'roman_spacecraft_and_instrument_parameters.csv')
     array_dir = os.path.join(repo_path, 'output', 'arrays', 'skypy_test')
-    figure_dir = os.path.join(repo_path, 'figures')
     data_dir = os.path.join('/data','bwedig', 'roman-population', 'data')
     csv_path = os.path.join(data_dir, 'dictparaggln_Area00000010.csv')
     df = pd.read_csv(csv_path)
 
     # set number of images to select
     limit = 16
+    total = limit
     lens_list = []
     lens_execution_times, pandeia_execution_times = [], []
 
     # build list of Lenses from SkyPy output
     print('Building lenses from SkyPy pipeline output')
-    for i, row in tqdm(df.iterrows(), total=limit):
+    for i, row in tqdm(df.iterrows(), total=total):
         # print(f'New loop: i={i}, limit={limit}')
         start = time.time()
 
@@ -78,15 +78,16 @@ def main():
     # generate Pandeia images
     print('Generating Pandeia images')
     for i, lens in tqdm(enumerate(lens_list)):
-        grid_oversample = 3
+        grid_oversample = 9
         num_samples = 10000
 
         model = lens.get_array(num_pix=90 * grid_oversample, side=10.)
 
         # build Pandeia input
-        calc = pandeia_input.build_pandeia_calc(csv=csv,
+        calc, _ = pandeia_input.build_pandeia_calc(csv=csv,
                                                 array=model, 
-                                                lens=lens, 
+                                                lens=lens,
+                                                side=10., 
                                                 band='f106', 
                                                 num_samples=num_samples)
 

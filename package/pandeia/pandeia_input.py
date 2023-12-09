@@ -11,12 +11,12 @@ from tqdm import tqdm
 from package.helpers.roman_params import RomanParameters
 
 
-def build_pandeia_calc(csv, array, lens, band='f106', num_samples=None, oversample_factor=None):
+def build_pandeia_calc(csv, array, lens, band='f106', side=5., num_samples=None, oversample_factor=None):
     calc = build_default_calc('roman', 'wfi', 'imaging')
 
     # set scene size settings
     # calc['configuration']['dynamic_scene'] = True
-    calc['configuration']['max_scene_size'] = 5
+    calc['configuration']['max_scene_size'] = side
 
     # set filter
     calc['configuration']['instrument']['filter'] = band.lower()  # e.g. 'f106'
@@ -35,6 +35,8 @@ def build_pandeia_calc(csv, array, lens, band='f106', num_samples=None, oversamp
         calc, num_point_sources = _phonion_grid(calc, mag_array, lens, oversample_factor, norm_wave)
     else:
         raise Exception('Either provide num_samples to use sampling method or oversample_factor to use grid method')
+    
+    print(f'Estimated calculation time: {estimate_calculation_time(num_point_sources)}')
 
     return calc, num_point_sources
 
@@ -50,6 +52,11 @@ def get_pandeia_results(calc):
     execution_time = str(datetime.timedelta(seconds=round(stop - start)))
 
     return results, execution_time
+
+
+def estimate_calculation_time(num_point_sources):
+    seconds = (0.07847 * num_point_sources) - 131.6
+    return str(datetime.timedelta(seconds=seconds))
 
 
 def get_pandeia_image(calc):
