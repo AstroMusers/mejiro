@@ -55,7 +55,7 @@ def get_pandeia_results(calc):
 
 
 def estimate_calculation_time(num_point_sources):
-    seconds = (0.07847 * num_point_sources) - 131.6
+    seconds = round((0.07847 * num_point_sources) - 131.6)
     return str(datetime.timedelta(seconds=seconds))
 
 

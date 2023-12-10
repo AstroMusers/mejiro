@@ -23,7 +23,7 @@ def main():
     num_samples_list = [10e2, 5*10e2, 10e3, 5*10e3, 10e4, 5*10e4, 10e5]
     num_samples_list = [int(i) for i in num_samples_list]  # convert to list of int as scientific notation in Python gives float
     grid_oversample = 9
-    execution_times, point_source_count = [], []
+    execution_times, point_source_count, estimated_time = [], [], []
 
     for num_samples in tqdm(num_samples_list):
         # use test lens
@@ -41,6 +41,9 @@ def main():
                                                 lens=lens, 
                                                 band='f106', 
                                                 num_samples=num_samples)
+        
+        # get estimated calculation time
+        estimated_time.append(pandeia_input.estimate_calculation_time(num_point_sources))
 
         # do Pandeia calculation        
         image, execution_time = pandeia_input.get_pandeia_image(calc)
@@ -53,6 +56,7 @@ def main():
     # save execution times and point source counts
     np.save(os.path.join(array_dir, 'execution_times_num_samples.npy'), execution_times)
     np.save(os.path.join(array_dir, 'point_source_count_num_samples.npy'), point_source_count)
+    np.save(os.path.join(array_dir, 'estimated_time_num_samples.npy'), estimated_time)
 
 
 if __name__ == '__main__':
