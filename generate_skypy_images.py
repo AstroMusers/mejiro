@@ -97,7 +97,7 @@ def main(config):
         pandeia_execution_times.append(execution_time)
         
         # save detector image
-        np.save(os.path.join(array_dir, f'skypy_output_{str(i).zfill(5)}'), image)
+        np.save(os.path.join(array_dir, f'skypy_output_{str(i).zfill(5)}.npy'), image)
 
     # save lists of execution times
     np.save(os.path.join(array_dir, 'skypy_output_lens_execution_times.npy'), lens_execution_times)

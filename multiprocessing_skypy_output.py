@@ -65,27 +65,20 @@ def main(config):
 
     # split the images into batches based on core count
     cpu_count = multiprocessing.cpu_count()
-    generator = util.batch_list(lens_list, cpu_count)
+    process_count = int(cpu_count / 2)
+    generator = util.batch_list(lens_list, process_count)
     batches = list(generator)
 
-    # process the batches
-    for batch in tqdm(batches):
-        pool = Pool(processes=cpu_count) 
-        output = []
-        for each in pool.map(generate.main, batch):
-            output.append(each)
-
-    # unpack the output
     image_list, execution_times, num_point_sources = [], [], []
-    for tuple in output:
-        (image, execution_time, num_ps) = tuple
-        image_list.append(image)
-        execution_times.append(execution_time)
-        num_point_sources.append(num_ps)
 
-    # save images
-    for i, image in enumerate(image_list):
-        np.save(os.path.join(array_dir, f'skypy_output_{str(i).zfill(5)}'), image)
+    # process the batches
+    for batch_index, batch in tqdm(enumerate(batches)):
+        pool = Pool(processes=process_count) 
+        for i, output in enumerate(pool.map(generate.main, batch)):
+            (image, execution_time, num_ps) = output
+            np.save(os.path.join(array_dir, f'skypy_output_{batch_index}_{str(i).zfill(3)}'), image)
+            execution_times.append(execution_time)
+            num_point_sources.append(num_ps)             
 
     # save other output lists
     np.save(os.path.join(array_dir, 'skypy_output_execution_times.npy'), execution_times)

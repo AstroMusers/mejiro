@@ -24,36 +24,34 @@ def main(config):
     csv = os.path.join(repo_dir, 'data', 'roman_spacecraft_and_instrument_parameters.csv')
     roman_pixel_scale = roman_params.RomanParameters(csv).get_pixel_scale()
     
+    num_pix = 51  # (45 + (2 * 3))
+    side = 5.61  # (4.95 + (2 * 0.33))
     grid_oversample = 5
-    num_samples_list = [1000, 5000, 10000, 50000, 100000, 250000, 500000, 750000, 1000000]
+    num_samples_list = [1000, 5000, 10000, 50000, 100000, 250000, 500000, 750000, 1000000, 2500000, 5000000, 7500000, 10000000]
     num_samples_list = [int(i) for i in num_samples_list]  # convert to list of int as scientific notation in Python gives float
-    buffer = 0.5  # arcseconds
-    side = 5.  # arcseconds
-    num_pix = round(side / roman_pixel_scale)
-    # if num_pix even, need to make it odd
-    if num_pix % 2 == 0:
-        num_pix += 1
 
     execution_times = []
 
     # use test lens
     lens = test_physical_lens.TestPhysicalLens()
 
-    # add CDM subhalos
+    # add CDM subhalos; NB same subhalo population for all
     lens.add_subhalos(*pyhalo.generate_CDM_halos(lens.z_lens, lens.z_source))
 
     for num_samples in tqdm(num_samples_list):
-        model = lens.get_array(num_pix=num_pix * grid_oversample, side=side + buffer)
+        model = lens.get_array(num_pix=num_pix * grid_oversample, side=side)
 
         # build Pandeia input
         calc, _ = pandeia_input.build_pandeia_calc(csv=csv,
                                                 array=model, 
                                                 lens=lens, 
                                                 band='f106',
-                                                num_samples=num_samples)
+                                                num_samples=num_samples,
+                                                suppress_output=True)
 
         # do Pandeia calculation        
-        image, execution_time = pandeia_input.get_pandeia_image(calc)
+        image, execution_time = pandeia_input.get_pandeia_image(calc,
+                                                                suppress_output=True)
         execution_times.append(execution_time)
         
         # save detector image

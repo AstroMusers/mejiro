@@ -10,12 +10,12 @@ from lenstronomy.LightModel.light_model import LightModel
 from lenstronomy.Plots import plot_util
 from lenstronomy.SimulationAPI.ObservationConfig.Roman import Roman
 from lenstronomy.SimulationAPI.sim_api import SimAPI
-from lenstronomy.Util import data_util
+from lenstronomy.Util import data_util, util
 from scipy.stats import norm, truncnorm, uniform
 
 
 class Lens:
-    def __init__(self, z_lens, z_source, sigma_v, lens_x, lens_y, source_x, source_y, mag_lens, mag_source):
+    def __init__(self, z_lens, z_source, theta_e, lens_x, lens_y, source_x, source_y, mag_lens, mag_source):
         # define redshifts and cosmology
         self.z_lens = z_lens
         self.z_source = z_source
@@ -27,7 +27,8 @@ class Lens:
         self.lens_redshift_list = [self.z_lens, self.z_lens]
         self.lens_model_class = LensModel(self.lens_model_list)
         kwargs_mass = {
-            'sigma_v': sigma_v,  # velocity dispersion in units km/s
+            # 'sigma_v': sigma_v,  # velocity dispersion in units km/s
+            'theta_E': theta_e,
             'center_x': lens_x,
             'center_y': lens_y,
             'e1': norm(loc=0.0, scale=0.1).rvs(),
@@ -82,22 +83,16 @@ class Lens:
             # source redshift to which the reduced deflections are computed, is the maximal redshift of the ray-tracing
         }
 
+        # set kwargs in terms of amp (converted from magnitude)
+        self.kwargs_source_amp, self.kwargs_lens_light_amp = None, None
+        self._set_amp_light_kwargs(self)
+
         self.delta_pix, self.num_pix = None, None
         self.ra_at_xy_0, self.dec_at_xy_0 = None, None
-        self.pixel_grid, self.transform_pix2angle, self.coords = None, None, None
+        self.Mpix2coord, self.Mcoord2pix = None, None
+        self.pixel_grid, self.coords = None, None
         self.lenstronomy_roman_config = None
 
-        # convert from magnitude to amplitude for light models
-        self.lenstronomy_roman_config = Roman(band='F106',
-                                              psf_type='PIXEL', 
-                                              survey_mode='wide_area').kwargs_single_band()
-        magnitude_zero_point = self.lenstronomy_roman_config.get('magnitude_zero_point')
-        self.kwargs_lens_light_amp = data_util.magnitude2amplitude(self.lens_light_model_class, 
-                                                                   self.kwargs_lens_light,
-                                                                   magnitude_zero_point)
-        self.kwargs_source_amp = data_util.magnitude2amplitude(self.source_model_class, 
-                                                               self.kwargs_source,
-                                                               magnitude_zero_point)
 
     # TODO something useful
     # def __str__(self):
@@ -131,9 +126,9 @@ class Lens:
         }
 
 
-    def get_array(self, num_pix, kwargs_psf={'psf_type': 'NONE'}, side=5.):
+    def get_array(self, num_pix, side, kwargs_psf={'psf_type': 'NONE'}):
         self.num_pix = num_pix
-        _set_up_pixel_grid(self, num_pix, side)
+        self._set_up_pixel_grid(num_pix, side)
 
         # define PSF, e.g. kwargs_psf = {'psf_type': 'NONE'}, {'psf_type': 'GAUSSIAN', 'fwhm': psf_fwhm}
         psf_class = PSF(**kwargs_psf)
@@ -144,20 +139,8 @@ class Lens:
             'supersampling_convolution': False
         }
 
-        # convert from magnitude to amplitude for light models
-        self.lenstronomy_roman_config = Roman(band='F106',
-                                              psf_type='PIXEL', 
-                                              survey_mode='wide_area').kwargs_single_band()
-        magnitude_zero_point = self.lenstronomy_roman_config.get('magnitude_zero_point')
-        self.kwargs_lens_light_amp = data_util.magnitude2amplitude(self.lens_light_model_class, 
-                                                                   self.kwargs_lens_light,
-                                                                   magnitude_zero_point)
-        self.kwargs_source_amp = data_util.magnitude2amplitude(self.source_model_class, 
-                                                               self.kwargs_source,
-                                                               magnitude_zero_point)
-
         # convert from physical to lensing units
-        self._mass_physical_to_lensing_units()
+        # self._mass_physical_to_lensing_units()
 
         image_model = ImageModel(data_class=self.pixel_grid,
                                  psf_class=psf_class,
@@ -166,37 +149,55 @@ class Lens:
                                  lens_light_model_class=self.lens_light_model_class,
                                  kwargs_numerics=kwargs_numerics)
 
-        return image_model.image(kwargs_lens=self.kwargs_lens_lensing_units,
+        return image_model.image(kwargs_lens=self.kwargs_lens,
                                  kwargs_source=self.kwargs_source_amp,
                                  kwargs_lens_light=self.kwargs_lens_light_amp)
+
 
     def get_source_pixel_coords(self):
         source_ra, source_dec = self.kwargs_lens[0]['center_x'], self.kwargs_lens[0]['center_y']
         return self.coords.map_coord2pix(ra=source_ra, dec=source_dec)
 
+
     def get_lens_pixel_coords(self):
         lens_ra, lens_dec = self.kwargs_source[0]['center_x'], self.kwargs_source[0]['center_y']
         return self.coords.map_coord2pix(ra=lens_ra, dec=lens_dec)
     
+
     def _mass_physical_to_lensing_units(self):
         sim_g = SimAPI(numpix=self.num_pix, kwargs_single_band=self.lenstronomy_roman_config, kwargs_model=self.kwargs_model)
         self.kwargs_lens_lensing_units = sim_g.physical2lensing_conversion(kwargs_mass=self.kwargs_lens)
 
 
-def _set_up_pixel_grid(self, num_pix, side):
-    self.delta_pix = side / num_pix  # size of pixel in angular coordinates
+    def _set_up_pixel_grid(self, num_pix, side):
+        self.delta_pix = side / num_pix  # size of pixel in angular coordinates
 
-    # specify coordinate in angles (RA/DEC) at the position of the pixel edge (0,0)
-    self.ra_at_xy_0, self.dec_at_xy_0 = -self.delta_pix * math.ceil(num_pix / 2), -self.delta_pix * math.ceil(
-        num_pix / 2)
+        ra_grid, dec_grid, self.ra_at_xy_0, self.dec_at_xy_0, x_at_radec_0, y_at_radec_0, self.Mpix2coord, self.Mcoord2pix = util.make_grid_with_coordtransform(
+            numPix=num_pix, 
+            deltapix=self.delta_pix, 
+            subgrid_res=1, 
+            left_lower=False, 
+            inverse=False)
 
-    # define linear translation matrix of a shift in pixel in a shift in coordinates
-    self.transform_pix2angle = np.array([[1, 0], [0, 1]]) * self.delta_pix
+        kwargs_pixel = {'nx': num_pix, 'ny': num_pix,  # number of pixels per axis
+                        'ra_at_xy_0': self.ra_at_xy_0,
+                        'dec_at_xy_0': self.dec_at_xy_0,
+                        'transform_pix2angle': self.Mpix2coord}
 
-    kwargs_pixel = {'nx': num_pix, 'ny': num_pix,  # number of pixels per axis
-                    'ra_at_xy_0': self.ra_at_xy_0,
-                    'dec_at_xy_0': self.dec_at_xy_0,
-                    'transform_pix2angle': self.transform_pix2angle}
+        self.pixel_grid = PixelGrid(**kwargs_pixel)
+        self.coords = Coordinates(self.Mpix2coord, self.ra_at_xy_0, self.dec_at_xy_0)
 
-    self.pixel_grid = PixelGrid(**kwargs_pixel)
-    self.coords = Coordinates(self.transform_pix2angle, self.ra_at_xy_0, self.dec_at_xy_0)
+
+    def _set_amp_light_kwargs(self):
+        self.lenstronomy_roman_config = Roman(band='F106',
+                                                psf_type='PIXEL', 
+                                                survey_mode='wide_area').kwargs_single_band()
+        magnitude_zero_point = self.lenstronomy_roman_config.get('magnitude_zero_point')
+
+        self.kwargs_lens_light_amp = data_util.magnitude2amplitude(self.lens_light_model_class, 
+                                                                    self.kwargs_lens_light,
+                                                                    magnitude_zero_point)
+        self.kwargs_source_amp = data_util.magnitude2amplitude(self.source_model_class, 
+                                                                self.kwargs_source,
+                                                                magnitude_zero_point)
+    

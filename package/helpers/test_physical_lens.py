@@ -19,7 +19,8 @@ class TestPhysicalLens(Lens):
         self.lens_redshift_list = [self.z_lens, self.z_lens]
         self.lens_model_class = LensModel(self.lens_model_list)
         kwargs_mass = {
-            'sigma_v': 250,  # velocity dispersion in units km/s
+            # 'sigma_v': 250,  # velocity dispersion in units km/s
+            'theta_E': 1.,
             'center_x': 0,
             'center_y': 0,
             'e1': 0.1,
@@ -74,6 +75,12 @@ class TestPhysicalLens(Lens):
             # source redshift to which the reduced deflections are computed, is the maximal redshift of the ray-tracing
         }
 
+        # set kwargs in terms of amp (converted from magnitude)
+        self.kwargs_source_amp, self.kwargs_lens_light_amp = None, None
+        self._set_amp_light_kwargs()
+
         self.delta_pix, self.num_pix = None, None
         self.ra_at_xy_0, self.dec_at_xy_0 = None, None
-        self.pixel_grid, self.transform_pix2angle, self.coords = None, None, None
+        self.Mpix2coord, self.Mcoord2pix = None, None
+        self.pixel_grid, self.coords = None, None
+        self.lenstronomy_roman_config = None
