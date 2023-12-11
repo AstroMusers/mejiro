@@ -25,14 +25,14 @@ def build_pandeia_calc(csv, array, lens, band='f106', side=5., num_samples=None,
     calc['calculation'] = get_calculation_dict(init=True)
 
     # convert array from counts/sec to astronomical magnitude
-    mag_array = _get_mag_array(lens, array, num_samples, band)
+    mag_array = _get_mag_array(lens, array, num_samples, band, suppress_output)
 
     # add point sources to Pandeia input ('calc')
     norm_wave = _get_norm_wave(csv, band)
     if num_samples:
-        calc, num_point_sources = _phonion_sample(calc, mag_array, lens, num_samples, norm_wave)
+        calc, num_point_sources = _phonion_sample(calc, mag_array, lens, num_samples, norm_wave, suppress_output)
     elif oversample_factor:
-        calc, num_point_sources = _phonion_grid(calc, mag_array, lens, oversample_factor, norm_wave)
+        calc, num_point_sources = _phonion_grid(calc, mag_array, lens, oversample_factor, norm_wave, suppress_output)
     else:
         raise Exception('Either provide num_samples to use sampling method or oversample_factor to use grid method')
     
@@ -63,8 +63,8 @@ def estimate_calculation_time(num_point_sources):
     return str(datetime.timedelta(seconds=seconds))
 
 
-def get_pandeia_image(calc):
-    results, execution_time = get_pandeia_results(calc)
+def get_pandeia_image(calc, suppress_output=False):
+    results, execution_time = get_pandeia_results(calc, suppress_output)
 
     return results['2d']['detector'], execution_time
 
@@ -85,11 +85,11 @@ def get_calculation_dict(init=True):
     }
 
 
-def _phonion_sample(calc, mag_array, lens, num_samples, norm_wave):
+def _phonion_sample(calc, mag_array, lens, num_samples, norm_wave, suppress_output=False):
     i = 0
 
     # loop over non-zero pixels, i.e. ignore pixels with no phonions
-    for x, y in tqdm(np.argwhere(mag_array != np.inf)):
+    for x, y in tqdm(np.argwhere(mag_array != np.inf), disable=suppress_output):
         if i != 0:
             calc['scene'].append(build_default_source(geometry='point', telescope='roman'))
 
@@ -108,16 +108,21 @@ def _phonion_sample(calc, mag_array, lens, num_samples, norm_wave):
         calc['scene'][i]['position']['y_offset'] = ra
 
         i += 1
-    print(f'Point source conversion complete: placed {i} point sources')
+
+    if not suppress_output:
+        print(f'Point source conversion complete: placed {i} point sources')
 
     return calc, i
 
 
-def _phonion_grid(calc, mag_array, lens, oversample_factor, norm_wave):
+def _phonion_grid(calc, mag_array, lens, oversample_factor, norm_wave, suppress_output=False):
     i = 0
     side, _ = mag_array.shape
-    print(f'Converting {mag_array.shape} array to point sources...')
-    for row_number, row in tqdm(enumerate(mag_array), total=side):
+
+    if not suppress_output:
+        print(f'Converting {mag_array.shape} array to point sources...')
+
+    for row_number, row in tqdm(enumerate(mag_array), total=side, disable=suppress_output):
         for item_number, item in enumerate(row):
             if i != 0:
                 calc['scene'].append(build_default_source(geometry='point', telescope='roman'))
@@ -136,12 +141,14 @@ def _phonion_grid(calc, mag_array, lens, oversample_factor, norm_wave):
                         1 / oversample_factor)) + lens.dec_at_xy_0  # arcsec
 
             i += 1
-    print(f'Point source conversion complete: placed {i} point sources')
+
+    if not suppress_output:        
+        print(f'Point source conversion complete: placed {i} point sources')
 
     return calc, i
 
 
-def _get_mag_array(lens, array, num_samples, band):
+def _get_mag_array(lens, array, num_samples, band, suppress_output):
     # normalize the image to convert it into a PDF
     sum = np.sum(array)
     normalized_array = array / sum
@@ -166,10 +173,10 @@ def _get_mag_array(lens, array, num_samples, band):
         reconstructed_array[x][y] += counts_per_pixel
 
     # convert from counts/sec to astronomical magnitude
-    return _convert_cps_to_magnitude(reconstructed_array, band)
+    return _convert_cps_to_magnitude(reconstructed_array, band, suppress_output)
 
 
-def _convert_cps_to_magnitude(array, band):
+def _convert_cps_to_magnitude(array, band, suppress_output):
     lenstronomy_roman_config = Roman(band=band.upper(), psf_type='PIXEL',
                                      survey_mode='wide_area').kwargs_single_band()  # band e.g. 'F106'
     magnitude_zero_point = lenstronomy_roman_config.get('magnitude_zero_point')
@@ -178,7 +185,7 @@ def _convert_cps_to_magnitude(array, band):
     side, _ = array.shape
     mag_array = np.zeros(array.shape)
 
-    for row_number, row in tqdm(enumerate(array), total=side):
+    for row_number, row in tqdm(enumerate(array), total=side, disable=suppress_output):
         for item_number, item in enumerate(row):
             mag_array[row_number][item_number] = data_util.cps2magnitude(item, magnitude_zero_point)
             i += 1
@@ -186,7 +193,7 @@ def _convert_cps_to_magnitude(array, band):
     return mag_array
 
 
-def _convert_magnitude_to_cps(array, band):
+def _convert_magnitude_to_cps(array, band, suppress_output):
     lenstronomy_roman_config = Roman(band=band.upper(), psf_type='PIXEL',
                                      survey_mode='wide_area').kwargs_single_band()  # band e.g. 'F106'
     magnitude_zero_point = lenstronomy_roman_config.get('magnitude_zero_point')
@@ -195,7 +202,7 @@ def _convert_magnitude_to_cps(array, band):
     side, _ = array.shape
     cps_array = np.zeros(array.shape)
 
-    for row_number, row in tqdm(enumerate(array), total=side):
+    for row_number, row in tqdm(enumerate(array), total=side, disable=suppress_output):
         for item_number, item in enumerate(row):
             cps_array[row_number][item_number] = data_util.magnitude2cps(item, magnitude_zero_point)
             i += 1

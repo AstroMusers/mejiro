@@ -1,5 +1,4 @@
 import math
-
 import numpy as np
 from astropy.cosmology import FlatLambdaCDM
 from lenstronomy.Data.coord_transforms import Coordinates
@@ -178,78 +177,6 @@ class Lens:
     def get_lens_pixel_coords(self):
         lens_ra, lens_dec = self.kwargs_source[0]['center_x'], self.kwargs_source[0]['center_y']
         return self.coords.map_coord2pix(ra=lens_ra, dec=lens_dec)
-
-    def get_roman_sim(self, noise=True, side=5.):
-        kwargs_numerics = {'point_source_supersampling_factor': 1}
-
-        roman_g = Roman(band='F062', psf_type='PIXEL', survey_mode='wide_area')
-        roman_r = Roman(band='F106', psf_type='PIXEL', survey_mode='wide_area')
-        roman_i = Roman(band='F184', psf_type='PIXEL', survey_mode='wide_area')
-
-        kwargs_b_band = roman_g.kwargs_single_band()
-        kwargs_g_band = roman_r.kwargs_single_band()
-        kwargs_r_band = roman_i.kwargs_single_band()
-
-        # set number of pixels from pixel scale
-        pixel_scale = kwargs_g_band['pixel_scale']
-        numpix = int(round(side / pixel_scale))
-
-        sim_b = SimAPI(numpix=numpix, kwargs_single_band=kwargs_b_band, kwargs_model=self.kwargs_model)
-        sim_g = SimAPI(numpix=numpix, kwargs_single_band=kwargs_g_band, kwargs_model=self.kwargs_model)
-        sim_r = SimAPI(numpix=numpix, kwargs_single_band=kwargs_r_band, kwargs_model=self.kwargs_model)
-
-        imsim_b = sim_b.image_model_class(kwargs_numerics)
-        imsim_g = sim_g.image_model_class(kwargs_numerics)
-        imsim_r = sim_r.image_model_class(kwargs_numerics)
-
-        # TODO TEMP for now, just set flat spectrum i.e. same brightness across filters
-        kwargs_lens_light_mag_g = self.kwargs_lens_light
-        kwargs_lens_light_mag_r = self.kwargs_lens_light
-        kwargs_lens_light_mag_i = self.kwargs_lens_light
-        kwargs_source_mag_g = self.kwargs_source
-        kwargs_source_mag_r = self.kwargs_source
-        kwargs_source_mag_i = self.kwargs_source
-
-        # turn magnitude kwargs into lenstronomy kwargs
-        kwargs_lens_light_g, kwargs_source_g, _ = sim_b.magnitude2amplitude(kwargs_lens_light_mag_g,
-                                                                            kwargs_source_mag_g, None)
-        kwargs_lens_light_r, kwargs_source_r, _ = sim_g.magnitude2amplitude(kwargs_lens_light_mag_r,
-                                                                            kwargs_source_mag_r, None)
-        kwargs_lens_light_i, kwargs_source_i, _ = sim_r.magnitude2amplitude(kwargs_lens_light_mag_i,
-                                                                            kwargs_source_mag_i, None)
-
-        # convert from physical to lensing units
-        kwargs_lens_lensing_units = sim_b.physical2lensing_conversion(kwargs_mass=self.kwargs_lens)
-
-        # create images in each filter
-        image_b = imsim_b.image(kwargs_lens_lensing_units, kwargs_source_g, kwargs_lens_light_g)
-        image_g = imsim_g.image(kwargs_lens_lensing_units, kwargs_source_r, kwargs_lens_light_r)
-        image_r = imsim_r.image(kwargs_lens_lensing_units, kwargs_source_i, kwargs_lens_light_i)
-
-        # add noise
-        if noise:
-            image_b += sim_b.noise_for_model(model=image_b)
-            image_g += sim_g.noise_for_model(model=image_g)
-            image_r += sim_r.noise_for_model(model=image_r)
-
-        # pick an image to return as the single filter image
-        image = image_g
-
-        # assemble the color image
-        rgb_image = np.zeros((image_g.shape[0], image_g.shape[1], 3), dtype=float)
-
-        # scale_max=10000
-        def _scale_max(image):
-            flat = image.flatten()
-            flat.sort()
-            scale_max = flat[int(len(flat) * 0.95)]
-            return scale_max
-
-        rgb_image[:, :, 0] = plot_util.sqrt(image_b, scale_min=0, scale_max=_scale_max(image_b))
-        rgb_image[:, :, 1] = plot_util.sqrt(image_g, scale_min=0, scale_max=_scale_max(image_g))
-        rgb_image[:, :, 2] = plot_util.sqrt(image_r, scale_min=0, scale_max=_scale_max(image_r))
-
-        return image, rgb_image, sim_b.data_class
     
     def _mass_physical_to_lensing_units(self):
         sim_g = SimAPI(numpix=self.num_pix, kwargs_single_band=self.lenstronomy_roman_config, kwargs_model=self.kwargs_model)

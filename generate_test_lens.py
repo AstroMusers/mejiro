@@ -25,10 +25,10 @@ def main(config):
     roman_pixel_scale = roman_params.RomanParameters(csv).get_pixel_scale()
     
     grid_oversample = 5
-    num_samples_list = [100, 500, 1000, 5000, 10000, 50000]
+    num_samples_list = [1000, 5000, 10000, 50000, 100000, 250000, 500000, 750000, 1000000]
     num_samples_list = [int(i) for i in num_samples_list]  # convert to list of int as scientific notation in Python gives float
     buffer = 0.5  # arcseconds
-    side = 10.  # arcseconds
+    side = 5.  # arcseconds
     num_pix = round(side / roman_pixel_scale)
     # if num_pix even, need to make it odd
     if num_pix % 2 == 0:
