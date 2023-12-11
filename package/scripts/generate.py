@@ -24,7 +24,7 @@ def main(lens):
         return None, None, None
 
     grid_oversample = 3
-    num_samples = 10000
+    num_samples = 100000
 
     buffer = 0.5
     side = 10.

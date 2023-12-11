@@ -56,7 +56,10 @@ def main(config):
                     mag_source=row['magtsourF106'])
         
         # add CDM subhalos
-        lens.add_subhalos(*pyhalo.generate_CDM_halos(lens.z_lens, lens.z_source))
+        try:
+            lens.add_subhalos(*pyhalo.generate_CDM_halos(lens.z_lens, lens.z_source))
+        except:
+            continue
         
         lens_list.append(lens)
 
