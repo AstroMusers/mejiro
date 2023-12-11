@@ -6,7 +6,15 @@ from scipy.fft import fft2
 from package.plots import plot_util
 
 
-# TODO execution time-dependence of whatever other parameters I can vary
+def residual_compare(ax, array_list, title_list, linear_width):
+    norm = plot_util.get_norm(array_list, linear_width)
+
+    for i, array in enumerate(array_list):
+        axis = ax[i].imshow(array, cmap='bwr', norm=norm)
+        ax[i].set_title(title_list[i])
+        ax[i].set_axis_off()
+
+    return axis
 
 
 def fft(filepath, title, array):

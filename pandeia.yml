@@ -11,3 +11,4 @@ dependencies:
   - pip:
       - pandeia-engine==3.0
       - pyhalo
+      - hydra-core

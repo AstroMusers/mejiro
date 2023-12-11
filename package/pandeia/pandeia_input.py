@@ -11,7 +11,7 @@ from tqdm import tqdm
 from package.helpers.roman_params import RomanParameters
 
 
-def build_pandeia_calc(csv, array, lens, band='f106', side=5., num_samples=None, oversample_factor=None):
+def build_pandeia_calc(csv, array, lens, band='f106', side=5., num_samples=None, oversample_factor=None, suppress_output=False):
     calc = build_default_calc('roman', 'wfi', 'imaging')
 
     # set scene size settings
@@ -36,26 +36,30 @@ def build_pandeia_calc(csv, array, lens, band='f106', side=5., num_samples=None,
     else:
         raise Exception('Either provide num_samples to use sampling method or oversample_factor to use grid method')
     
-    print(f'Estimated calculation time: {estimate_calculation_time(num_point_sources)}')
+    if not suppress_output:
+        print(f'Estimated calculation time: {estimate_calculation_time(num_point_sources)}')
 
     return calc, num_point_sources
 
 
-def get_pandeia_results(calc):
+def get_pandeia_results(calc, suppress_output=False):
     start = time.time()
 
-    print('Performing Pandeia calculation...')
+    if not suppress_output:
+        print('Performing Pandeia calculation...')
     results = perform_calculation(calc)
-    print('Pandeia calculation complete')
 
     stop = time.time()
     execution_time = str(datetime.timedelta(seconds=round(stop - start)))
+
+    if not suppress_output:
+        print(f'Pandeia calculation complete in {execution_time}')
 
     return results, execution_time
 
 
 def estimate_calculation_time(num_point_sources):
-    seconds = round((0.07847 * num_point_sources) - 131.6)
+    seconds = round(0.0785 * num_point_sources)
     return str(datetime.timedelta(seconds=seconds))
 
 

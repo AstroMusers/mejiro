@@ -3,10 +3,8 @@ import sys
 import numpy as np
 from tqdm import tqdm
 
-from package.helpers import test_physical_lens
+from package.helpers import test_physical_lens, pyhalo
 from package.pandeia import pandeia_input
-from package.pandeia.pandeia_output import PandeiaOutput
-from package.helpers import pyhalo
 
 
 def main():
@@ -23,15 +21,15 @@ def main():
     num_samples_list = [10e2, 5*10e2, 10e3, 5*10e3, 10e4, 5*10e4, 10e5]
     num_samples_list = [int(i) for i in num_samples_list]  # convert to list of int as scientific notation in Python gives float
     grid_oversample = 9
-    execution_times, point_source_count, estimated_time = [], [], []
+    execution_times, point_source_count, estimated_times = [], [], []
+
+    # use test lens
+    lens = test_physical_lens.TestPhysicalLens()
+
+    # add CDM subhalos
+    lens.add_subhalos(*pyhalo.generate_CDM_halos(lens.z_lens, lens.z_source))
 
     for num_samples in tqdm(num_samples_list):
-        # use test lens
-        lens = test_physical_lens.TestPhysicalLens()
-
-        # add CDM subhalos
-        lens.add_subhalos(*pyhalo.generate_CDM_halos(lens.z_lens, lens.z_source))
-
         # generate lenstronomy model, varying grid oversample factor
         model = lens.get_array(num_pix=45 * grid_oversample, side=5.)
 
@@ -43,7 +41,7 @@ def main():
                                                 num_samples=num_samples)
         
         # get estimated calculation time
-        estimated_time.append(pandeia_input.estimate_calculation_time(num_point_sources))
+        estimated_times.append(pandeia_input.estimate_calculation_time(num_point_sources))
 
         # do Pandeia calculation        
         image, execution_time = pandeia_input.get_pandeia_image(calc)
@@ -56,7 +54,7 @@ def main():
     # save execution times and point source counts
     np.save(os.path.join(array_dir, 'execution_times_num_samples.npy'), execution_times)
     np.save(os.path.join(array_dir, 'point_source_count_num_samples.npy'), point_source_count)
-    np.save(os.path.join(array_dir, 'estimated_time_num_samples.npy'), estimated_time)
+    np.save(os.path.join(array_dir, 'estimated_time_num_samples.npy'), estimated_times)
 
 
 if __name__ == '__main__':

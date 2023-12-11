@@ -1,6 +1,7 @@
 from os import path
-
 import matplotlib.pyplot as plt
+from matplotlib import colors
+import numpy as np
 
 from package.utils import util
 
@@ -12,6 +13,17 @@ from package.utils import util
 #             if 'colorbar_label' in kwargs:
 #                 if kwargs['colorbar_label']:
 #                     # TODO this is horrible, fix this
+
+
+def get_norm(array_list, linear_width):
+    min_list, max_list = [], []
+    for array in array_list:
+        min_list.append(abs(np.min(array)))
+        max_list.append(abs(np.max(array)))
+    abs_min, abs_max = abs(np.min(min_list)), abs(np.max(max_list))
+    limit = np.max([abs_min, abs_max])
+
+    return colors.AsinhNorm(linear_width=linear_width, vmin=-limit, vmax=limit)
 
 
 def __savefig(filepath):

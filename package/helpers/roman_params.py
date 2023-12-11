@@ -18,3 +18,6 @@ class RomanParameters:
             dict[roman_filter] = float(self.df.loc[self.df['Name'] == field]['Value'].to_string(index=False))
 
         return dict
+    
+    def get_pixel_scale(self):
+        return float(self.df.loc[self.df['Name'] == 'WFI_Pixel_Scale']['Value'].to_string(index=False))
