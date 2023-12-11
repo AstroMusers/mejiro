@@ -33,7 +33,7 @@ def main(config):
         lens_list = pickle.load(results_file)
 
     # TODO TEMP: for now, just grab the first handful
-    lens_list = lens_list[:100]
+    # lens_list = lens_list[:100]
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
