@@ -17,6 +17,7 @@ from package.helpers.lens import Lens
 from package.plots import diagnostic_plot, plot
 from package.utils import util
 from package.scripts import generate
+from package.helpers import pyhalo
 
 
 @hydra.main(version_base=None, config_path='config', config_name='config.yaml')
@@ -35,7 +36,7 @@ def main(config):
     # get output of SkyPy pipeline
     df = pd.read_csv(os.path.join('/data','bwedig', 'roman-population', 'data', 'dictparaggln_Area00000010.csv'))
 
-    limit = 100
+    limit = 200
     total = deepcopy(limit)
     lens_list = []
 
@@ -54,26 +55,36 @@ def main(config):
                     mag_lens=row['magtlensF106'], 
                     mag_source=row['magtsourF106'])
         
+        # add CDM subhalos
+        lens.add_subhalos(*pyhalo.generate_CDM_halos(lens.z_lens, lens.z_source))
+        
         lens_list.append(lens)
 
-    pool = Pool(processes=multiprocessing.cpu_count()) 
-    output = []
+    # split the images into batches based on core count
+    cpu_count = multiprocessing.cpu_count()
+    generator = util.batch_list(lens_list, cpu_count)
+    batches = list(generator)
 
-    for each in tqdm(pool.map(generate.main, lens_list), total=len(lens_list)):
-        output.append(each)
+    # process the batches
+    for batch in tqdm(batches):
+        pool = Pool(processes=cpu_count) 
+        output = []
+        for each in pool.map(generate.main, batch):
+            output.append(each)
 
+    # unpack the output
     image_list, execution_times, num_point_sources = [], [], []
-
     for tuple in output:
         (image, execution_time, num_ps) = tuple
         image_list.append(image)
         execution_times.append(execution_time)
         num_point_sources.append(num_ps)
 
+    # save images
     for i, image in enumerate(image_list):
         np.save(os.path.join(array_dir, f'skypy_output_{str(i).zfill(5)}'), image)
 
-    # save lists of execution times
+    # save other output lists
     np.save(os.path.join(array_dir, 'skypy_output_execution_times.npy'), execution_times)
     np.save(os.path.join(array_dir, 'skypy_output_num_point_sources.npy'), num_point_sources)
 
