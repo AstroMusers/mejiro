@@ -1,20 +1,23 @@
 import os
 import sys
+import pickle
 
 import hydra
 import numpy as np
 from tqdm import tqdm
 
 from package.helpers import pyhalo, pandeia_input
-from package.lenses import test_physical_lens
+from package.lenses import sample_skypy_lens
 from package.utils import util
 
 
 @hydra.main(version_base=None, config_path='config', config_name='config.yaml')
 def main(config):
-    array_dir, repo_dir = config.machine.array_dir, config.machine.repo_dir
+    array_dir, pickle_dir, repo_dir = config.machine.array_dir, config.machine.pickle_dir, config.machine.repo_dir
     array_dir = os.path.join(array_dir, 'sample_skypy_lens')
+    pickle_dir = os.path.join(pickle_dir, 'pyhalo')
     util.create_directory_if_not_exists(array_dir)
+    util.create_directory_if_not_exists(pickle_dir)
 
     # enable use of local packages
     if repo_dir not in sys.path:
@@ -27,16 +30,18 @@ def main(config):
     # num_pix = 51  # (45 + (2 * 3))
     # side = 5.61  # (4.95 + (2 * 0.33))
     # grid_oversample = 5
-    num_samples_list = [10, 100, 1000, 10000, 100000, 1000000]
+    num_samples_list = [10, 100, 1000, 10000, 100000, 1000000, 10000000]
     num_samples_list = [int(i) for i in
                         num_samples_list]  # convert to list of int as scientific notation in Python gives float
 
     # use test lens
-    lens = test_physical_lens.TestPhysicalLens()
+    lens = sample_skypy_lens.SampleSkyPyLens()
     lens_list = [lens] * len(num_samples_list)
 
     # add CDM subhalos; NB same subhalo population for all
-    lens.add_subhalos(*pyhalo.generate_CDM_halos(lens.z_lens, lens.z_source))
+    with open(os.path.join(pickle_dir, 'cdm_subhalos_for_sample_skypy_lens'), 'rb') as results_file:
+        realizationCDM = pickle.load(results_file)
+    lens.add_subhalos(*pyhalo.realization_to_lensing_quantities(realizationCDM))
 
     # # split up the lenses into batches based on core count
     # cpu_count = multiprocessing.cpu_count()

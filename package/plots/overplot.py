@@ -1,6 +1,13 @@
 from lenstronomy.LensModel.lens_model_extensions import LensModelExtensions
 
 
+def text_boxes(ax, text_list, fontsize=18):
+    props = dict(boxstyle='round', facecolor='w', alpha=0.5)
+    for i, each in enumerate(ax):
+        each.text(0.05, 0.95, text_list[i], transform=each.transAxes, fontsize=fontsize,
+            verticalalignment='top', bbox=props)
+    
+
 def source_position(ax, lens):
     source_x, source_y = lens.get_source_pixel_coords()
 

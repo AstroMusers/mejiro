@@ -10,6 +10,7 @@ from lenstronomy.SimulationAPI.ObservationConfig.Roman import Roman
 from lenstronomy.SimulationAPI.sim_api import SimAPI
 from lenstronomy.Util import data_util, util
 from scipy.stats import norm, truncnorm
+from pyHalo.Cosmology.cosmology import Cosmology
 
 
 class Lens:
@@ -17,7 +18,7 @@ class Lens:
         # define redshifts and cosmology
         self.z_lens = z_lens
         self.z_source = z_source
-        self.cosmo = FlatLambdaCDM(H0=70, Om0=0.3, Ob0=0.05)
+        self.cosmo = Cosmology().astropy  # FlatLambdaCDM(H0=70, Om0=0.3, Ob0=0.05)
 
         # LENS
         # mass model: singular isothermal ellipsoid with a shear

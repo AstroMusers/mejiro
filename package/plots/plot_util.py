@@ -27,6 +27,15 @@ def get_norm(array_list, linear_width):
     return colors.AsinhNorm(linear_width=linear_width, vmin=-limit, vmax=limit)
 
 
+def get_limit(array):
+    abs_min, abs_max = abs(np.min(array)), abs(np.max(array))
+    return np.max([abs_min, abs_max])
+
+
+def get_linear_width(array):
+    return np.abs(np.mean(array) + (3 * np.std(array)))
+
+
 def __savefig(filepath):
     if filepath is not None:
         # check if the specified directory exists; if not, create it

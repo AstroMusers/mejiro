@@ -11,16 +11,25 @@ def batch_list(list, n):
         yield list[i:i + n]
 
 
+def scientific_notation_string(input):
+    return '{:.2e}'.format(input)
+
 # TODO finish
-def scientific_notation_string(float):
-    # convert to Python scientific notion
-    str = '{:e}'.format(float)
-    num, exponent = str.split('e')
+# def scientific_notation_string(input):
+#     # convert to Python scientific notion
+#     string = '{:e}'.format(input)
+#     num_string, exponent = string.split('e')
+#     num = str(round(float(num_string), 2))
 
-    # handle exponent
-    if exponent[0] == '+':
-        _, power = exponent.split('+')
-        power = str(int(power))
-        exponent = '$10^{' + power + '}'
+#     # handle exponent
+#     if exponent[0] == '+':
+#         _, power = exponent.split('+')
+#     elif exponent[0] == '-':
+#         _, power = exponent.split('-')
+#         power = '-' + power
+        
 
-    return ''.join(num, '$\cross$', exponent)
+#     power = str(int(power))
+#     exponent = '10^{' + power + '}'
+
+#     return ''.join((num, '\cross', exponent))

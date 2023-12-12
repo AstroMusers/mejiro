@@ -16,7 +16,6 @@ def build_pandeia_calc(csv, array, lens, band='f106', side=5., num_samples=None,
     calc = build_default_calc('roman', 'wfi', 'imaging')
 
     # set scene size settings
-    # calc['configuration']['dynamic_scene'] = True
     calc['configuration']['max_scene_size'] = side
 
     # set filter
@@ -64,6 +63,13 @@ def estimate_calculation_time(num_point_sources):
     return str(datetime.timedelta(seconds=seconds))
 
 
+# TODO this isn't quite correct because we're looking at samples instead of point sources
+# maybe estimate based on common lenses? but likely to be inaccurate
+def estimate_total_calculation_time(num_samples_list):
+    total_samples = np.sum(num_samples_list)
+    return estimate_calculation_time(total_samples)
+
+
 def get_pandeia_image(calc, suppress_output=False):
     results, execution_time = get_pandeia_results(calc, suppress_output)
 
@@ -106,42 +112,9 @@ def _phonion_sample(calc, mag_array, lens, num_samples, norm_wave, suppress_outp
 
         # set position
         calc['scene'][i]['position']['x_offset'] = dec
-        calc['scene'][i]['position']['y_offset'] = ra
+        calc['scene'][i]['position']['y_offset'] = -ra
 
         i += 1
-
-    if not suppress_output:
-        print(f'Point source conversion complete: placed {i} point sources')
-
-    return calc, i
-
-
-def _phonion_grid(calc, mag_array, lens, oversample_factor, norm_wave, suppress_output=False):
-    i = 0
-    side, _ = mag_array.shape
-
-    if not suppress_output:
-        print(f'Converting {mag_array.shape} array to point sources...')
-
-    for row_number, row in tqdm(enumerate(mag_array), total=side, disable=suppress_output):
-        for item_number, item in enumerate(row):
-            if i != 0:
-                calc['scene'].append(build_default_source(geometry='point', telescope='roman'))
-
-            # set brightness
-            calc['scene'][i]['spectrum']['normalization']['norm_flux'] = item
-            calc['scene'][i]['spectrum']['normalization']['norm_fluxunit'] = 'abmag'
-            calc['scene'][i]['spectrum']['normalization']['norm_wave'] = norm_wave
-            calc['scene'][i]['spectrum']['normalization']['norm_waveunit'] = 'microns'
-            calc['scene'][i]['spectrum']['normalization']['type'] = 'at_lambda'
-
-            # set position
-            calc['scene'][i]['position']['x_offset'] = (item_number * (1 / 9) * (
-                    1 / oversample_factor)) + lens.ra_at_xy_0  # arcsec
-            calc['scene'][i]['position']['y_offset'] = (row_number * (1 / 9) * (
-                    1 / oversample_factor)) + lens.dec_at_xy_0  # arcsec
-
-            i += 1
 
     if not suppress_output:
         print(f'Point source conversion complete: placed {i} point sources')
@@ -217,3 +190,36 @@ def _get_norm_wave(csv, band):
     filter_center_dict = roman_params.get_filter_centers()
 
     return filter_center_dict[band]
+
+
+def _phonion_grid(calc, mag_array, lens, oversample_factor, norm_wave, suppress_output=False):
+    i = 0
+    side, _ = mag_array.shape
+
+    if not suppress_output:
+        print(f'Converting {mag_array.shape} array to point sources...')
+
+    for row_number, row in tqdm(enumerate(mag_array), total=side, disable=suppress_output):
+        for item_number, item in enumerate(row):
+            if i != 0:
+                calc['scene'].append(build_default_source(geometry='point', telescope='roman'))
+
+            # set brightness
+            calc['scene'][i]['spectrum']['normalization']['norm_flux'] = item
+            calc['scene'][i]['spectrum']['normalization']['norm_fluxunit'] = 'abmag'
+            calc['scene'][i]['spectrum']['normalization']['norm_wave'] = norm_wave
+            calc['scene'][i]['spectrum']['normalization']['norm_waveunit'] = 'microns'
+            calc['scene'][i]['spectrum']['normalization']['type'] = 'at_lambda'
+
+            # set position
+            calc['scene'][i]['position']['x_offset'] = (item_number * (1 / 9) * (
+                    1 / oversample_factor)) + lens.ra_at_xy_0  # arcsec
+            calc['scene'][i]['position']['y_offset'] = (row_number * (1 / 9) * (
+                    1 / oversample_factor)) + lens.dec_at_xy_0  # arcsec
+
+            i += 1
+
+    if not suppress_output:
+        print(f'Point source conversion complete: placed {i} point sources')
+
+    return calc, i
