@@ -84,7 +84,7 @@ class Lens:
 
         # set kwargs in terms of amp (converted from magnitude)
         self.kwargs_source_amp, self.kwargs_lens_light_amp = None, None
-        self._set_amp_light_kwargs(self)
+        self._set_amp_light_kwargs()
 
         self.delta_pix, self.num_pix = None, None
         self.ra_at_xy_0, self.dec_at_xy_0 = None, None

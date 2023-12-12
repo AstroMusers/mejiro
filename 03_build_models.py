@@ -42,7 +42,8 @@ def main(config):
 
 
 def get_model(lens):
-    return lens.get_array(num_pix=97, side=10.67)
+    grid_oversample = 5
+    return lens.get_array(num_pix=97 * grid_oversample, side=10.67)
 
 
 if __name__ == '__main__':

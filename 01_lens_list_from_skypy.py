@@ -1,6 +1,8 @@
+import multiprocessing
 import os
 import pickle
 import sys
+from multiprocessing import Pool
 
 import hydra
 import pandas as pd
@@ -26,21 +28,20 @@ def main(config):
 
     # TODO implement multiprocessing to parallelize
     # generate the lens objects
-    for i, row in tqdm(df.iterrows(), total=df.shape[0]):
-        lens_list.append(generate_lens(row))
+    # for _, row in tqdm(df.iterrows(), total=df.shape[0]):
+    #     lens_list.append(generate_lens(row))
 
-    # # split up the rows into batches based on core count
-    # cpu_count = multiprocessing.cpu_count()
-    # process_count = int(cpu_count / 2)  # TODO consider making this larger, but using all CPUs has crashed
-    # generator = util.batch_list(list(df.iterrows()), process_count)
-    # batches = list(generator)
+    # split up the rows into batches based on core count
+    cpu_count = multiprocessing.cpu_count()
+    process_count = int(cpu_count / 2)  # TODO consider making this larger, but using all CPUs has crashed
+    generator = util.batch_list(list(df.iterrows()), process_count)
+    batches = list(generator)
 
-    # # process the batches
-    # for batch in tqdm(batches):
-    #     pool = Pool(processes=process_count) 
-    #     for i, output in enumerate(pool.map(generate_lens, batch)):
-    #         (lens) = output
-    #         lens_list.append(lens)
+    # process the batches
+    for batch in tqdm(batches):
+        pool = Pool(processes=process_count) 
+        for row in pool.map(generate_lens, batch):
+            lens_list.append(row)
 
     # pickle lens list
     with open(os.path.join(pickle_dir, 'skypy_output_lens_list'), 'ab') as results_file:
@@ -48,15 +49,16 @@ def main(config):
 
 
 def generate_lens(row):
-    return Lens(z_lens=row['redslens'],
-                z_source=row['redssour'],
-                theta_e=row['angleins'],
-                lens_x=row['xposlens'],
-                lens_y=row['yposlens'],
-                source_x=row['xpossour'],
-                source_y=row['ypossour'],
-                mag_lens=row['magtlensF106'],
-                mag_source=row['magtsourF106'])
+    row_dict = dict(row)
+    return Lens(z_lens=row_dict['redslens'],
+                z_source=row_dict['redssour'],
+                theta_e=row_dict['angleins'],
+                lens_x=row_dict['xposlens'],
+                lens_y=row_dict['yposlens'],
+                source_x=row_dict['xpossour'],
+                source_y=row_dict['ypossour'],
+                mag_lens=row_dict['magtlensF106'],
+                mag_source=row_dict['magtsourF106'])
 
 
 if __name__ == '__main__':

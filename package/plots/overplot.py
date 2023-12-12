@@ -60,7 +60,7 @@ def _get_caustics_critical_curves(lens):
 
     frame_size = lens.delta_pix * lens.num_pix
 
-    return model_extension.critical_curve_caustics(lens.kwargs_lens_lensing_units,
+    return model_extension.critical_curve_caustics(lens.kwargs_lens,
                                                    compute_window=frame_size,
                                                    grid_scale=lens.delta_pix,
                                                    center_x=0.,
