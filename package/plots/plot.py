@@ -2,7 +2,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
-from package.plots import plot_util
 
 # TODO use **kwargs for params like colorbar label, title, filepath, colorbar boolean, etc.
 # TODO make sure the plot can be shown in a nb as well as saved
@@ -55,18 +54,19 @@ def plot(array, title='', cmap='viridis', colorbar=False, colorbar_label=None):
 
 
 def plot_grid(array_list, side, cmap='viridis'):
-    f, ax = plt.subplots(nrows=side, ncols=side, figsize=(20, 20), gridspec_kw={'hspace': 0.02,'wspace':0.02})
+    f, ax = plt.subplots(nrows=side, ncols=side, figsize=(20, 20), gridspec_kw={'hspace': 0.02, 'wspace': 0.02})
 
     for i, image in enumerate(array_list):
-        ax[i//side,i%side].imshow(np.log10(image), cmap=cmap)
-        ax[i//side,i%side].get_xaxis().set_visible(False)
-        ax[i//side,i%side].get_yaxis().set_visible(False)
+        ax[i // side, i % side].imshow(np.log10(image), cmap=cmap)
+        ax[i // side, i % side].get_xaxis().set_visible(False)
+        ax[i // side, i % side].get_yaxis().set_visible(False)
 
     plt.show()
 
 
 def plot_list(array_list, cmap='viridis'):
-    f, ax = plt.subplots(nrows=1, ncols=len(array_list), figsize=(len(array_list) * 4, 4), gridspec_kw={'hspace': 0.02,'wspace':0.02})
+    f, ax = plt.subplots(nrows=1, ncols=len(array_list), figsize=(len(array_list) * 4, 4),
+                         gridspec_kw={'hspace': 0.02, 'wspace': 0.02})
 
     for i, array in enumerate(array_list):
         ax[i].imshow(array, cmap='viridis')
@@ -77,7 +77,8 @@ def plot_list(array_list, cmap='viridis'):
 
 
 def log10_list(array_list, cmap='viridis'):
-    f, ax = plt.subplots(nrows=1, ncols=len(array_list), figsize=(len(array_list) * 4, 4), gridspec_kw={'hspace': 0.02,'wspace':0.02})
+    f, ax = plt.subplots(nrows=1, ncols=len(array_list), figsize=(len(array_list) * 4, 4),
+                         gridspec_kw={'hspace': 0.02, 'wspace': 0.02})
 
     for i, array in enumerate(array_list):
         ax[i].imshow(np.log10(array), cmap='viridis')

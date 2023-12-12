@@ -1,5 +1,5 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def azimuthalAverage(image, center=None):
@@ -16,7 +16,7 @@ def azimuthalAverage(image, center=None):
     y, x = np.indices(image.shape)
 
     if not center:
-        center = np.array([(x.max()-x.min())/2.0, (x.max()-x.min())/2.0])
+        center = np.array([(x.max() - x.min()) / 2.0, (x.max() - x.min()) / 2.0])
 
     r = np.hypot(x - center[0], y - center[1])
 
@@ -30,9 +30,9 @@ def azimuthalAverage(image, center=None):
 
     # Find all pixels that fall within each radial bin.
     deltar = r_int[1:] - r_int[:-1]  # Assumes all radii represented
-    rind = np.where(deltar)[0]       # location of changed radius
-    nr = rind[1:] - rind[:-1]        # number of radius bin
-    
+    rind = np.where(deltar)[0]  # location of changed radius
+    nr = rind[1:] - rind[:-1]  # number of radius bin
+
     # Cumulative sum to figure out sums for each radius bin
     csim = np.cumsum(i_sorted, dtype=float)
     tbin = csim[rind[1:]] - csim[rind[:-1]]
@@ -42,8 +42,7 @@ def azimuthalAverage(image, center=None):
     return radial_prof
 
 
-
-def twoD_ps(data=None,pix_size=0,rnge=100,shift=0,show_ps=False):
+def twoD_ps(data=None, pix_size=0, rnge=100, shift=0, show_ps=False):
     """
     takes in a 2D array and returns the 2D FFT:
     inputs:
@@ -64,26 +63,26 @@ def twoD_ps(data=None,pix_size=0,rnge=100,shift=0,show_ps=False):
     ind_ps = []
     for i in data:
         ft = np.fft.fft2(i)
-        ps2D = np.abs(ft)**2
+        ps2D = np.abs(ft) ** 2
         ind_ps.append(ps2D)
 
-    A_pix = pix_size**2
-    A_box = rnge**2
-    norm = A_pix**2/A_box
+    A_pix = pix_size ** 2
+    A_box = rnge ** 2
+    norm = A_pix ** 2 / A_box
 
-    ind_ps_x = [norm*np.fft.fftshift(i) for i in ind_ps]
-    tot_ps = np.mean(ind_ps_x,axis=0)
+    ind_ps_x = [norm * np.fft.fftshift(i) for i in ind_ps]
+    tot_ps = np.mean(ind_ps_x, axis=0)
     tot_ps2 = np.log10(tot_ps)
 
-    kx = 2*np.pi*np.fft.fftfreq(tot_ps.shape[0],d=pix_size)
+    kx = 2 * np.pi * np.fft.fftfreq(tot_ps.shape[0], d=pix_size)
     kx = np.fft.fftshift(kx)
-    ky = 2*np.pi*np.fft.fftfreq(tot_ps.shape[1],d=pix_size)
+    ky = 2 * np.pi * np.fft.fftfreq(tot_ps.shape[1], d=pix_size)
     ky = np.fft.fftshift(ky)
 
     if show_ps == True:
-        fig,(ax1,ax2) = plt.subplots(2,sharey=True)
-        ax1.imshow(tot_ps,extent=[min(kx),max(kx),min(ky),max(ky)],interpolation='nearest')
-        ax2.imshow(tot_ps2,extent=[min(kx),max(kx),min(ky),max(ky)],interpolation='nearest')
+        fig, (ax1, ax2) = plt.subplots(2, sharey=True)
+        ax1.imshow(tot_ps, extent=[min(kx), max(kx), min(ky), max(ky)], interpolation='nearest')
+        ax2.imshow(tot_ps2, extent=[min(kx), max(kx), min(ky), max(ky)], interpolation='nearest')
         plt.show()
 
     return ind_ps_x, tot_ps, kx, ky

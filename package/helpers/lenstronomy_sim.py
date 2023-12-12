@@ -1,10 +1,11 @@
 from copy import deepcopy
+
 import numpy as np
-from lenstronomy.SimulationAPI.ObservationConfig.Roman import Roman
-from lenstronomy.SimulationAPI.ObservationConfig.LSST import LSST
-from lenstronomy.SimulationAPI.ObservationConfig.HST import HST
-from lenstronomy.SimulationAPI.sim_api import SimAPI
 from lenstronomy.Plots import plot_util
+from lenstronomy.SimulationAPI.ObservationConfig.HST import HST
+from lenstronomy.SimulationAPI.ObservationConfig.LSST import LSST
+from lenstronomy.SimulationAPI.ObservationConfig.Roman import Roman
+from lenstronomy.SimulationAPI.sim_api import SimAPI
 
 
 def simulate_image(kwargs_model, kwargs_numerics, kwargs_lens, kwargs_lens_light, kwargs_source_light):

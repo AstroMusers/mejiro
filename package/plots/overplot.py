@@ -3,7 +3,7 @@ from lenstronomy.LensModel.lens_model_extensions import LensModelExtensions
 
 def source_position(ax, lens):
     source_x, source_y = lens.get_source_pixel_coords()
-    
+
     return ax.scatter(source_x, source_y, edgecolor='y', facecolor='none', s=150, label='Source position')
 
 
@@ -53,8 +53,8 @@ def _get_caustics_critical_curves(lens):
 
     frame_size = lens.delta_pix * lens.num_pix
 
-    return model_extension.critical_curve_caustics(lens.kwargs_lens_lensing_units, 
+    return model_extension.critical_curve_caustics(lens.kwargs_lens_lensing_units,
                                                    compute_window=frame_size,
-                                                   grid_scale=lens.delta_pix, 
-                                                   center_x=0., 
+                                                   grid_scale=lens.delta_pix,
+                                                   center_x=0.,
                                                    center_y=0.)

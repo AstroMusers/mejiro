@@ -11,7 +11,8 @@ from tqdm import tqdm
 from package.helpers.roman_params import RomanParameters
 
 
-def build_pandeia_calc(csv, array, lens, band='f106', side=5., num_samples=None, oversample_factor=None, suppress_output=False):
+def build_pandeia_calc(csv, array, lens, band='f106', side=5., num_samples=None, oversample_factor=None,
+                       suppress_output=False):
     calc = build_default_calc('roman', 'wfi', 'imaging')
 
     # set scene size settings
@@ -35,7 +36,7 @@ def build_pandeia_calc(csv, array, lens, band='f106', side=5., num_samples=None,
         calc, num_point_sources = _phonion_grid(calc, mag_array, lens, oversample_factor, norm_wave, suppress_output)
     else:
         raise Exception('Either provide num_samples to use sampling method or oversample_factor to use grid method')
-    
+
     if not suppress_output:
         print(f'Estimated calculation time: {estimate_calculation_time(num_point_sources)}')
 
@@ -136,13 +137,13 @@ def _phonion_grid(calc, mag_array, lens, oversample_factor, norm_wave, suppress_
 
             # set position
             calc['scene'][i]['position']['x_offset'] = (item_number * (1 / 9) * (
-                        1 / oversample_factor)) + lens.ra_at_xy_0  # arcsec
+                    1 / oversample_factor)) + lens.ra_at_xy_0  # arcsec
             calc['scene'][i]['position']['y_offset'] = (row_number * (1 / 9) * (
-                        1 / oversample_factor)) + lens.dec_at_xy_0  # arcsec
+                    1 / oversample_factor)) + lens.dec_at_xy_0  # arcsec
 
             i += 1
 
-    if not suppress_output:        
+    if not suppress_output:
         print(f'Point source conversion complete: placed {i} point sources')
 
     return calc, i

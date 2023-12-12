@@ -1,16 +1,12 @@
 import os
+import pickle
 import sys
-import numpy as np
-from glob import glob
-import multiprocessing
+
+import hydra
 import pandas as pd
 from tqdm import tqdm
-from copy import deepcopy
-from multiprocessing import Pool
-import hydra
-import pickle
 
-from package.helpers.lens import Lens
+from package.lenses.lens import Lens
 from package.utils import util
 
 
@@ -24,13 +20,13 @@ def main(config):
         sys.path.append(repo_dir)
 
     # get output of SkyPy pipeline
-    df = pd.read_csv(os.path.join('/data','bwedig', 'roman-population', 'data', 'dictparaggln_Area00000010.csv'))
+    df = pd.read_csv(os.path.join('/data', 'bwedig', 'roman-population', 'data', 'dictparaggln_Area00000010.csv'))
 
     lens_list = []
-    
+
     # TODO implement multiprocessing to parallelize
     # generate the lens objects
-    for i, row in tqdm(df.iterrows(), total=df.shape[0]):       
+    for i, row in tqdm(df.iterrows(), total=df.shape[0]):
         lens_list.append(generate_lens(row))
 
     # # split up the rows into batches based on core count
@@ -45,21 +41,21 @@ def main(config):
     #     for i, output in enumerate(pool.map(generate_lens, batch)):
     #         (lens) = output
     #         lens_list.append(lens)
-                         
+
     # pickle lens list
     with open(os.path.join(pickle_dir, 'skypy_output_lens_list'), 'ab') as results_file:
         pickle.dump(lens_list, results_file)
 
 
 def generate_lens(row):
-    return Lens(z_lens=row['redslens'], 
-                z_source=row['redssour'], 
-                theta_e=row['angleins'], 
-                lens_x=row['xposlens'], 
-                lens_y=row['yposlens'], 
-                source_x=row['xpossour'], 
-                source_y=row['ypossour'], 
-                mag_lens=row['magtlensF106'], 
+    return Lens(z_lens=row['redslens'],
+                z_source=row['redssour'],
+                theta_e=row['angleins'],
+                lens_x=row['xposlens'],
+                lens_y=row['yposlens'],
+                source_x=row['xpossour'],
+                source_y=row['ypossour'],
+                mag_lens=row['magtlensF106'],
                 mag_source=row['magtsourF106'])
 
 

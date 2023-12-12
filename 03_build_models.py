@@ -1,23 +1,14 @@
-import os
-import sys
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import colors
-from glob import glob
 import multiprocessing
-import pandas as pd
-from tqdm import tqdm
-import time
-from copy import deepcopy
-from multiprocessing import Pool
-import hydra
+import os
 import pickle
+import sys
+from multiprocessing import Pool
 
-from package.helpers.test_physical_lens import TestPhysicalLens
-from package.helpers.lens import Lens
-from package.plots import diagnostic_plot, plot
+import hydra
+import numpy as np
+from tqdm import tqdm
+
 from package.utils import util
-from package.helpers import pyhalo
 
 
 @hydra.main(version_base=None, config_path='config', config_name='config.yaml')
@@ -43,7 +34,7 @@ def main(config):
     # process the batches
     i = 0
     for batch in tqdm(batches):
-        pool = Pool(processes=process_count) 
+        pool = Pool(processes=process_count)
         for output in pool.map(get_model, batch):
             (model) = output
             np.save(os.path.join(array_dir, f'skypy_output_{str(i).zfill(8)}.npy'), model)

@@ -1,10 +1,11 @@
 import os
 import sys
+
 import numpy as np
 from tqdm import tqdm
 
-from package.helpers import test_physical_lens, pyhalo
-from package.pandeia import pandeia_input
+from package.helpers import pyhalo, pandeia_input
+from package.lenses import test_physical_lens
 
 
 def main():
@@ -34,11 +35,11 @@ def main():
 
         # build Pandeia input
         calc, num_point_sources = pandeia_input.build_pandeia_calc(csv=csv,
-                                                array=model, 
-                                                lens=lens, 
-                                                band='f106', 
-                                                num_samples=num_samples)
-        
+                                                                   array=model,
+                                                                   lens=lens,
+                                                                   band='f106',
+                                                                   num_samples=num_samples)
+
         # get estimated calculation time
         estimated_times.append(pandeia_input.estimate_calculation_time(num_point_sources))
 
@@ -46,7 +47,7 @@ def main():
         image, execution_time = pandeia_input.get_pandeia_image(calc)
         execution_times.append(execution_time)
         point_source_count.append(num_point_sources)
-        
+
         # save detector image
         np.save(os.path.join(array_dir, f'grid_oversampling_{grid_oversample}'), image)
 

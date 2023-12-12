@@ -3,7 +3,7 @@ import numpy as np
 
 
 def plot_projected_mass(lens):
-    npix = 100 
+    npix = 100
     _x = _y = np.linspace(-1.2, 1.2, npix)
     xx, yy = np.meshgrid(_x, _y)
     shape0 = xx.shape

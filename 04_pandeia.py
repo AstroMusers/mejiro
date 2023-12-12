@@ -1,24 +1,15 @@
+import multiprocessing
 import os
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import colors
 from glob import glob
-import multiprocessing
-import pandas as pd
-from tqdm import tqdm
-import time
-from copy import deepcopy
 from multiprocessing import Pool
-import hydra
-import pickle
 
-from package.helpers.test_physical_lens import TestPhysicalLens
-from package.helpers.lens import Lens
-from package.plots import diagnostic_plot, plot
+import hydra
+import numpy as np
+from tqdm import tqdm
+
+from package.helpers import pandeia_input
 from package.utils import util
-from package.helpers import pyhalo
-from package.pandeia import pandeia_input
 
 
 @hydra.main(version_base=None, config_path='config', config_name='config.yaml')
@@ -44,7 +35,7 @@ def main(config):
     # process the batches
     i = 0
     for batch in tqdm(batches):
-        pool = Pool(processes=process_count) 
+        pool = Pool(processes=process_count)
         for output in pool.map(get_image, batch):
             (image, execution_time) = output
             np.save(os.path.join(array_dir, f'skypy_output_pandeia_{str(i).zfill(8)}.npy'), image)
@@ -53,7 +44,8 @@ def main(config):
 
 # TODO fix - this might require quite a bit of refactoring of pandeia_input.py
 def get_image(array):
-    calc, num_point_sources = pandeia_input.build_pandeia_calc(csv, array, lens, band, side=side, num_samples=num_samples, suppress_output=True)
+    calc, num_point_sources = pandeia_input.build_pandeia_calc(csv, array, lens, band, side=side,
+                                                               num_samples=num_samples, suppress_output=True)
 
     return pandeia_input.get_pandeia_image(calc, suppress_output=False)
 

@@ -1,18 +1,9 @@
 import os
-import sys
-import time
-import datetime
-import numpy as np
-import pandas as pd
-from tqdm import tqdm
-import traceback
 
-from package.helpers.lens import Lens
-from package.helpers import pyhalo, roman_params
-from package.pandeia import pandeia_input
+from package.helpers import pyhalo, roman_params, pandeia_input
 
 
-def main(lens, grid_oversample, num_samples):   
+def main(lens, grid_oversample, num_samples):
     csv = os.path.join('/nfshome', 'bwedig', 'roman-pandeia', 'data', 'roman_spacecraft_and_instrument_parameters.csv')
     roman_pixel_scale = roman_params.RomanParameters(csv).get_pixel_scale()
 
@@ -35,12 +26,12 @@ def main(lens, grid_oversample, num_samples):
 
     # build Pandeia input
     calc, num_point_sources = pandeia_input.build_pandeia_calc(csv=csv,
-                                            array=model, 
-                                            lens=lens,
-                                            side=side, 
-                                            band='f106', 
-                                            num_samples=num_samples,
-                                            suppress_output=True)
+                                                               array=model,
+                                                               lens=lens,
+                                                               side=side,
+                                                               band='f106',
+                                                               num_samples=num_samples,
+                                                               suppress_output=True)
 
     # do Pandeia calculation        
     image, execution_time = pandeia_input.get_pandeia_image(calc, suppress_output=True)

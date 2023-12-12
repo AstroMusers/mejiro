@@ -1,6 +1,5 @@
-from scipy.optimize import curve_fit
-import matplotlib.pyplot as plt
 import numpy as np
+from scipy.optimize import curve_fit
 
 
 def linear_fit_through_origin(x, y):

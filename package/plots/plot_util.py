@@ -1,7 +1,8 @@
 from os import path
+
 import matplotlib.pyplot as plt
-from matplotlib import colors
 import numpy as np
+from matplotlib import colors
 
 from package.utils import util
 

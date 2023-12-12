@@ -1,15 +1,12 @@
 import os
 import sys
+
+import hydra
 import numpy as np
 from tqdm import tqdm
-import pandas as pd
-import hydra
-import multiprocessing
-from multiprocessing import Pool
-from itertools import repeat
 
-from package.helpers import test_physical_lens, pyhalo, roman_params
-from package.pandeia import pandeia_input
+from package.helpers import pyhalo, pandeia_input
+from package.lenses import test_physical_lens
 from package.utils import util
 
 
@@ -26,12 +23,13 @@ def main(config):
     # get Roman pixel scale
     # csv = os.path.join(repo_dir, 'data', 'roman_spacecraft_and_instrument_parameters.csv')
     # roman_pixel_scale = roman_params.RomanParameters(csv).get_pixel_scale()
-    
+
     # num_pix = 51  # (45 + (2 * 3))
     # side = 5.61  # (4.95 + (2 * 0.33))
     # grid_oversample = 5
     num_samples_list = [10, 100, 1000, 10000, 100000, 1000000]
-    num_samples_list = [int(i) for i in num_samples_list]  # convert to list of int as scientific notation in Python gives float
+    num_samples_list = [int(i) for i in
+                        num_samples_list]  # convert to list of int as scientific notation in Python gives float
 
     # use test lens
     lens = test_physical_lens.TestPhysicalLens()
@@ -60,17 +58,18 @@ def generate(lens, num_samples):
     model = lens.get_array(num_pix=51 * 5, side=5.61)  # .get_array(num_pix=97, side=10.67)
 
     # build Pandeia input
-    calc, _ = pandeia_input.build_pandeia_calc(csv='/nfshome/bwedig/roman-pandeia/data/roman_spacecraft_and_instrument_parameters.csv',
-                                            array=model, 
-                                            lens=lens, 
-                                            band='f106',
-                                            num_samples=num_samples,
-                                            suppress_output=True)
+    calc, _ = pandeia_input.build_pandeia_calc(
+        csv='/nfshome/bwedig/roman-pandeia/data/roman_spacecraft_and_instrument_parameters.csv',
+        array=model,
+        lens=lens,
+        band='f106',
+        num_samples=num_samples,
+        suppress_output=True)
 
     # do Pandeia calculation        
     image, _ = pandeia_input.get_pandeia_image(calc, suppress_output=True)
-    
-    return image  
+
+    return image
 
 
 if __name__ == '__main__':

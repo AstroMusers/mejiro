@@ -1,15 +1,15 @@
+import datetime
 import os
 import sys
 import time
-import datetime
+
+import hydra
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-import hydra
 
-from package.helpers.lens import Lens
-from package.helpers import pyhalo, roman_params
-from package.pandeia import pandeia_input
+from package.helpers import pyhalo, roman_params, pandeia_input
+from package.lenses.lens import Lens
 from package.utils import util
 
 
@@ -50,16 +50,16 @@ def main(config):
         #     limit += 1
         #     continue
 
-        lens = Lens(z_lens = row['redslens'], 
-                    z_source=row['redssour'], 
-                    sigma_v=row['velodisp'], 
-                    lens_x=row['xposlens'], 
-                    lens_y=row['yposlens'], 
-                    source_x=row['xpossour'], 
-                    source_y=row['ypossour'], 
-                    mag_lens=row['magtlensF106'], 
+        lens = Lens(z_lens=row['redslens'],
+                    z_source=row['redssour'],
+                    sigma_v=row['velodisp'],
+                    lens_x=row['xposlens'],
+                    lens_y=row['yposlens'],
+                    source_x=row['xpossour'],
+                    source_y=row['ypossour'],
+                    mag_lens=row['magtlensF106'],
                     mag_source=row['magtsourF106'])
-        
+
         # add CDM subhalos
         try:
             lens.add_subhalos(*pyhalo.generate_CDM_halos(lens.z_lens, lens.z_source))
@@ -83,11 +83,11 @@ def main(config):
 
         # build Pandeia input
         calc, num_point_sources = pandeia_input.build_pandeia_calc(csv=csv,
-                                                array=model, 
-                                                lens=lens,
-                                                side=10., 
-                                                band='f106', 
-                                                num_samples=num_samples)
+                                                                   array=model,
+                                                                   lens=lens,
+                                                                   side=10.,
+                                                                   band='f106',
+                                                                   num_samples=num_samples)
 
         # get estimated calculation time
         estimated_times.append(pandeia_input.estimate_calculation_time(num_point_sources))
@@ -95,7 +95,7 @@ def main(config):
         # do Pandeia calculation        
         image, execution_time = pandeia_input.get_pandeia_image(calc)
         pandeia_execution_times.append(execution_time)
-        
+
         # save detector image
         np.save(os.path.join(array_dir, f'skypy_output_{str(i).zfill(5)}.npy'), image)
 
