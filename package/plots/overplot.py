@@ -1,8 +1,8 @@
 from lenstronomy.LensModel.lens_model_extensions import LensModelExtensions
 
 
-def text_boxes(ax, text_list, fontsize=18):
-    props = dict(boxstyle='round', facecolor='w', alpha=0.5)
+def text_boxes(ax, text_list, fontsize=18, alpha=0.5):
+    props = dict(boxstyle='round', facecolor='w', alpha=alpha)
     for i, each in enumerate(ax):
         each.text(0.05, 0.95, text_list[i], transform=each.transAxes, fontsize=fontsize,
             verticalalignment='top', bbox=props)

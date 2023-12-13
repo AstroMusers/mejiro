@@ -1,5 +1,37 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.stats as stats
+
+
+def twod_ft(array):
+    fourier_image = np.fft.fftn(array)
+    fourier_amplitudes = np.abs(fourier_image)**2
+    return fourier_amplitudes
+
+
+def power_spectrum(array, k_min=1, k_max=22):
+    npix = array.shape[0]
+
+    fourier_image = np.fft.fftn(array)
+    fourier_amplitudes = np.abs(fourier_image)**2
+
+    kfreq = np.fft.fftfreq(npix) * npix
+    kfreq2D = np.meshgrid(kfreq, kfreq)
+    knrm = np.sqrt(kfreq2D[0]**2 + kfreq2D[1]**2)
+
+    knrm = knrm.flatten()
+    fourier_amplitudes = fourier_amplitudes.flatten()
+
+    kbins = np.arange(0.5, npix//2+1, 1.)
+    kvals = 0.5 * (kbins[1:] + kbins[:-1])
+    kvals = np.linspace(k_min, k_max, 22)
+
+    Abins, _, _ = stats.binned_statistic(knrm, fourier_amplitudes,
+                                        statistic = "mean",
+                                        bins = kbins)
+    Abins *= np.pi * (kbins[1:]**2 - kbins[:-1]**2)
+
+    return kvals, Abins
 
 
 def azimuthalAverage(image, center=None):

@@ -22,23 +22,38 @@ def main(config):
         sys.path.append(repo_dir)
 
     # open pickled lens list
-    with open(os.path.join(pickle_dir, 'skypy_output_lens_list_with_subhalos'), 'rb') as results_file:
+    with open(os.path.join(pickle_dir, '02_skypy_output_lens_list_with_subhalos'), 'rb') as results_file:
         lens_list = pickle.load(results_file)
 
-    # split up the lenses into batches based on core count
-    cpu_count = multiprocessing.cpu_count()
-    process_count = int(cpu_count / 2)  # TODO consider making this larger, but using all CPUs has crashed
-    generator = util.batch_list(lens_list, process_count)
-    batches = list(generator)
+    updated_lens_list = []
 
-    # process the batches
-    i = 0
-    for batch in tqdm(batches):
-        pool = Pool(processes=process_count)
-        for output in pool.map(get_model, batch):
-            (model) = output
-            np.save(os.path.join(array_dir, f'skypy_output_{str(i).zfill(8)}.npy'), model)
-            i += 1
+    # go sequentially so that lens_list is modified
+    grid_oversample = 5
+    for i, lens in tqdm(enumerate(lens_list), total=len(lens_list)):
+        model = lens.get_array(num_pix=97 * grid_oversample, side=10.67)
+        np.save(os.path.join(array_dir, f'skypy_output_{str(i).zfill(8)}.npy'), model)
+        updated_lens_list.append(lens)
+
+    # # split up the lenses into batches based on core count
+    # cpu_count = multiprocessing.cpu_count()
+    # process_count = int(cpu_count / 2)  # TODO consider making this larger, but using all CPUs has crashed
+    # generator = util.batch_list(lens_list, process_count)
+    # batches = list(generator)
+
+    # # process the batches
+    # i = 0
+    # for batch in tqdm(batches):
+    #     pool = Pool(processes=process_count)
+    #     for output in pool.map(get_model, batch):
+    #         (model) = output
+    #         np.save(os.path.join(array_dir, f'skypy_output_{str(i).zfill(8)}.npy'), model)
+    #         i += 1
+
+    # pickle lens list
+    pickle_target = os.path.join(pickle_dir, '03_skypy_output_lens_list_models')
+    util.delete_if_exists(pickle_target)
+    with open(pickle_target, 'ab') as results_file:
+        pickle.dump(updated_lens_list, results_file)
 
 
 def get_model(lens):

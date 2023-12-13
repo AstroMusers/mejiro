@@ -16,6 +16,14 @@ from package.utils import util
 #                     # TODO this is horrible, fix this
 
 
+def asinh(array):
+    array = np.arcsinh(array)
+    array -= np.amin(array)
+    array /= np.amax(array)
+
+    return array
+
+
 def get_norm(array_list, linear_width):
     min_list, max_list = [], []
     for array in array_list:
@@ -29,6 +37,7 @@ def get_norm(array_list, linear_width):
 
 def get_limit(array):
     abs_min, abs_max = abs(np.min(array)), abs(np.max(array))
+
     return np.max([abs_min, abs_max])
 
 

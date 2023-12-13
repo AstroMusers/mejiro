@@ -20,7 +20,7 @@ def main(config):
         sys.path.append(repo_dir)
 
     # open pickled lens list
-    with open(os.path.join(pickle_dir, 'skypy_output_lens_list'), 'rb') as results_file:
+    with open(os.path.join(pickle_dir, '01_skypy_output_lens_list'), 'rb') as results_file:
         lens_list = pickle.load(results_file)
 
     # TODO TEMP: for now, just grab the first handful
@@ -41,7 +41,9 @@ def main(config):
                 lens_list.append(lens)
 
     # pickle lens list
-    with open(os.path.join(pickle_dir, 'skypy_output_lens_list_with_subhalos'), 'ab') as results_file:
+    pickle_target = os.path.join(pickle_dir, '02_skypy_output_lens_list_with_subhalos')
+    util.delete_if_exists(pickle_target)
+    with open(pickle_target, 'ab') as results_file:
         pickle.dump(lens_list, results_file)
 
 

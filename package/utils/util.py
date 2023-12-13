@@ -14,6 +14,11 @@ def batch_list(list, n):
 def scientific_notation_string(input):
     return '{:.2e}'.format(input)
 
+
+def delete_if_exists(path):
+    if os.path.exists(path):
+        os.remove(path)
+
 # TODO finish
 # def scientific_notation_string(input):
 #     # convert to Python scientific notion
