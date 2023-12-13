@@ -14,7 +14,7 @@ from package.utils import util
 @hydra.main(version_base=None, config_path='config', config_name='config.yaml')
 def main(config):
     array_dir, pickle_dir, repo_dir = config.machine.array_dir, config.machine.pickle_dir, config.machine.repo_dir
-    array_dir = os.path.join(array_dir, 'sample_skypy_lens')
+    array_dir = os.path.join(array_dir, 'sample_skypy_lens', 'no_grid_oversample')
     pickle_dir = os.path.join(pickle_dir, 'pyhalo')
     util.create_directory_if_not_exists(array_dir)
     util.create_directory_if_not_exists(pickle_dir)
@@ -55,12 +55,12 @@ def main(config):
 
     for num_samples in tqdm(num_samples_list):
         image = generate(lens, num_samples)
-        np.save(os.path.join(array_dir, f'sample_skypy_lens_{num_samples}'), image)
+        np.save(os.path.join(array_dir, f'sample_skypy_lens_1_{num_samples}'), image)
 
 
 def generate(lens, num_samples):
     # (lens, num_samples) = input
-    model = lens.get_array(num_pix=51 * 5, side=5.61)  # .get_array(num_pix=97, side=10.67)
+    model = lens.get_array(num_pix=51, side=5.61)  # .get_array(num_pix=97, side=10.67)
 
     # build Pandeia input
     calc, _ = pandeia_input.build_pandeia_calc(
