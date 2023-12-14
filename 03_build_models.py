@@ -8,7 +8,7 @@ import hydra
 import numpy as np
 from tqdm import tqdm
 
-from package.utils import util
+from mejiro.utils import util
 
 
 @hydra.main(version_base=None, config_path='config', config_name='config.yaml')

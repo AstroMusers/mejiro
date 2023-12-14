@@ -7,8 +7,8 @@ from multiprocessing import Pool
 import hydra
 from tqdm import tqdm
 
-from package.helpers import pyhalo
-from package.utils import util
+from mejiro.helpers import pyhalo
+from mejiro.utils import util
 
 
 @hydra.main(version_base=None, config_path='config', config_name='config.yaml')

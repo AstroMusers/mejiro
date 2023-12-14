@@ -8,8 +8,8 @@ import hydra
 import pandas as pd
 from tqdm import tqdm
 
-from package.lenses.lens import Lens
-from package.utils import util
+from mejiro.lenses.lens import Lens
+from mejiro.utils import util
 
 
 @hydra.main(version_base=None, config_path='config', config_name='config.yaml')

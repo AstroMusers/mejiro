@@ -8,7 +8,7 @@ from pandeia.engine.calc_utils import build_default_calc, build_default_source
 from pandeia.engine.perform_calculation import perform_calculation
 from tqdm import tqdm
 
-from package.helpers.roman_params import RomanParameters
+from mejiro.helpers.roman_params import RomanParameters
 
 
 def build_pandeia_calc(csv, array, lens, band='f106', side=5., num_samples=None, oversample_factor=None,

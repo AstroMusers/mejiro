@@ -2,14 +2,14 @@ from astropy.cosmology import FlatLambdaCDM
 from lenstronomy.LensModel.lens_model import LensModel
 from lenstronomy.LightModel.light_model import LightModel
 
-from package.lenses.lens import Lens
+from mejiro.lenses.lens import Lens
 
 
-class SampleSkyPyLens(Lens):
+class TestPhysicalLens(Lens):
     def __init__(self):
         # define redshifts and cosmology
-        self.z_lens = 0.643971
-        self.z_source = 1.627633
+        self.z_lens = 0.5
+        self.z_source = 1.5
         self.cosmo = FlatLambdaCDM(H0=70, Om0=0.3, Ob0=0.05)
         # lens_cosmo = LensCosmo(z_lens=self.z_lens, z_source=self.z_source, cosmo=cosmo)
 
@@ -20,9 +20,9 @@ class SampleSkyPyLens(Lens):
         self.lens_model_class = LensModel(self.lens_model_list)
         kwargs_mass = {
             # 'sigma_v': 250,  # velocity dispersion in units km/s
-            'theta_E': 0.975908,
-            'center_x': 0.042010,
-            'center_y': 0.038204,
+            'theta_E': 1.,
+            'center_x': 0,
+            'center_y': 0,
             'e1': 0.1,
             'e2': 0
         }
@@ -36,13 +36,13 @@ class SampleSkyPyLens(Lens):
         self.lens_light_model_list = ['SERSIC_ELLIPSE']
         self.lens_light_model_class = LightModel(self.lens_light_model_list)
         kwargs_sersic_lens = {
-            'magnitude': 20.934556,
+            'magnitude': 22,
             'R_sersic': 0.6,
             'n_sersic': 2,
             'e1': -0.1,
             'e2': 0.1,
-            'center_x': 0.042010,
-            'center_y': 0.038204
+            'center_x': 0.05,
+            'center_y': 0
         }
         self.kwargs_lens_light = [kwargs_sersic_lens]
 
@@ -52,13 +52,13 @@ class SampleSkyPyLens(Lens):
         self.source_redshift_list = [self.z_source]
         self.source_model_class = LightModel(self.source_model_list)
         kwargs_sersic = {
-            'magnitude': 23.902054,
+            'magnitude': 26,
             'R_sersic': 0.1,
             'n_sersic': 1,
             'e1': -0.1,
             'e2': 0.1,
-            'center_x': 0.237250,
-            'center_y': -0.090416
+            'center_x': 0.1,
+            'center_y': 0
         }
         self.kwargs_source = [kwargs_sersic]
 

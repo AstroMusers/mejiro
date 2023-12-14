@@ -6,9 +6,9 @@ import hydra
 import numpy as np
 from tqdm import tqdm
 
-from package.helpers import pyhalo, pandeia_input
-from package.lenses import sample_skypy_lens
-from package.utils import util
+from mejiro.helpers import pyhalo, pandeia_input
+from mejiro.lenses import sample_skypy_lens
+from mejiro.utils import util
 
 
 @hydra.main(version_base=None, config_path='config', config_name='config.yaml')

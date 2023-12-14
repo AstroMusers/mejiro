@@ -4,8 +4,8 @@ import sys
 import numpy as np
 from tqdm import tqdm
 
-from package.helpers import pyhalo, pandeia_input
-from package.lenses import test_physical_lens
+from mejiro.helpers import pyhalo, pandeia_input
+from mejiro.lenses import test_physical_lens
 
 
 def main():

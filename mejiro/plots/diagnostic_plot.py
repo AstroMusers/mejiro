@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib import colors
 from scipy.fft import fft2
 
-from package.plots import plot_util
+from mejiro.plots import plot_util
 
 
 def residual_compare(ax, array_list, title_list, linear_width):

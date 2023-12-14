@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import colors
 
-from package.utils import util
+from mejiro.utils import util
 
 
 # def __kwargs_handler(kwargs):

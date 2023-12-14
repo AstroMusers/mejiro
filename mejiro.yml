@@ -1,4 +1,4 @@
-name: pandeia
+name: mejiro
 channels:
   - conda-forge
   - defaults

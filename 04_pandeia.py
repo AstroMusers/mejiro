@@ -8,8 +8,8 @@ import hydra
 import numpy as np
 from tqdm import tqdm
 
-from package.helpers import pandeia_input
-from package.utils import util
+from mejiro.helpers import pandeia_input
+from mejiro.utils import util
 
 
 @hydra.main(version_base=None, config_path='config', config_name='config.yaml')

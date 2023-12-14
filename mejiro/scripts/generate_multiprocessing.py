@@ -1,9 +1,9 @@
 import os
 
-from package.helpers import pyhalo, roman_params, pandeia_input
+from mejiro.helpers import pyhalo, roman_params, pandeia_input
 
 
-def main(lens):
+def main(lens, grid_oversample, num_samples):
     csv = os.path.join('/nfshome', 'bwedig', 'roman-pandeia', 'data', 'roman_spacecraft_and_instrument_parameters.csv')
     roman_pixel_scale = roman_params.RomanParameters(csv).get_pixel_scale()
 
@@ -13,9 +13,6 @@ def main(lens):
     except:
         # traceback.print_exc()
         return None, None, None
-
-    grid_oversample = 3
-    num_samples = 100000
 
     buffer = 0.5
     side = 10.
