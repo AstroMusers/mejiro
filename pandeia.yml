@@ -3,12 +3,12 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - acstools
   - astroquery
   - jupyter
   - lenstronomy
-  - photutils
+  - pip
   - tqdm
   - pip:
       - pandeia-engine==3.0
-      - regions
+      - pyhalo
+      - hydra-core

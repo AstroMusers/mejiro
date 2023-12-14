@@ -41,8 +41,14 @@ savefig.pad_inches : 0.05
 # Use serif fonts
 # font.size : 24
 font.family : serif
-font.serif : Computer Modern Roman
-font.monospace : Computer Modern Typewriter
+
+# LaTeX fonts
+# font.serif : Computer Modern Roman
+# font.monospace : Computer Modern Typewriter
+
+font.serif : Times
+font.monospace : Times
+
 mathtext.fontset : dejavuserif
 
 # Use LaTeX for math formatting

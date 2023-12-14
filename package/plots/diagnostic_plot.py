@@ -6,7 +6,15 @@ from scipy.fft import fft2
 from package.plots import plot_util
 
 
-# TODO execution time-dependence of whatever other parameters I can vary
+def residual_compare(ax, array_list, title_list, linear_width):
+    norm = plot_util.get_norm(array_list, linear_width)
+
+    for i, array in enumerate(array_list):
+        axis = ax[i].imshow(array, cmap='bwr', norm=norm)
+        ax[i].set_title(title_list[i])
+        ax[i].set_axis_off()
+
+    return axis
 
 
 def fft(filepath, title, array):
@@ -18,7 +26,7 @@ def fft(filepath, title, array):
     plt.show()
 
 
-def residual(filepath, title, array1, array2, normalization=1):
+def residual(array1, array2, title='', normalization=1):
     residual = (array1 - array2) / normalization
     abs_min, abs_max = abs(np.min(residual)), abs(np.max(residual))
     limit = np.max([abs_min, abs_max])
@@ -28,19 +36,19 @@ def residual(filepath, title, array1, array2, normalization=1):
     im = ax.imshow(residual, cmap='bwr', norm=colors.AsinhNorm(linear_width=linear_width, vmin=-limit, vmax=limit))
     ax.set_title(title)
     fig.colorbar(im, ax=ax)
-    plot_util.__savefig(filepath)
+
     plt.show()
 
 
-def execution_time_scatter(filepath, title, execution_times):
+def execution_time_scatter(execution_times, title=''):
     plt.scatter(np.arange(0, len(execution_times)), execution_times)
     plt.title(title)
-    plot_util.__savefig(filepath)
+
     plt.show()
 
 
-def execution_time_hist(filepath, title, execution_times):
+def execution_time_hist(execution_times, title=''):
     plt.hist(execution_times)
     plt.title(title)
-    plot_util.__savefig(filepath)
+
     plt.show()

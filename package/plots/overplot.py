@@ -1,14 +1,12 @@
-import matplotlib
-from matplotlib import rc
-
-rc('font', **{'family': 'serif', 'serif': ['Computer Modern Roman'], 'monospace': ['Computer Modern Typewriter']})
-rc('text', usetex=True)
-
-matplotlib.rcParams['axes.grid'] = False
-matplotlib.rcParams['image.origin'] = 'lower'
-
 from lenstronomy.LensModel.lens_model_extensions import LensModelExtensions
 
+
+def text_boxes(ax, text_list, fontsize=18, alpha=0.5):
+    props = dict(boxstyle='round', facecolor='w', alpha=alpha)
+    for i, each in enumerate(ax):
+        each.text(0.05, 0.95, text_list[i], transform=each.transAxes, fontsize=fontsize,
+            verticalalignment='top', bbox=props)
+    
 
 def source_position(ax, lens):
     source_x, source_y = lens.get_source_pixel_coords()
@@ -62,5 +60,8 @@ def _get_caustics_critical_curves(lens):
 
     frame_size = lens.delta_pix * lens.num_pix
 
-    return model_extension.critical_curve_caustics(lens.kwargs_lens_lensing_units, compute_window=frame_size,
-                                                   grid_scale=lens.delta_pix, center_x=0., center_y=0.)
+    return model_extension.critical_curve_caustics(lens.kwargs_lens,
+                                                   compute_window=frame_size,
+                                                   grid_scale=lens.delta_pix,
+                                                   center_x=0.,
+                                                   center_y=0.)

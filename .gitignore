@@ -1,3 +1,9 @@
+/tutorial_notebooks
+/docs
+# /notebooks/build
+# /notebooks/old
+# /notebooks/test
+
 # Jupyter
 .ipynb_checkpoints
 

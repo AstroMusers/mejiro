@@ -1,0 +1,4 @@
+repo_dir: '/nfshome/bwedig/roman-pandeia'
+data_dir: '/data/bwedig/roman-pandeia'
+array_dir: '/data/bwedig/roman-pandeia/output/arrays'
+pickle_dir: '/data/bwedig/roman-pandeia/output/pickles'
