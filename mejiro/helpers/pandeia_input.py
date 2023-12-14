@@ -19,8 +19,11 @@ def build_pandeia_calc(array, lens, band='f106', side=5.61, num_samples=None, ov
     # set scene size settings
     calc['configuration']['max_scene_size'] = side
 
-    # set filter
+    # set instrument
     calc['configuration']['instrument']['filter'] = band.lower()  # e.g. 'f106'
+
+    # set detector
+    calc['configuration']['detector']['ma_table_name'] = 'hlwas_imaging'
 
     # turn on noise sources
     calc['calculation'] = get_calculation_dict(init=True)

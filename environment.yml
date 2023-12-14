@@ -10,7 +10,8 @@ dependencies:
   - pip
   - tqdm
   - pip:
-      - pandeia-engine==3.1
+      - pandeia-engine==3.0
       - pyhalo
       - hydra-core
       - colossus
+      - mcfit
