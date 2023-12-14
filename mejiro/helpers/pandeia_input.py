@@ -1,4 +1,5 @@
 import datetime
+import os
 import time
 
 import numpy as np
@@ -11,7 +12,7 @@ from tqdm import tqdm
 from mejiro.helpers.roman_params import RomanParameters
 
 
-def build_pandeia_calc(csv, array, lens, band='f106', side=5., num_samples=None, oversample_factor=None,
+def build_pandeia_calc(array, lens, band='f106', side=5.61, num_samples=None, oversample_factor=None,
                        suppress_output=False):
     calc = build_default_calc('roman', 'wfi', 'imaging')
 
@@ -27,8 +28,8 @@ def build_pandeia_calc(csv, array, lens, band='f106', side=5., num_samples=None,
     # convert array from counts/sec to astronomical magnitude
     mag_array = _get_mag_array(lens, array, num_samples, band, suppress_output)
 
-    # add point sources to Pandeia input ('calc')
-    norm_wave = _get_norm_wave(csv, band)
+    # add point sources to Pandeia input
+    norm_wave = _get_norm_wave(band)
     if num_samples:
         calc, num_point_sources = _phonion_sample(calc, mag_array, lens, num_samples, norm_wave, suppress_output)
     elif oversample_factor:
@@ -60,14 +61,8 @@ def get_pandeia_results(calc, suppress_output=False):
 
 def estimate_calculation_time(num_point_sources):
     seconds = round(0.0785 * num_point_sources)
+    
     return str(datetime.timedelta(seconds=seconds))
-
-
-# TODO this isn't quite correct because we're looking at samples instead of point sources
-# maybe estimate based on common lenses? but likely to be inaccurate
-def estimate_total_calculation_time(num_samples_list):
-    total_samples = np.sum(num_samples_list)
-    return estimate_calculation_time(total_samples)
 
 
 def get_pandeia_image(calc, suppress_output=False):
@@ -184,12 +179,19 @@ def _convert_magnitude_to_cps(array, band, suppress_output):
     return cps_array
 
 
-def _get_norm_wave(csv, band):
+def _get_norm_wave(band):
     band = band.upper()
-    roman_params = RomanParameters(csv)
+    roman_params = _get_roman_params()
     filter_center_dict = roman_params.get_filter_centers()
 
     return filter_center_dict[band]
+
+
+def _get_roman_params():
+    import mejiro
+    module_path = os.path.dirname(mejiro.__file__)
+    csv_path = os.path.join(module_path, 'data', 'roman_spacecraft_and_instrument_parameters.csv')
+    return RomanParameters(csv_path)
 
 
 def _phonion_grid(calc, mag_array, lens, oversample_factor, norm_wave, suppress_output=False):

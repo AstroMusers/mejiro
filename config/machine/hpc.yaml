@@ -1,4 +1,10 @@
-repo_dir: '/nfshome/bwedig/roman-pandeia'
-data_dir: '/data/bwedig/roman-pandeia'
-array_dir: '/data/bwedig/roman-pandeia/output/arrays'
-pickle_dir: '/data/bwedig/roman-pandeia/output/pickles'
+# where the repository lives
+repo_dir: /nfshome/bwedig/mejiro
+
+# where output data should be written
+data_dir: /data/bwedig/roman-pandeia
+
+# specify additional directories here to ensure consistency
+array_dir: ${machine.data_dir}/output/arrays
+figure_dir: ${machine.repo_dir}/figures
+pickle_dir: ${machine.data_dir}/output/pickles

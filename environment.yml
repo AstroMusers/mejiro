@@ -3,12 +3,14 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - python
   - astroquery
   - jupyter
   - lenstronomy
   - pip
   - tqdm
   - pip:
-      - pandeia-engine==3.0
+      - pandeia-engine==3.1
       - pyhalo
       - hydra-core
+      - colossus
