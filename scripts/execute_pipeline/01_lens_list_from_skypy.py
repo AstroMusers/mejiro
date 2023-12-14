@@ -12,7 +12,7 @@ from mejiro.lenses.lens import Lens
 from mejiro.utils import util
 
 
-@hydra.main(version_base=None, config_path='config', config_name='config.yaml')
+@hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
 def main(config):
     array_dir, data_dir, repo_dir, pickle_dir = config.machine.array_dir, config.machine.data_dir, config.machine.repo_dir, config.machine.pickle_dir
     util.create_directory_if_not_exists(pickle_dir)

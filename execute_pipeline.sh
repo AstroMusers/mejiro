@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # make sure appropriate conda env is active
-# conda activate pandeia
+# conda activate mejiro
+
+# shellcheck disable=SC2164
+cd scripts/execute_pipeline
 
 # execute Python scripts sequentially
 echo 'Building lens list from SkyPy...'
@@ -12,4 +15,10 @@ echo 'Adding subhalos with PyHalo...'
 python3 02_add_subhalos.py
 echo 'Added subhalos.'
 
+# echo 'Building models...'
 # python3 03_build_models.py
+# echo 'Built models.'
+
+# echo 'Simulating Pandeia images...'
+# python3 04_pandeia.py
+# echo 'Pandeia simulations complete.'

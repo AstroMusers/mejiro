@@ -11,10 +11,10 @@ from mejiro.lenses import sample_skypy_lens
 from mejiro.utils import util
 
 
-@hydra.main(version_base=None, config_path='config', config_name='config.yaml')
+@hydra.main(version_base=None, config_path='../config', config_name='config.yaml')
 def main(config):
     array_dir, pickle_dir, repo_dir = config.machine.array_dir, config.machine.pickle_dir, config.machine.repo_dir
-    array_dir = os.path.join(array_dir, 'sample_skypy_lens')
+    array_dir = os.path.join(array_dir, 'sample_skypy_lens', 'no_grid_oversample')
     pickle_dir = os.path.join(pickle_dir, 'pyhalo')
     util.create_directory_if_not_exists(array_dir)
     util.create_directory_if_not_exists(pickle_dir)
@@ -30,18 +30,18 @@ def main(config):
     # num_pix = 51  # (45 + (2 * 3))
     # side = 5.61  # (4.95 + (2 * 0.33))
     # grid_oversample = 5
-    num_samples_list = [10000]  # 10, 100, 1000, 10000, 100000, 1000000, 10000000
+    num_samples_list = [10, 100, 1000, 10000, 100000, 1000000, 10000000]
     num_samples_list = [int(i) for i in
                         num_samples_list]  # convert to list of int as scientific notation in Python gives float
 
     # use test lens
     lens = sample_skypy_lens.SampleSkyPyLens()
-    # lens_list = [lens] * len(num_samples_list)
+    lens_list = [lens] * len(num_samples_list)
 
     # add CDM subhalos; NB same subhalo population for all
-    # with open(os.path.join(pickle_dir, 'cdm_subhalos_for_sample_skypy_lens'), 'rb') as results_file:
-    #     realizationCDM = pickle.load(results_file)
-    # lens.add_subhalos(*pyhalo.realization_to_lensing_quantities(realizationCDM))
+    with open(os.path.join(pickle_dir, 'cdm_subhalos_for_sample_skypy_lens'), 'rb') as results_file:
+        realizationCDM = pickle.load(results_file)
+    lens.add_subhalos(*pyhalo.realization_to_lensing_quantities(realizationCDM))
 
     # # split up the lenses into batches based on core count
     # cpu_count = multiprocessing.cpu_count()
@@ -55,12 +55,12 @@ def main(config):
 
     for num_samples in tqdm(num_samples_list):
         image = generate(lens, num_samples)
-        np.save(os.path.join(array_dir, f'sample_skypy_lens_no_substructure_{num_samples}'), image)
+        np.save(os.path.join(array_dir, f'sample_skypy_lens_1_{num_samples}'), image)
 
 
 def generate(lens, num_samples):
     # (lens, num_samples) = input
-    model = lens.get_array(num_pix=51 * 5, side=5.61)  # .get_array(num_pix=97, side=10.67)
+    model = lens.get_array(num_pix=51, side=5.61)  # .get_array(num_pix=97, side=10.67)
 
     # build Pandeia input
     calc, _ = pandeia_input.build_pandeia_calc(

@@ -13,7 +13,7 @@ from mejiro.lenses.lens import Lens
 from mejiro.utils import util
 
 
-@hydra.main(version_base=None, config_path='config', config_name='config.yaml')
+@hydra.main(version_base=None, config_path='../config', config_name='config.yaml')
 def main(config):
     array_dir, repo_dir = config.machine.array_dir, config.machine.repo_dir
     array_dir = os.path.join(array_dir, 'skypy')
