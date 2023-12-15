@@ -7,9 +7,6 @@ from multiprocessing import Pool
 import hydra
 from tqdm import tqdm
 
-from mejiro.helpers import pyhalo
-from mejiro.utils import util
-
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
 def main(config):
@@ -18,6 +15,7 @@ def main(config):
     # enable use of local packages
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
+    from mejiro.utils import util
 
     # open pickled lens list
     with open(os.path.join(pickle_dir, '01_skypy_output_lens_list'), 'rb') as results_file:
@@ -33,24 +31,31 @@ def main(config):
     batches = list(generator)
 
     # process the batches
+    updated_lenses = []
     for batch in tqdm(batches):
         pool = Pool(processes=process_count)
-        for i, output in enumerate(pool.map(add_subhalos, batch)):
-            (lens) = output
-            if lens is not None:
-                lens_list.append(lens)
+        for updated_lens in pool.map(add, batch):
+            if updated_lens is not None:
+                updated_lenses.append(updated_lens)
+
+    # for lens in tqdm(lens_list):
+    #     updated_lens = add(lens)
+    #     if updated_lens is not None:
+    #         updated_lenses.append(updated_lens)
 
     # pickle lens list
     pickle_target = os.path.join(pickle_dir, '02_skypy_output_lens_list_with_subhalos')
     util.delete_if_exists(pickle_target)
     with open(pickle_target, 'ab') as results_file:
-        pickle.dump(lens_list, results_file)
+        pickle.dump(updated_lenses, results_file)
 
 
-def add_subhalos(lens):
+def add(lens):
+    from mejiro.helpers import pyhalo
     # add CDM subhalos
     try:
-        lens.add_subhalos(*pyhalo.generate_CDM_halos(lens.z_lens, lens.z_source))
+        lens.add_subhalos(*pyhalo.unpickle_subhalos('/data/bwedig/roman-pandeia/output/pickles/pyhalo/cdm_subhalos_tuple'))  # TODO hard-code path for now
+        return lens
     except:
         return None
 

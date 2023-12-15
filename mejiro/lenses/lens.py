@@ -9,103 +9,65 @@ from lenstronomy.LightModel.light_model import LightModel
 from lenstronomy.SimulationAPI.ObservationConfig.Roman import Roman
 from lenstronomy.SimulationAPI.sim_api import SimAPI
 from lenstronomy.Util import data_util, util
-from scipy.stats import norm, truncnorm
 
 
 class Lens:
-    def __init__(self, z_lens, z_source, theta_e, lens_x, lens_y, source_x, source_y, mag_lens, mag_source):
-        # define redshifts and cosmology
-        self.z_lens = z_lens
-        self.z_source = z_source
-        self.cosmo = astropy_cosmo.default_cosmology.get()
+    def __init__(self, kwargs_model, kwargs_params):
+        # set kwargs_lens, kwargs_lens_light, kwargs_source
+        self._unpack_kwargs_params(kwargs_params)
 
-        # LENS
-        # mass model: singular isothermal ellipsoid with a shear
-        self.lens_model_list = ['SIE', 'SHEAR']
-        self.lens_redshift_list = [self.z_lens, self.z_lens]
-        self.lens_model_class = LensModel(self.lens_model_list)
-        kwargs_mass = {
-            # 'sigma_v': sigma_v,  # velocity dispersion in units km/s
-            'theta_E': theta_e,
-            'center_x': lens_x,
-            'center_y': lens_y,
-            'e1': norm(loc=0.0, scale=0.1).rvs(),
-            'e2': norm(loc=0.0, scale=0.1).rvs()
-        }
-        kwargs_shear = {
-            'gamma1': norm(loc=0.0, scale=0.05).rvs(),
-            'gamma2': norm(loc=0.0, scale=0.05).rvs()
-        }
-        self.kwargs_lens = [kwargs_mass, kwargs_shear]
+        # set lens_model_list, lens_light_model_list, source_light_model_list
+        self._unpack_kwargs_model(kwargs_model)
 
-        # light model: sersic ellipse profile
-        self.lens_light_model_list = ['SERSIC_ELLIPSE']
-        self.lens_light_model_class = LightModel(self.lens_light_model_list)
-        kwargs_sersic_lens = {
-            'magnitude': mag_lens,
-            'R_sersic': truncnorm(-2, 2, loc=0.35, scale=0.05).rvs(),
-            'n_sersic': truncnorm(-6., np.inf, loc=3., scale=0.5).rvs(),
-            'e1': norm(loc=0.0, scale=0.1).rvs(),
-            'e2': norm(loc=0.0, scale=0.1).rvs(),
-            'center_x': lens_x,
-            'center_y': lens_y
-        }
-        self.kwargs_lens_light = [kwargs_sersic_lens]
+        # self.delta_pix, self.num_pix = None, None
+        # self.ra_at_xy_0, self.dec_at_xy_0 = None, None
+        # self.Mpix2coord, self.Mcoord2pix = None, None
+        # self.pixel_grid, self.coords = None, None
+        # self.lenstronomy_roman_config = None
 
-        # SOURCE
-        # light model: sersic ellipse profile
-        self.source_model_list = ['SERSIC_ELLIPSE']
-        self.source_redshift_list = [self.z_source]
-        self.source_model_class = LightModel(self.source_model_list)
-        kwargs_sersic = {
-            'magnitude': mag_source,
-            'R_sersic': truncnorm(-2, 2, loc=0.35, scale=0.05).rvs(),
-            'n_sersic': truncnorm(-6., np.inf, loc=3., scale=0.5).rvs(),
-            'e1': norm(loc=0.0, scale=0.1).rvs(),
-            'e2': norm(loc=0.0, scale=0.1).rvs(),
-            'center_x': source_x,
-            'center_y': source_y
-        }
-        self.kwargs_source = [kwargs_sersic]
+        
+    def _unpack_kwargs_params(self, kwargs_params):
+        self.kwargs_lens = kwargs_params['kwargs_lens']
+        self.kwargs_lens_light = kwargs_params['kwargs_lens_light']
+        self.kwargs_source = kwargs_params['kwargs_source']
 
-        # set up model
-        self.kwargs_model = {
-            'lens_model_list': self.lens_model_list,
-            'lens_redshift_list': self.lens_redshift_list,
-            'lens_light_model_list': self.lens_light_model_list,
-            'source_light_model_list': self.source_model_list,
-            'source_redshift_list': self.source_redshift_list,
-            'cosmo': self.cosmo,
-            'z_source': self.z_source,
-            'z_source_convention': 4,
-            # source redshift to which the reduced deflections are computed, is the maximal redshift of the ray-tracing
-        }
 
-        # set kwargs in terms of amp (converted from magnitude)
-        self.kwargs_source_amp, self.kwargs_lens_light_amp = None, None
-        if mag_lens is not None and mag_source is not None:  # conditional because test lenses don't set in super().__init__
-            self._set_amp_light_kwargs()
+    def _unpack_kwargs_model(self, kwargs_model):
+        # get model lists, which are required(TODO ?)
+        self.lens_model_list = kwargs_model['lens_model_list']
+        self.lens_light_model_list = kwargs_model['lens_light_model_list']
+        self.source_model_list = kwargs_model['source_light_model_list']
 
-        self.delta_pix, self.num_pix = None, None
-        self.ra_at_xy_0, self.dec_at_xy_0 = None, None
-        self.Mpix2coord, self.Mcoord2pix = None, None
-        self.pixel_grid, self.coords = None, None
-        self.lenstronomy_roman_config = None
+        # set any optional key/value pairs
+        self.lens_redshift_list, self.source_redshift_list, self.z_source = None, None, None
 
-    # TODO something useful
-    # def __str__(self):
+        if 'lens_redshift_list' in kwargs_model:
+            self.lens_redshift_list = kwargs_model['lens_redshift_list']
+        if 'source_redshift_list' in kwargs_model:
+            self.source_redshift_list = kwargs_model['source_redshift_list']    
+        if 'cosmo' in kwargs_model:
+            self.cosmo = kwargs_model['cosmo']
+        else:
+            self.cosmo = astropy_cosmo.default_cosmology.get()
+        if 'z_source' in kwargs_model:
+            self.z_source = kwargs_model['z_source']
+        if 'z_source_convention' in kwargs_model:
+            self.z_source_convention = kwargs_model['z_source_convention']
+        else:
+            self.z_source_convention = 4
+
 
     def add_subhalos(self, halo_lens_model_list, halo_redshift_list, kwargs_halos):
-        self.lens_model_list += halo_lens_model_list
-        self.lens_model_class = LensModel(self.lens_model_list)
-
-        self.lens_redshift_list += halo_redshift_list
+        # add subhalos to list of lensing objects
         self.kwargs_lens += kwargs_halos
 
-    def update_classes(self):
+        # set redshifts of subhalos
+        self.lens_redshift_list += halo_redshift_list
+
+        # update other lenstronomy objects
+        self.lens_model_list += halo_lens_model_list
         self.lens_model_class = LensModel(self.lens_model_list)
-        self.lens_light_model_class = LightModel(self.lens_light_model_list)
-        self.source_model_class = LightModel(self.source_model_list)
+    
 
     def update_model(self):
         # update model
@@ -121,7 +83,7 @@ class Lens:
             # source redshift to which the reduced deflections are computed, is the maximal redshift of the ray-tracing
         }
 
-    def get_array(self, num_pix, side, kwargs_psf={'psf_type': 'NONE'}):
+    def get_array(self, num_pix, side, band='f106', kwargs_psf={'psf_type': 'NONE'}):
         self.num_pix = num_pix
         self._set_up_pixel_grid(num_pix, side)
 
@@ -134,8 +96,12 @@ class Lens:
             'supersampling_convolution': False
         }
 
-        # convert from physical to lensing units
-        # self._mass_physical_to_lensing_units()
+        # convert from physical to lensing units if necessary e.g. sigma_v specified instead of theta_E
+        if 'theta_E' not in self.kwargs_lens[0]:
+            self._mass_physical_to_lensing_units()
+
+        # to create ImageModel, need LensModel and LightModel objects
+        self._set_classes()
 
         image_model = ImageModel(data_class=self.pixel_grid,
                                  psf_class=psf_class,
@@ -143,23 +109,36 @@ class Lens:
                                  source_model_class=self.source_model_class,
                                  lens_light_model_class=self.lens_light_model_class,
                                  kwargs_numerics=kwargs_numerics)
+        
+        # convert brightnesses to lenstronomy amp from magnitudes
+        self._set_amp_light_kwargs(band)
 
         return image_model.image(kwargs_lens=self.kwargs_lens,
                                  kwargs_source=self.kwargs_source_amp,
                                  kwargs_lens_light=self.kwargs_lens_light_amp)
 
+
+    def _set_classes(self):
+        self.lens_model_class = LensModel(self.lens_model_list)
+        self.lens_light_model_class = LightModel(self.lens_light_model_list)
+        self.source_model_class = LightModel(self.source_model_list)
+
+
     def get_source_pixel_coords(self):
         source_ra, source_dec = self.kwargs_lens[0]['center_x'], self.kwargs_lens[0]['center_y']
         return self.coords.map_coord2pix(ra=source_ra, dec=source_dec)
+
 
     def get_lens_pixel_coords(self):
         lens_ra, lens_dec = self.kwargs_source[0]['center_x'], self.kwargs_source[0]['center_y']
         return self.coords.map_coord2pix(ra=lens_ra, dec=lens_dec)
 
+
     def _mass_physical_to_lensing_units(self):
         sim_g = SimAPI(numpix=self.num_pix, kwargs_single_band=self.lenstronomy_roman_config,
                        kwargs_model=self.kwargs_model)
         self.kwargs_lens_lensing_units = sim_g.physical2lensing_conversion(kwargs_mass=self.kwargs_lens)
+
 
     def _set_up_pixel_grid(self, num_pix, side):
         self.delta_pix = side / num_pix  # size of pixel in angular coordinates
@@ -179,8 +158,9 @@ class Lens:
         self.pixel_grid = PixelGrid(**kwargs_pixel)
         self.coords = Coordinates(self.Mpix2coord, self.ra_at_xy_0, self.dec_at_xy_0)
 
-    def _set_amp_light_kwargs(self):
-        self.lenstronomy_roman_config = Roman(band='F106',
+
+    def _set_amp_light_kwargs(self, band):
+        self.lenstronomy_roman_config = Roman(band=band.upper(),
                                               psf_type='PIXEL',
                                               survey_mode='wide_area').kwargs_single_band()
         magnitude_zero_point = self.lenstronomy_roman_config.get('magnitude_zero_point')
@@ -191,3 +171,7 @@ class Lens:
         self.kwargs_source_amp = data_util.magnitude2amplitude(self.source_model_class,
                                                                self.kwargs_source,
                                                                magnitude_zero_point)
+
+    # TODO something useful
+    # def __str__(self):
+        

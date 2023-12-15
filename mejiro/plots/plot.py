@@ -53,11 +53,13 @@ def plot(array, title='', cmap='viridis', colorbar=False, colorbar_label=None):
     plt.show()
 
 
-def plot_grid(array_list, side, cmap='viridis'):
+def plot_grid(array_list, side, cmap='viridis', log10=True):
     f, ax = plt.subplots(nrows=side, ncols=side, figsize=(20, 20), gridspec_kw={'hspace': 0.02, 'wspace': 0.02})
 
     for i, image in enumerate(array_list):
-        ax[i // side, i % side].imshow(np.log10(image), cmap=cmap)
+        if log10:
+            image = np.log10(image)
+        ax[i // side, i % side].imshow(image, cmap=cmap)
         ax[i // side, i % side].get_xaxis().set_visible(False)
         ax[i // side, i % side].get_yaxis().set_visible(False)
 
