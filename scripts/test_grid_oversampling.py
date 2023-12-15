@@ -5,7 +5,7 @@ import numpy as np
 from tqdm import tqdm
 
 from mejiro.helpers import pyhalo, pandeia_input
-from mejiro.lenses import test_physical_lens
+from mejiro.lenses import test
 
 
 def main():
@@ -24,7 +24,7 @@ def main():
     execution_times, point_source_count, estimated_times = [], [], []
 
     # use test lens
-    lens = test_physical_lens.TestPhysicalLens()
+    lens = test.TestLens()
 
     # add CDM subhalos
     lens.add_subhalos(*pyhalo.generate_CDM_halos(lens.z_lens, lens.z_source))
