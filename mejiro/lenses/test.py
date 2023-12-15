@@ -70,18 +70,7 @@ class SampleSkyPyLens(Lens):
         }
         self.kwargs_source = [kwargs_sersic]
 
-        # set up model
-        self.kwargs_model = {
-            'lens_model_list': self.lens_model_list,
-            'lens_redshift_list': self.lens_redshift_list,
-            'lens_light_model_list': self.lens_light_model_list,
-            'source_light_model_list': self.source_model_list,
-            'source_redshift_list': self.source_redshift_list,
-            'cosmo': self.cosmo,
-            'z_source': self.z_source,
-            'z_source_convention': 4
-        }
-
+        self.update_model()        
         self._set_amp_light_kwargs()
 
 
@@ -150,18 +139,7 @@ class TestLens(Lens):
         }
         self.kwargs_source = [kwargs_sersic]
 
-        # set up model
-        self.kwargs_model = {
-            'lens_model_list': self.lens_model_list,
-            'lens_redshift_list': self.lens_redshift_list,
-            'lens_light_model_list': self.lens_light_model_list,
-            'source_light_model_list': self.source_model_list,
-            'source_redshift_list': self.source_redshift_list,
-            'cosmo': self.cosmo,
-            'z_source': self.z_source,
-            'z_source_convention': 4
-        }
-
+        self.update_model()
         self._set_amp_light_kwargs()
 
 
@@ -202,7 +180,7 @@ class TutorialLens(Lens):
         kwargs_sersic = {'amp': 100, 'R_sersic': 0.1, 'n_sersic': 1.5, 'center_x': beta_ra, 'center_y': beta_dec}
         self.kwargs_source = [kwargs_sersic]
 
-        # set up model
+        # update model
         self.kwargs_model = {
             'lens_model_list': lens_model_list,
             'lens_light_model_list': lens_light_model_list,
