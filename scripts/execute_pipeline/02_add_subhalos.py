@@ -3,6 +3,8 @@ import os
 import pickle
 import sys
 from multiprocessing import Pool
+import time
+import datetime
 
 import hydra
 from tqdm import tqdm
@@ -10,6 +12,8 @@ from tqdm import tqdm
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
 def main(config):
+    start = time.time()
+    
     array_dir, data_dir, repo_dir, pickle_dir = config.machine.array_dir, config.machine.data_dir, config.machine.repo_dir, config.machine.pickle_dir
 
     # enable use of local packages
@@ -49,12 +53,20 @@ def main(config):
     with open(pickle_target, 'ab') as results_file:
         pickle.dump(updated_lenses, results_file)
 
+    stop = time.time()
+    execution_time = str(datetime.timedelta(seconds=round(stop - start)))
+    print(f'Execution time: {execution_time}')
+
 
 def add(lens):
     from mejiro.helpers import pyhalo
     # add CDM subhalos
     try:
-        lens.add_subhalos(*pyhalo.unpickle_subhalos('/data/bwedig/roman-pandeia/output/pickles/pyhalo/cdm_subhalos_tuple'))  # TODO hard-code path for now
+        # use same CDM subhalos
+        # lens.add_subhalos(*pyhalo.unpickle_subhalos('/data/bwedig/roman-pandeia/output/pickles/pyhalo/cdm_subhalos_tuple'))
+
+        # randomly generate CDM subhalos
+        lens.add_subhalos(*pyhalo.generate_CDM_halos(lens.z_lens, lens.z_source, cone_opening_angle_arcsec=10, LOS_normalization=0.0))
         return lens
     except:
         return None

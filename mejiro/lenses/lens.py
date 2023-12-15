@@ -12,7 +12,10 @@ from lenstronomy.Util import data_util, util
 
 
 class Lens:
-    def __init__(self, kwargs_model, kwargs_params):
+    def __init__(self, kwargs_model, kwargs_params, uid=None):
+        # set unique identifier
+        self.uid = uid
+
         # set kwargs_lens, kwargs_lens_light, kwargs_source
         self._unpack_kwargs_params(kwargs_params)
 

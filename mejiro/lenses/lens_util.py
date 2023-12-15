@@ -3,14 +3,14 @@ import pickle
 from mejiro.lenses.lens import Lens
 
 
-def unpickle_lens(pickle_path):
+def unpickle_lens(pickle_path, uid):
     with open(pickle_path, 'rb') as pickled_lens:
         unpickled = pickle.load(pickled_lens)
 
     kwargs_model = unpickled['kwargs_model']
     kwargs_params = unpickled['kwargs_params']
 
-    return Lens(kwargs_model=kwargs_model, kwargs_params=kwargs_params)
+    return Lens(kwargs_model=kwargs_model, kwargs_params=kwargs_params, uid=uid)
 
 
 def set_kwargs_params(kwargs_lens, kwargs_lens_light, kwargs_source):

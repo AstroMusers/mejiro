@@ -12,12 +12,12 @@ from tqdm import tqdm
 from mejiro.helpers.roman_params import RomanParameters
 
 
-def build_pandeia_calc(array, lens, band='f106', side=5.61, num_samples=None, oversample_factor=None,
+def build_pandeia_calc(array, lens, band='f106', num_samples=None, oversample_factor=None,
                        suppress_output=False):
     calc = build_default_calc('roman', 'wfi', 'imaging')
 
     # set scene size settings
-    calc['configuration']['max_scene_size'] = side
+    calc['configuration']['max_scene_size'] = 5
 
     # set instrument
     calc['configuration']['instrument']['filter'] = band.lower()  # e.g. 'f106'

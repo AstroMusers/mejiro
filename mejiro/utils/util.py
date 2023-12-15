@@ -1,9 +1,17 @@
 import os
 
+from glob import glob
+
 
 def create_directory_if_not_exists(path):
     if not os.path.exists(path):
         os.makedirs(path)
+
+
+def clear_directory(path):
+    for file in glob(path + '/*'):
+        os.remove(file)
+
 
 
 def batch_list(list, n):
