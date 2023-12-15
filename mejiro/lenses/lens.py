@@ -83,7 +83,8 @@ class Lens:
 
         # set kwargs in terms of amp (converted from magnitude)
         self.kwargs_source_amp, self.kwargs_lens_light_amp = None, None
-        self._set_amp_light_kwargs()
+        if mag_lens is not None and mag_source is not None:  # conditional because test lenses don't set in super().__init__
+            self._set_amp_light_kwargs()
 
         self.delta_pix, self.num_pix = None, None
         self.ra_at_xy_0, self.dec_at_xy_0 = None, None

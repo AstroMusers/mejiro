@@ -1,5 +1,6 @@
 from lenstronomy.LensModel.lens_model import LensModel
 from lenstronomy.LightModel.light_model import LightModel
+from lenstronomy.Util import param_util
 
 from mejiro.lenses.lens import Lens
 
@@ -78,9 +79,10 @@ class SampleSkyPyLens(Lens):
             'source_redshift_list': self.source_redshift_list,
             'cosmo': self.cosmo,
             'z_source': self.z_source,
-            'z_source_convention': 4,
-            # source redshift to which the reduced deflections are computed, is the maximal redshift of the ray-tracing
+            'z_source_convention': 4
         }
+
+        self._set_amp_light_kwargs()
 
 
 class TestLens(Lens):
@@ -157,9 +159,10 @@ class TestLens(Lens):
             'source_redshift_list': self.source_redshift_list,
             'cosmo': self.cosmo,
             'z_source': self.z_source,
-            'z_source_convention': 4,
-            # source redshift to which the reduced deflections are computed, is the maximal redshift of the ray-tracing
+            'z_source_convention': 4
         }
+
+        self._set_amp_light_kwargs()
 
 
 class TutorialLens(Lens):
@@ -205,3 +208,5 @@ class TutorialLens(Lens):
             'lens_light_model_list': lens_light_model_list,
             'source_light_model_list': source_model_list
         }
+
+        self._set_amp_light_kwargs()

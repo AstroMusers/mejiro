@@ -1,3 +1,5 @@
+import pickle
+
 import astropy.cosmology as astropy_cosmo
 from pyHalo.preset_models import CDM
 from pyHalo.Cosmology.cosmology import Cosmology
@@ -20,4 +22,11 @@ def realization_to_lensing_quantities(realization):
     # for some reason, halo_lens_model_list and kwargs_halos are lists, but halo_redshift_list is an ndarray
     halo_redshift_list = halo_redshift_list.tolist()
 
+    return halo_lens_model_list, halo_redshift_list, kwargs_halos
+
+
+def unpickle_subhalos(filepath):
+    with open(filepath, 'rb') as results_file:
+        halo_lens_model_list, halo_redshift_list, kwargs_halos = pickle.load(results_file)
+    
     return halo_lens_model_list, halo_redshift_list, kwargs_halos
