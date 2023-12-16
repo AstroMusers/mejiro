@@ -6,6 +6,15 @@ defaults:
 
 seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
 
+pipeline:
+  - num_pix: 97  # 97
+  - side: 10.67  # 10.67
+  - grid_oversample: 1
+  - num_samples: 10000
+  - max_scene_size: 10
+  - subhalo_cone: 11.
+  - los_normalization: 0.
+
 hydra:
   output_subdir: null
   run:

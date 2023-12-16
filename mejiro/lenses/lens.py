@@ -16,6 +16,10 @@ class Lens:
         # set unique identifier
         self.uid = uid
 
+        # get redshifts
+        self.z_lens = kwargs_model['lens_redshift_list'][0]
+        self.z_source = kwargs_model['z_source']
+
         # set kwargs_lens, kwargs_lens_light, kwargs_source
         self._unpack_kwargs_params(kwargs_params)
 

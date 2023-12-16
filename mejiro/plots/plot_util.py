@@ -16,6 +16,16 @@ from mejiro.utils import util
 #                     # TODO this is horrible, fix this
 
 
+def get_residual_list(array_list):
+    last_array = array_list[-1]
+    residual_list = [(last_array - i) for i in array_list]
+    return residual_list[:-1]
+
+
+def get_filenames(filepath_list):
+    return [path.basename(i) for i in filepath_list]
+
+
 def asinh(array):
     array = np.arcsinh(array)
     array -= np.amin(array)

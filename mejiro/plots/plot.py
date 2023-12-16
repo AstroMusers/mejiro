@@ -53,7 +53,9 @@ def plot(array, title='', cmap='viridis', colorbar=False, colorbar_label=None):
     plt.show()
 
 
-def plot_grid(array_list, side, cmap='viridis', log10=True):
+def plot_grid(array_list, side, cmap='viridis', log10=True, title='', save=None):
+    array_list = array_list[:side ** 2]
+
     f, ax = plt.subplots(nrows=side, ncols=side, figsize=(20, 20), gridspec_kw={'hspace': 0.02, 'wspace': 0.02})
 
     for i, image in enumerate(array_list):
@@ -63,10 +65,15 @@ def plot_grid(array_list, side, cmap='viridis', log10=True):
         ax[i // side, i % side].get_xaxis().set_visible(False)
         ax[i // side, i % side].get_yaxis().set_visible(False)
 
+    plt.suptitle(title)
+
+    if save is not None:
+        plt.savefig(save)
+
     plt.show()
 
 
-def plot_list(array_list, cmap='viridis'):
+def plot_list(array_list, cmap='viridis', title_list=None):
     f, ax = plt.subplots(nrows=1, ncols=len(array_list), figsize=(len(array_list) * 4, 4),
                          gridspec_kw={'hspace': 0.02, 'wspace': 0.02})
 
@@ -74,6 +81,8 @@ def plot_list(array_list, cmap='viridis'):
         ax[i].imshow(array, cmap='viridis')
         ax[i].get_xaxis().set_visible(False)
         ax[i].get_yaxis().set_visible(False)
+        if title_list is not None:
+            ax[i].set_title(title_list[i])
 
     plt.show()
 

@@ -12,12 +12,12 @@ from tqdm import tqdm
 from mejiro.helpers.roman_params import RomanParameters
 
 
-def build_pandeia_calc(array, lens, band='f106', num_samples=None, oversample_factor=None,
+def build_pandeia_calc(array, lens, band='f106', max_scene_size=5, num_samples=None, oversample_factor=None,
                        suppress_output=False):
     calc = build_default_calc('roman', 'wfi', 'imaging')
 
     # set scene size settings
-    calc['configuration']['max_scene_size'] = 5
+    calc['configuration']['max_scene_size'] = max_scene_size
 
     # set instrument
     calc['configuration']['instrument']['filter'] = band.lower()  # e.g. 'f106'
@@ -180,6 +180,12 @@ def _convert_magnitude_to_cps(array, band, suppress_output):
             i += 1
 
     return cps_array
+
+
+def _get_center_of_pixel():
+    
+
+    return ra, dec
 
 
 def _get_norm_wave(band):

@@ -1,6 +1,36 @@
+import datetime
 import os
+import pickle as _pickle
+from collections import ChainMap
 
 from glob import glob
+from omegaconf import OmegaConf
+
+
+def hydra_to_dict(config):
+    container = OmegaConf.to_container(config, resolve=True)
+    return dict(ChainMap(*container))
+
+
+def print_execution_time(start, stop):
+    execution_time = str(datetime.timedelta(seconds=round(stop - start)))
+    print(f'Execution time: {execution_time}')
+
+
+def pickle(path, object):
+    with open(path, 'ab') as results_file:
+        _pickle.dump(object, results_file)
+
+
+def unpickle(path):
+    with open(path, 'rb') as results_file:
+        result = _pickle.load(results_file)
+    return result
+
+
+def unpickle_all(dir_path, prefix=''):
+    file_list = glob(dir_path + f'/{prefix}*')
+    return [unpickle(i) for i in file_list]
 
 
 def create_directory_if_not_exists(path):
@@ -11,7 +41,6 @@ def create_directory_if_not_exists(path):
 def clear_directory(path):
     for file in glob(path + '/*'):
         os.remove(file)
-
 
 
 def batch_list(list, n):
@@ -26,6 +55,7 @@ def scientific_notation_string(input):
 def delete_if_exists(path):
     if os.path.exists(path):
         os.remove(path)
+
 
 # TODO finish
 # def scientific_notation_string(input):

@@ -23,17 +23,26 @@ def main(config):
         sys.path.append(repo_dir)
     from mejiro.utils import util
 
-    array_dir = os.path.join(array_dir, 'skypy_output')
-    util.create_directory_if_not_exists(array_dir)
-    util.clear_directory(array_dir)
+    # directory to write the output to
+    output_dir = os.path.join(array_dir, '04_pandeia_output')
+    util.create_directory_if_not_exists(output_dir)
+    util.clear_directory(output_dir)
 
     # open pickled lens dict list
-    with open(os.path.join(pickle_dir, '03_skypy_output_lens_list_models'), 'rb') as results_file:
-        dict_list = pickle.load(results_file) 
+    input_dir = os.path.join(pickle_dir, '03_models_and_updated_lenses')
+    dict_list = util.unpickle_all(os.path.join(input_dir), prefix='lens_dict_')
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
     process_count = int(cpu_count / 2)  # TODO consider making this larger, but using all CPUs has crashed
+
+    # tuple the parameters
+    pipeline_params = util.hydra_to_dict(config.pipeline)
+    tuple_list = []
+    for i, _ in enumerate(dict_list):
+        tuple_list.append((dict_list[i], pipeline_params))
+
+    # batch
     generator = util.batch_list(dict_list, process_count)
     batches = list(generator)
 
@@ -50,19 +59,25 @@ def main(config):
     np.save(os.path.join(array_dir, 'execution_times.npy'), execution_times)
 
     stop = time.time()
-    execution_time = str(datetime.timedelta(seconds=round(stop - start)))
-    print(f'Execution time: {execution_time}')
+    util.print_execution_time(start, stop)
 
 
-def get_image(lens_dict):
+def get_image(input):
+    # unpack tuple
+    (lens_dict, pipeline_params) = input
+
     # unpack lens_dict
     array = lens_dict['model']
     lens = lens_dict['lens']
     uid = lens.uid
 
+    # unpack pipeline_params
+    max_scene_size = pipeline_params['max_scene_size']
+    num_samples = pipeline_params['num_samples']
+
     from mejiro.helpers import pandeia_input
 
-    calc, _ = pandeia_input.build_pandeia_calc(array, lens, num_samples=10000, suppress_output=True)
+    calc, _ = pandeia_input.build_pandeia_calc(array, lens, max_scene_size=max_scene_size, num_samples=num_samples, suppress_output=True)
 
     image, execution_time = pandeia_input.get_pandeia_image(calc, suppress_output=True)
 

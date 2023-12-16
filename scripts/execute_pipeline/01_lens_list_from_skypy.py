@@ -1,13 +1,8 @@
-import multiprocessing
 import os
-import pickle
 import sys
-from multiprocessing import Pool
 import time
-import datetime
 
 import hydra
-import pandas as pd
 from tqdm import tqdm
 from glob import glob
 
@@ -29,20 +24,18 @@ def main(config):
     # unpickle the lenses from the population survey and create lens objects
     lens_dir = os.path.join('/data', 'bwedig', 'roman-population', 'data', 'lenses')
     lens_paths = glob(lens_dir + '/*')
-    updated_lenses = []
+    lens_list = []
     for i, lens in tqdm(enumerate(lens_paths), total=len(lens_paths)):
         lens = lens_util.unpickle_lens(lens, str(i).zfill(8))
-        updated_lenses.append(lens)
+        lens_list.append(lens)
 
     # pickle lens list
     pickle_target = os.path.join(pickle_dir, '01_skypy_output_lens_list')
     util.delete_if_exists(pickle_target)
-    with open(pickle_target, 'ab') as results_file:
-        pickle.dump(updated_lenses, results_file)
+    util.pickle(pickle_target, lens_list)
 
     stop = time.time()
-    execution_time = str(datetime.timedelta(seconds=round(stop - start)))
-    print(f'Execution time: {execution_time}')
+    util.print_execution_time(start, stop)
 
 
 if __name__ == '__main__':
