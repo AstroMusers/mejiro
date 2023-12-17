@@ -20,5 +20,5 @@ python3 03_build_models.py
 echo 'Built models.'
 
 echo 'Simulating Pandeia images...'
-python3 04_pandeia.py
+python3 -W ignore 04_pandeia.py  # suppress warnings
 echo 'Pandeia simulations complete.'

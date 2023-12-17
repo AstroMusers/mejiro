@@ -34,16 +34,17 @@ def main(config):
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
-    process_count = int(cpu_count / 2)  # TODO consider making this larger, but using all CPUs has crashed
+    process_count = int(cpu_count / 1.5)  # TODO play with this, e.g. cpu_count - 4?
+    print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     # tuple the parameters
     pipeline_params = util.hydra_to_dict(config.pipeline)
     tuple_list = []
     for i, _ in enumerate(dict_list):
-        tuple_list.append((dict_list[i], pipeline_params))
+        tuple_list.append((dict_list[i], pipeline_params, output_dir))
 
     # batch
-    generator = util.batch_list(dict_list, process_count)
+    generator = util.batch_list(tuple_list, process_count)
     batches = list(generator)
 
     # process the batches
@@ -51,9 +52,7 @@ def main(config):
     for batch in tqdm(batches):
         pool = Pool(processes=process_count)
         for output in pool.map(get_image, batch):
-            (uid, image, execution_time) = output
-            np.save(os.path.join(array_dir, f'pandeia_{uid}.npy'), image)
-            execution_times.append(execution_time)
+            execution_times.append(output)
 
     # TODO update and append results from each batch, instead of writing all at end
     np.save(os.path.join(array_dir, 'execution_times.npy'), execution_times)
@@ -64,7 +63,7 @@ def main(config):
 
 def get_image(input):
     # unpack tuple
-    (lens_dict, pipeline_params) = input
+    (lens_dict, pipeline_params, output_dir) = input
 
     # unpack lens_dict
     array = lens_dict['model']
@@ -77,11 +76,14 @@ def get_image(input):
 
     from mejiro.helpers import pandeia_input
 
+    # build Pandeia input
     calc, _ = pandeia_input.build_pandeia_calc(array, lens, max_scene_size=max_scene_size, num_samples=num_samples, suppress_output=True)
 
+    # generate Pandeia image and save
     image, execution_time = pandeia_input.get_pandeia_image(calc, suppress_output=True)
+    np.save(os.path.join(output_dir, f'pandeia_{uid}.npy'), image)
 
-    return uid, image, execution_time
+    return execution_time
 
 
 if __name__ == '__main__':
