@@ -20,14 +20,6 @@ def main(config):
         sys.path.append(repo_dir)
     from mejiro.utils import util
 
-    # directory to write the lenses with subhalos to
-    output_dir = os.path.join(pickle_dir, '02_lenses_with_substructure')
-    util.create_directory_if_not_exists(output_dir)
-    util.clear_directory(output_dir)
-
-    # open pickled lens list
-    lens_list = util.unpickle(os.path.join(pickle_dir, '01_skypy_output_lens_list'))
-
     # TEMP: optionally, grab the first handful
     # lens_list = lens_list[:100]
 
@@ -35,37 +27,44 @@ def main(config):
     cpu_count = multiprocessing.cpu_count()
     process_count = int(cpu_count / 2)  # TODO consider making this larger, but using all CPUs has crashed
 
-    # tuple the parameters
-    pipeline_params = util.hydra_to_dict(config.pipeline)
-    tuple_list = []
-    for i, _ in enumerate(lens_list):
-        tuple_list.append((lens_list[i], pipeline_params, output_dir))
+    # TODO need to make sure that the same substructure is being added to each filter
+    # organize the pickles into a dict
+    lens_dict = {}
+    for band in util.hydra_to_dict(config.pipeline)['band']:
+        # open pickled lens list
+        lens_list = util.unpickle(os.path.join(pickle_dir, f'01_skypy_output_lens_list_{band.lower()}'))
+        lens_dict[band] = lens_list
+    
+    # create a tuple for each lens
+    lens_tuple_list = []
 
-    # batch
-    generator = util.batch_list(tuple_list, process_count)
-    batches = list(generator)
+    for band in util.hydra_to_dict(config.pipeline)['band']:
+        # directory to write the lenses with subhalos to
+        output_dir = os.path.join(pickle_dir, f'02_lenses_with_substructure_{band.lower()}')
+        util.create_directory_if_not_exists(output_dir)
+        util.clear_directory(output_dir)
 
-    # process the batches
-    # lenses_with_substructure = []
-    success_count = 0
-    for batch in tqdm(batches):
-        pool = Pool(processes=process_count)
-        for updated_lens in pool.map(add, batch):
-            if updated_lens is not None:
-                success_count += 1
-                # lenses_with_substructure.append(updated_lens)
+        
 
-    # for lens in tqdm(lens_list):
-    #     updated_lens = add(lens)
-    #     if updated_lens is not None:
-    #         updated_lenses.append(updated_lens)
+        # tuple the parameters
+        pipeline_params = util.hydra_to_dict(config.pipeline)
+        tuple_list = []
+        for i, _ in enumerate(lens_list):
+            tuple_list.append((lens_list[i], pipeline_params, output_dir))
 
-    # pickle lens list
-    # pickle_target = os.path.join(pickle_dir, '02_skypy_output_lens_list_with_subhalos')
-    # util.delete_if_exists(pickle_target)
-    # util.pickle(pickle_target, lenses_with_substructure)
-                
-    print(f'Added subhalos to {success_count} of {len(lens_list)} lenses')
+        # batch
+        generator = util.batch_list(tuple_list, process_count)
+        batches = list(generator)
+
+        # process the batches
+        success_count = 0
+        for batch in tqdm(batches):
+            pool = Pool(processes=process_count)
+            for updated_lens in pool.map(add, batch):
+                if updated_lens is not None:
+                    success_count += 1
+                    
+        print(f'Added subhalos to {success_count} of {len(lens_list)} lenses')
 
     stop = time.time()
     util.print_execution_time(start, stop)

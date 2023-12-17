@@ -30,8 +30,13 @@ def asinh(array):
     array = np.arcsinh(array)
     array -= np.amin(array)
     array /= np.amax(array)
-
     return array
+
+
+def percentile_norm(array, percentile):
+    percentile = np.percentile(array, percentile)
+    vmin = -0.25 * percentile
+    return colors.Normalize(vmin=vmin, vmax=percentile)
 
 
 def get_norm(array_list, linear_width):
@@ -41,13 +46,11 @@ def get_norm(array_list, linear_width):
         max_list.append(abs(np.max(array)))
     abs_min, abs_max = abs(np.min(min_list)), abs(np.max(max_list))
     limit = np.max([abs_min, abs_max])
-
     return colors.AsinhNorm(linear_width=linear_width, vmin=-limit, vmax=limit)
 
 
 def get_limit(array):
     abs_min, abs_max = abs(np.min(array)), abs(np.max(array))
-
     return np.max([abs_min, abs_max])
 
 

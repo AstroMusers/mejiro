@@ -1,6 +1,7 @@
-import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+
+from mejiro.plots import plot_util
 
 
 # TODO use **kwargs for params like colorbar label, title, filepath, colorbar boolean, etc.
@@ -8,9 +9,7 @@ import numpy as np
 
 
 def percentile(array, title='', cmap='binary', percentile=98, colorbar=False):
-    percentile = np.percentile(array, 98)
-    vmin = -0.25 * percentile
-    norm = matplotlib.colors.Normalize(vmin=vmin, vmax=percentile)
+    norm = plot_util.percentile_norm(array, percentile)
 
     plt.imshow(array, cmap=cmap, norm=norm)
     plt.title(title)
@@ -30,11 +29,7 @@ def log10(array, title='', cmap='viridis', colorbar=False):
 
 
 def arcsinh(array, title='', cmap='viridis', colorbar=False):
-    array = np.arcsinh(array)
-    array -= np.amin(array)
-    array /= np.amax(array)
-
-    plt.imshow(array, cmap=cmap)
+    plt.imshow(plot_util.asinh(array), cmap=cmap)
     plt.title(title)
     if colorbar:
         plt.colorbar()

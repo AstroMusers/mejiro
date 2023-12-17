@@ -82,10 +82,10 @@ def get_calculation_dict(init=True):
             'excess': False,  # Roman's detectors are H4RG which do not have excess noise parameters
             'ffnoise': init,
             'readnoise': init,
-            'scatter': init
+            'scatter': False  # doesn't seem to have an effect
         },
         'effects': {
-            'saturation': init
+            'saturation': False  # doesn't seem to have an effect
         }
     }
 
