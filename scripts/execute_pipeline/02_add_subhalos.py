@@ -36,7 +36,9 @@ def main(config):
         lens_dict[band] = lens_list
     
     # create a tuple for each lens
-    lens_tuple_list = []
+
+        
+
 
     for band in util.hydra_to_dict(config.pipeline)['band']:
         # directory to write the lenses with subhalos to
