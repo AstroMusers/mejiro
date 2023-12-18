@@ -9,6 +9,7 @@ def twod_ft(array):
     return fourier_amplitudes
 
 
+# https://bertvandenbroucke.netlify.app/2019/05/24/computing-a-power-spectrum-in-python/
 def power_spectrum(array, k_min=1, k_max=22):
     npix = array.shape[0]
 
@@ -34,46 +35,7 @@ def power_spectrum(array, k_min=1, k_max=22):
     return kvals, Abins
 
 
-def azimuthalAverage(image, center=None):
-    """
-    Calculate the azimuthally averaged radial profile.
-
-    image - The 2D image
-    center - The [x,y] pixel coordinates used as the center. The default is 
-             None, which then uses the center of the image (including 
-             fracitonal pixels).
-    
-    """
-    # Calculate the indices from the image
-    y, x = np.indices(image.shape)
-
-    if not center:
-        center = np.array([(x.max() - x.min()) / 2.0, (x.max() - x.min()) / 2.0])
-
-    r = np.hypot(x - center[0], y - center[1])
-
-    # Get sorted radii
-    ind = np.argsort(r.flat)
-    r_sorted = r.flat[ind]
-    i_sorted = image.flat[ind]
-
-    # Get the integer part of the radii (bin size = 1)
-    r_int = r_sorted.astype(int)
-
-    # Find all pixels that fall within each radial bin.
-    deltar = r_int[1:] - r_int[:-1]  # Assumes all radii represented
-    rind = np.where(deltar)[0]  # location of changed radius
-    nr = rind[1:] - rind[:-1]  # number of radius bin
-
-    # Cumulative sum to figure out sums for each radius bin
-    csim = np.cumsum(i_sorted, dtype=float)
-    tbin = csim[rind[1:]] - csim[rind[:-1]]
-
-    radial_prof = tbin / nr
-
-    return radial_prof
-
-
+# https://github.com/franyancr/Subhalo-correlations/blob/master/plot_power_spectrum.py
 def twoD_ps(data=None, pix_size=0, rnge=100, shift=0, show_ps=False):
     """
     takes in a 2D array and returns the 2D FFT:

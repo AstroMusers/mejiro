@@ -1,5 +1,8 @@
 import pickle
 
+import matplotlib.pyplot as plt
+import numpy as np
+
 from mejiro.lenses.lens import Lens
 
 
@@ -27,3 +30,14 @@ def set_kwargs_model(lens_model_list, lens_light_model_list, source_model_list):
         'lens_light_model_list': lens_light_model_list,
         'source_light_model_list': source_model_list
     }
+
+
+def plot_projected_mass(lens):
+    npix = 100
+    _x = _y = np.linspace(-1.2, 1.2, npix)
+    xx, yy = np.meshgrid(_x, _y)
+    shape0 = xx.shape
+    kappa_subs = lens.lens_model_class.kappa(xx.ravel(), yy.ravel(), lens.kwargs_lens).reshape(shape0)
+
+    _, ax = plt.figure()
+    return ax.imshow(kappa_subs, vmin=-0.1, vmax=0.1, cmap='bwr')

@@ -71,8 +71,6 @@ def simulate_rgb(lens, kwargs_lens_list, kwargs_source_list, config_list, size):
     sim_g = SimAPI(numpix=numpix, kwargs_single_band=kwargs_g_band, kwargs_model=lens.kwargs_model)
     sim_r = SimAPI(numpix=numpix, kwargs_single_band=kwargs_r_band, kwargs_model=lens.kwargs_model)
 
-    # return the ImSim instance. With this class instance, you can compute all the
-    # modelling accessible of the core modules. See class documentation and other notebooks.
     kwargs_numerics = {}
     imSim_b = sim_b.image_model_class(kwargs_numerics)
     imSim_g = sim_g.image_model_class(kwargs_numerics)

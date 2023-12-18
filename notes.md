@@ -11,3 +11,6 @@
 `02` on jovian (64 cores), 00:37:09 (2572/3414 successful)
 `03` on zenobia (40 cores), 
 `04` on galileo (64 cores),  06:09:07
+
+# TODO
+* tests, e.g. `pandeia.engine.pandeia_version()`, lenstronomy has a test

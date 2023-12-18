@@ -10,13 +10,11 @@ def text_boxes(ax, text_list, fontsize=18, alpha=0.5):
 
 def source_position(ax, lens):
     source_x, source_y = lens.get_source_pixel_coords()
-
     return ax.scatter(source_x, source_y, edgecolor='y', facecolor='none', s=150, label='Source position')
 
 
 def lens_position(ax, lens):
     lens_x, lens_y = lens.get_lens_pixel_coords()
-
     return ax.scatter(lens_x, lens_y, edgecolor='r', facecolor='none', s=150, label='Lens position')
 
 
@@ -45,17 +43,6 @@ def critical_curves(ax, lens):
 
 
 def _get_caustics_critical_curves(lens):
-    """_summary_
-
-    Args:
-        lens (_type_): _description_
-
-    Returns:
-        _type_: ra_critical_list
-        _type_: dec_critical_list
-        _type_: ra_caustic_list
-        _type_: dec_caustic_list
-    """
     model_extension = LensModelExtensions(lens.lens_model_class)
 
     frame_size = lens.delta_pix * lens.num_pix
