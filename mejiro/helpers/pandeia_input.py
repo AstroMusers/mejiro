@@ -105,12 +105,12 @@ def _phonion_sample(calc, mag_array, lens, num_samples, norm_wave, suppress_outp
         calc['scene'][i]['spectrum']['normalization']['norm_waveunit'] = 'microns'
         calc['scene'][i]['spectrum']['normalization']['type'] = 'at_lambda'
 
-        # calculate position
+        # calculate position. NB this returns the center of the pixel
         ra, dec = lens.pixel_grid.map_pix2coord(x=x, y=y)
 
         # set position
         calc['scene'][i]['position']['x_offset'] = dec
-        calc['scene'][i]['position']['y_offset'] = -ra
+        calc['scene'][i]['position']['y_offset'] = -ra  # TODO why does this make sense? it works, but why?
 
         i += 1
 
@@ -133,7 +133,7 @@ def _get_mag_array(lens, array, num_samples, band, suppress_output):
     total_flux_cps = source_flux_cps + lens_flux_cps
     counts_per_pixel = total_flux_cps / num_samples
 
-    # turn array into PDF and sample from it
+    # turn array into probability distribution function and sample from it
     flattened = normalized_array.flatten()
     sample_indices = np.random.choice(a=flattened.size, p=flattened, size=num_samples)
     adjusted_indices = np.unravel_index(sample_indices, normalized_array.shape)
@@ -182,12 +182,6 @@ def _convert_magnitude_to_cps(array, band, suppress_output):
     return cps_array
 
 
-def _get_center_of_pixel():
-    
-
-    return ra, dec
-
-
 def _get_norm_wave(band):
     band = band.upper()
     roman_params = _get_roman_params()
@@ -222,11 +216,17 @@ def _phonion_grid(calc, mag_array, lens, oversample_factor, norm_wave, suppress_
             calc['scene'][i]['spectrum']['normalization']['norm_waveunit'] = 'microns'
             calc['scene'][i]['spectrum']['normalization']['type'] = 'at_lambda'
 
+            # calculate position. NB this returns the center of the pixel
+            ra, dec = lens.pixel_grid.map_pix2coord(x=item_number, y=row_number)
+
             # set position
-            calc['scene'][i]['position']['x_offset'] = (item_number * (1 / 9) * (
-                    1 / oversample_factor)) + lens.ra_at_xy_0  # arcsec
-            calc['scene'][i]['position']['y_offset'] = (row_number * (1 / 9) * (
-                    1 / oversample_factor)) + lens.dec_at_xy_0  # arcsec
+            calc['scene'][i]['position']['x_offset'] = dec
+            calc['scene'][i]['position']['y_offset'] = -ra
+            # TODO clean up after confirming the above works
+            # calc['scene'][i]['position']['x_offset'] = (item_number * (1 / 9) * (
+            #         1 / oversample_factor)) + lens.ra_at_xy_0  # arcsec
+            # calc['scene'][i]['position']['y_offset'] = (row_number * (1 / 9) * (
+            #         1 / oversample_factor)) + lens.dec_at_xy_0  # arcsec
 
             i += 1
 

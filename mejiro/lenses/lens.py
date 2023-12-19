@@ -26,6 +26,7 @@ class Lens:
         # set lens_model_list, lens_light_model_list, source_light_model_list
         self._unpack_kwargs_model(kwargs_model)
 
+        # TODO clean up?
         # self.delta_pix, self.num_pix = None, None
         # self.ra_at_xy_0, self.dec_at_xy_0 = None, None
         # self.Mpix2coord, self.Mcoord2pix = None, None
