@@ -1,6 +1,6 @@
 # Overview
 
-`mejiro` ("MEH-ji-roe") is a pipeline to simulate Roman Space Telescope WFI images of galaxy-galaxy strong gravitational lenses
+`mejiro` ("MEH-ji-roe")[^1] is a pipeline to simulate Roman Space Telescope WFI images of galaxy-galaxy strong gravitational lenses
 built on [`lenstronomy`](https://github.com/lenstronomy/lenstronomy), [`pyHalo`](https://github.com/dangilman/pyHalo), and [Pandeia](https://outerspace.stsci.edu/display/PEN).
 
 # Setup
@@ -22,3 +22,5 @@ The bash script `execute_pipeline.sh` will execute the pipeline end-to-end:
 ```
 bash execute_pipeline.sh
 ```
+
+[^1]: "mejiro" ([メジロ](https://ja.wikipedia.org/wiki/%E3%83%A1%E3%82%B8%E3%83%AD) in Japanese) or "warbling white-eye" (*Zosterops japonicus*) is a small bird native to East Asia with a distinctive white ring around the eye, much like the shape of a strong lens.
