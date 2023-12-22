@@ -16,7 +16,7 @@ from tqdm import tqdm
 def main(config):
     start = time.time()
 
-    array_dir, data_dir, repo_dir, pickle_dir = config.machine.array_dir, config.machine.data_dir, config.machine.repo_dir, config.machine.pickle_dir
+    array_dir, repo_dir, pickle_dir = config.machine.array_dir, config.machine.repo_dir, config.machine.pickle_dir
 
     # enable use of local packages
     if repo_dir not in sys.path:
@@ -34,7 +34,7 @@ def main(config):
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
-    process_count = int(cpu_count / 1.5)  # TODO play with this, e.g. cpu_count - 4?
+    process_count = cpu_count - 4
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     # tuple the parameters
@@ -42,6 +42,9 @@ def main(config):
     tuple_list = []
     for i, _ in enumerate(dict_list):
         tuple_list.append((dict_list[i], pipeline_params, output_dir))
+
+    # TODO TEMP: limit list
+    tuple_list = tuple_list[:100]
 
     # batch
     generator = util.batch_list(tuple_list, process_count)
@@ -62,6 +65,8 @@ def main(config):
 
 
 def get_image(input):
+    from mejiro.helpers import pandeia_input
+
     # unpack tuple
     (lens_dict, pipeline_params, output_dir) = input
 
@@ -69,19 +74,19 @@ def get_image(input):
     array = lens_dict['model']
     lens = lens_dict['lens']
     uid = lens.uid
+    band = lens.band
 
     # unpack pipeline_params
     max_scene_size = pipeline_params['max_scene_size']
     num_samples = pipeline_params['num_samples']
 
-    from mejiro.helpers import pandeia_input
-
     # build Pandeia input
-    calc, _ = pandeia_input.build_pandeia_calc(array, lens, max_scene_size=max_scene_size, num_samples=num_samples, suppress_output=True)
+    calc, _ = pandeia_input.build_pandeia_calc(array, lens, band=band, max_scene_size=max_scene_size, num_samples=num_samples, suppress_output=True)
 
     # generate Pandeia image and save
     image, execution_time = pandeia_input.get_pandeia_image(calc, suppress_output=True)
-    np.save(os.path.join(output_dir, f'pandeia_{uid}.npy'), image)
+    # assert image.shape == (round(max_scene_size / .11), round(max_scene_size / .11))
+    np.save(os.path.join(output_dir, f'pandeia_{uid}_{band}.npy'), image)
 
     return execution_time
 

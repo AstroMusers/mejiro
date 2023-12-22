@@ -10,8 +10,8 @@ pipeline:
   - num_pix: 97  # 97
   - side: 10.67  # 10.67
   - grid_oversample: 1
-  - num_samples: 10000
-  - max_scene_size: 10
+  - num_samples: 100000
+  - max_scene_size: 10.
   - subhalo_cone: 11.
   - los_normalization: 0.
   - band: [F106, F129, F158, F184]
