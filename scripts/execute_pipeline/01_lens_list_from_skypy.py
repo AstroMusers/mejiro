@@ -27,7 +27,7 @@ def main(config):
         lens_paths = glob(lens_dir + f'/*{band}*')
         lens_list = []
         for i, lens in tqdm(enumerate(lens_paths), total=len(lens_paths)):
-            lens = lens_util.unpickle_lens(lens, str(i).zfill(8))
+            lens = lens_util.unpickle_lens(lens, str(i).zfill(8), band)
             lens_list.append(lens)
 
         # pickle lens list

@@ -12,9 +12,12 @@ from lenstronomy.Util import data_util, util
 
 
 class Lens:
-    def __init__(self, kwargs_model, kwargs_params, uid=None):
+    def __init__(self, kwargs_model, kwargs_params, band, uid=None):
         # set unique identifier
         self.uid = uid
+
+        # set band
+        self.band = band.lower()
 
         # get redshifts
         self.z_lens = kwargs_model['lens_redshift_list'][0]
@@ -91,7 +94,7 @@ class Lens:
             # source redshift to which the reduced deflections are computed, is the maximal redshift of the ray-tracing
         }
 
-    def get_array(self, num_pix, side, band='f106', kwargs_psf={'psf_type': 'NONE'}):
+    def get_array(self, num_pix, side, kwargs_psf={'psf_type': 'NONE'}):
         self.num_pix = num_pix
         self._set_up_pixel_grid(num_pix, side)
 
@@ -119,7 +122,7 @@ class Lens:
                                  kwargs_numerics=kwargs_numerics)
         
         # convert brightnesses to lenstronomy amp from magnitudes
-        self._set_amp_light_kwargs(band)
+        self._set_amp_light_kwargs()
 
         return image_model.image(kwargs_lens=self.kwargs_lens,
                                  kwargs_source=self.kwargs_source_amp,
@@ -167,8 +170,8 @@ class Lens:
         self.coords = Coordinates(self.Mpix2coord, self.ra_at_xy_0, self.dec_at_xy_0)
 
 
-    def _set_amp_light_kwargs(self, band):
-        self.lenstronomy_roman_config = Roman(band=band.upper(),
+    def _set_amp_light_kwargs(self):
+        self.lenstronomy_roman_config = Roman(band=self.band.upper(),
                                               psf_type='PIXEL',
                                               survey_mode='wide_area').kwargs_single_band()
         magnitude_zero_point = self.lenstronomy_roman_config.get('magnitude_zero_point')

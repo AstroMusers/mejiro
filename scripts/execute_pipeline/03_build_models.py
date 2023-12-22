@@ -13,7 +13,7 @@ def main(config):
     start = time.time()
 
     # get directories
-    array_dir, data_dir, repo_dir, pickle_dir = config.machine.array_dir, config.machine.data_dir, config.machine.repo_dir, config.machine.pickle_dir
+    repo_dir, pickle_dir = config.machine.repo_dir, config.machine.pickle_dir
     
     # enable use of local packages
     if repo_dir not in sys.path:
@@ -40,7 +40,7 @@ def main(config):
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
-    process_count = int(cpu_count / 2)  # TODO consider making this larger, but using all CPUs has crashed
+    process_count = cpu_count - 4
 
     # tuple the parameters
     pipeline_params = util.hydra_to_dict(config.pipeline)
@@ -80,7 +80,7 @@ def get_model(input):
                 'lens': lens,
                 'model': model
             } 
-    pickle_target = os.path.join(output_dir, f'lens_dict_{lens.uid}')
+    pickle_target = os.path.join(output_dir, f'lens_dict_{lens.uid}_{lens.band}')
     util.pickle(pickle_target, lens_dict)
 
 

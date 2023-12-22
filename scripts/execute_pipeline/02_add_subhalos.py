@@ -83,11 +83,13 @@ def add(tuple):
     # randomly generate CDM subhalos
     halo_tuple = pyhalo.generate_CDM_halos(z_lens, z_source, cone_opening_angle_arcsec=subhalo_cone, LOS_normalization=los_normalization)
 
+    # print(halo_tuple)
+
     # add this subhalo population to the lens for each filter
-    for band, band_lens in lens:
+    for band, band_lens in lens.items():
         band_lens.add_subhalos(*halo_tuple)
 
-        pickle_target = os.path.join(output_dir, f'lens_with_subhalos_{lens.uid}_{band}')
+        pickle_target = os.path.join(output_dir, f'lens_with_subhalos_{band_lens.uid}_{band.lower()}')
         util.pickle(pickle_target, band_lens)
 
 
