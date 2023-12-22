@@ -20,9 +20,6 @@ def main(config):
         sys.path.append(repo_dir)
     from mejiro.utils import util
 
-    # array_dir = os.path.join(array_dir, 'skypy_output')
-    # util.create_directory_if_not_exists(array_dir)
-
     # directory to write the output to
     output_dir = os.path.join(pickle_dir, '03_models_and_updated_lenses')
     util.create_directory_if_not_exists(output_dir)

@@ -29,13 +29,6 @@ class Lens:
         # set lens_model_list, lens_light_model_list, source_light_model_list
         self._unpack_kwargs_model(kwargs_model)
 
-        # TODO clean up?
-        # self.delta_pix, self.num_pix = None, None
-        # self.ra_at_xy_0, self.dec_at_xy_0 = None, None
-        # self.Mpix2coord, self.Mcoord2pix = None, None
-        # self.pixel_grid, self.coords = None, None
-        # self.lenstronomy_roman_config = None
-
         
     def _unpack_kwargs_params(self, kwargs_params):
         self.kwargs_lens = kwargs_params['kwargs_lens']
@@ -103,7 +96,7 @@ class Lens:
 
         # define numerics
         kwargs_numerics = {
-            'supersampling_factor': 1,
+            'supersampling_factor': 1,  # TODO crank this up?
             'supersampling_convolution': False
         }
 
