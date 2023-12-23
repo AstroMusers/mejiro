@@ -117,6 +117,11 @@ def _phonion_sample(calc, mag_array, lens, num_samples, norm_wave, suppress_outp
     if not suppress_output:
         print(f'Point source conversion complete: placed {i} point sources')
 
+    # add an extra point source far out to force maximum scene size
+    calc['scene'].append(build_default_source(geometry='point', telescope='roman'))
+    calc['scene'][i]['position']['x_offset'] = 100
+    calc['scene'][i]['position']['y_offset'] = 100
+
     return calc, i
 
 

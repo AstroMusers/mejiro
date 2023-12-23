@@ -24,7 +24,7 @@ def main(config):
     from mejiro.utils import util
 
     # directory to write the output to
-    output_dir = os.path.join(array_dir, '04_pandeia_output')
+    output_dir = os.path.join(array_dir, '04_pandeia_output_color')
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
 
@@ -44,7 +44,7 @@ def main(config):
         tuple_list.append((dict_list[i], pipeline_params, output_dir))
 
     # TODO TEMP: limit list
-    tuple_list = tuple_list[:100]
+    # tuple_list = tuple_list[:10]
 
     # batch
     generator = util.batch_list(tuple_list, process_count)
