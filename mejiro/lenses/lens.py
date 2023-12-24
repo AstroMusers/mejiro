@@ -115,7 +115,11 @@ class Lens:
                                  kwargs_numerics=kwargs_numerics)
         
         # convert brightnesses to lenstronomy amp from magnitudes
-        self._set_amp_light_kwargs()
+        if 'magnitude' in self.kwargs_lens_light[0].keys():
+            self._set_amp_light_kwargs()
+        else:
+            self.kwargs_lens_light_amp = self.kwargs_lens_light
+            self.kwargs_source_amp = self.kwargs_source
 
         return image_model.image(kwargs_lens=self.kwargs_lens,
                                  kwargs_source=self.kwargs_source_amp,
@@ -129,12 +133,12 @@ class Lens:
 
 
     def get_source_pixel_coords(self):
-        source_ra, source_dec = self.kwargs_lens[0]['center_x'], self.kwargs_lens[0]['center_y']
+        source_ra, source_dec = self.kwargs_source[0]['center_x'], self.kwargs_source[0]['center_y']
         return self.coords.map_coord2pix(ra=source_ra, dec=source_dec)
 
 
     def get_lens_pixel_coords(self):
-        lens_ra, lens_dec = self.kwargs_source[0]['center_x'], self.kwargs_source[0]['center_y']
+        lens_ra, lens_dec = self.kwargs_lens[0]['center_x'], self.kwargs_lens[0]['center_y']
         return self.coords.map_coord2pix(ra=lens_ra, dec=lens_dec)
 
 
