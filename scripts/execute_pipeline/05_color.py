@@ -31,12 +31,13 @@ def main(config):
     # open pandeia arrays
     input_dir = config.machine.pandeia_dir
     file_list = glob(input_dir + '/*.npy')
+    num = int(len(file_list) / 4 - 100)  # TODO TEMP
     pandeia_list = []
-    for i in range(len(file_list) / 4):
-        f106 = [np.load(file) for file in file_list if f'{str(i).zfill(8)}_f106' in file][0]
-        f129 = [np.load(file) for file in file_list if f'{str(i).zfill(8)}_f129' in file][0]
-        f158 = [np.load(file) for file in file_list if f'{str(i).zfill(8)}_f158' in file][0]
-        f184 = [np.load(file) for file in file_list if f'{str(i).zfill(8)}_f184' in file][0]
+    for i in range(num):
+        f106 = np.load(input_dir + f'/pandeia_{str(i).zfill(8)}_f106.npy')
+        f129 = np.load(input_dir + f'/pandeia_{str(i).zfill(8)}_f129.npy')
+        f158 = np.load(input_dir + f'/pandeia_{str(i).zfill(8)}_f158.npy')
+        f184 = np.load(input_dir + f'/pandeia_{str(i).zfill(8)}_f184.npy')
         rgb_tuple = (f106, f129, f184, output_dir, str(i).zfill(8))
         pandeia_list.append(rgb_tuple)
 

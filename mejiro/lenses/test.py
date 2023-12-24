@@ -1,5 +1,6 @@
-from os import path
+import os
 
+import numpy as np
 from glob import glob
 from lenstronomy.LensModel.lens_model import LensModel
 from lenstronomy.LightModel.light_model import LightModel
@@ -15,11 +16,12 @@ def get_sample(pickle_dir, pandeia_dir, index):
     files = glob(pickle_dir + f'/lens_dict_{str(index).zfill(8)}_*')
 
     f106 = [util.unpickle(i) for i in files if 'f106' in i][0]
-    f129 = [util.unpickle(i) for i in files if 'f129' in i][0]
-    f158 = [util.unpickle(i) for i in files if 'f158' in i][0]
-    f184 = [util.unpickle(i) for i in files if 'f184' in i][0]
+    # f129 = [util.unpickle(i) for i in files if 'f129' in i][0]
+    # f158 = [util.unpickle(i) for i in files if 'f158' in i][0]
+    # f184 = [util.unpickle(i) for i in files if 'f184' in i][0]
 
-    rgb_image = util.unpickle(path.join(pandeia_dir, f'/pandeia_{str(index).zfill(8)}_*'))
+    image_path = os.path.join(pandeia_dir, f'pandeia_color_{str(index).zfill(8)}.npy')
+    rgb_image = np.load(image_path)
 
     return f106['lens'], rgb_image
 

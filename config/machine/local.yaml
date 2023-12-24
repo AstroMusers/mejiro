@@ -8,6 +8,8 @@ data_dir: /data/bwedig/roman-pandeia
 array_dir: ${machine.data_dir}/output/arrays
 figure_dir: ${machine.repo_dir}/figures
 pickle_dir: ${machine.data_dir}/output/pickles
+
+# pipeline directories
 sample_dir: ${machine.pickle_dir}/03_models_and_updated_lenses
 pandeia_dir: ${machine.array_dir}/04_pandeia_output
 color_dir: ${machine.array_dir}/05_color
