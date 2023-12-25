@@ -30,7 +30,7 @@ def main(config):
     lens_dict = {}
     for band in bands:
         # open pickled lens list
-        lens_list = util.unpickle(os.path.join(pickle_dir, f'01_skypy_output_lens_list_{band.lower()}'))
+        lens_list = util.unpickle(os.path.join(dir_01, f'01_skypy_output_lens_list_{band.lower()}'))
         lens_dict[band] = lens_list
     
     # TODO this naming is dumb, fix it

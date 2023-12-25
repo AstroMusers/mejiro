@@ -7,17 +7,21 @@
 cd scripts/execute_pipeline
 
 # execute Python scripts sequentially
+echo 'Checking installation...'
+python3 00_pipeline_setup.py
+echo 'Installation check passed.'
+
 echo 'Building lens list from SkyPy...'
 python3 01_lens_list_from_skypy.py
 echo 'Built lens list.'
 
-echo 'Adding subhalos with PyHalo...'
-python3 02_add_subhalos.py
-echo 'Added subhalos.'
-
-echo 'Building models...'
-python3 03_build_models.py
-echo 'Built models.'
+#echo 'Adding subhalos with PyHalo...'
+#python3 02_add_subhalos.py
+#echo 'Added subhalos.'
+#
+#echo 'Building models...'
+#python3 03_build_models.py
+#echo 'Built models.'
 
 # echo 'Simulating Pandeia images...'
 # python3 -W ignore 04_pandeia.py  # suppress warnings
