@@ -10,7 +10,7 @@ def text_boxes(ax, text_list, fontsize=18, alpha=0.5):
 
 def source_position(ax, lens):
     source_x, source_y = lens.get_source_pixel_coords()
-    return ax.scatter(source_x, source_y, edgecolor='y', facecolor='none', s=150, label='Source position')
+    return ax.scatter(source_x, source_y, edgecolor='purple', facecolor='none', s=150, label='Source position')
 
 
 def lens_position(ax, lens):

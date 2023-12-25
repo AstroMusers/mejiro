@@ -110,7 +110,7 @@ def _phonion_sample(calc, mag_array, lens, num_samples, norm_wave, suppress_outp
 
         # set position
         calc['scene'][i]['position']['x_offset'] = dec
-        calc['scene'][i]['position']['y_offset'] = -ra  # TODO why does this make sense? it works, but why?
+        calc['scene'][i]['position']['y_offset'] = -ra
 
         i += 1
 
