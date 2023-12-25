@@ -29,6 +29,9 @@ class Lens:
         # set lens_model_list, lens_light_model_list, source_light_model_list
         self._unpack_kwargs_model(kwargs_model)
 
+        # set kwargs_model
+        self.update_model()        
+
         
     def _unpack_kwargs_params(self, kwargs_params):
         self.kwargs_lens = kwargs_params['kwargs_lens']
