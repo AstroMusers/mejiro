@@ -12,7 +12,7 @@ from tqdm import tqdm
 def main(config):
     start = time.time()
     
-    repo_dir, pickle_dir = config.machine.repo_dir, config.machine.pickle_dir
+    repo_dir = config.machine.repo_dir
 
     # enable use of local packages
     if repo_dir not in sys.path:
@@ -30,7 +30,7 @@ def main(config):
     lens_dict = {}
     for band in bands:
         # open pickled lens list
-        lens_list = util.unpickle(os.path.join(dir_01, f'01_skypy_output_lens_list_{band.lower()}'))
+        lens_list = util.unpickle(os.path.join(config.machine.dir_01, f'01_skypy_output_lens_list_{band.lower()}'))
         lens_dict[band] = lens_list
     
     # TODO this naming is dumb, fix it
@@ -43,9 +43,14 @@ def main(config):
         lenses.append(lens)
 
     # directory to write the lenses with subhalos to
-    output_dir = os.path.join(pickle_dir, '02_lenses_with_substructure')
+    output_dir = config.machine.dir_02
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
+
+    # directory to write pickled subhalos to
+    subhalo_dir = os.path.join(output_dir, 'subhalos')
+    util.create_directory_if_not_exists(subhalo_dir)
+    util.clear_directory(subhalo_dir)
 
     # tuple the parameters
     pipeline_params = util.hydra_to_dict(config.pipeline)
@@ -83,7 +88,8 @@ def add(tuple):
     # randomly generate CDM subhalos
     halo_tuple = pyhalo.generate_CDM_halos(z_lens, z_source, cone_opening_angle_arcsec=subhalo_cone, LOS_normalization=los_normalization)
 
-    # print(halo_tuple)
+    # pickle the subhalos
+    util.pickle(os.path.join(output_dir, 'subhalos'), halo_tuple)
 
     # add this subhalo population to the lens for each filter
     for band, band_lens in lens.items():

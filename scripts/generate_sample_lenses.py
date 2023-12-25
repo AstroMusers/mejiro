@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 
 import hydra
 import numpy as np
@@ -34,19 +35,31 @@ def main(config):
     pickle_dir = os.path.join(pickle_dir, 'pyhalo')
     lens.add_subhalos(*pyhalo.unpickle_subhalos(os.path.join(pickle_dir, 'cdm_subhalos_tuple')))
 
+    execution_time = []
+    execution_time_x = []
+
     for grid_oversample in grid_oversample_list:
         for num_samples in tqdm(num_samples_list):
-            model = lens.get_array(num_pix=51 * grid_oversample, side=5.61)  # .get_array(num_pix=97, side=10.67)
+            start = time.time()
+
+            model = lens.get_array(num_pix=97, side=10.67)  # .get_array(num_pix=51 * grid_oversample, side=5.61)
 
             # build Pandeia input
-            calc, _ = pandeia_input.build_pandeia_calc(model, lens, num_samples=num_samples, suppress_output=True)
+            calc, _ = pandeia_input.build_pandeia_calc(model, lens, max_scene_size=10., num_samples=num_samples, suppress_output=True)
 
             # do Pandeia calculation        
             image, _ = pandeia_input.get_pandeia_image(calc, suppress_output=True)
-            assert image.shape == (45, 45)
+            assert image.shape == (91, 91) # 45, 45
 
             # save image
             np.save(os.path.join(array_dir, f'sample_skypy_lens_{grid_oversample}_{num_samples}'), image)
+
+            stop = time.time()
+            execution_time.append(stop - start)
+            execution_time_x.append((grid_oversample, num_samples))
+
+    np.save(os.path.join(array_dir, f'execution_time'), execution_time)
+    np.save(os.path.join(array_dir, f'execution_time_x'), execution_time_x)
 
 
 if __name__ == '__main__':

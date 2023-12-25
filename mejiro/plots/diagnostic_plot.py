@@ -9,8 +9,10 @@ from mejiro.plots import plot_util
 def residual_compare(ax, array_list, title_list, linear_width):
     norm = plot_util.get_norm(array_list, linear_width)
 
+    last_array = array_list[:-1]
+
     for i, array in enumerate(array_list):
-        axis = ax[i].imshow(array, cmap='bwr', norm=norm)
+        axis = ax[i].imshow(last_array - array, cmap='bwr', norm=norm)
         ax[i].set_title(title_list[i])
         ax[i].set_axis_off()
 
