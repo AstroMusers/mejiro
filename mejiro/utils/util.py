@@ -15,10 +15,6 @@ def center_crop_image(array, shape):
     return array[y_start:y_start+y_out, x_start:x_start+x_out]
 
 
-def hydra_to_list(config, key):
-    return hydra_to_dict(config)[key]
-
-
 def hydra_to_dict(config):
     container = OmegaConf.to_container(config, resolve=True)
     return dict(ChainMap(*container))

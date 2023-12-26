@@ -6,7 +6,7 @@ from scipy.fft import fft2
 from mejiro.plots import plot_util
 
 
-def residual_compare(ax, array_list, title_list, linear_width):
+def residual_compare(ax, array_list, linear_width, title_list=None):
     norm = plot_util.get_norm(array_list, linear_width)
 
     last_array = array_list[:-1]

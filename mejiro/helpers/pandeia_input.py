@@ -11,6 +11,7 @@ from tqdm import tqdm
 
 from mejiro.helpers.roman_params import RomanParameters
 from mejiro.utils import util
+from mejiro.helpers import bkg
 
 
 def build_pandeia_calc(array, lens, band='f106', max_scene_size=5, num_samples=None, oversample_factor=None, suppress_output=False):
@@ -29,7 +30,7 @@ def build_pandeia_calc(array, lens, band='f106', max_scene_size=5, num_samples=N
     calc['calculation'] = get_calculation_dict(init=True)
 
     # set background
-    calc['background'] = get_background_noise(array, band)
+    calc['background'] = bkg.get_background()
 
     # convert array from counts/sec to astronomical magnitude
     mag_array = _get_mag_array(lens, array, num_samples, band, suppress_output)
@@ -191,17 +192,20 @@ def _convert_magnitude_to_cps(array, band, suppress_output):
 
 
 def get_background_noise(array, band):
-    # load pre-generated Pandeia minzodi background
-    data_dir = _get_data_dir()
-    bkg = np.load(os.path.join(data_dir, f'pandeia_bkg_minzodi_benchmark_{band}.npy'))
+    # # load pre-generated Pandeia minzodi background
+    # data_dir = _get_data_dir()
+    # bkg = np.load(os.path.join(data_dir, f'pandeia_bkg_minzodi_benchmark_{band}.npy'))
 
-    # crop and randomize
-    bkg_cropped = util.center_crop_image(bkg, array.shape)
-    flat = bkg_cropped.flatten()
-    np.random.shuffle(flat)
-    shuffled = flat.reshape(bkg_cropped.shape)
+    # # crop and randomize
+    # bkg_cropped = util.center_crop_image(bkg, (97, 97))
+    # flat = bkg_cropped.flatten()
+    # np.random.shuffle(flat)
+    # shuffled = flat.reshape(bkg_cropped.shape)
 
-    return shuffled
+    # return shuffled
+
+    from mejiro.data.background import background
+    return background
 
 
 def _get_norm_wave(band):

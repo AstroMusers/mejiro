@@ -6,6 +6,7 @@ dependencies:
   - python
   - astroquery
   - jupyter
+  - healpy
   - lenstronomy
   - pip
   - tqdm
@@ -15,3 +16,5 @@ dependencies:
       - hydra-core
       - colossus
       - mcfit
+      - jwst_backgrounds
+      - regions

@@ -13,7 +13,7 @@ def main(config):
     start = time.time()
 
     # get directories
-    repo_dir, pickle_dir = config.machine.repo_dir, config.machine.pickle_dir
+    repo_dir = config.machine.repo_dir
     
     # enable use of local packages
     if repo_dir not in sys.path:
@@ -21,19 +21,12 @@ def main(config):
     from mejiro.utils import util
 
     # directory to write the output to
-    output_dir = os.path.join(pickle_dir, '03_models_and_updated_lenses')
+    output_dir = config.machine.dir_03
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
 
     # open pickled lens list
-    lens_dir = os.path.join(pickle_dir, '02_lenses_with_substructure')
-    lens_list = util.unpickle_all(lens_dir)
-
-    # go sequentially
-    # for i, lens in tqdm(enumerate(lens_list), total=len(lens_list)):
-    #     lens, model = get_model(lens)
-    #     np.save(os.path.join(array_dir, f'skypy_output_{str(i).zfill(8)}.npy'), model)
-    #     updated_lenses.append(lens)
+    lens_list = util.unpickle_all(config.machine.dir_02)
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()

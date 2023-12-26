@@ -16,7 +16,7 @@ from tqdm import tqdm
 def main(config):
     start = time.time()
 
-    array_dir, repo_dir, pickle_dir = config.machine.array_dir, config.machine.repo_dir, config.machine.pickle_dir
+    array_dir, repo_dir = config.machine.array_dir, config.machine.repo_dir
 
     # enable use of local packages
     if repo_dir not in sys.path:
@@ -24,13 +24,12 @@ def main(config):
     from mejiro.utils import util
 
     # directory to write the output to
-    output_dir = os.path.join(array_dir, '04_pandeia_output_color')
+    output_dir = config.machine.dir_04
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
 
     # open pickled lens dict list
-    input_dir = os.path.join(pickle_dir, '03_models_and_updated_lenses')
-    dict_list = util.unpickle_all(os.path.join(input_dir), prefix='lens_dict_')
+    dict_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_')
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -85,7 +84,6 @@ def get_image(input):
 
     # generate Pandeia image and save
     image, execution_time = pandeia_input.get_pandeia_image(calc, suppress_output=True)
-    # assert image.shape == (round(max_scene_size / .11), round(max_scene_size / .11))
     np.save(os.path.join(output_dir, f'pandeia_{uid}_{band}.npy'), image)
 
     return execution_time

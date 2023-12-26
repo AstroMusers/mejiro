@@ -16,7 +16,7 @@ from tqdm import tqdm
 def main(config):
     start = time.time()
 
-    array_dir, repo_dir, pickle_dir = config.machine.array_dir, config.machine.repo_dir, config.machine.pickle_dir
+    array_dir, repo_dir = config.machine.array_dir, config.machine.repo_dir
 
     # enable use of local packages
     if repo_dir not in sys.path:
@@ -24,12 +24,12 @@ def main(config):
     from mejiro.utils import util
 
     # directory to write the output to
-    output_dir = os.path.join(array_dir, '05_color')
+    output_dir = config.machine.dir_05
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
 
     # open pandeia arrays
-    input_dir = config.machine.pandeia_dir
+    input_dir = config.machine.dir_04
     file_list = glob(input_dir + '/*.npy')
     num = int(len(file_list) / 4 - 100)  # TODO TEMP
     pandeia_list = []
@@ -65,12 +65,11 @@ def main(config):
 
 
 def get_image(input):
-    from mejiro.helpers import color
-
     # unpack tuple
     (f106, f129, f184, output_dir, uid) = input
 
     # generate and save color image
+    from mejiro.helpers import color
     rgb_image = color.get_rgb(image_b=f106, image_g=f129, image_r=f184)
     np.save(os.path.join(output_dir, f'pandeia_color_{uid}.npy'), rgb_image)
 
