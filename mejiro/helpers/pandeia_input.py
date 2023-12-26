@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from mejiro.helpers.roman_params import RomanParameters
 from mejiro.utils import util
-from mejiro.helpers import bkg
+from mejiro.helpers import bkg, lenstronomy_sim
 
 
 def build_pandeia_calc(array, lens, band='f106', max_scene_size=5, num_samples=None, oversample_factor=None, suppress_output=False):
@@ -30,7 +30,10 @@ def build_pandeia_calc(array, lens, band='f106', max_scene_size=5, num_samples=N
     calc['calculation'] = get_calculation_dict(init=True)
 
     # set background
-    calc['background'] = bkg.get_background()
+    calc['background'] = 'none'
+
+    # add noise
+    array += lenstronomy_sim.get_background_noise(lens, array, lens.num_pix, band)
 
     # convert array from counts/sec to astronomical magnitude
     mag_array = _get_mag_array(lens, array, num_samples, band, suppress_output)
