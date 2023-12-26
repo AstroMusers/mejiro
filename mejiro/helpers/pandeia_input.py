@@ -10,10 +10,10 @@ from pandeia.engine.perform_calculation import perform_calculation
 from tqdm import tqdm
 
 from mejiro.helpers.roman_params import RomanParameters
+from mejiro.utils import util
 
 
-def build_pandeia_calc(array, lens, band='f106', max_scene_size=5, num_samples=None, oversample_factor=None,
-                       suppress_output=False):
+def build_pandeia_calc(array, lens, band='f106', max_scene_size=5, num_samples=None, oversample_factor=None, suppress_output=False):
     calc = build_default_calc('roman', 'wfi', 'imaging')
 
     # set scene size settings
@@ -27,6 +27,9 @@ def build_pandeia_calc(array, lens, band='f106', max_scene_size=5, num_samples=N
 
     # turn on noise sources
     calc['calculation'] = get_calculation_dict(init=True)
+
+    # set background
+    calc['background'] = get_background_noise(array, band)
 
     # convert array from counts/sec to astronomical magnitude
     mag_array = _get_mag_array(lens, array, num_samples, band, suppress_output)
@@ -187,6 +190,20 @@ def _convert_magnitude_to_cps(array, band, suppress_output):
     return cps_array
 
 
+def get_background_noise(array, band):
+    # load pre-generated Pandeia minzodi background
+    data_dir = _get_data_dir()
+    bkg = np.load(os.path.join(data_dir, f'pandeia_bkg_minzodi_benchmark_{band}.npy'))
+
+    # crop and randomize
+    bkg_cropped = util.center_crop_image(bkg, array.shape)
+    flat = bkg_cropped.flatten()
+    np.random.shuffle(flat)
+    shuffled = flat.reshape(bkg_cropped.shape)
+
+    return shuffled
+
+
 def _get_norm_wave(band):
     band = band.upper()
     roman_params = _get_roman_params()
@@ -196,9 +213,8 @@ def _get_norm_wave(band):
 
 
 def _get_roman_params():
-    import mejiro
-    module_path = os.path.dirname(mejiro.__file__)
-    csv_path = os.path.join(module_path, 'data', 'roman_spacecraft_and_instrument_parameters.csv')
+    data_dir = _get_data_dir()
+    csv_path = os.path.join(data_dir, 'roman_spacecraft_and_instrument_parameters.csv')
     return RomanParameters(csv_path)
 
 
@@ -239,3 +255,9 @@ def _phonion_grid(calc, mag_array, lens, oversample_factor, norm_wave, suppress_
         print(f'Point source conversion complete: placed {i} point sources')
 
     return calc, i
+
+
+def _get_data_dir():
+    import mejiro
+    module_path = os.path.dirname(mejiro.__file__)
+    return os.path.join(module_path, 'data')

@@ -42,7 +42,7 @@ def main(config):
         for num_samples in tqdm(num_samples_list):
             start = time.time()
 
-            model = lens.get_array(num_pix=97, side=10.67)  # .get_array(num_pix=51 * grid_oversample, side=5.61)
+            model = lens.get_array(num_pix=97 * grid_oversample, side=10.67)  # .get_array(num_pix=51 * grid_oversample, side=5.61)
 
             # build Pandeia input
             calc, _ = pandeia_input.build_pandeia_calc(model, lens, max_scene_size=10., num_samples=num_samples, suppress_output=True)
@@ -58,8 +58,8 @@ def main(config):
             execution_time.append(stop - start)
             execution_time_x.append((grid_oversample, num_samples))
 
-    np.save(os.path.join(array_dir, f'execution_time'), execution_time)
-    np.save(os.path.join(array_dir, f'execution_time_x'), execution_time_x)
+    np.save(os.path.join(array_dir, 'execution_time'), execution_time)
+    np.save(os.path.join(array_dir, 'execution_time_x'), execution_time_x)
 
 
 if __name__ == '__main__':

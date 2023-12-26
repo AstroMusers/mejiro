@@ -7,6 +7,18 @@ from glob import glob
 from omegaconf import OmegaConf
 
 
+def center_crop_image(array, shape):
+    y_out, x_out = shape
+    y, x = array.shape
+    x_start = (x // 2) - (x_out // 2)
+    y_start = (y // 2) - (y_out // 2)    
+    return array[y_start:y_start+y_out, x_start:x_start+x_out]
+
+
+def hydra_to_list(config, key):
+    return hydra_to_dict(config)[key]
+
+
 def hydra_to_dict(config):
     container = OmegaConf.to_container(config, resolve=True)
     return dict(ChainMap(*container))
