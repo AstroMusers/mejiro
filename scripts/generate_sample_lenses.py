@@ -35,10 +35,10 @@ def main(config):
     pickle_dir = os.path.join(pickle_dir, 'pyhalo')
     lens.add_subhalos(*pyhalo.unpickle_subhalos(os.path.join(pickle_dir, 'cdm_subhalos_tuple')))
 
-    execution_time = []
-    execution_time_x = []
-
     for grid_oversample in grid_oversample_list:
+        execution_time = []
+        execution_time_x = []
+
         for num_samples in tqdm(num_samples_list):
             start = time.time()
 
@@ -58,8 +58,8 @@ def main(config):
             execution_time.append(stop - start)
             execution_time_x.append((grid_oversample, num_samples))
 
-    np.save(os.path.join(array_dir, 'execution_time'), execution_time)
-    np.save(os.path.join(array_dir, 'execution_time_x'), execution_time_x)
+        np.save(os.path.join(array_dir, f'execution_time_{grid_oversample}'), execution_time)
+        np.save(os.path.join(array_dir, f'execution_time_x_{grid_oversample}'), execution_time_x)
 
 
 if __name__ == '__main__':

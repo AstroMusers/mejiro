@@ -15,6 +15,8 @@ from mejiro.helpers import bkg, lenstronomy_sim
 
 
 def build_pandeia_calc(array, lens, band='f106', max_scene_size=5, num_samples=None, oversample_factor=None, suppress_output=False):
+    band = band.lower()
+
     calc = build_default_calc('roman', 'wfi', 'imaging')
 
     # set scene size settings
@@ -33,7 +35,8 @@ def build_pandeia_calc(array, lens, band='f106', max_scene_size=5, num_samples=N
     calc['background'] = 'none'
 
     # add noise
-    array += lenstronomy_sim.get_background_noise(lens, array, lens.num_pix, band)
+    array += lenstronomy_sim.get_background_noise(lens, array, band)
+    # array += get_background_noise(lens, band)
 
     # convert array from counts/sec to astronomical magnitude
     mag_array = _get_mag_array(lens, array, num_samples, band, suppress_output)
@@ -194,21 +197,20 @@ def _convert_magnitude_to_cps(array, band, suppress_output):
     return cps_array
 
 
-def get_background_noise(array, band):
-    # # load pre-generated Pandeia minzodi background
-    # data_dir = _get_data_dir()
-    # bkg = np.load(os.path.join(data_dir, f'pandeia_bkg_minzodi_benchmark_{band}.npy'))
+def get_background_noise(lens, band):
+    # load pre-generated Pandeia minzodi background
+    data_dir = _get_data_dir()
+    bkg = np.load(os.path.join(data_dir, f'pandeia_bkg_minzodi_benchmark_{band}.npy'))
 
-    # # crop and randomize
-    # bkg_cropped = util.center_crop_image(bkg, (97, 97))
-    # flat = bkg_cropped.flatten()
-    # np.random.shuffle(flat)
-    # shuffled = flat.reshape(bkg_cropped.shape)
+    # TODO account for supersampling
 
-    # return shuffled
+    # crop and randomize
+    bkg_cropped = util.center_crop_image(bkg, (lens.num_pix, lens.num_pix))
+    flat = bkg_cropped.flatten()
+    np.random.shuffle(flat)
+    shuffled = flat.reshape(bkg_cropped.shape)
 
-    from mejiro.data.background import background
-    return background
+    return shuffled
 
 
 def _get_norm_wave(band):
