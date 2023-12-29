@@ -10,7 +10,7 @@ pipeline:
   - num_pix: 97
   - side: 10.67
   - grid_oversample: 3
-  - num_samples: 100000
+  - num_samples: 10000
   - max_scene_size: 10.01
   - subhalo_cone: 11.
   - los_normalization: 0.

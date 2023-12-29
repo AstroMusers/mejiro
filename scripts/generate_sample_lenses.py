@@ -26,7 +26,7 @@ def main(config):
         sys.path.append(repo_dir)
 
     grid_oversample_list = [1, 3, 5]
-    num_samples_list = [100, 1000, 10000, 100000, 1000000, 10000000]
+    num_samples_list = [100, 1000, 10000, 100000]  # , 1000000, 10000000
 
     # use test lens
     lens = SampleSkyPyLens()
