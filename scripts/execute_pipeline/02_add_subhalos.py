@@ -25,12 +25,14 @@ def main(config):
 
     # get bands
     bands = util.hydra_to_dict(config.pipeline)['band']
+    bands = [i.lower() for i in bands]
 
     # organize the pickles into a dict
     lens_dict = {}
     for band in bands:
         # open pickled lens list
-        lens_list = util.unpickle(os.path.join(config.machine.dir_01, f'01_skypy_output_lens_list_{band.lower()}'))
+        pickled_lens_list = os.path.join(config.machine.dir_01, f'01_skypy_output_lens_list_{band}')
+        lens_list = util.unpickle(pickled_lens_list)
         lens_dict[band] = lens_list
     
     # TODO this naming is dumb, fix it
@@ -89,7 +91,9 @@ def add(tuple):
     halo_tuple = pyhalo.generate_CDM_halos(z_lens, z_source, cone_opening_angle_arcsec=subhalo_cone, LOS_normalization=los_normalization)
 
     # pickle the subhalos
-    util.pickle(os.path.join(output_dir, 'subhalos'), halo_tuple)
+    first_filter = pipeline_params['band'][0].lower()
+    lens_object = lens[first_filter]
+    util.pickle(os.path.join(output_dir, 'subhalos', f'subhalo_tuple_{lens_object.uid}'), halo_tuple)
 
     # add this subhalo population to the lens for each filter
     for band, band_lens in lens.items():

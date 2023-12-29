@@ -2,7 +2,7 @@
 repo_dir: /nfshome/bwedig/mejiro
 
 # where output data should be written
-data_dir: /data/bwedig/roman-pandeia  # mejiro
+data_dir: /data/bwedig/mejiro
 
 # input data
 skypy_dir: ${machine.data_dir}/skypy

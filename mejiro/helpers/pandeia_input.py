@@ -32,10 +32,10 @@ def build_pandeia_calc(array, lens, band='f106', max_scene_size=5, num_samples=N
     calc['calculation'] = get_calculation_dict(init=True)
 
     # set background
-    calc['background'] = 'none'
+    # calc['background'] = 'none'
 
     # add noise
-    array += lenstronomy_sim.get_background_noise(lens, array, band)
+    # array += lenstronomy_sim.get_background_noise(lens, array, band)
     # array += get_background_noise(lens, band)
 
     # convert array from counts/sec to astronomical magnitude

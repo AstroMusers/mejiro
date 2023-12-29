@@ -75,8 +75,8 @@ class SampleSkyPyLens(Lens):
             'n_sersic': 1,
             'e1': -0.1,
             'e2': 0.1,
-            'center_x': 0,  # 0.237250
-            'center_y': 0.2  # -0.090416
+            'center_x': 0.237250,
+            'center_y': -0.090416
         }
         self.kwargs_source = [kwargs_sersic]
 

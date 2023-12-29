@@ -2,6 +2,7 @@ import datetime
 import os
 import pickle as _pickle
 from collections import ChainMap
+import shutil
 
 from glob import glob
 from omegaconf import OmegaConf
@@ -39,9 +40,9 @@ def unpickle(path):
 def unpickle_all(dir_path, prefix='', limit=None):
     file_list = glob(dir_path + f'/{prefix}*')
     if limit is not None:
-        return [unpickle(i) for i in file_list[:limit]]
+        return [unpickle(i) for i in file_list[:limit] if os.path.isfile(i)]
     else:
-        return [unpickle(i) for i in file_list]
+        return [unpickle(i) for i in file_list if os.path.isfile(i)]
 
 
 def create_directory_if_not_exists(path):
@@ -50,8 +51,11 @@ def create_directory_if_not_exists(path):
 
 
 def clear_directory(path):
-    for file in glob(path + '/*'):
-        os.remove(file)
+    for i in glob(path + '/*'):
+        if os.path.isfile(i):
+            os.remove(i)
+        else:
+            shutil.rmtree(i)
 
 
 def batch_list(list, n):
