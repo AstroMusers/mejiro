@@ -1,8 +1,9 @@
 /pandeia_docs
 /roman_tools
 # /notebooks/build
-# /notebooks/old
+/notebooks/old
 # /notebooks/test
+scripts/old
 
 # Jupyter
 .ipynb_checkpoints

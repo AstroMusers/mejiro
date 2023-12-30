@@ -15,6 +15,7 @@ def get_background():
 
     wavelengths = get_wavelengths()
     ra, dec = generate_hlwas_coords()
+    # print(f'RA: {ra}, DEC: {dec}')
 
     for wavelength in wavelengths:
         bg = jbt.background(ra, dec, wavelength)
@@ -24,7 +25,7 @@ def get_background():
 
 
 def generate_hlwas_coords():
-    return random.uniform(-60, -15), random.uniform(-60, -15)
+    return random.uniform(15, 45), random.uniform(-45, -15)
 
     
 def get_wavelengths():

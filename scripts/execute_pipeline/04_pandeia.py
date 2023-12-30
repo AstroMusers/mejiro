@@ -43,7 +43,7 @@ def main(config):
         tuple_list.append((dict_list[i], pipeline_params, output_dir))
 
     # TODO TEMP: limit list
-    # tuple_list = tuple_list[:10]
+    tuple_list = tuple_list[:10]
 
     # batch
     generator = util.batch_list(tuple_list, process_count)
