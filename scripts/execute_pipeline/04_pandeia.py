@@ -26,7 +26,7 @@ def main(config):
     # directory to write the output to
     output_dir = config.machine.dir_04
     util.create_directory_if_not_exists(output_dir)
-    util.clear_directory(output_dir)
+    # util.clear_directory(output_dir)
 
     # open pickled lens dict list
     dict_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_')
@@ -43,7 +43,7 @@ def main(config):
         tuple_list.append((dict_list[i], pipeline_params, output_dir))
 
     # TODO TEMP: limit list
-    tuple_list = tuple_list[:10]
+    # tuple_list = tuple_list[:10]
 
     # batch
     generator = util.batch_list(tuple_list, process_count)

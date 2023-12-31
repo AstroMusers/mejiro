@@ -1,8 +1,23 @@
 import pickle
 
 import astropy.cosmology as astropy_cosmo
+from lenstronomy.Cosmo.lens_cosmo import LensCosmo
 from pyHalo.preset_models import CDM
 from pyHalo.Cosmology.cosmology import Cosmology
+
+
+def get_lens_cosmo(z_lens, z_source):
+    return LensCosmo(z_lens=z_lens, 
+                     z_source=z_source, 
+                     cosmo=get_default_cosmo())
+
+
+def cut_mass(realization, log_m_cutoff):
+    for i, halo in enumerate(realization.halos):
+        if halo.mass < 10 ** log_m_cutoff:
+            del realization.halos[i]
+
+    return realization
 
 
 def generate_CDM_halos(z_lens, z_source, cone_opening_angle_arcsec=11, LOS_normalization=0.0):
@@ -13,7 +28,7 @@ def generate_CDM_halos(z_lens, z_source, cone_opening_angle_arcsec=11, LOS_norma
 
 def realization_to_lensing_quantities(realization):
     # set cosmology by initializing pyHalo's Cosmology object, otherwise Colossus throws an error down the line
-    astropy_default_cosmo = astropy_cosmo.default_cosmology.get()
+    astropy_default_cosmo = get_default_cosmo()
     Cosmology(astropy_instance=astropy_default_cosmo)
 
     # generate lenstronomy objects
@@ -30,3 +45,7 @@ def unpickle_subhalos(filepath):
         halo_lens_model_list, halo_redshift_list, kwargs_halos = pickle.load(results_file)
     
     return halo_lens_model_list, halo_redshift_list, kwargs_halos
+
+
+def get_default_cosmo():
+    return astropy_cosmo.default_cosmology.get()

@@ -24,31 +24,29 @@ def main(config):
     from mejiro.utils import util
 
     # directory to write the output to
-    output_dir = config.machine.dir_05
+    output_dir = config.machine.dir_04
     util.create_directory_if_not_exists(output_dir)
-    util.clear_directory(output_dir)
+    # util.clear_directory(output_dir)
 
-    # open pandeia arrays
-    input_dir = config.machine.dir_04
-    file_list = glob(input_dir + '/*.npy')
-    num = int(len(file_list) / 4)
-    pandeia_list = []
-    for i in range(num):
-        if len(glob(input_dir + f'/pandeia_{str(i).zfill(8)}*.npy')) == 4:
-            f106 = np.load(input_dir + f'/pandeia_{str(i).zfill(8)}_f106.npy')
-            f129 = np.load(input_dir + f'/pandeia_{str(i).zfill(8)}_f129.npy')
-            f158 = np.load(input_dir + f'/pandeia_{str(i).zfill(8)}_f158.npy')
-            f184 = np.load(input_dir + f'/pandeia_{str(i).zfill(8)}_f184.npy')
-            rgb_tuple = (f106, f129, f184, output_dir, str(i).zfill(8))
-            pandeia_list.append(rgb_tuple)
+    # open pickled lens dict list
+    dict_list = util.unpickle_all(os.path.join(config.machine.pipeline_dir, '03_3'), prefix='lens_dict_')
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
-    process_count = cpu_count - 4
+    process_count = cpu_count - 8
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
+    # tuple the parameters
+    pipeline_params = util.hydra_to_dict(config.pipeline)
+    tuple_list = []
+    for i, _ in enumerate(dict_list):
+        tuple_list.append((dict_list[i], pipeline_params, output_dir))
+
+    # TODO TEMP: limit list
+    # tuple_list = tuple_list[:10]
+
     # batch
-    generator = util.batch_list(pandeia_list, process_count)
+    generator = util.batch_list(tuple_list, process_count)
     batches = list(generator)
 
     # process the batches
@@ -66,13 +64,29 @@ def main(config):
 
 
 def get_image(input):
-    # unpack tuple
-    (f106, f129, f184, output_dir, uid) = input
+    from mejiro.helpers import pandeia_input
 
-    # generate and save color image
-    from mejiro.helpers import color
-    rgb_image = color.get_rgb(image_b=f106, image_g=f129, image_r=f184)
-    np.save(os.path.join(output_dir, f'pandeia_color_{uid}.npy'), rgb_image)
+    # unpack tuple
+    (lens_dict, pipeline_params, output_dir) = input
+
+    # unpack lens_dict
+    array = lens_dict['model']
+    lens = lens_dict['lens']
+    uid = lens.uid
+    band = lens.band
+
+    # unpack pipeline_params
+    max_scene_size = pipeline_params['max_scene_size']
+    num_samples = pipeline_params['num_samples']
+
+    # build Pandeia input
+    calc, _ = pandeia_input.build_pandeia_calc(array, lens, band=band, max_scene_size=max_scene_size, num_samples=num_samples, suppress_output=True)
+
+    # generate Pandeia image and save
+    image, execution_time = pandeia_input.get_pandeia_image(calc, suppress_output=True)
+    np.save(os.path.join(output_dir, f'pandeia_{uid}_{band}.npy'), image)
+
+    return execution_time
 
 
 if __name__ == '__main__':
