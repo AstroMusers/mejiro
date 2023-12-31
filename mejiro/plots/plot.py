@@ -73,7 +73,7 @@ def plot_list(array_list, cmap='viridis', title_list=None):
                          gridspec_kw={'hspace': 0.02, 'wspace': 0.02})
 
     for i, array in enumerate(array_list):
-        ax[i].imshow(array, cmap='viridis')
+        ax[i].imshow(array, cmap=cmap)
         ax[i].get_xaxis().set_visible(False)
         ax[i].get_yaxis().set_visible(False)
         if title_list is not None:

@@ -33,7 +33,7 @@ def build_pandeia_calc(array, lens, band='f106', max_scene_size=5, num_samples=N
 
     # set background
     # calc['background'] = 'none'
-    calc['background'] = bkg.get_background()
+    calc['background'] = bkg.get_background(suppress_output)
 
     # add noise
     # array += lenstronomy_sim.get_background_noise(lens, array, band)

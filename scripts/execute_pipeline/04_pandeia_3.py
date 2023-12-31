@@ -29,11 +29,15 @@ def main(config):
     # util.clear_directory(output_dir)
 
     # open pickled lens dict list
-    dict_list = util.unpickle_all(os.path.join(config.machine.pipeline_dir, '03_3'), prefix='lens_dict_')
+    # dict_list = util.unpickle_all(os.path.join(config.machine.pipeline_dir, '03_3'), prefix='lens_dict_')
+    f106_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f106')  # os.path.join(config.machine.pipeline_dir, '03_test')
+    f129_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f129')
+    f184_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f184')
+    dict_list = f106_list + f129_list + f184_list
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
-    process_count = cpu_count - 8
+    process_count = cpu_count - 4
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     # tuple the parameters

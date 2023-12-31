@@ -24,12 +24,12 @@ def main(config):
     from mejiro.utils import util
 
     # directory to write the output to
-    output_dir = config.machine.dir_05
+    output_dir = config.machine.dir_05  # os.path.join(config.machine.pipeline_dir, '05_test')
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
 
     # open pandeia arrays
-    input_dir = config.machine.dir_04
+    input_dir = config.machine.dir_04  # os.path.join(config.machine.pipeline_dir, '04_test')
     file_list = glob(input_dir + '/*.npy')
     num = int(len(file_list) / 4)
     pandeia_list = []

@@ -24,12 +24,15 @@ def main(config):
     from mejiro.utils import util
 
     # directory to write the output to
-    output_dir = config.machine.dir_04
+    output_dir = config.machine.dir_04  # os.path.join(config.machine.pipeline_dir, '04_test')
     util.create_directory_if_not_exists(output_dir)
     # util.clear_directory(output_dir)
 
     # open pickled lens dict list
-    dict_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_')
+    f106_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f106')  # os.path.join(config.machine.pipeline_dir, '03_test')
+    f129_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f129')
+    f184_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f184')
+    dict_list = f106_list + f129_list + f184_list
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
