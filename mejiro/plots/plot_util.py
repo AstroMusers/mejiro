@@ -7,15 +7,6 @@ from matplotlib import colors
 from mejiro.utils import util
 
 
-# def __kwargs_handler(kwargs):
-#     if 'colorbar' in kwargs:
-#         if kwargs['colorbar']:
-#             plt.colorbar()
-#             if 'colorbar_label' in kwargs:
-#                 if kwargs['colorbar_label']:
-#                     # TODO this is horrible, fix this
-
-
 def get_residual_list(array_list):
     last_array = array_list[-1]
     residual_list = [(last_array - i) for i in array_list]

@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import ImageGrid
 import numpy as np
 
 from mejiro.plots import plot_util
@@ -48,28 +49,76 @@ def plot(array, title='', cmap='viridis', colorbar=False, colorbar_label=None):
     plt.show()
 
 
-def plot_grid(array_list, side, cmap='viridis', log10=True, title='', save=None, colorbar=False):
-    array_list = array_list[:side ** 2]
+# def plot_grid(array_list, side, cmap='viridis', log10=True, title='', save=None, colorbar=False):
+#     array_list = array_list[:side ** 2]
+#     if colorbar:
+#         vmin, vmax = plot_util.get_min_max(array_list)
+
+#     f, ax = plt.subplots(nrows=side, ncols=side, figsize=(20, 20), gridspec_kw={'hspace': 0.02, 'wspace': 0.02})
+
+#     for i, image in enumerate(array_list):
+#         if log10:
+#             image = np.log10(image)
+#         if colorbar:
+#             ax[i // side, i % side].imshow(image, cmap=cmap, vmin=vmin, vmax=vmax)
+#         else:
+#             ax[i // side, i % side].imshow(image, cmap=cmap)
+#         ax[i // side, i % side].get_xaxis().set_visible(False)
+#         ax[i // side, i % side].get_yaxis().set_visible(False)
+
+#     plt.suptitle(title)
+
+#     # TODO fix
+#     # if colorbar:
+#     #     plt.colorbar()
+
+#     if save is not None:
+#         plt.savefig(save)
+
+#     plt.show()
+
+
+def plot_grid(array_list, side, cmap='viridis', log10=True, title='', save=None, colorbar=False, colorbar_label=None):
+    fig = plt.figure(figsize=(20,20))
+
+    cbar_kwargs = {
+        'cbar_location': 'right',
+        'cbar_mode': 'single',
+        'cbar_pad': '2%',
+        'cbar_size': '5%'
+    }
+
     if colorbar:
-        vmin, vmax = plot_util.get_min_max(array_list)
+        grid = ImageGrid(
+            fig, 111,
+            nrows_ncols=(side, side), 
+            axes_pad=0.04,
+            label_mode='all',
+            share_all=True,
+            **cbar_kwargs)
+    else:
+        grid = ImageGrid(
+            fig, 111,
+            nrows_ncols=(side, side), 
+            axes_pad=0.04,
+            label_mode='all',
+            share_all=True)
 
-    f, ax = plt.subplots(nrows=side, ncols=side, figsize=(20, 20), gridspec_kw={'hspace': 0.02, 'wspace': 0.02})
-
-    for i, image in enumerate(array_list):
+    for i, ax in enumerate(grid):
         if log10:
-            image = np.log10(image)
-        if colorbar:
-            ax[i // side, i % side].imshow(image, cmap=cmap, vmin=vmin, vmax=vmax)
-        else:
-            ax[i // side, i % side].imshow(image, cmap=cmap)
-        ax[i // side, i % side].get_xaxis().set_visible(False)
-        ax[i // side, i % side].get_yaxis().set_visible(False)
+            array_list[i] = np.log10(array_list[i])
+        im = ax.imshow(array_list[i], cmap=cmap)
+
+    if colorbar:
+        cbar = grid.cbar_axes[0].colorbar(im)
+        if colorbar_label is not None:
+            cbar.set_label(colorbar_label, rotation=90)
+        for cax in grid.cbar_axes:
+            cax.tick_params(labeltop=False)
+
+    grid.axes_llc.set(xticks=[], yticks=[])
 
     plt.suptitle(title)
-
-    # TODO fix
-    # if colorbar:
-    #     plt.colorbar()
 
     if save is not None:
         plt.savefig(save)
