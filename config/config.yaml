@@ -1,6 +1,6 @@
 defaults:
   - _self_
-  - machine: hpc
+  - machine: uzay
   - override hydra/hydra_logging: disabled
   - override hydra/job_logging: disabled
 
@@ -14,7 +14,7 @@ pipeline:
   - max_scene_size: 10.01
   - subhalo_cone: 11.
   - los_normalization: 0.
-  - band: [F106, F129, F158, F184]
+  - band: [F106, F129, F184]
 
 hydra:
   output_subdir: null

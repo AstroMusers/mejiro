@@ -15,14 +15,14 @@ echo 'Building lens list from SkyPy...'
 python3 01_lens_list_from_skypy.py
 echo 'Built lens list.'
 
-#echo 'Adding subhalos with PyHalo...'
-#python3 02_add_subhalos.py
-#echo 'Added subhalos.'
-#
-#echo 'Building models...'
-#python3 03_build_models.py
-#echo 'Built models.'
+echo 'Adding subhalos with PyHalo...'
+python3 02_add_subhalos.py
+echo 'Added subhalos.'
 
-# echo 'Simulating Pandeia images...'
-# python3 -W ignore 04_pandeia.py  # suppress warnings
-# echo 'Pandeia simulations complete.'
+echo 'Building models...'
+python3 03_build_models.py
+echo 'Built models.'
+
+echo 'Simulating Pandeia images...'
+python3 -W ignore 04_pandeia.py  # suppress warnings
+echo 'Pandeia simulations complete.'

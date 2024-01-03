@@ -4,10 +4,11 @@ channels:
   - defaults
 dependencies:
   - python
+  - astropy==5.1.1
   - astroquery
   - jupyter
   - healpy
-  - lenstronomy
+  - lenstronomy==1.11.0
   - pip
   - tqdm
   - pip:
@@ -17,4 +18,3 @@ dependencies:
       - colossus
       - mcfit
       - jwst_backgrounds
-      - regions
