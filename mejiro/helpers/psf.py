@@ -4,8 +4,7 @@ import astropy.io.fits as pyfits
 from webbpsf import roman
 
 
-def get_kwargs_psf(band, oversample=5):
-    kernel = get_random_psf_kernel(band, oversample=oversample)
+def get_kwargs_psf(kernel, oversample):
     return {
         'psf_type': 'PIXEL',
         'kernel_point_source': kernel,

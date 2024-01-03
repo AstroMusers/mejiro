@@ -14,7 +14,7 @@ from mejiro.helpers.roman_params import RomanParameters
 from mejiro.utils import util
 
 
-def build_pandeia_calc(array, lens, band='f106', max_scene_size=5, num_samples=None, oversample_factor=None,
+def build_pandeia_calc(array, lens, background=False, band='f106', max_scene_size=5, num_samples=None, oversample_factor=None,
                        suppress_output=False):
     band = band.lower()
 
@@ -33,9 +33,11 @@ def build_pandeia_calc(array, lens, band='f106', max_scene_size=5, num_samples=N
     calc['calculation'] = get_calculation_dict(init=True)
 
     # set background
-    # calc['background'] = 'none'
-    calc['background'] = bkg.get_background(suppress_output)
-
+    if background:
+        calc['background'] = bkg.get_background(suppress_output)
+    else:
+        calc['background'] = 'none'
+    
     # add noise
     # array += lenstronomy_sim.get_background_noise(lens, array, band)
     # array += get_background_noise(lens, band)
