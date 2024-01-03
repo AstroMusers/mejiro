@@ -54,6 +54,14 @@ def get_limit(array):
     return np.max([abs_min, abs_max])
 
 
+def get_min_max(array_list):
+    min_list, max_list = [], []
+    for array in array_list:
+        min_list.append(np.min(array))
+        max_list.append(np.max(array))
+    return np.min(min_list), np.max(max_list)
+
+
 def get_linear_width(array):
     return np.abs(np.mean(array) + (3 * np.std(array)))
 

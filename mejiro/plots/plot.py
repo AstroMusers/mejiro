@@ -48,19 +48,28 @@ def plot(array, title='', cmap='viridis', colorbar=False, colorbar_label=None):
     plt.show()
 
 
-def plot_grid(array_list, side, cmap='viridis', log10=True, title='', save=None):
+def plot_grid(array_list, side, cmap='viridis', log10=True, title='', save=None, colorbar=False):
     array_list = array_list[:side ** 2]
+    if colorbar:
+        vmin, vmax = plot_util.get_min_max(array_list)
 
     f, ax = plt.subplots(nrows=side, ncols=side, figsize=(20, 20), gridspec_kw={'hspace': 0.02, 'wspace': 0.02})
 
     for i, image in enumerate(array_list):
         if log10:
             image = np.log10(image)
-        ax[i // side, i % side].imshow(image, cmap=cmap)
+        if colorbar:
+            ax[i // side, i % side].imshow(image, cmap=cmap, vmin=vmin, vmax=vmax)
+        else:
+            ax[i // side, i % side].imshow(image, cmap=cmap)
         ax[i // side, i % side].get_xaxis().set_visible(False)
         ax[i // side, i % side].get_yaxis().set_visible(False)
 
     plt.suptitle(title)
+
+    # TODO fix
+    # if colorbar:
+    #     plt.colorbar()
 
     if save is not None:
         plt.savefig(save)
@@ -68,16 +77,26 @@ def plot_grid(array_list, side, cmap='viridis', log10=True, title='', save=None)
     plt.show()
 
 
-def plot_list(array_list, cmap='viridis', title_list=None):
+def plot_list(array_list, cmap='viridis', title_list=None, colorbar=False):
     f, ax = plt.subplots(nrows=1, ncols=len(array_list), figsize=(len(array_list) * 4, 4),
                          gridspec_kw={'hspace': 0.02, 'wspace': 0.02})
+    
+    if colorbar:
+        vmin, vmax = plot_util.get_min_max(array_list)
 
     for i, array in enumerate(array_list):
-        ax[i].imshow(array, cmap=cmap)
+        if colorbar:
+            ax[i].imshow(array, cmap=cmap, vmin=vmin, vmax=vmax)
+        else:
+            ax[i].imshow(array, cmap=cmap)
         ax[i].get_xaxis().set_visible(False)
         ax[i].get_yaxis().set_visible(False)
         if title_list is not None:
             ax[i].set_title(title_list[i])
+
+    # TODO fix
+    # if colorbar:
+    #     plt.colorbar()
 
     plt.show()
 

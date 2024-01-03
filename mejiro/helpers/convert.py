@@ -1,5 +1,11 @@
 
 
+def supersample(input, output_side):
+    input_side = input.shape[0]
+    
+
+
+
 def mjy_to_counts(array, band):
     conversion_factor = get_mjy_to_counts_factor(band)
     return array * conversion_factor
