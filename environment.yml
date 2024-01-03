@@ -10,6 +10,7 @@ dependencies:
   - healpy
   - lenstronomy==1.11.0
   - pip
+  - scikit-image
   - tqdm
   - pip:
       - pandeia-engine==3.0
@@ -18,3 +19,4 @@ dependencies:
       - colossus
       - mcfit
       - jwst_backgrounds
+      - webbpsf==1.1.1
