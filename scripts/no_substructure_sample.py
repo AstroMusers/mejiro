@@ -1,13 +1,11 @@
 import os
 import sys
-import pickle
 
 import hydra
 import numpy as np
 from tqdm import tqdm
 
-import mejiro.lenses.test
-from mejiro.helpers import pyhalo, pandeia_input
+from mejiro.helpers import pandeia_input
 from mejiro.lenses.test import SampleSkyPyLens
 from mejiro.utils import util
 

@@ -1,10 +1,10 @@
 import os
 import sys
 import time
+from glob import glob
 
 import hydra
 from tqdm import tqdm
-from glob import glob
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -21,7 +21,7 @@ def main(config):
     # create directory that this script will write to
     util.create_directory_if_not_exists(config.machine.dir_01)
     util.clear_directory(config.machine.dir_01)
-        
+
     for band in util.hydra_to_dict(config.pipeline)['band']:
         # unpickle the lenses from the population survey and create lens objects
         lens_paths = glob(config.machine.skypy_dir + f'/lenses/*{band}*')

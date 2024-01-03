@@ -1,10 +1,7 @@
 import os
 import sys
-import time
 
 import hydra
-from tqdm import tqdm
-from glob import glob
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')

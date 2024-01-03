@@ -1,8 +1,8 @@
 import multiprocessing
 import os
 import sys
-from multiprocessing import Pool
 import time
+from multiprocessing import Pool
 
 import hydra
 from tqdm import tqdm
@@ -14,7 +14,7 @@ def main(config):
 
     # get directories
     repo_dir = config.machine.repo_dir
-    
+
     # enable use of local packages
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
@@ -65,12 +65,12 @@ def get_model(input):
 
     # generate lenstronomy model
     model = lens.get_array(num_pix=num_pix * grid_oversample, side=side)
-    
+
     # pickle the results
     lens_dict = {
-                'lens': lens,
-                'model': model
-            } 
+        'lens': lens,
+        'model': model
+    }
     pickle_target = os.path.join(output_dir, f'lens_dict_{lens.uid}_{lens.band}')
     util.pickle(pickle_target, lens_dict)
 

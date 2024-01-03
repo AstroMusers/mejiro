@@ -9,12 +9,13 @@ from pandeia.engine.calc_utils import build_default_calc, build_default_source
 from pandeia.engine.perform_calculation import perform_calculation
 from tqdm import tqdm
 
+from mejiro.helpers import bkg
 from mejiro.helpers.roman_params import RomanParameters
 from mejiro.utils import util
-from mejiro.helpers import bkg, lenstronomy_sim
 
 
-def build_pandeia_calc(array, lens, band='f106', max_scene_size=5, num_samples=None, oversample_factor=None, suppress_output=False):
+def build_pandeia_calc(array, lens, band='f106', max_scene_size=5, num_samples=None, oversample_factor=None,
+                       suppress_output=False):
     band = band.lower()
 
     calc = build_default_calc('roman', 'wfi', 'imaging')
@@ -75,7 +76,7 @@ def get_pandeia_results(calc, suppress_output=False):
 
 def estimate_calculation_time(num_point_sources):
     seconds = round(0.0785 * num_point_sources)
-    
+
     return str(datetime.timedelta(seconds=seconds))
 
 

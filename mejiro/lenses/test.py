@@ -1,15 +1,14 @@
 import os
+from glob import glob
 
 import numpy as np
-from glob import glob
 from lenstronomy.LensModel.lens_model import LensModel
-from lenstronomy.LightModel.light_model import LightModel
 from lenstronomy.Util import param_util
 
-from mejiro.lenses.lens import Lens
-from mejiro.lenses import lens_util
-from mejiro.utils import util
 from mejiro.helpers import color
+from mejiro.lenses import lens_util
+from mejiro.lenses.lens import Lens
+from mejiro.utils import util
 
 
 def get_sample(pickle_dir, pandeia_dir, index):
@@ -84,7 +83,8 @@ class SampleSkyPyLens(Lens):
         self.kwargs_params = lens_util.set_kwargs_params(self.kwargs_lens, self.kwargs_lens_light, self.kwargs_source)
 
         # set kwargs_model
-        self.kwargs_model = lens_util.set_kwargs_model(self.lens_model_list, self.lens_light_model_list, self.source_model_list)      
+        self.kwargs_model = lens_util.set_kwargs_model(self.lens_model_list, self.lens_light_model_list,
+                                                       self.source_model_list)
         self.kwargs_model['lens_redshift_list'] = self.lens_redshift_list
         self.kwargs_model['source_redshift_list'] = self.source_redshift_list
         self.kwargs_model['z_source'] = self.z_source
@@ -148,7 +148,8 @@ class TestLens(Lens):
         self.kwargs_params = lens_util.set_kwargs_params(self.kwargs_lens, self.kwargs_lens_light, self.kwargs_source)
 
         # set kwargs_model
-        self.kwargs_model = lens_util.set_kwargs_model(self.lens_model_list, self.lens_light_model_list, self.source_model_list)      
+        self.kwargs_model = lens_util.set_kwargs_model(self.lens_model_list, self.lens_light_model_list,
+                                                       self.source_model_list)
         self.kwargs_model['lens_redshift_list'] = self.lens_redshift_list
         self.kwargs_model['source_redshift_list'] = self.source_redshift_list
         self.kwargs_model['z_source'] = self.z_source
@@ -161,7 +162,7 @@ class TutorialLens(Lens):
         # define redshifts
         self.z_lens = 0.5
         self.z_source = 1.5
-        
+
         # LENS
         # mass model: singular isothermal ellipsoid with a shear
         self.lens_model_list = ['EPL', 'SHEAR']
@@ -191,7 +192,8 @@ class TutorialLens(Lens):
         self.kwargs_params = lens_util.set_kwargs_params(self.kwargs_lens, self.kwargs_lens_light, self.kwargs_source)
 
         # set kwargs_model
-        self.kwargs_model = lens_util.set_kwargs_model(self.lens_model_list, self.lens_light_model_list, self.source_model_list)      
+        self.kwargs_model = lens_util.set_kwargs_model(self.lens_model_list, self.lens_light_model_list,
+                                                       self.source_model_list)
         self.kwargs_model['lens_redshift_list'] = self.lens_redshift_list
         self.kwargs_model['source_redshift_list'] = self.source_redshift_list
         self.kwargs_model['z_source'] = self.z_source

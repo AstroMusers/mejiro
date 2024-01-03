@@ -11,7 +11,7 @@ from tqdm import tqdm
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
 def main(config):
     start = time.time()
-    
+
     repo_dir = config.machine.repo_dir
 
     # enable use of local packages
@@ -35,7 +35,7 @@ def main(config):
         pickled_lens_list = os.path.join(config.machine.dir_01, f'01_skypy_output_lens_list_{band}')
         lens_list = util.unpickle(pickled_lens_list)
         lens_dict[band] = lens_list
-    
+
     # TODO this naming is dumb, fix it
     lenses = []
     # create a tuple for each lens
@@ -84,12 +84,13 @@ def add(tuple):
     # unpack pipeline_params
     subhalo_cone = pipeline_params['subhalo_cone']
     los_normalization = pipeline_params['los_normalization']
-   
+
     z_lens = round(list(lens.values())[0].z_lens, 2)
     z_source = round(list(lens.values())[0].z_source, 2)
 
     # randomly generate CDM subhalos
-    halo_tuple = pyhalo.generate_CDM_halos(z_lens, z_source, cone_opening_angle_arcsec=subhalo_cone, LOS_normalization=los_normalization)
+    halo_tuple = pyhalo.generate_CDM_halos(z_lens, z_source, cone_opening_angle_arcsec=subhalo_cone,
+                                           LOS_normalization=los_normalization)
 
     # pickle the subhalos
     first_filter = pipeline_params['band'][0].lower()

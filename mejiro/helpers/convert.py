@@ -1,9 +1,5 @@
-
-
 def supersample(input, output_side):
     input_side = input.shape[0]
-    
-
 
 
 def mjy_to_counts(array, band):

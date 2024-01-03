@@ -1,7 +1,6 @@
 from copy import deepcopy
 
 import numpy as np
-from lenstronomy.Plots import plot_util
 from lenstronomy.SimulationAPI.ObservationConfig import HST, LSST, Roman, DES, Euclid
 from lenstronomy.SimulationAPI.sim_api import SimAPI
 
@@ -31,7 +30,7 @@ def get_image(lens, telescope, side):
         config_list = euclid_config_list()
     else:
         raise Exception('Unsupported telescope')
-    
+
     return simulate_rgb(lens, kwargs_lens_list, kwargs_source_list, config_list, side)
 
 
@@ -54,10 +53,12 @@ def set_up_magnitudes(lens):
     kwargs_source_mag_i = deepcopy(kwargs_source_mag_r)
     kwargs_source_mag_i[0]['magnitude'] += 1
 
-    return [kwargs_lens_light_mag_g, kwargs_lens_light_mag_r, kwargs_lens_light_mag_i], [kwargs_source_mag_g, kwargs_source_mag_r, kwargs_source_mag_i]
+    return [kwargs_lens_light_mag_g, kwargs_lens_light_mag_r, kwargs_lens_light_mag_i], [kwargs_source_mag_g,
+                                                                                         kwargs_source_mag_r,
+                                                                                         kwargs_source_mag_i]
 
 
-def simulate_rgb(lens, kwargs_lens_list, kwargs_source_list, config_list, size):  
+def simulate_rgb(lens, kwargs_lens_list, kwargs_source_list, config_list, size):
     if len(config_list) == 3:
         band_b, band_g, band_r = config_list
         kwargs_b_band = band_b.kwargs_single_band()
@@ -70,7 +71,7 @@ def simulate_rgb(lens, kwargs_lens_list, kwargs_source_list, config_list, size):
         kwargs_r_band = band_g.kwargs_single_band()
     else:
         raise Exception('Unknown telescope configuration')
-    
+
     # set number of pixels from pixel scale
     pixel_scale = kwargs_g_band['pixel_scale']
     numpix = int(round(size / pixel_scale))
@@ -105,9 +106,9 @@ def simulate_rgb(lens, kwargs_lens_list, kwargs_source_list, config_list, size):
 
     if len(config_list) == 3:
         img = np.zeros((image_g.shape[0], image_g.shape[1], 3), dtype=float)
-        img[:,:,0] = image_b  # _scale_max(image_b)
-        img[:,:,1] = image_g  # _scale_max(image_g)
-        img[:,:,2] = image_r  # _scale_max(image_r)
+        img[:, :, 0] = image_b  # _scale_max(image_b)
+        img[:, :, 1] = image_g  # _scale_max(image_g)
+        img[:, :, 2] = image_r  # _scale_max(image_r)
         # plot_util.sqrt(image_r, scale_min=0, scale_max=scale_max)
         data_class = sim_b.data_class
 
@@ -119,12 +120,12 @@ def simulate_rgb(lens, kwargs_lens_list, kwargs_source_list, config_list, size):
         return img, data_class
     else:
         raise Exception('Unknown telescope configuration')
-    
 
-def _scale_max(image): 
-    flat=image.flatten()
+
+def _scale_max(image):
+    flat = image.flatten()
     flat.sort()
-    scale_max = flat[int(len(flat)*0.95)]
+    scale_max = flat[int(len(flat) * 0.95)]
     return scale_max
 
 

@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import ImageGrid
 import numpy as np
+from mpl_toolkits.axes_grid1 import ImageGrid
 
 from mejiro.plots import plot_util
 
@@ -79,7 +79,7 @@ def plot(array, title='', cmap='viridis', colorbar=False, colorbar_label=None):
 
 
 def plot_grid(array_list, side, cmap='viridis', log10=True, title='', save=None, colorbar=False, colorbar_label=None):
-    fig = plt.figure(figsize=(20,20))
+    fig = plt.figure(figsize=(20, 20))
 
     cbar_kwargs = {
         'cbar_location': 'right',
@@ -91,7 +91,7 @@ def plot_grid(array_list, side, cmap='viridis', log10=True, title='', save=None,
     if colorbar:
         grid = ImageGrid(
             fig, 111,
-            nrows_ncols=(side, side), 
+            nrows_ncols=(side, side),
             axes_pad=0.04,
             label_mode='all',
             share_all=True,
@@ -99,7 +99,7 @@ def plot_grid(array_list, side, cmap='viridis', log10=True, title='', save=None,
     else:
         grid = ImageGrid(
             fig, 111,
-            nrows_ncols=(side, side), 
+            nrows_ncols=(side, side),
             axes_pad=0.04,
             label_mode='all',
             share_all=True)
@@ -129,7 +129,7 @@ def plot_grid(array_list, side, cmap='viridis', log10=True, title='', save=None,
 def plot_list(array_list, cmap='viridis', title_list=None, colorbar=False):
     f, ax = plt.subplots(nrows=1, ncols=len(array_list), figsize=(len(array_list) * 4, 4),
                          gridspec_kw={'hspace': 0.02, 'wspace': 0.02})
-    
+
     if colorbar:
         vmin, vmax = plot_util.get_min_max(array_list)
 

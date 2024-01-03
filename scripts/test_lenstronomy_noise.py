@@ -5,9 +5,8 @@ from copy import deepcopy
 
 import hydra
 import numpy as np
+from pandeia.engine.calc_utils import build_default_calc
 from tqdm import tqdm
-from pandeia.engine.calc_utils import build_default_calc, build_default_source
-from pandeia.engine.perform_calculation import perform_calculation
 
 
 @hydra.main(version_base=None, config_path='../config', config_name='config.yaml')
@@ -47,7 +46,8 @@ def main(config):
 
         grid_lens = deepcopy(lens)
 
-        array = grid_lens.get_array(num_pix=51 * grid_oversample, side=5.61)  # .get_array(num_pix=97 * grid_oversample, side=10.67)
+        array = grid_lens.get_array(num_pix=51 * grid_oversample,
+                                    side=5.61)  # .get_array(num_pix=97 * grid_oversample, side=10.67)
 
         # generate noise and save
         noise = lenstronomy_sim.get_background_noise(grid_lens, array, band)
@@ -85,16 +85,18 @@ def main(config):
 
             # add point sources to Pandeia input
             norm_wave = pandeia_input._get_norm_wave(band)
-            calc, num_point_sources = pandeia_input._phonion_sample(calc, mag_array, grid_lens, num_samples, norm_wave, suppress_output=False)
+            calc, num_point_sources = pandeia_input._phonion_sample(calc, mag_array, grid_lens, num_samples, norm_wave,
+                                                                    suppress_output=False)
 
             print(f'Estimated calculation time: {pandeia_input.estimate_calculation_time(num_point_sources)}')
 
             # do Pandeia calculation        
             image, _ = pandeia_input.get_pandeia_image(calc, suppress_output=False)
-            assert image.shape == (45, 45) # 91, 91
+            assert image.shape == (45, 45)  # 91, 91
 
             # save image
-            np.save(os.path.join(array_dir, f'sample_skypy_lens_lenstronomy_noise_{grid_oversample}_{num_samples}'), image)
+            np.save(os.path.join(array_dir, f'sample_skypy_lens_lenstronomy_noise_{grid_oversample}_{num_samples}'),
+                    image)
 
             stop = time.time()
             util.print_execution_time(start, stop)
