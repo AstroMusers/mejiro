@@ -1,10 +1,10 @@
 import datetime
 import os
 import pickle as _pickle
-from collections import ChainMap
 import shutil
-
+from collections import ChainMap
 from glob import glob
+
 from omegaconf import OmegaConf
 
 
@@ -12,8 +12,8 @@ def center_crop_image(array, shape):
     y_out, x_out = shape
     y, x = array.shape
     x_start = (x // 2) - (x_out // 2)
-    y_start = (y // 2) - (y_out // 2)    
-    return array[y_start:y_start+y_out, x_start:x_start+x_out]
+    y_start = (y // 2) - (y_out // 2)
+    return array[y_start:y_start + y_out, x_start:x_start + x_out]
 
 
 def hydra_to_dict(config):
@@ -71,7 +71,6 @@ def delete_if_exists(path):
     if os.path.exists(path):
         os.remove(path)
 
-
 # TODO finish
 # def scientific_notation_string(input):
 #     # convert to Python scientific notion
@@ -85,7 +84,7 @@ def delete_if_exists(path):
 #     elif exponent[0] == '-':
 #         _, power = exponent.split('-')
 #         power = '-' + power
-        
+
 
 #     power = str(int(power))
 #     exponent = '10^{' + power + '}'

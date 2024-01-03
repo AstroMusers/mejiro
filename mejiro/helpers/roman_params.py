@@ -21,9 +21,9 @@ class RomanParameters:
 
     def get_pixel_scale(self):
         return float(self.df.loc[self.df['Name'] == 'WFI_Pixel_Scale']['Value'].to_string(index=False))
-    
 
     def get_min_max_wavelength(self, band):
-        range = self.df.loc[self.df['Name'] == f'WFI_Filter_{band.upper()}_Wavelength_Range']['Value'].to_string(index=False)
+        range = self.df.loc[self.df['Name'] == f'WFI_Filter_{band.upper()}_Wavelength_Range']['Value'].to_string(
+            index=False)
         min, max = range.split('-')
         return float(min), float(max)

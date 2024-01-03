@@ -1,11 +1,8 @@
 import multiprocessing
 import os
 import sys
-from glob import glob
-from multiprocessing import Pool
-import pickle
 import time
-import datetime
+from multiprocessing import Pool
 
 import hydra
 import numpy as np
@@ -29,7 +26,8 @@ def main(config):
     # util.clear_directory(output_dir)
 
     # open pickled lens dict list
-    f106_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f106')  # os.path.join(config.machine.pipeline_dir, '03_test')
+    f106_list = util.unpickle_all(config.machine.dir_03,
+                                  prefix='lens_dict_*_f106')  # os.path.join(config.machine.pipeline_dir, '03_test')
     f129_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f129')
     f184_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f184')
     dict_list = f106_list + f129_list + f184_list
@@ -83,7 +81,8 @@ def get_image(input):
     num_samples = pipeline_params['num_samples']
 
     # build Pandeia input
-    calc, _ = pandeia_input.build_pandeia_calc(array, lens, band=band, max_scene_size=max_scene_size, num_samples=num_samples, suppress_output=True)
+    calc, _ = pandeia_input.build_pandeia_calc(array, lens, band=band, max_scene_size=max_scene_size,
+                                               num_samples=num_samples, suppress_output=True)
 
     # generate Pandeia image and save
     image, execution_time = pandeia_input.get_pandeia_image(calc, suppress_output=True)

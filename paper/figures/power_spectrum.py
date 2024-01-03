@@ -1,10 +1,11 @@
 import os
 import sys
+from copy import deepcopy
+
+import hydra
 import numpy as np
 from pandeia.engine.calc_utils import build_default_calc
 from pyHalo.preset_models import CDM
-import hydra
-from copy import deepcopy
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -25,27 +26,27 @@ def main(config):
     lens = SampleSkyPyLens()
 
     # generate subhalos
-    no_cut = CDM(lens.z_lens, 
-                lens.z_source, 
-                cone_opening_angle_arcsec=6., 
-                LOS_normalization=0., 
-                log_mlow=6., 
+    no_cut = CDM(lens.z_lens,
+                 lens.z_source,
+                 cone_opening_angle_arcsec=6.,
+                 LOS_normalization=0.,
+                 log_mlow=6.,
+                 log_mhigh=10.)
+
+    cut_7 = CDM(lens.z_lens,
+                lens.z_source,
+                cone_opening_angle_arcsec=6.,
+                LOS_normalization=0.,
+                log_mlow=7.,
                 log_mhigh=10.)
 
-    cut_7 = CDM(lens.z_lens, 
-                lens.z_source, 
-                cone_opening_angle_arcsec=6., 
-                LOS_normalization=0., 
-                log_mlow=7., 
+    cut_8 = CDM(lens.z_lens,
+                lens.z_source,
+                cone_opening_angle_arcsec=6.,
+                LOS_normalization=0.,
+                log_mlow=8.,
                 log_mhigh=10.)
 
-    cut_8 = CDM(lens.z_lens, 
-                lens.z_source, 
-                cone_opening_angle_arcsec=6., 
-                LOS_normalization=0., 
-                log_mlow=8., 
-                log_mhigh=10.)
-    
     np.save(os.path.join(pickle_dir, 'no_cut'), no_cut)
     np.save(os.path.join(pickle_dir, 'cut_7'), cut_7)
     np.save(os.path.join(pickle_dir, 'cut_8'), cut_8)

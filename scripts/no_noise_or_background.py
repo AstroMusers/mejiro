@@ -1,10 +1,9 @@
 import os
 import sys
+
+import hydra
 import numpy as np
 from pandeia.engine.calc_utils import build_default_calc
-from pyHalo.preset_models import CDM
-import hydra
-from copy import deepcopy
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')

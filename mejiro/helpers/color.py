@@ -13,9 +13,9 @@ def get_rgb(image_b, image_g, image_r, minimum=None, stretch=3, Q=4):
 
 def get_rgb_log10(image_b, image_g, image_r):
     image = np.zeros((image_g.shape[0], image_g.shape[1], 3), dtype=float)
-    image[:,:,0] = np.log10(image_b)
-    image[:,:,1] = np.log10(image_g)
-    image[:,:,2] = np.log10(image_r)
+    image[:, :, 0] = np.log10(image_b)
+    image[:, :, 1] = np.log10(image_g)
+    image[:, :, 2] = np.log10(image_r)
     return image
 
 

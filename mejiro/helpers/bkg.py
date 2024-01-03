@@ -1,13 +1,7 @@
 import random
 
-from jwst_backgrounds import jbt
-from regions import RectangleSkyRegion
-from astropy.coordinates import SkyCoord
-from astropy import units as u
-from astropy.wcs import WCS
 import numpy as np
-
-from mejiro.helpers import pandeia_input
+from jwst_backgrounds import jbt
 
 
 def get_background(suppress_output=False):
@@ -28,7 +22,7 @@ def get_background(suppress_output=False):
 def generate_hlwas_coords():
     return random.uniform(15, 45), random.uniform(-45, -15)
 
-    
+
 def get_wavelengths():
     # roman_params = pandeia_input._get_roman_params()
     # min, _ = roman_params.get_min_max_wavelength('f106')

@@ -1,4 +1,3 @@
-import numpy as np
 import astropy.cosmology as astropy_cosmo
 from lenstronomy.Data.coord_transforms import Coordinates
 from lenstronomy.Data.pixel_grid import PixelGrid
@@ -30,14 +29,12 @@ class Lens:
         self._unpack_kwargs_model(kwargs_model)
 
         # set kwargs_model
-        self.update_model()        
+        self.update_model()
 
-        
     def _unpack_kwargs_params(self, kwargs_params):
         self.kwargs_lens = kwargs_params['kwargs_lens']
         self.kwargs_lens_light = kwargs_params['kwargs_lens_light']
         self.kwargs_source = kwargs_params['kwargs_source']
-
 
     def _unpack_kwargs_model(self, kwargs_model):
         # get model lists, which are required(TODO ?)
@@ -51,7 +48,7 @@ class Lens:
         if 'lens_redshift_list' in kwargs_model:
             self.lens_redshift_list = kwargs_model['lens_redshift_list']
         if 'source_redshift_list' in kwargs_model:
-            self.source_redshift_list = kwargs_model['source_redshift_list']    
+            self.source_redshift_list = kwargs_model['source_redshift_list']
         if 'cosmo' in kwargs_model:
             self.cosmo = kwargs_model['cosmo']
         else:
@@ -63,7 +60,6 @@ class Lens:
         else:
             self.z_source_convention = 4
 
-
     def add_subhalos(self, halo_lens_model_list, halo_redshift_list, kwargs_halos):
         # add subhalos to list of lensing objects
         self.kwargs_lens += kwargs_halos
@@ -74,7 +70,6 @@ class Lens:
         # update other lenstronomy objects
         self.lens_model_list += halo_lens_model_list
         self.lens_model_class = LensModel(self.lens_model_list)
-    
 
     def update_model(self):
         # update model
@@ -116,7 +111,7 @@ class Lens:
                                  source_model_class=self.source_model_class,
                                  lens_light_model_class=self.lens_light_model_class,
                                  kwargs_numerics=kwargs_numerics)
-        
+
         # convert brightnesses to lenstronomy amp from magnitudes
         if 'magnitude' in self.kwargs_lens_light[0].keys():
             self._set_amp_light_kwargs()
@@ -128,28 +123,23 @@ class Lens:
                                  kwargs_source=self.kwargs_source_amp,
                                  kwargs_lens_light=self.kwargs_lens_light_amp)
 
-
     def _set_classes(self):
         self.lens_model_class = LensModel(self.lens_model_list)
         self.lens_light_model_class = LightModel(self.lens_light_model_list)
         self.source_model_class = LightModel(self.source_model_list)
 
-
     def get_source_pixel_coords(self):
         source_ra, source_dec = self.kwargs_source[0]['center_x'], self.kwargs_source[0]['center_y']
         return self.coords.map_coord2pix(ra=source_ra, dec=source_dec)
-
 
     def get_lens_pixel_coords(self):
         lens_ra, lens_dec = self.kwargs_lens[0]['center_x'], self.kwargs_lens[0]['center_y']
         return self.coords.map_coord2pix(ra=lens_ra, dec=lens_dec)
 
-
     def _mass_physical_to_lensing_units(self):
         sim_g = SimAPI(numpix=self.num_pix, kwargs_single_band=self.lenstronomy_roman_config,
                        kwargs_model=self.kwargs_model)
         self.kwargs_lens_lensing_units = sim_g.physical2lensing_conversion(kwargs_mass=self.kwargs_lens)
-
 
     def _set_up_pixel_grid(self, num_pix, side):
         self.delta_pix = side / num_pix  # size of pixel in angular coordinates
@@ -169,7 +159,6 @@ class Lens:
         self.pixel_grid = PixelGrid(**kwargs_pixel)
         self.coords = Coordinates(self.Mpix2coord, self.ra_at_xy_0, self.dec_at_xy_0)
 
-
     def _set_amp_light_kwargs(self):
         self.lenstronomy_roman_config = Roman(band=self.band.upper(),
                                               psf_type='PIXEL',
@@ -185,4 +174,3 @@ class Lens:
 
     # TODO something useful
     # def __str__(self):
-        
