@@ -39,10 +39,11 @@ def unpickle(path):
 
 def unpickle_all(dir_path, prefix='', limit=None):
     file_list = glob(dir_path + f'/{prefix}*')
+    sorted_list = sorted(file_list)
     if limit is not None:
-        return [unpickle(i) for i in file_list[:limit] if os.path.isfile(i)]
+        return [unpickle(i) for i in sorted_list[:limit] if os.path.isfile(i)]
     else:
-        return [unpickle(i) for i in file_list if os.path.isfile(i)]
+        return [unpickle(i) for i in sorted_list if os.path.isfile(i)]
 
 
 def create_directory_if_not_exists(path):

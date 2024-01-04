@@ -4,6 +4,7 @@
 /notebooks/old
 # /notebooks/test
 scripts/old
+/config
 
 # Jupyter
 .ipynb_checkpoints

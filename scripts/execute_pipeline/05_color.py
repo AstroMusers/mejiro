@@ -29,13 +29,13 @@ def main(config):
     # open pandeia arrays
     input_dir = config.machine.dir_04  # os.path.join(config.machine.pipeline_dir, '04_test')
     file_list = glob(input_dir + '/*.npy')
-    num = int(len(file_list) / 4)
+    num = int(len(file_list) / 3)
     pandeia_list = []
     for i in range(num):
-        if len(glob(input_dir + f'/pandeia_{str(i).zfill(8)}*.npy')) == 4:
+        if len(glob(input_dir + f'/pandeia_{str(i).zfill(8)}*.npy')) == 3:
             f106 = np.load(input_dir + f'/pandeia_{str(i).zfill(8)}_f106.npy')
             f129 = np.load(input_dir + f'/pandeia_{str(i).zfill(8)}_f129.npy')
-            f158 = np.load(input_dir + f'/pandeia_{str(i).zfill(8)}_f158.npy')
+            # f158 = np.load(input_dir + f'/pandeia_{str(i).zfill(8)}_f158.npy')
             f184 = np.load(input_dir + f'/pandeia_{str(i).zfill(8)}_f184.npy')
             rgb_tuple = (f106, f129, f184, output_dir, str(i).zfill(8))
             pandeia_list.append(rgb_tuple)
