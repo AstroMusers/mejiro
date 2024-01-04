@@ -99,7 +99,7 @@ def get_calculation_dict(init=True):
             'scatter': False  # doesn't seem to have an effect
         },
         'effects': {
-            'saturation': False  # doesn't seem to have an effect
+            'saturation': True  # only has an effect for bright (>19mag) sources
         }
     }
 

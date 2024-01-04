@@ -22,6 +22,12 @@ def get_random_psf_kernel(band, oversample=5, save=None):
     return kernel
 
 
+def print_header(filepath):
+    from pprint import pprint
+    header = pyfits.getheader(filepath)
+    pprint(header)
+
+
 def load_psf(filepath):
     return pyfits.getdata(filepath)
 
