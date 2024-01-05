@@ -1,9 +1,7 @@
 /pandeia_docs
 /roman_tools
-# /notebooks/build
 /notebooks/old
-# /notebooks/test
-scripts/old
+/scripts/old
 /config
 
 # Jupyter
