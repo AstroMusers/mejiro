@@ -1,7 +1,14 @@
+import os
 import random
+from glob import glob
 
 import astropy.io.fits as pyfits
 from webbpsf import roman
+
+
+def load_default_psf(dir, band, oversample):
+    filepath = os.path.join(dir, f'/webbpsf_sca01_center_{band.lower()}_{oversample}.fits')
+    return load_psf(filepath)
 
 
 def get_kwargs_psf(kernel, oversample):

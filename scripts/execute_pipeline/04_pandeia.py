@@ -25,6 +25,8 @@ def main(config):
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
 
+    # TODO unpickling at beginning means all of this is held in memory, so unpickle over time
+
     # open pickled lens dict list
     f106_list = util.unpickle_all(config.machine.dir_03,
                                   prefix='lens_dict_*_f106')  # os.path.join(config.machine.pipeline_dir, '03_test')
