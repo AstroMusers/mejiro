@@ -36,6 +36,9 @@ def main(config):
         dict_list.append(f129_list[i])
         dict_list.append(f184_list[i])
     # dict_list = util.unpickle_all(config.machine.dir_03)
+        
+    # TODO TEMP: limit list
+    dict_list = dict_list[:100]
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -47,9 +50,6 @@ def main(config):
     tuple_list = []
     for i, _ in enumerate(dict_list):
         tuple_list.append((dict_list[i], pipeline_params, output_dir))
-
-    # TODO TEMP: limit list
-    # tuple_list = tuple_list[:10]
 
     # batch
     generator = util.batch_list(tuple_list, process_count)
