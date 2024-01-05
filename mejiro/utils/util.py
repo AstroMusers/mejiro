@@ -10,7 +10,8 @@ from omegaconf import OmegaConf
 
 def center_crop_image(array, shape):
     y_out, x_out = shape
-    y, x = array.shape
+    tuple = array.shape
+    y, x = tuple[0], tuple[1]
     x_start = (x // 2) - (x_out // 2)
     y_start = (y // 2) - (y_out // 2)
     return array[y_start:y_start + y_out, x_start:x_start + x_out]

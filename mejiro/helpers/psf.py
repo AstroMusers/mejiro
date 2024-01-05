@@ -12,14 +12,14 @@ def get_kwargs_psf(kernel, oversample):
     }
 
 
-def get_random_psf_kernel(band, oversample=5, save=None):
+def get_random_psf_kernel(band, oversample=5, save=None, suppress_output=False):
     wfi = get_instrument(band)
-    wfi.detector = get_random_detector(wfi)
-    wfi.detector_position = get_random_position()
-    kernel = wfi.calc_psf(oversample=oversample)
+    wfi.detector = get_random_detector(wfi, suppress_output)
+    wfi.detector_position = get_random_position(suppress_output)
+    psf = wfi.calc_psf(oversample=oversample)
     if save is not None:
-        kernel.writeto(save, overwrite=True)
-    return kernel
+        psf.writeto(save, overwrite=True)
+    return psf['DET_SAMP'].data
 
 
 def print_header(filepath):
@@ -38,10 +38,16 @@ def get_instrument(band):
     return wfi
 
 
-def get_random_position():
+def get_random_position(suppress_output=False):
     # Roman WFI detectors are 4096x4096 pixels, but the outermost four rows and columns are reference pixels
-    return random.randrange(4, 4092), random.randrange(4, 4092)
+    x, y = random.randrange(4, 4092), random.randrange(4, 4092)
+    if not suppress_output:
+        print(f'Detector position: {x}, {y}')
+    return x, y
 
 
-def get_random_detector(wfi):
-    return random.choice(wfi.detector_list)
+def get_random_detector(wfi, suppress_output=False):
+    detector = random.choice(wfi.detector_list)
+    if not suppress_output:
+        print(f'Detector: {detector}')
+    return detector

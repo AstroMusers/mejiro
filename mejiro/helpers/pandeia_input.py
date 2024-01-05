@@ -14,7 +14,7 @@ from mejiro.helpers.roman_params import RomanParameters
 from mejiro.utils import util
 
 
-def build_pandeia_calc(array, lens, background=False, band='f106', max_scene_size=5, num_samples=None, oversample_factor=None,
+def build_pandeia_calc(array, lens, background=False, band='f106', max_scene_size=5, noise=True, num_samples=None, oversample_factor=None,
                        suppress_output=False):
     band = band.lower()
 
@@ -30,11 +30,13 @@ def build_pandeia_calc(array, lens, background=False, band='f106', max_scene_siz
     calc['configuration']['detector']['ma_table_name'] = 'hlwas_imaging'
 
     # turn on noise sources
-    calc['calculation'] = get_calculation_dict(init=True)
+    calc['calculation'] = get_calculation_dict(init=noise)
 
     # set background
     if background:
-        calc['background'] = bkg.get_background(suppress_output)
+        # calc['background'] = bkg.get_background(suppress_output)
+        calc['background'] = 'minzodi'
+        calc['background_level'] = 'benchmark'
     else:
         calc['background'] = 'none'
     

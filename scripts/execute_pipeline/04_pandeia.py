@@ -26,12 +26,16 @@ def main(config):
     util.clear_directory(output_dir)
 
     # open pickled lens dict list
-    # f106_list = util.unpickle_all(config.machine.dir_03,
-    #                               prefix='lens_dict_*_f106')  # os.path.join(config.machine.pipeline_dir, '03_test')
-    # f129_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f129')
-    # f184_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f184')
-    # dict_list = f106_list + f129_list + f184_list
-    dict_list = util.unpickle_all(config.machine.dir_03, limit=75)
+    f106_list = util.unpickle_all(config.machine.dir_03,
+                                  prefix='lens_dict_*_f106')  # os.path.join(config.machine.pipeline_dir, '03_test')
+    f129_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f129')
+    f184_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f184')
+    dict_list = []
+    for i, _ in enumerate(f106_list):
+        dict_list.append(f106_list[i])
+        dict_list.append(f129_list[i])
+        dict_list.append(f184_list[i])
+    # dict_list = util.unpickle_all(config.machine.dir_03)
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -82,7 +86,7 @@ def get_image(input):
     num_samples = pipeline_params['num_samples']
 
     # build Pandeia input
-    calc, _ = pandeia_input.build_pandeia_calc(array, lens, background=True, band=band, max_scene_size=max_scene_size,
+    calc, _ = pandeia_input.build_pandeia_calc(array, lens, background=True, noise=True, band=band, max_scene_size=max_scene_size,
                                                num_samples=num_samples, suppress_output=True)
 
     # generate Pandeia image and save
