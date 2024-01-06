@@ -30,9 +30,10 @@ def main(config):
     psf_dir = os.path.join(repo_dir, 'mejiro', 'data', 'default_psfs')
 
     # open pickled lens dict list
-    f106_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f106', limit=9)
-    f129_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f129', limit=9)
-    f184_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f184', limit=9)
+    limit = 25
+    f106_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f106', limit=limit)
+    f129_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f129', limit=limit)
+    f184_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f184', limit=limit)
     dict_list = []
     for i, _ in enumerate(f106_list):
         dict_list.append((f106_list[i], f129_list[i], f184_list[i]))
@@ -43,7 +44,7 @@ def main(config):
     # process_count = cpu_count - 4
     # if len(dict_list) < process_count:
     #     process_count = len(dict_list)
-    process_count = 10
+    process_count = 13
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     # tuple the parameters
