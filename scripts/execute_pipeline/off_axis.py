@@ -30,25 +30,22 @@ def main(config):
     psf_dir = os.path.join(repo_dir, 'mejiro', 'data', 'default_psfs')
 
     # open pickled lens dict list
-    f106_list = util.unpickle_all(config.machine.dir_03,
-                                  prefix='lens_dict_*_f106')  # os.path.join(config.machine.pipeline_dir, '03_test')
-    f129_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f129')
-    f184_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f184')
+    f106_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f106', limit=9)
+    f129_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f129', limit=9)
+    f184_list = util.unpickle_all(config.machine.dir_03, prefix='lens_dict_*_f184', limit=9)
     dict_list = []
     for i, _ in enumerate(f106_list):
         dict_list.append(f106_list[i])
         dict_list.append(f129_list[i])
         dict_list.append(f184_list[i])
     # dict_list = util.unpickle_all(config.machine.dir_03)
-        
-    # TODO TEMP: limit list
-    dict_list = dict_list[:27]
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
-    process_count = cpu_count - 4
-    if len(dict_list) < process_count:
-        process_count = len(dict_list)
+    # process_count = cpu_count - 4
+    # if len(dict_list) < process_count:
+    #     process_count = len(dict_list)
+    process_count = 10
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     # tuple the parameters
