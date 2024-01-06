@@ -22,12 +22,12 @@ def main(config):
     from mejiro.utils import util
 
     # directory to write the output to
-    output_dir = config.machine.dir_05  # os.path.join(config.machine.pipeline_dir, '05_test')
+    output_dir = os.path.join(config.machine.pipeline_dir, '05_test')  # config.machine.dir_05
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
 
     # open pandeia arrays
-    input_dir = config.machine.dir_04  # os.path.join(config.machine.pipeline_dir, '04_test')
+    input_dir = os.path.join(config.machine.pipeline_dir, '04_test')  # config.machine.dir_04
     file_list = glob(input_dir + '/*.npy')
     num = int(len(file_list) / 3)
     pandeia_list = []
@@ -43,6 +43,8 @@ def main(config):
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - 4
+    if len(pandeia_list) < process_count:
+        process_count = len(pandeia_list)
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     # batch

@@ -23,6 +23,16 @@ def get_kernel_from_calc_psf(calc_psf):
     return calc_psf['DET_SAMP'].data
 
 
+def get_psf_kernel(band, x, y, detector, oversample=5, save=None, suppress_output=False):
+    wfi = get_instrument(band)
+    wfi.detector = detector
+    wfi.detector_position = (x, y)
+    psf = wfi.calc_psf(oversample=oversample)
+    if save is not None:
+        psf.writeto(save, overwrite=True)
+    return psf['DET_SAMP'].data
+
+
 def get_random_psf_kernel(band, oversample=5, save=None, suppress_output=False):
     wfi = get_instrument(band)
     wfi.detector = get_random_detector(wfi, suppress_output)
