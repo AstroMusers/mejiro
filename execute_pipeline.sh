@@ -26,3 +26,7 @@ echo 'Built models.'
 echo 'Simulating Pandeia images...'
 python3 -W ignore 04_pandeia.py  # suppress warnings
 echo 'Pandeia simulations complete.'
+
+echo 'Generating color images...'
+python3 05_color.py
+echo 'Color image generation complete.'
