@@ -19,6 +19,10 @@
     * take `kwargs_model`, `kwargs_params` as input
     * specify some detector params, or just hand to a wrapper that has defaults and can directly provide a reasonable output
     * generate image
+* examples
+    1. basic: lenstronomy lens to image with all defaults. some simplest wrapper of everything: make sure all assumptions are stated in the notebook
+    2. advanced: same lenstronomy lens to image with different options e.g. off-center PSF. expose the methods that comprise the wrapper in the previous example
+    3. use the `plots` module to compare the two
 
 # TODO
 
