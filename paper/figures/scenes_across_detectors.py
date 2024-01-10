@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[139]:
-
-
 import os
 import pickle
 import sys
@@ -43,7 +37,7 @@ from mejiro.helpers import pyhalo, pandeia_input, psf
 # In[140]:
 
 
-output_dir = os.path.join(array_dir, 'scenes_across_detectors')
+output_dir = os.path.join(array_dir, 'scenes_across_detectors_test')
 util.create_directory_if_not_exists(output_dir)
 util.clear_directory(output_dir)
 
@@ -64,52 +58,26 @@ lens.add_subhalos(*pyhalo.generate_CDM_halos(lens.z_lens, lens.z_source, cone_op
 
 model = lens.get_array(num_pix=51 * supersample_factor, side=5.61)
 
-
-# In[142]:
-
-
-calc, _ = pandeia_input.build_pandeia_calc(model, lens, background=False, band=band, max_scene_size=5, noise=False, num_samples=num_samples, suppress_output=False)
-pandeia_off, _ = pandeia_input.get_pandeia_image(calc, suppress_output=False)
-np.save(os.path.join(output_dir, 'pandeia_off.npy'), pandeia_off)
-
-
-# In[143]:
-
-
-calc, _ = pandeia_input.build_pandeia_calc(model, lens, background=True, band=band, max_scene_size=5, noise=True, num_samples=num_samples, suppress_output=False)
-pandeia_on, _ = pandeia_input.get_pandeia_image(calc)
-np.save(os.path.join(output_dir, 'pandeia_on.npy'), pandeia_on)
-
-
-# In[144]:
-
+execute = True
+if execute:
+    calc, _ = pandeia_input.build_pandeia_calc(model, lens, background=False, band=band, max_scene_size=5, noise=False, num_samples=num_samples, suppress_output=False)
+    pandeia_off, _ = pandeia_input.get_pandeia_image(calc, suppress_output=False)
+    np.save(os.path.join(output_dir, 'pandeia_off.npy'), pandeia_off)
+    
+    calc, _ = pandeia_input.build_pandeia_calc(model, lens, background=True, band=band, max_scene_size=5, noise=True, num_samples=num_samples, suppress_output=False)
+    pandeia_on, _ = pandeia_input.get_pandeia_image(calc)
+    np.save(os.path.join(output_dir, 'pandeia_on.npy'), pandeia_on)
 
 pandeia_off = np.load(os.path.join(output_dir, 'pandeia_off.npy'))
 pandeia_on = np.load(os.path.join(output_dir, 'pandeia_on.npy'))
 
-
-# In[145]:
-
-
 noise_and_convolved_bkg = pandeia_on - pandeia_off
-
-
-# In[146]:
-
 
 wfi = roman.WFI()
 calc_psf = wfi.calc_psf(oversample=supersample_factor)
 pandeia_kernel = psf.get_kernel_from_calc_psf(calc_psf)
 
-
-# In[147]:
-
-
 deconvolved = restoration.richardson_lucy(pandeia_off, pandeia_kernel, num_iter=30, clip=False)
-
-
-# In[148]:
-
 
 # get kernels
 wfi_01 = roman.WFI()
@@ -147,40 +115,22 @@ wfi_16.detector_position = (4092, 4092)
 calc_psf_16 = wfi_16.calc_psf(oversample=supersample_factor)
 kernel_sca16 = psf.get_kernel_from_calc_psf(calc_psf_16)
 
-
-# In[149]:
-
-
 image_01 = convolution.convolve(deconvolved, kernel_sca01)
 image_05 = convolution.convolve(deconvolved, kernel_sca05)
 image_09 = convolution.convolve(deconvolved, kernel_sca09)
 image_15 = convolution.convolve(deconvolved, kernel_sca15)
 image_16 = convolution.convolve(deconvolved, kernel_sca16)
 
-image_01 += noise_and_convolved_bkg
-image_05 += noise_and_convolved_bkg
-image_09 += noise_and_convolved_bkg
-image_15 += noise_and_convolved_bkg
-image_16 += noise_and_convolved_bkg
-
-
-# In[150]:
-
-
-plot.plot_list([image_01, image_05, image_09, image_15, image_16])
-
-
-# In[151]:
-
+# image_01 += noise_and_convolved_bkg
+# image_05 += noise_and_convolved_bkg
+# image_09 += noise_and_convolved_bkg
+# image_15 += noise_and_convolved_bkg
+# image_16 += noise_and_convolved_bkg
 
 residual_05 = image_01 - image_05
 residual_09 = image_01 - image_09
 residual_15 = image_01 - image_15
 residual_16 = image_01 - image_16
-
-
-# In[169]:
-
 
 f, ax = plt.subplots(figsize=(14, 10))
 
