@@ -16,6 +16,7 @@ import pickle
 from copy import deepcopy
 from pandeia.engine.calc_utils import build_default_calc, build_default_source
 from pandeia.engine.perform_calculation import perform_calculation
+from webbpsf import roman
 
 # set paths to various directories based on the machine this code is being executed on
 with initialize(version_base=None, config_path='../../config'):
@@ -34,7 +35,7 @@ from mejiro.lenses.test import SampleSkyPyLens
 from mejiro.plots import diagnostic_plot, plot, plot_util, overplot
 from mejiro.analysis import stats
 from mejiro.utils import util
-from mejiro.helpers import pyhalo, pandeia_input
+from mejiro.helpers import pyhalo, pandeia_input, psf
 
 
 # In[7]:
@@ -130,14 +131,12 @@ print(gaussian_psf.shape)
 import astropy.io.fits as pyfits
 
 # load PSF from WebbPSF
-psf_filename = os.path.join(repo_dir, 'mejiro', 'data', 'webbpsf_f184.fits')
-kernel = pyfits.getdata(psf_filename)
-plt.matshow(np.log10(kernel))
-plt.show()
-
-
-# In[14]:
-
+wfi = roman.WFI()
+wfi.filter = 'F184'
+wfi.detector = 'SCA01'
+wfi.detector_position = (2048, 2048)
+calc_psf = wfi.calc_psf(oversample=5)
+kernel = psf.get_kernel_from_calc_psf(calc_psf)
 
 webbpsf_lens = deepcopy(lens)
 
@@ -157,19 +156,9 @@ np.save(os.path.join(array_dir, 'webbpsf.npy'), webbpsf_psf)
 
 print(webbpsf_psf.shape)
 
-
-# # Plot
-
-# In[15]:
-
-
 no_psf = np.load(os.path.join(array_dir, 'no_psf.npy'))
 gaussian_psf = np.load(os.path.join(array_dir, 'gaussian_psf.npy'))
 pandeia = np.load(os.path.join(array_dir, 'webbpsf.npy'))
-
-
-# In[24]:
-
 
 fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(14, 8), gridspec_kw={'hspace': 0.1, 'wspace': 0.02})
 
