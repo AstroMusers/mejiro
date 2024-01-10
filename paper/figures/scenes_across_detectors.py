@@ -35,7 +35,7 @@ from mejiro.helpers import pyhalo, pandeia_input, psf
 
 output_dir = os.path.join(array_dir, 'scenes_across_detectors_test')
 util.create_directory_if_not_exists(output_dir)
-util.clear_directory(output_dir)
+# util.clear_directory(output_dir)
 
 lens = SampleSkyPyLens()
 
@@ -72,9 +72,16 @@ plt.close()
 wfi = roman.WFI()
 calc_psf = wfi.calc_psf(oversample=supersample_factor)
 pandeia_kernel = psf.get_kernel_from_calc_psf(calc_psf)
-
+f, ax = plt.subplots()
+ax.imshow(np.log10(pandeia_kernel))
+plt.savefig(os.path.join(array_dir, 'pandeia_kernel.png'))
+plt.close()
 
 deconvolved = restoration.richardson_lucy(pandeia_off, pandeia_kernel, num_iter=30, clip=False)
+f, ax = plt.subplots()
+ax.imshow(deconvolved)
+plt.savefig(os.path.join(array_dir, 'deconvolved.png'))
+plt.close()
 
 # get kernels
 wfi_01 = roman.WFI()

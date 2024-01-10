@@ -57,6 +57,8 @@ title_list = ['Cosmic ray noise', 'Dark current noise', 'Flat-field noise', 'Rea
 
 norm = plot_util.get_norm(array_list, linear_width=0.00001)
 
+side = 2
+
 for i, array in enumerate(array_list):
     axis = ax[i // side, i % side].imshow(array, cmap='bwr', norm=norm)
     ax[i // side, i % side].set_title(title_list[i])
@@ -72,6 +74,8 @@ chi_square_list.append(stats.chi_square(readnoise_off, all_on))
 chi_square_list = ['$\chi^2 = $' + util.scientific_notation_string(i) for i in chi_square_list]
 
 # create text boxes
-overplot.text_boxes(ax, chi_square_list, fontsize=fontsize, alpha=0.8)
+props = dict(boxstyle='round', facecolor='w', alpha=0.8)
+for i, title in enumerate(chi_square_list):
+    ax[i // side, i % side].text(0.05, 0.95, title, transform=ax[i // side, i % side].transAxes, fontsize=fontsize, verticalalignment='top', bbox=props)
 
 plt.savefig(os.path.join(figure_dir, 'noise_asinh_2by2.png'))
