@@ -33,17 +33,9 @@ from mejiro.analysis import stats
 from mejiro.utils import util
 from mejiro.helpers import pyhalo, pandeia_input, psf
 
-
-# In[140]:
-
-
 output_dir = os.path.join(array_dir, 'scenes_across_detectors_test')
 util.create_directory_if_not_exists(output_dir)
 util.clear_directory(output_dir)
-
-
-# In[141]:
-
 
 lens = SampleSkyPyLens()
 
@@ -58,7 +50,7 @@ lens.add_subhalos(*pyhalo.generate_CDM_halos(lens.z_lens, lens.z_source, cone_op
 
 model = lens.get_array(num_pix=51 * supersample_factor, side=5.61)
 
-execute = True
+execute = False
 if execute:
     calc, _ = pandeia_input.build_pandeia_calc(model, lens, background=False, band=band, max_scene_size=5, noise=False, num_samples=num_samples, suppress_output=False)
     pandeia_off, _ = pandeia_input.get_pandeia_image(calc, suppress_output=False)
@@ -72,10 +64,15 @@ pandeia_off = np.load(os.path.join(output_dir, 'pandeia_off.npy'))
 pandeia_on = np.load(os.path.join(output_dir, 'pandeia_on.npy'))
 
 noise_and_convolved_bkg = pandeia_on - pandeia_off
+f, ax = plt.subplots()
+ax.imshow(noise_and_convolved_bkg)
+plt.savefig(os.path.join(array_dir, 'noise_and_convolved_bkg.png'))
+plt.close()
 
 wfi = roman.WFI()
 calc_psf = wfi.calc_psf(oversample=supersample_factor)
 pandeia_kernel = psf.get_kernel_from_calc_psf(calc_psf)
+
 
 deconvolved = restoration.richardson_lucy(pandeia_off, pandeia_kernel, num_iter=30, clip=False)
 
@@ -114,6 +111,14 @@ wfi_16.detector = 'SCA16'
 wfi_16.detector_position = (4092, 4092)
 calc_psf_16 = wfi_16.calc_psf(oversample=supersample_factor)
 kernel_sca16 = psf.get_kernel_from_calc_psf(calc_psf_16)
+
+psfs = [kernel_sca01, kernel_sca05, kernel_sca09, kernel_sca15, kernel_sca16]
+
+for i, im in enumerate(psfs):
+    f, ax = plt.subplots()
+    ax.imshow(np.log10(i))
+    plt.savefig(os.path.join(array_dir, f'psf_{i}.png'))
+    plt.close()
 
 image_01 = convolution.convolve(deconvolved, kernel_sca01)
 image_05 = convolution.convolve(deconvolved, kernel_sca05)
@@ -220,5 +225,3 @@ cbar = f.colorbar(im, cax=cax)
 cbar.set_label('e-/sec', rotation=90)
 
 plt.savefig(os.path.join(figure_dir, 'scenes_across_detectors.png'))
-plt.show()
-
