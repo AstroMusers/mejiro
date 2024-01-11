@@ -70,6 +70,7 @@ plt.savefig(os.path.join(array_dir, 'noise_and_convolved_bkg.png'))
 plt.close()
 
 wfi = roman.WFI()
+wfi.filter = 'F184'
 calc_psf = wfi.calc_psf(oversample=supersample_factor)
 pandeia_kernel = psf.get_kernel_from_calc_psf(calc_psf)
 f, ax = plt.subplots()
@@ -86,7 +87,7 @@ plt.close()
 # get kernels
 wfi_01 = roman.WFI()
 wfi_01.filter = 'F184'
-wfi_01.detector = 'SCA01'
+wfi_01.detector = 'SCA11'
 wfi_01.detector_position = (2048, 2048)
 calc_psf_01 = wfi_01.calc_psf(oversample=supersample_factor)
 kernel_sca01 = psf.get_kernel_from_calc_psf(calc_psf_01)
@@ -123,7 +124,7 @@ psfs = [kernel_sca01, kernel_sca05, kernel_sca09, kernel_sca15, kernel_sca16]
 
 for i, im in enumerate(psfs):
     f, ax = plt.subplots()
-    ax.imshow(np.log10(i))
+    ax.imshow(np.log10(im))
     plt.savefig(os.path.join(array_dir, f'psf_{i}.png'))
     plt.close()
 
@@ -133,16 +134,24 @@ image_09 = convolution.convolve(deconvolved, kernel_sca09)
 image_15 = convolution.convolve(deconvolved, kernel_sca15)
 image_16 = convolution.convolve(deconvolved, kernel_sca16)
 
-# image_01 += noise_and_convolved_bkg
-# image_05 += noise_and_convolved_bkg
-# image_09 += noise_and_convolved_bkg
-# image_15 += noise_and_convolved_bkg
-# image_16 += noise_and_convolved_bkg
+image_01 += noise_and_convolved_bkg
+image_05 += noise_and_convolved_bkg
+image_09 += noise_and_convolved_bkg
+image_15 += noise_and_convolved_bkg
+image_16 += noise_and_convolved_bkg
 
 residual_05 = image_01 - image_05
 residual_09 = image_01 - image_09
 residual_15 = image_01 - image_15
 residual_16 = image_01 - image_16
+
+residual_list = [residual_05, residual_09, residual_15, residual_16]
+
+f, ax = plt.subplots(1, 4)
+for i, im in enumerate(residual_list):
+    ax[i].imshow(im)
+plt.savefig(os.path.join(array_dir, 'residuals.png'))
+plt.close()
 
 f, ax = plt.subplots(figsize=(14, 10))
 
@@ -150,9 +159,9 @@ fov = np.asarray(Image.open('../graphics/roman_fov.png'))
 ax.imshow(fov, origin='upper')
 ax.set_axis_off()
 
-vmin, vmax = -0.03, 0.03
+vmin, vmax = -0.05, 0.05
 
-circ_01_coords = (800, 390)
+circ_01_coords = (1020, 620)
 circ_01 = patches.Circle(circ_01_coords, radius=20, color='black')
 point_01 = ax.add_patch(circ_01)
 ax_01 = f.add_axes([0.375,0.65,0.2,0.2], anchor='NE', zorder=1)
