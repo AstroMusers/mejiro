@@ -1,10 +1,9 @@
+import hydra
+import numpy as np
 import os
 import sys
 import time
 from copy import deepcopy
-
-import hydra
-import numpy as np
 from pandeia.engine.calc_utils import build_default_calc
 from tqdm import tqdm
 
@@ -17,7 +16,7 @@ def main(config):
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
     from mejiro.helpers import pyhalo, pandeia_input, lenstronomy_sim
-    from mejiro.lenses.test import SampleSkyPyLens
+    from mejiro.lenses.test import SampleSkyPyStrongLens
     from mejiro.utils import util
 
     array_dir = os.path.join(array_dir, 'sample_skypy_lens', 'lenstronomy_noise')
@@ -34,7 +33,7 @@ def main(config):
     band = 'f106'
 
     # use test lens
-    lens = SampleSkyPyLens()
+    lens = SampleSkyPyStrongLens()
 
     # add CDM subhalos; NB same subhalo population for all
     pickle_dir = os.path.join(pickle_dir, 'pyhalo')

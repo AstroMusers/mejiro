@@ -1,13 +1,12 @@
+import numpy as np
 import os
 from glob import glob
-
-import numpy as np
 from lenstronomy.LensModel.lens_model import LensModel
 from lenstronomy.Util import param_util
 
 from mejiro.helpers import color
 from mejiro.lenses import lens_util
-from mejiro.lenses.lens import Lens
+from mejiro.lenses.stronglens import StrongLens
 from mejiro.utils import util
 
 
@@ -27,7 +26,7 @@ def get_sample(pickle_dir, pandeia_dir, index):
     return f106, rgb_image, rgb_model
 
 
-class SampleSkyPyLens(Lens):
+class SampleSkyPyStrongLens(StrongLens):
     def __init__(self):
         # define redshifts
         self.z_lens = 0.643971
@@ -92,7 +91,7 @@ class SampleSkyPyLens(Lens):
         super().__init__(kwargs_model=self.kwargs_model, kwargs_params=self.kwargs_params, band='f106')
 
 
-class TestLens(Lens):
+class TestStrongLens(StrongLens):
     def __init__(self):
         # define redshifts
         self.z_lens = 0.5
@@ -157,7 +156,7 @@ class TestLens(Lens):
         super().__init__(kwargs_model=self.kwargs_model, kwargs_params=self.kwargs_params, band='f106')
 
 
-class TutorialLens(Lens):
+class TutorialStrongLens(StrongLens):
     def __init__(self):
         # define redshifts
         self.z_lens = 0.5

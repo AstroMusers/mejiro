@@ -1,8 +1,7 @@
-import os
-import sys
-
 import hydra
 import numpy as np
+import os
+import sys
 from pandeia.engine.calc_utils import build_default_calc
 
 
@@ -14,14 +13,14 @@ def main(config):
     # enable use of local packages
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
-    from mejiro.lenses.test import SampleSkyPyLens
+    from mejiro.lenses.test import SampleSkyPyStrongLens
     from mejiro.helpers import pyhalo, pandeia_input
 
     band = 'f106'
     num_samples = 100000
     grid_supersample = 3
 
-    lens = SampleSkyPyLens()
+    lens = SampleSkyPyStrongLens()
 
     # add CDM subhalos; NB same subhalo population for all
     lens.add_subhalos(*pyhalo.unpickle_subhalos(os.path.join(pickle_dir, 'cdm_subhalos_tuple')))

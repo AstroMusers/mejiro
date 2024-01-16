@@ -1,9 +1,8 @@
+import hydra
+import numpy as np
 import os
 import sys
 import time
-
-import hydra
-import numpy as np
 from tqdm import tqdm
 
 
@@ -15,7 +14,7 @@ def main(config):
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
     from mejiro.helpers import pyhalo, pandeia_input
-    from mejiro.lenses.test import SampleSkyPyLens
+    from mejiro.lenses.test import SampleSkyPyStrongLens
     from mejiro.utils import util
 
     array_dir = os.path.join(array_dir, 'sample_skypy_lens')
@@ -29,7 +28,7 @@ def main(config):
     num_samples_list = [100, 1000, 10000, 100000, 1000000, 10000000]
 
     # use test lens
-    lens = SampleSkyPyLens()
+    lens = SampleSkyPyStrongLens()
 
     # add CDM subhalos; NB same subhalo population for all
     pickle_dir = os.path.join(pickle_dir, 'pyhalo')

@@ -1,11 +1,10 @@
+import hydra
 import multiprocessing
+import numpy as np
 import os
 import sys
 import time
 from multiprocessing import Pool
-
-import hydra
-import numpy as np
 from tqdm import tqdm
 
 
@@ -38,7 +37,7 @@ def main(config):
         dict_list.append(f129_list[i])
         dict_list.append(f184_list[i])
     # dict_list = util.unpickle_all(config.machine.dir_03)
-        
+
     # TODO TEMP: limit list
     dict_list = dict_list[:100]
 
@@ -88,7 +87,8 @@ def get_image(input):
     num_samples = pipeline_params['num_samples']
 
     # build Pandeia input
-    calc, _ = pandeia_input.build_pandeia_calc(array, lens, background=True, noise=True, band=band, max_scene_size=max_scene_size,
+    calc, _ = pandeia_input.build_pandeia_calc(array, lens, background=True, noise=True, band=band,
+                                               max_scene_size=max_scene_size,
                                                num_samples=num_samples, suppress_output=True)
 
     # generate Pandeia image and save

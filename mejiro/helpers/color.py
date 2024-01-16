@@ -1,7 +1,6 @@
-from copy import deepcopy
-
 import numpy as np
 from astropy.visualization import make_lupton_rgb
+from copy import deepcopy
 
 
 def get_rgb(image_b, image_g, image_r, minimum=None, stretch=3, Q=4):

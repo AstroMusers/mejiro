@@ -1,9 +1,8 @@
-import pickle
-
 import matplotlib.pyplot as plt
 import numpy as np
+import pickle
 
-from mejiro.lenses.lens import Lens
+from mejiro.lenses.stronglens import StrongLens
 
 
 def unpickle_lens(pickle_path, uid, band):
@@ -13,7 +12,7 @@ def unpickle_lens(pickle_path, uid, band):
     kwargs_model = unpickled['kwargs_model']
     kwargs_params = unpickled['kwargs_params']
 
-    return Lens(kwargs_model=kwargs_model, kwargs_params=kwargs_params, uid=uid, band=band)
+    return StrongLens(kwargs_model=kwargs_model, kwargs_params=kwargs_params, uid=uid, band=band)
 
 
 def set_kwargs_params(kwargs_lens, kwargs_lens_light, kwargs_source):

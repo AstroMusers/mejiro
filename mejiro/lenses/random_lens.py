@@ -2,10 +2,10 @@ import numpy as np
 from scipy.stats import norm, truncnorm
 
 from mejiro.lenses import lens_util
-from mejiro.lenses.lens import Lens
+from mejiro.lenses.stronglens import StrongLens
 
 
-class RandomLens(Lens):
+class RandomStrongLens(StrongLens):
     def __init__(self, z_lens, z_source, theta_e, lens_x, lens_y, source_x, source_y, mag_lens, mag_source):
         # define redshifts
         self.z_lens = z_lens

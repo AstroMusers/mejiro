@@ -1,12 +1,11 @@
-import os
-import sys
-
 import hydra
 import numpy as np
+import os
+import sys
 from tqdm import tqdm
 
 from mejiro.helpers import pandeia_input
-from mejiro.lenses.test import SampleSkyPyLens
+from mejiro.lenses.test import SampleSkyPyStrongLens
 from mejiro.utils import util
 
 
@@ -34,7 +33,7 @@ def main(config):
                         num_samples_list]  # convert to list of int as scientific notation in Python gives float
 
     # use test lens
-    lens = SampleSkyPyLens()
+    lens = SampleSkyPyStrongLens()
     # lens_list = [lens] * len(num_samples_list)
 
     # add CDM subhalos; NB same subhalo population for all

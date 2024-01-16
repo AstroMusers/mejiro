@@ -10,7 +10,7 @@ from lenstronomy.SimulationAPI.sim_api import SimAPI
 from lenstronomy.Util import data_util, util
 
 
-class Lens:
+class StrongLens:
     def __init__(self, kwargs_model, kwargs_params, band, uid=None):
         # set unique identifier
         self.uid = uid

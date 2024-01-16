@@ -1,24 +1,23 @@
+import matplotlib
+import matplotlib.colors as colors
+import matplotlib.pyplot as plt
+import numpy as np
 import os
 import sys
-
-import numpy as np
 from copy import deepcopy
+from glob import glob
+from hydra import initialize, compose
+from matplotlib import rc
+from pandeia.engine.calc_utils import build_default_calc, build_default_source
+from pandeia.engine.perform_calculation import perform_calculation
 from pprint import pprint
 from tqdm import tqdm
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib import rc
-import matplotlib.colors as colors
-from hydra import initialize, compose
-from glob import glob
-from pandeia.engine.perform_calculation import perform_calculation
-from pandeia.engine.calc_utils import build_default_calc, build_default_source
 
 # set paths to various directories based on the machine this code is being executed on
 with initialize(version_base=None, config_path='../../config'):
     config = compose(config_name='config.yaml')  # overrides=['machine=uzay']
 
-array_dir, data_dir, figure_dir, pickle_dir, repo_dir  = config.machine.array_dir, config.machine.data_dir, config.machine.figure_dir, config.machine.pickle_dir, config.machine.repo_dir
+array_dir, data_dir, figure_dir, pickle_dir, repo_dir = config.machine.array_dir, config.machine.data_dir, config.machine.figure_dir, config.machine.pickle_dir, config.machine.repo_dir
 
 # enable use of local modules
 if repo_dir not in sys.path:
@@ -28,16 +27,14 @@ if repo_dir not in sys.path:
 plt.style.use(f'{repo_dir}/mejiro/mplstyle/science.mplstyle')
 
 from mejiro.helpers import pandeia_input, pyhalo
-from mejiro.lenses.test import SampleSkyPyLens
+from mejiro.lenses.test import SampleSkyPyStrongLens
 from mejiro.plots import diagnostic_plot, plot, plot_util, overplot
 from mejiro.utils import util
 from mejiro.analysis import stats
 
-
 array_dir = os.path.join(array_dir, 'pandeia_noise_residuals')
 util.create_directory_if_not_exists(array_dir)
 pickle_dir = os.path.join(pickle_dir, 'pyhalo')
-
 
 all_on = np.load(os.path.join(array_dir, 'all_on.npy'))
 crs_off = np.load(os.path.join(array_dir, 'crs_off.npy'))
@@ -50,7 +47,7 @@ saturation_off = np.load(os.path.join(array_dir, 'saturation_off.npy'))
 fontsize = 24
 matplotlib.rcParams.update({'font.size': fontsize})
 
-fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(10,10), gridspec_kw={'hspace': 0.02, 'wspace': 0.02})
+fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(10, 10), gridspec_kw={'hspace': 0.02, 'wspace': 0.02})
 
 array_list = [all_on - crs_off, all_on - dark_off, all_on - ffnoise_off, all_on - readnoise_off]
 title_list = ['Cosmic ray noise', 'Dark current noise', 'Flat-field noise', 'Read noise']
@@ -76,6 +73,7 @@ chi_square_list = ['$\chi^2 = $' + util.scientific_notation_string(i) for i in c
 # create text boxes
 props = dict(boxstyle='round', facecolor='w', alpha=0.8)
 for i, title in enumerate(chi_square_list):
-    ax[i // side, i % side].text(0.05, 0.95, title, transform=ax[i // side, i % side].transAxes, fontsize=fontsize, verticalalignment='top', bbox=props)
+    ax[i // side, i % side].text(0.05, 0.95, title, transform=ax[i // side, i % side].transAxes, fontsize=fontsize,
+                                 verticalalignment='top', bbox=props)
 
 plt.savefig(os.path.join(figure_dir, 'noise_asinh_2by2.png'))

@@ -1,8 +1,7 @@
+import astropy.io.fits as pyfits
 import os
 import random
 from glob import glob
-
-import astropy.io.fits as pyfits
 from webbpsf import roman
 
 

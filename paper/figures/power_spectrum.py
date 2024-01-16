@@ -1,9 +1,8 @@
+import hydra
+import numpy as np
 import os
 import sys
 from copy import deepcopy
-
-import hydra
-import numpy as np
 from pandeia.engine.calc_utils import build_default_calc
 from pyHalo.preset_models import CDM
 
@@ -16,14 +15,14 @@ def main(config):
     # enable use of local packages
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
-    from mejiro.lenses.test import SampleSkyPyLens
+    from mejiro.lenses.test import SampleSkyPyStrongLens
     from mejiro.helpers import pyhalo, pandeia_input
 
     band = 'f106'
     num_samples = 100000
     grid_supersample = 3
 
-    lens = SampleSkyPyLens()
+    lens = SampleSkyPyStrongLens()
 
     # generate subhalos
     no_cut = CDM(lens.z_lens,

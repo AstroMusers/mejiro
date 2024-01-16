@@ -4,16 +4,15 @@
 # In[6]:
 
 
-import os
-import sys
-
-import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib import colors
-from hydra import initialize, compose
+import numpy as np
+import os
 import pickle
+import sys
 from copy import deepcopy
+from hydra import initialize, compose
+from matplotlib import colors
 from pandeia.engine.calc_utils import build_default_calc, build_default_source
 from pandeia.engine.perform_calculation import perform_calculation
 from webbpsf import roman
@@ -22,7 +21,7 @@ from webbpsf import roman
 with initialize(version_base=None, config_path='../../config'):
     config = compose(config_name='config.yaml')  # overrides=['machine=uzay']
 
-array_dir, data_dir, figure_dir, pickle_dir, repo_dir  = config.machine.array_dir, config.machine.data_dir, config.machine.figure_dir, config.machine.pickle_dir, config.machine.repo_dir
+array_dir, data_dir, figure_dir, pickle_dir, repo_dir = config.machine.array_dir, config.machine.data_dir, config.machine.figure_dir, config.machine.pickle_dir, config.machine.repo_dir
 
 # enable use of local modules
 if repo_dir not in sys.path:
@@ -31,7 +30,7 @@ if repo_dir not in sys.path:
 # set matplotlib style
 plt.style.use(f'{repo_dir}/mejiro/mplstyle/science.mplstyle')
 
-from mejiro.lenses.test import SampleSkyPyLens
+from mejiro.lenses.test import SampleSkyPyStrongLens
 from mejiro.plots import diagnostic_plot, plot, plot_util, overplot
 from mejiro.analysis import stats
 from mejiro.utils import util
@@ -40,7 +39,7 @@ from mejiro.helpers import pyhalo, pandeia_input, psf
 array_dir = os.path.join(array_dir, 'sample_skypy_lens')
 pickle_dir = os.path.join(pickle_dir, 'pyhalo')
 
-lens = SampleSkyPyLens()
+lens = SampleSkyPyStrongLens()
 
 num_pix = 45
 side = 4.95
@@ -88,7 +87,7 @@ kwargs_webbpsf = {
     'psf_type': 'PIXEL',
     'kernel_point_source': kernel,
     'point_source_supersampling_factor': 5
-    }
+}
 webbpsf_psf = webbpsf_lens.get_array(num_pix=num_pix, kwargs_psf=kwargs_webbpsf, side=side)
 np.save(os.path.join(array_dir, 'webbpsf.npy'), webbpsf_psf)
 
@@ -133,6 +132,6 @@ for i, array in enumerate(array_list):
 
 overplot.text_boxes(ax[1], chi_square_list, fontsize=fontsize)
 
-fig.colorbar(axis_2, ax=ax[1], ticks=[-1, -10** -1, 0, 10 ** -1, 1])
+fig.colorbar(axis_2, ax=ax[1], ticks=[-1, -10 ** -1, 0, 10 ** -1, 1])
 
 plt.savefig(os.path.join(figure_dir, 'psf_compare.png'))
