@@ -1,14 +1,13 @@
+import hydra
 import multiprocessing
+import numpy as np
 import os
 import sys
 import time
-from multiprocessing import Pool
-
-import hydra
-import numpy as np
-from tqdm import tqdm
 from astropy import convolution
+from multiprocessing import Pool
 from skimage import restoration
+from tqdm import tqdm
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -40,7 +39,7 @@ def main(config):
 
     # tuple the parameters
     pipeline_params = util.hydra_to_dict(config.pipeline)
-    
+
     # unpack pipeline_params
     max_scene_size = pipeline_params['max_scene_size']
     num_samples = pipeline_params['num_samples']
@@ -62,26 +61,26 @@ def main(config):
             print(f'Lens {uid}, band {band}')
 
             # generate Pandeia image with no background or noise
-            calc_off, _ = pandeia_input.build_pandeia_calc(array, 
-                                                    lens, 
-                                                    background=False, 
-                                                    noise=False, 
-                                                    band=band, 
-                                                    max_scene_size=max_scene_size,
-                                                    num_samples=num_samples, 
-                                                    suppress_output=False)
+            calc_off, _ = pandeia_input.build_pandeia_calc(array,
+                                                           lens,
+                                                           background=False,
+                                                           noise=False,
+                                                           band=band,
+                                                           max_scene_size=max_scene_size,
+                                                           num_samples=num_samples,
+                                                           suppress_output=False)
             pandeia_off, _ = pandeia_input.get_pandeia_image(calc_off, suppress_output=False)
             pandeia_off = np.nan_to_num(pandeia_off, copy=False, nan=0)
 
             # generate Pandeia image with background and noise
-            calc_on, _ = pandeia_input.build_pandeia_calc(array, 
-                                                    lens, 
-                                                    background=True, 
-                                                    noise=True,
-                                                    band=band, 
-                                                    max_scene_size=max_scene_size,  
-                                                    num_samples=num_samples, 
-                                                    suppress_output=False)
+            calc_on, _ = pandeia_input.build_pandeia_calc(array,
+                                                          lens,
+                                                          background=True,
+                                                          noise=True,
+                                                          band=band,
+                                                          max_scene_size=max_scene_size,
+                                                          num_samples=num_samples,
+                                                          suppress_output=False)
             pandeia_on, _ = pandeia_input.get_pandeia_image(calc_on, suppress_output=False)
 
             # subtract to get noise and convolved sky background
@@ -89,18 +88,18 @@ def main(config):
 
             # deconvolve the "nothing on" image to get synthetic image in Pandeia units
             default_kernel = psf.load_default_psf(psf_dir, band, oversample)
-            deconvolved = restoration.richardson_lucy(pandeia_off, 
-                                                    default_kernel, 
-                                                    num_iter=30, 
-                                                    clip=False)
-        
+            deconvolved = restoration.richardson_lucy(pandeia_off,
+                                                      default_kernel,
+                                                      num_iter=30,
+                                                      clip=False)
+
             # re-convolve with off-axis PSF
-            off_axis_kernel = psf.get_psf_kernel(band=band, 
-                                                x=x, 
-                                                y=y, 
-                                                detector=detector, 
-                                                oversample=oversample, 
-                                                suppress_output=False)
+            off_axis_kernel = psf.get_psf_kernel(band=band,
+                                                 x=x,
+                                                 y=y,
+                                                 detector=detector,
+                                                 oversample=oversample,
+                                                 suppress_output=False)
             off_axis_image = convolution.convolve(deconvolved, off_axis_kernel)
 
             # add off-axis image and noise+convolved bkg

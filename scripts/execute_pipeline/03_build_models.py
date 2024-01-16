@@ -1,10 +1,9 @@
+import hydra
 import multiprocessing
 import os
 import sys
 import time
 from multiprocessing import Pool
-
-import hydra
 from tqdm import tqdm
 
 

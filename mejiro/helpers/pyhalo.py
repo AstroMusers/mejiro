@@ -1,6 +1,5 @@
-import pickle
-
 import astropy.cosmology as astropy_cosmo
+import pickle
 from lenstronomy.Cosmo.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.preset_models import CDM

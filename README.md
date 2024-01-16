@@ -23,7 +23,10 @@ Then, follow the instructions in the `setup` directory to modify the local `lens
 
 # Getting Started
 
-First, duplicate any yaml file in the `config/machine` directory and rename it, then update `repo_dir` and `data_dir` attributes to point to the directories where the local repository resides and output data should be written, respectively. Then modify the `defaults.machine` attribute in `config/config.yaml` to the name (without extension) of the yaml file created earlier. 
+First, duplicate any yaml file in the `config/machine` directory and rename it, then update `repo_dir` and `data_dir`
+attributes to point to the directories where the local repository resides and output data should be written,
+respectively. Then modify the `defaults.machine` attribute in `config/config.yaml` to the name (without extension) of
+the yaml file created earlier.
 
 Then, execute the Jupyter notebooks in the `examples` directory in order.
 

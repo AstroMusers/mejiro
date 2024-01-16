@@ -1,8 +1,7 @@
 import datetime
+import numpy as np
 import os
 import time
-
-import numpy as np
 from lenstronomy.SimulationAPI.ObservationConfig.Roman import Roman
 from lenstronomy.Util import data_util
 from pandeia.engine.calc_utils import build_default_calc, build_default_source
@@ -14,7 +13,8 @@ from mejiro.helpers.roman_params import RomanParameters
 from mejiro.utils import util
 
 
-def build_pandeia_calc(array, lens, background=False, band='f106', max_scene_size=5, noise=True, num_samples=None, oversample_factor=None,
+def build_pandeia_calc(array, lens, background=False, band='f106', max_scene_size=5, noise=True, num_samples=None,
+                       oversample_factor=None,
                        suppress_output=False):
     band = band.lower()
 
@@ -39,7 +39,7 @@ def build_pandeia_calc(array, lens, background=False, band='f106', max_scene_siz
         calc['background_level'] = 'benchmark'
     else:
         calc['background'] = 'none'
-    
+
     # add noise
     # array += lenstronomy_sim.get_background_noise(lens, array, band)
     # array += get_background_noise(lens, band)
