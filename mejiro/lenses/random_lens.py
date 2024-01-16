@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import norm, truncnorm
 
 from mejiro.lenses import lens_util
-from mejiro.lenses.stronglens import StrongLens
+from mejiro.lenses.strong_lens import StrongLens
 
 
 class RandomStrongLens(StrongLens):

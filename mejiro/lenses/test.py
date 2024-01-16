@@ -6,7 +6,7 @@ from lenstronomy.Util import param_util
 
 from mejiro.helpers import color
 from mejiro.lenses import lens_util
-from mejiro.lenses.stronglens import StrongLens
+from mejiro.lenses.strong_lens import StrongLens
 from mejiro.utils import util
 
 

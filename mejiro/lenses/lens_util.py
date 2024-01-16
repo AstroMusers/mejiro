@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pickle
 
-from mejiro.lenses.stronglens import StrongLens
+from mejiro.lenses.strong_lens import StrongLens
 
 
 def unpickle_lens(pickle_path, uid, band):
