@@ -11,12 +11,18 @@ from lenstronomy.Util import data_util, util
 
 
 class StrongLens:
-    def __init__(self, kwargs_model, kwargs_params, band, uid=None):
+    def __init__(self, kwargs_model, kwargs_params, mag_dict, uid=None):
+        # set z_source convention default
+        self.z_source_convention = 5
+
         # set unique identifier
         self.uid = uid
 
         # set band
-        self.band = band.lower()
+        # self.band = band.lower()
+
+        # set magnitudes in each band
+        self.mag_dict = mag_dict
 
         # get redshifts
         self.z_lens = kwargs_model['lens_redshift_list'][0]
@@ -57,8 +63,6 @@ class StrongLens:
             self.z_source = kwargs_model['z_source']
         if 'z_source_convention' in kwargs_model:
             self.z_source_convention = kwargs_model['z_source_convention']
-        else:
-            self.z_source_convention = 4
 
     def add_subhalos(self, halo_lens_model_list, halo_redshift_list, kwargs_halos):
         # add subhalos to list of lensing objects
@@ -81,7 +85,7 @@ class StrongLens:
             'source_redshift_list': self.source_redshift_list,
             'cosmo': self.cosmo,
             'z_source': self.z_source,
-            'z_source_convention': 4,
+            'z_source_convention': self.z_source_convention,
             # source redshift to which the reduced deflections are computed, is the maximal redshift of the ray-tracing
         }
 
@@ -94,7 +98,7 @@ class StrongLens:
 
         # define numerics
         kwargs_numerics = {
-            'supersampling_factor': 1,  # TODO crank this up?
+            'supersampling_factor': 1,
             'supersampling_convolution': False
         }
 
@@ -172,5 +176,5 @@ class StrongLens:
                                                                self.kwargs_source,
                                                                magnitude_zero_point)
 
-    # TODO something useful
-    # def __str__(self):
+    def __str__(self):
+        return f'StrongLens {self.uid}'

@@ -12,7 +12,7 @@ and [Pandeia](https://outerspace.stsci.edu/display/PEN).
 Create a conda environment:
 
 ```
-conda env create --file environment.yml
+conda env create -f environment.yml
 ```
 
 Install Pandeia by following the
