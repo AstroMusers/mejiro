@@ -1,4 +1,5 @@
 import astropy.cosmology as astropy_cosmo
+from copy import deepcopy
 from lenstronomy.Data.coord_transforms import Coordinates
 from lenstronomy.Data.pixel_grid import PixelGrid
 from lenstronomy.Data.psf import PSF
@@ -11,25 +12,28 @@ from lenstronomy.Util import data_util, util
 
 
 class StrongLens:
-    def __init__(self, kwargs_model, kwargs_params, band, uid=None):
+    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, uid=None):
         # set z_source convention default
         self.z_source_convention = 5
 
         # set unique identifier
-        self.uid = uid
-
-        # set band TODO get rid of
-        self.band = band.lower()
-
-        # set magnitudes in each band
-        # self.mag_dict = mag_dict
+        self.uid = uid       
 
         # get redshifts
         self.z_lens = kwargs_model['lens_redshift_list'][0]
         self.z_source = kwargs_model['z_source']
 
-        # set kwargs_lens, kwargs_lens_light, kwargs_source
-        self._unpack_kwargs_params(kwargs_params)
+        # set magnitudes in each band
+        self.lens_mags = lens_mags
+        self.source_mags = source_mags
+
+        # confirm that magnitudes are set up correctly
+        self._validate_mags(lens_mags, source_mags)
+
+        # build light kwargs dicts
+        kwargs_lens_light, kwargs_source = self._unpack_kwargs_params(kwargs_params)
+        self.kwargs_lens_light_dict = self._build_kwargs_light_dict(lens_mags, kwargs_lens_light)
+        self.kwargs_source_dict = self._build_kwargs_light_dict(source_mags, kwargs_source)
 
         # set lens_model_list, lens_light_model_list, source_light_model_list
         self._unpack_kwargs_model(kwargs_model)
@@ -37,10 +41,22 @@ class StrongLens:
         # set kwargs_model
         self.update_model()
 
+    def _build_kwargs_light_dict(mag_dict, kwargs_light):
+        kwargs_light_dict = {}
+        for band, mag in mag_dict:
+            kwargs_light_band = deepcopy(kwargs_light)
+            kwargs_light_band['magnitude'] = mag
+            kwargs_light_dict[band] = kwargs_light_band
+        return kwargs_light_dict
+
+    def _validate_mags(lens_mags, source_mags):
+        lens_bands = list(lens_mags.keys())
+        source_bands = list(source_mags.keys())
+        assert lens_bands == source_bands, 'Pair of lens and source magnitudes not available for all filters.'
+
     def _unpack_kwargs_params(self, kwargs_params):
         self.kwargs_lens = kwargs_params['kwargs_lens']
-        self.kwargs_lens_light = kwargs_params['kwargs_lens_light']
-        self.kwargs_source = kwargs_params['kwargs_source']
+        return kwargs_params['kwargs_lens_light'], kwargs_params['kwargs_source']
 
     def _unpack_kwargs_model(self, kwargs_model):
         # get model lists, which are required(TODO ?)
@@ -89,7 +105,7 @@ class StrongLens:
             # source redshift to which the reduced deflections are computed, is the maximal redshift of the ray-tracing
         }
 
-    def get_array(self, num_pix, side, kwargs_psf={'psf_type': 'NONE'}):
+    def get_array(self, num_pix, side, band, kwargs_psf={'psf_type': 'NONE'}):
         self.num_pix = num_pix
         self._set_up_pixel_grid(num_pix, side)
 
@@ -117,7 +133,7 @@ class StrongLens:
                                  kwargs_numerics=kwargs_numerics)
 
         # convert brightnesses to lenstronomy amp from magnitudes
-        if 'magnitude' in self.kwargs_lens_light[0].keys():
+        if 'magnitude' in self.kwargs_lens_light[0].keys():  # TODO fix
             self._set_amp_light_kwargs()
         else:
             self.kwargs_lens_light_amp = self.kwargs_lens_light
@@ -169,11 +185,16 @@ class StrongLens:
                                               survey_mode='wide_area').kwargs_single_band()
         magnitude_zero_point = self.lenstronomy_roman_config.get('magnitude_zero_point')
 
-        self.kwargs_lens_light_amp = data_util.magnitude2amplitude(self.lens_light_model_class,
-                                                                   self.kwargs_lens_light,
+        self.kwargs_lens_light_amp_dict = {}
+        for band, _ in self.lens_mags:
+            self.kwargs_lens_light_amp_dict[band] = data_util.magnitude2amplitude(self.lens_light_model_class,
+                                                                   self.kwargs_lens_light_dict[band],
                                                                    magnitude_zero_point)
-        self.kwargs_source_amp = data_util.magnitude2amplitude(self.source_model_class,
-                                                               self.kwargs_source,
+        
+        self.kwargs_source_amp_dict = {}
+        for band, _ in self.source_mags:
+            self.kwargs_source_amp_dict[band] = data_util.magnitude2amplitude(self.source_model_class,
+                                                               self.kwargs_source_dict[band],
                                                                magnitude_zero_point)
 
     def __str__(self):

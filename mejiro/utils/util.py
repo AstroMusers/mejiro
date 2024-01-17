@@ -27,9 +27,9 @@ def print_execution_time(start, stop):
     print(f'Execution time: {execution_time}')
 
 
-def pickle(path, object):
+def pickle(path, thing):
     with open(path, 'ab') as results_file:
-        _pickle.dump(object, results_file)
+        _pickle.dump(thing, results_file)
 
 
 def unpickle(path):

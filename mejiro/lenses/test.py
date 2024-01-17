@@ -1,29 +1,8 @@
-import numpy as np
-import os
-from glob import glob
 from lenstronomy.LensModel.lens_model import LensModel
 from lenstronomy.Util import param_util
 
-from mejiro.helpers import color
 from mejiro.lenses import lens_util
 from mejiro.lenses.strong_lens import StrongLens
-from mejiro.utils import util
-
-
-def get_sample(pickle_dir, pandeia_dir, index):
-    files = glob(pickle_dir + f'/lens_dict_{str(index).zfill(8)}_*')
-
-    f106 = [util.unpickle(i) for i in files if 'f106' in i][0]
-    f129 = [util.unpickle(i) for i in files if 'f129' in i][0]
-    # f158 = [util.unpickle(i) for i in files if 'f158' in i][0]
-    f184 = [util.unpickle(i) for i in files if 'f184' in i][0]
-
-    rgb_model = color.get_rgb(f106['model'], f129['model'], f184['model'], minimum=None, stretch=3, Q=8)
-
-    image_path = os.path.join(pandeia_dir, f'pandeia_color_{str(index).zfill(8)}.npy')
-    rgb_image = np.load(image_path)
-
-    return f106, rgb_image, rgb_model
 
 
 class SampleSkyPyStrongLens(StrongLens):
@@ -78,6 +57,21 @@ class SampleSkyPyStrongLens(StrongLens):
         }
         self.kwargs_source = [kwargs_sersic]
 
+        # TODO update
+        lens_mags = { 
+            'f106': 20,
+            'f129': 20,
+            'f158': 20,
+            'f184': 20
+        }
+        source_mags = { 
+            'f106': 21,
+            'f129': 21,
+            'f158': 21,
+            'f184': 21
+        }
+
+        # TODO fix
         # set kwargs_params
         self.kwargs_params = lens_util.set_kwargs_params(self.kwargs_lens, self.kwargs_lens_light, self.kwargs_source)
 
@@ -88,7 +82,7 @@ class SampleSkyPyStrongLens(StrongLens):
         self.kwargs_model['source_redshift_list'] = self.source_redshift_list
         self.kwargs_model['z_source'] = self.z_source
 
-        super().__init__(kwargs_model=self.kwargs_model, kwargs_params=self.kwargs_params, band='f106')
+        super().__init__(kwargs_model=self.kwargs_model, kwargs_params=self.kwargs_params, lens_mags=lens_mags, source_mags=source_mags)
 
 
 class TestStrongLens(StrongLens):
