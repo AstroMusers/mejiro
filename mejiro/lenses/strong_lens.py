@@ -11,18 +11,18 @@ from lenstronomy.Util import data_util, util
 
 
 class StrongLens:
-    def __init__(self, kwargs_model, kwargs_params, mag_dict, uid=None):
+    def __init__(self, kwargs_model, kwargs_params, band, uid=None):
         # set z_source convention default
         self.z_source_convention = 5
 
         # set unique identifier
         self.uid = uid
 
-        # set band
-        # self.band = band.lower()
+        # set band TODO get rid of
+        self.band = band.lower()
 
         # set magnitudes in each band
-        self.mag_dict = mag_dict
+        # self.mag_dict = mag_dict
 
         # get redshifts
         self.z_lens = kwargs_model['lens_redshift_list'][0]
