@@ -32,7 +32,7 @@ class SampleStrongLens(StrongLens):
         # light model: sersic ellipse profile
         self.lens_light_model_list = ['SERSIC_ELLIPSE']
         kwargs_sersic_lens = {
-            'magnitude': 20.934556,
+            'magnitude': 1,  # TODO test
             'R_sersic': 0.6,
             'n_sersic': 2,
             'e1': -0.1,
@@ -46,8 +46,7 @@ class SampleStrongLens(StrongLens):
         # light model: sersic ellipse profile
         self.source_model_list = ['SERSIC_ELLIPSE']
         self.source_redshift_list = [self.z_source]
-        kwargs_sersic = {
-            'magnitude': 23.902054,
+        kwargs_sersic = {  # TODO test, no magnitude attribute
             'R_sersic': 0.1,
             'n_sersic': 1,
             'e1': -0.1,
@@ -57,23 +56,23 @@ class SampleStrongLens(StrongLens):
         }
         self.kwargs_source = [kwargs_sersic]
 
-        # TODO update
         lens_mags = {
-            'f106': 20,
-            'f129': 20,
-            'f158': 20,
-            'f184': 20
+            'f106': 20.47734355,
+            'f129': 20.1486012,
+            'f158': 19.94610498,
+            'f184': 19.85683648
         }
         source_mags = {
-            'f106': 21,
-            'f129': 21,
-            'f158': 21,
-            'f184': 21
+            'f106': 22.18633408,
+            'f129': 21.98034088,
+            'f158': 21.77380172,
+            'f184': 21.649701
         }
 
-        # TODO fix
-        # set kwargs_params
-        self.kwargs_params = lens_util.set_kwargs_params(self.kwargs_lens, self.kwargs_lens_light, self.kwargs_source)
+        # set kwargs_params, just for the StrongLens constructor
+        kwargs_params = {'kwargs_lens': self.kwargs_lens, 
+                         'kwargs_source': self.kwargs_source,
+                         'kwargs_lens_light': self.kwargs_lens_light}
 
         # set kwargs_model
         self.kwargs_model = lens_util.set_kwargs_model(self.lens_model_list, self.lens_light_model_list,
@@ -82,10 +81,11 @@ class SampleStrongLens(StrongLens):
         self.kwargs_model['source_redshift_list'] = self.source_redshift_list
         self.kwargs_model['z_source'] = self.z_source
 
-        super().__init__(kwargs_model=self.kwargs_model, kwargs_params=self.kwargs_params, lens_mags=lens_mags,
+        super().__init__(kwargs_model=self.kwargs_model, kwargs_params=kwargs_params, lens_mags=lens_mags,
                          source_mags=source_mags)
 
 
+# TODO fix
 class TestStrongLens(StrongLens):
     def __init__(self):
         # define redshifts
@@ -151,6 +151,7 @@ class TestStrongLens(StrongLens):
         super().__init__(kwargs_model=self.kwargs_model, kwargs_params=self.kwargs_params, band='f106')
 
 
+# TODO fix
 class TutorialStrongLens(StrongLens):
     def __init__(self):
         # define redshifts

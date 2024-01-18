@@ -28,7 +28,7 @@ class StrongLens:
         self.source_mags = source_mags
 
         # confirm that magnitudes are set up correctly
-        self._validate_mags(lens_mags, source_mags)
+        self._validate_mags(self.lens_mags, self.source_mags)
 
         # build light kwargs dicts
         kwargs_lens_light, kwargs_source = self._unpack_kwargs_params(kwargs_params)
@@ -41,15 +41,15 @@ class StrongLens:
         # set kwargs_model
         self.update_model()
 
-    def _build_kwargs_light_dict(mag_dict, kwargs_light):
+    def _build_kwargs_light_dict(self, mag_dict, kwargs_light):
         kwargs_light_dict = {}
-        for band, mag in mag_dict:
-            kwargs_light_band = deepcopy(kwargs_light)
+        for band, mag in mag_dict.items():
+            kwargs_light_band = deepcopy(kwargs_light[0])
             kwargs_light_band['magnitude'] = mag
             kwargs_light_dict[band] = kwargs_light_band
         return kwargs_light_dict
 
-    def _validate_mags(lens_mags, source_mags):
+    def _validate_mags(self, lens_mags, source_mags):
         lens_bands = list(lens_mags.keys())
         source_bands = list(source_mags.keys())
         assert lens_bands == source_bands, 'Pair of lens and source magnitudes not available for all filters.'
@@ -133,23 +133,34 @@ class StrongLens:
                                  kwargs_numerics=kwargs_numerics)
 
         # convert brightnesses to lenstronomy amp from magnitudes
-        if 'magnitude' in self.kwargs_lens_light[0].keys():  # TODO fix
-            self._set_amp_light_kwargs()
-        else:
-            self.kwargs_lens_light_amp = self.kwargs_lens_light
-            self.kwargs_source_amp = self.kwargs_source
+        self.lenstronomy_roman_config = Roman(band=band.upper(),
+                                              psf_type='PIXEL',
+                                              survey_mode='wide_area').kwargs_single_band()
+        magnitude_zero_point = self.lenstronomy_roman_config.get('magnitude_zero_point')
+
+        kwargs_lens_light_amp = self._get_amp_light_kwargs(magnitude_zero_point, self.lens_light_model_class, self.kwargs_lens_light_dict[band])
+        kwargs_source_amp = self._get_amp_light_kwargs(magnitude_zero_point, self.source_model_class, self.kwargs_source_dict[band])
+
+        self.kwargs_lens_light_amp_dict, self.kwargs_source_amp_dict = {}, {}
+        self.kwargs_lens_light_amp_dict[band] = kwargs_lens_light_amp[0]
+        self.kwargs_source_amp_dict[band] = kwargs_source_amp[0]
 
         return image_model.image(kwargs_lens=self.kwargs_lens,
-                                 kwargs_source=self.kwargs_source_amp,
-                                 kwargs_lens_light=self.kwargs_lens_light_amp)
+                                 kwargs_source=kwargs_source_amp,
+                                 kwargs_lens_light=kwargs_lens_light_amp)
+    
+    def _get_amp_light_kwargs(self, magnitude_zero_point, light_model_class, kwargs_light):
+        return data_util.magnitude2amplitude(light_model_class, [kwargs_light], magnitude_zero_point)
 
     def _set_classes(self):
         self.lens_model_class = LensModel(self.lens_model_list)
         self.lens_light_model_class = LightModel(self.lens_light_model_list)
         self.source_model_class = LightModel(self.source_model_list)
 
-    def get_source_pixel_coords(self):
-        source_ra, source_dec = self.kwargs_source[0]['center_x'], self.kwargs_source[0]['center_y']
+    def get_source_pixel_coords(self):  # TODO need to test this
+        first_key = next(iter(self.kwargs_source_dict))
+        source_ra = self.kwargs_source_dict[first_key][0]['center_x']
+        source_dec = self.kwargs_source_dict[first_key][0]['center_y']
         return self.coords.map_coord2pix(ra=source_ra, dec=source_dec)
 
     def get_lens_pixel_coords(self):
@@ -178,24 +189,6 @@ class StrongLens:
 
         self.pixel_grid = PixelGrid(**kwargs_pixel)
         self.coords = Coordinates(self.Mpix2coord, self.ra_at_xy_0, self.dec_at_xy_0)
-
-    def _set_amp_light_kwargs(self):
-        self.lenstronomy_roman_config = Roman(band=self.band.upper(),
-                                              psf_type='PIXEL',
-                                              survey_mode='wide_area').kwargs_single_band()
-        magnitude_zero_point = self.lenstronomy_roman_config.get('magnitude_zero_point')
-
-        self.kwargs_lens_light_amp_dict = {}
-        for band, _ in self.lens_mags:
-            self.kwargs_lens_light_amp_dict[band] = data_util.magnitude2amplitude(self.lens_light_model_class,
-                                                                                  self.kwargs_lens_light_dict[band],
-                                                                                  magnitude_zero_point)
-
-        self.kwargs_source_amp_dict = {}
-        for band, _ in self.source_mags:
-            self.kwargs_source_amp_dict[band] = data_util.magnitude2amplitude(self.source_model_class,
-                                                                              self.kwargs_source_dict[band],
-                                                                              magnitude_zero_point)
 
     def __str__(self):
         return f'StrongLens {self.uid}'

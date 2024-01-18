@@ -32,11 +32,15 @@ def main(config):
     process_count = cpu_count - 4
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
+    # get bands
+    bands = util.hydra_to_dict(config.pipeline)['band']
+    bands = [i.lower() for i in bands]
+
     # tuple the parameters
     pipeline_params = util.hydra_to_dict(config.pipeline)
     tuple_list = []
-    for i, _ in enumerate(lens_list):
-        tuple_list.append((lens_list[i], pipeline_params, output_dir))
+    for lens in lens_list:
+        tuple_list.append((lens, pipeline_params, bands, output_dir))
 
     # batch
     generator = util.batch_list(tuple_list, process_count)
@@ -55,7 +59,7 @@ def get_model(input):
     from mejiro.utils import util
 
     # unpack tuple
-    (lens, pipeline_params, output_dir) = input
+    (lens, pipeline_params, bands, output_dir) = input
 
     # unpack pipeline params
     num_pix = pipeline_params['num_pix']
@@ -63,15 +67,14 @@ def get_model(input):
     grid_oversample = pipeline_params['grid_oversample']
 
     # generate lenstronomy model
-    model = lens.get_array(num_pix=num_pix * grid_oversample, side=side)
-
-    # pickle the results
-    lens_dict = {
-        'lens': lens,
-        'model': model
-    }
-    pickle_target = os.path.join(output_dir, f'lens_dict_{lens.uid}_{lens.band}')
-    util.pickle(pickle_target, lens_dict)
+    for band in bands:
+        model = lens.get_array(num_pix=num_pix * grid_oversample, side=side, band=band)
+        pickle_target_array = os.path.join(output_dir, f'array_{lens.uid}_{band}')
+        util.pickle(pickle_target_array, model)
+    
+    # pickle lens
+    pickle_target_lens = os.path.join(output_dir, f'lens_{lens.uid}')
+    util.pickle(pickle_target_lens, lens)
 
 
 if __name__ == '__main__':

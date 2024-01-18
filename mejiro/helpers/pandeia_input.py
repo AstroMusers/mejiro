@@ -146,9 +146,9 @@ def _get_mag_array(lens, array, num_samples, band, suppress_output):
     sum = np.sum(array)
     normalized_array = array / sum
 
-    # calculate flux in counts/sec of source and lens light
-    source_flux_cps = lens.source_model_class.total_flux(lens.kwargs_source_amp)[0]
-    lens_flux_cps = lens.lens_light_model_class.total_flux(lens.kwargs_lens_light_amp)[0]
+    # calculate flux in counts/sec of source and lens light. the total_flux attribute is a list with one element
+    lens_flux_cps = lens.lens_light_model_class.total_flux([lens.kwargs_lens_light_amp_dict[band]])[0]
+    source_flux_cps = lens.source_model_class.total_flux([lens.kwargs_source_amp_dict[band]])[0]
 
     # get total flux in counts/sec so we know how bright to make each pixel (in counts/sec)
     total_flux_cps = source_flux_cps + lens_flux_cps
