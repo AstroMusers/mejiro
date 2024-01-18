@@ -14,7 +14,7 @@ def main(config):
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
     from mejiro.helpers import pyhalo, pandeia_input
-    from mejiro.lenses.test import SampleSkyPyStrongLens
+    from mejiro.lenses.test import SampleStrongLens
     from mejiro.utils import util
 
     array_dir = os.path.join(array_dir, 'sample_skypy_lens')
@@ -28,7 +28,7 @@ def main(config):
     num_samples_list = [100, 1000, 10000, 100000, 1000000, 10000000]
 
     # use test lens
-    lens = SampleSkyPyStrongLens()
+    lens = SampleStrongLens()
 
     # add CDM subhalos; NB same subhalo population for all
     pickle_dir = os.path.join(pickle_dir, 'pyhalo')

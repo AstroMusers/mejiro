@@ -1,9 +1,9 @@
-from glob import glob
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-from mejiro.helpers import color
+from glob import glob
 
+from mejiro.helpers import color
 from mejiro.lenses.strong_lens import StrongLens
 from mejiro.utils import util
 
@@ -16,9 +16,9 @@ def unpickle_lens(pickle_path, uid):
     lens_mags = unpickled['lens_mags']
     source_mags = unpickled['source_mags']
 
-    return StrongLens(kwargs_model=kwargs_model, 
-                      kwargs_params=kwargs_params, 
-                      lens_mags=lens_mags, 
+    return StrongLens(kwargs_model=kwargs_model,
+                      kwargs_params=kwargs_params,
+                      lens_mags=lens_mags,
                       source_mags=source_mags,
                       uid=uid)
 

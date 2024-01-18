@@ -16,7 +16,7 @@ def main(config):
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
     from mejiro.helpers import pyhalo, pandeia_input, lenstronomy_sim
-    from mejiro.lenses.test import SampleSkyPyStrongLens
+    from mejiro.lenses.test import SampleStrongLens
     from mejiro.utils import util
 
     array_dir = os.path.join(array_dir, 'sample_skypy_lens', 'lenstronomy_noise')
@@ -33,7 +33,7 @@ def main(config):
     band = 'f106'
 
     # use test lens
-    lens = SampleSkyPyStrongLens()
+    lens = SampleStrongLens()
 
     # add CDM subhalos; NB same subhalo population for all
     pickle_dir = os.path.join(pickle_dir, 'pyhalo')

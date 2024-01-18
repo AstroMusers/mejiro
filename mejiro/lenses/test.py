@@ -5,7 +5,7 @@ from mejiro.lenses import lens_util
 from mejiro.lenses.strong_lens import StrongLens
 
 
-class SampleSkyPyStrongLens(StrongLens):
+class SampleStrongLens(StrongLens):
     def __init__(self):
         # define redshifts
         self.z_lens = 0.643971
@@ -58,13 +58,13 @@ class SampleSkyPyStrongLens(StrongLens):
         self.kwargs_source = [kwargs_sersic]
 
         # TODO update
-        lens_mags = { 
+        lens_mags = {
             'f106': 20,
             'f129': 20,
             'f158': 20,
             'f184': 20
         }
-        source_mags = { 
+        source_mags = {
             'f106': 21,
             'f129': 21,
             'f158': 21,
@@ -82,7 +82,8 @@ class SampleSkyPyStrongLens(StrongLens):
         self.kwargs_model['source_redshift_list'] = self.source_redshift_list
         self.kwargs_model['z_source'] = self.z_source
 
-        super().__init__(kwargs_model=self.kwargs_model, kwargs_params=self.kwargs_params, lens_mags=lens_mags, source_mags=source_mags)
+        super().__init__(kwargs_model=self.kwargs_model, kwargs_params=self.kwargs_params, lens_mags=lens_mags,
+                         source_mags=source_mags)
 
 
 class TestStrongLens(StrongLens):

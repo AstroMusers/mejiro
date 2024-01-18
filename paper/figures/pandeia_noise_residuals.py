@@ -27,7 +27,7 @@ if repo_dir not in sys.path:
 plt.style.use(f'{repo_dir}/mejiro/mplstyle/science.mplstyle')
 
 from mejiro.helpers import pandeia_input, pyhalo
-from mejiro.lenses.test import SampleSkyPyStrongLens
+from mejiro.lenses.test import SampleStrongLens
 from mejiro.plots import diagnostic_plot, plot, plot_util, overplot
 from mejiro.utils import util
 from mejiro.analysis import stats

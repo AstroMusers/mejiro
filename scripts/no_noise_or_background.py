@@ -13,14 +13,14 @@ def main(config):
     # enable use of local packages
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
-    from mejiro.lenses.test import SampleSkyPyStrongLens
+    from mejiro.lenses.test import SampleStrongLens
     from mejiro.helpers import pyhalo, pandeia_input
 
     band = 'f106'
     num_samples = 100000
     grid_supersample = 3
 
-    lens = SampleSkyPyStrongLens()
+    lens = SampleStrongLens()
 
     # add CDM subhalos; NB same subhalo population for all
     lens.add_subhalos(*pyhalo.unpickle_subhalos(os.path.join(pickle_dir, 'cdm_subhalos_tuple')))

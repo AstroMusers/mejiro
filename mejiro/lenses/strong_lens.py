@@ -17,7 +17,7 @@ class StrongLens:
         self.z_source_convention = 5
 
         # set unique identifier
-        self.uid = uid       
+        self.uid = uid
 
         # get redshifts
         self.z_lens = kwargs_model['lens_redshift_list'][0]
@@ -188,14 +188,14 @@ class StrongLens:
         self.kwargs_lens_light_amp_dict = {}
         for band, _ in self.lens_mags:
             self.kwargs_lens_light_amp_dict[band] = data_util.magnitude2amplitude(self.lens_light_model_class,
-                                                                   self.kwargs_lens_light_dict[band],
-                                                                   magnitude_zero_point)
-        
+                                                                                  self.kwargs_lens_light_dict[band],
+                                                                                  magnitude_zero_point)
+
         self.kwargs_source_amp_dict = {}
         for band, _ in self.source_mags:
             self.kwargs_source_amp_dict[band] = data_util.magnitude2amplitude(self.source_model_class,
-                                                               self.kwargs_source_dict[band],
-                                                               magnitude_zero_point)
+                                                                              self.kwargs_source_dict[band],
+                                                                              magnitude_zero_point)
 
     def __str__(self):
         return f'StrongLens {self.uid}'
