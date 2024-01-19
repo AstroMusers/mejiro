@@ -107,7 +107,9 @@ class StrongLens:
 
     def get_array(self, num_pix, side, band, kwargs_psf={'psf_type': 'NONE'}):
         self.num_pix = num_pix
-        self._set_up_pixel_grid(num_pix, side)
+        self.side = side
+        self.oversample_factor = round((0.11 * self.num_pix) / self.side)
+        self._set_up_pixel_grid()
 
         # define PSF, e.g. kwargs_psf = {'psf_type': 'NONE'}, {'psf_type': 'GAUSSIAN', 'fwhm': psf_fwhm}
         psf_class = PSF(**kwargs_psf)
@@ -172,17 +174,17 @@ class StrongLens:
                        kwargs_model=self.kwargs_model)
         self.kwargs_lens_lensing_units = sim_g.physical2lensing_conversion(kwargs_mass=self.kwargs_lens)
 
-    def _set_up_pixel_grid(self, num_pix, side):
-        self.delta_pix = side / num_pix  # size of pixel in angular coordinates
+    def _set_up_pixel_grid(self):
+        self.delta_pix = self.side / self.num_pix  # size of pixel in angular coordinates
 
         ra_grid, dec_grid, self.ra_at_xy_0, self.dec_at_xy_0, x_at_radec_0, y_at_radec_0, self.Mpix2coord, self.Mcoord2pix = util.make_grid_with_coordtransform(
-            numPix=num_pix,
+            numPix=self.num_pix,
             deltapix=self.delta_pix,
             subgrid_res=1,
             left_lower=False,
             inverse=False)
 
-        kwargs_pixel = {'nx': num_pix, 'ny': num_pix,  # number of pixels per axis
+        kwargs_pixel = {'nx': self.num_pix, 'ny': self.num_pix,  # number of pixels per axis
                         'ra_at_xy_0': self.ra_at_xy_0,
                         'dec_at_xy_0': self.dec_at_xy_0,
                         'transform_pix2angle': self.Mpix2coord}

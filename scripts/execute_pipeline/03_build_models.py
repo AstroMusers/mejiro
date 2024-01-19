@@ -1,4 +1,5 @@
 import hydra
+import numpy as np
 import multiprocessing
 import os
 import sys
@@ -34,7 +35,6 @@ def main(config):
 
     # get bands
     bands = util.hydra_to_dict(config.pipeline)['band']
-    bands = [i.lower() for i in bands]
 
     # tuple the parameters
     pipeline_params = util.hydra_to_dict(config.pipeline)
@@ -66,11 +66,10 @@ def get_model(input):
     side = pipeline_params['side']
     grid_oversample = pipeline_params['grid_oversample']
 
-    # generate lenstronomy model
+    # generate lenstronomy model and save
     for band in bands:
         model = lens.get_array(num_pix=num_pix * grid_oversample, side=side, band=band)
-        pickle_target_array = os.path.join(output_dir, f'array_{lens.uid}_{band}')
-        util.pickle(pickle_target_array, model)
+        np.save(os.path.join(output_dir, f'array_{lens.uid}_{band}'), model)
     
     # pickle lens
     pickle_target_lens = os.path.join(output_dir, f'lens_{lens.uid}')

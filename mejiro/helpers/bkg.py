@@ -1,9 +1,53 @@
+import lenstronomy.Util.data_util as data_util
+import os
 import numpy as np
 import random
 from jwst_backgrounds import jbt
+from scipy.stats import truncnorm
+
+from mejiro.helpers.roman_params import RomanParameters
+from mejiro.helpers import lenstronomy_sim
+from mejiro.utils import util
 
 
-def get_background(suppress_output=False):
+def get_high_galactic_lat_bkg(array, band, seed=None):
+    # calculate minimum zodical light in given band in counts/sec/pixel from Roman technical documentation
+    csv_path = os.path.join(_get_data_dir(), 'roman_spacecraft_and_instrument_parameters.csv')
+    params = RomanParameters(csv_path)
+    min_count_rate = params.get_min_zodi_count_rate(band)
+
+    # get a distribution to vary zodiacal light between 1 and 2 times minimum, centered on 1.5 which is typical at high galactic latitudes
+    loc = 1.5
+    scale = 0.2
+    clip_a = 1.
+    clip_b = 2.
+    a = (clip_a - loc) / scale
+    b = (clip_b - loc) / scale
+    dist = truncnorm(a=a, b=b, loc=loc, scale=scale)
+    multiplier = dist.rvs(size=1)[0]
+
+    # get baseline
+    baseline = np.ones(array.shape) * min_count_rate * multiplier
+
+    # calculate variance in this baseline
+    kwargs_band = lenstronomy_sim.get_roman_band_kwargs(band)
+    sigma_bkg = data_util.bkg_noise(readout_noise=0, exposure_time=kwargs_band['exposure_time'], sky_brightness=kwargs_band['sky_brightness'], pixel_scale=kwargs_band['pixel_scale'], num_exposures=1)
+    print(sigma_bkg)
+
+    # make an array out of this variance; it'll have positive and negative elements 
+    if seed is not None:
+        g = np.random.RandomState(seed=seed)
+    else:
+        g = np.random
+    nx, ny = np.shape(array)
+    variance = np.zeros_like(array)
+    variance += g.randn(nx, ny) * sigma_bkg
+
+    return baseline + variance
+
+
+
+def get_jbt_bkg(suppress_output=False):
     background = []
 
     wavelengths = get_wavelengths()
@@ -28,3 +72,25 @@ def get_wavelengths():
     # _, max = roman_params.get_min_max_wavelength('f184')
     # return np.arange(start=min, stop=max, step=0.1).tolist()
     return np.arange(start=0.5, stop=2.2, step=0.1).tolist()
+
+
+def get_pandeia_randomized_bkg(lens, band):
+    # load pre-generated Pandeia minzodi background
+    data_dir = _get_data_dir()
+    bkg = np.load(os.path.join(data_dir, f'pandeia_bkg_minzodi_benchmark_{band}.npy'))
+
+    # TODO account for supersampling
+
+    # crop and randomize
+    bkg_cropped = util.center_crop_image(bkg, (lens.num_pix, lens.num_pix))
+    flat = bkg_cropped.flatten()
+    np.random.shuffle(flat)
+    shuffled = flat.reshape(bkg_cropped.shape)
+
+    return shuffled
+
+
+def _get_data_dir():
+    import mejiro
+    module_path = os.path.dirname(mejiro.__file__)
+    return os.path.join(module_path, 'data')

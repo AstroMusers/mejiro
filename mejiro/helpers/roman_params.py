@@ -27,3 +27,8 @@ class RomanParameters:
             index=False)
         min, max = range.split('-')
         return float(min), float(max)
+    
+    def get_min_zodi_count_rate(self, band):
+        count_rate = self.df.loc[self.df['Name'] == f'WFI_Count_Rate_Zody_Minimum_{band.upper()}']['Value'].to_string(
+            index=False)
+        return float(count_rate)

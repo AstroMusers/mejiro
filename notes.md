@@ -7,7 +7,7 @@
 
 * 2992 models, num_pix=97, side=10.67, grid_oversample=3, num_samples=100000
   `01` on zenobia (40 cores), 00:00:10
-  `02` on galileo (64 cores), 
+  `02` on zenobia (40 cores), 01:33:17
   `03` on galileo (64 cores), 11:56:44; on uzay (64 cores), 13:16:50
   `04` on galileo (64 cores),
 

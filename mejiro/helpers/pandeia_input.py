@@ -10,14 +10,11 @@ from tqdm import tqdm
 
 from mejiro.helpers import bkg
 from mejiro.helpers.roman_params import RomanParameters
-from mejiro.utils import util
 
 
 def build_pandeia_calc(array, lens, background=False, band='f106', max_scene_size=5, noise=True, num_samples=None,
-                       oversample_factor=None,
+                       oversample_factor=None, canned_bkg=False, seed=None,
                        suppress_output=False):
-    band = band.lower()
-
     calc = build_default_calc('roman', 'wfi', 'imaging')
 
     # set scene size settings
@@ -32,27 +29,32 @@ def build_pandeia_calc(array, lens, background=False, band='f106', max_scene_siz
     # turn on noise sources
     calc['calculation'] = get_calculation_dict(init=noise)
 
-    # set background
-    if background:
-        # calc['background'] = bkg.get_background(suppress_output)
+    # set Pandeia canned background
+    if canned_bkg:
+        # calc['background'] = bkg.get_jbt_bkg(suppress_output)
         calc['background'] = 'minzodi'
         calc['background_level'] = 'benchmark'
     else:
         calc['background'] = 'none'
 
-    # add noise
-    # array += lenstronomy_sim.get_background_noise(lens, array, band)
-    # array += get_background_noise(lens, band)
+    # convert array from amp to counts/sec
+    cps_array = _get_cps_array(lens, array, num_samples, band, suppress_output)
+    
+    # add sky background in cps
+    if background:
+        sky_background = bkg.get_high_galactic_lat_bkg(array, band, seed)
+        # TODO reshape
+        cps_array += sky_background
 
     # convert array from counts/sec to astronomical magnitude
-    mag_array = _get_mag_array(lens, array, num_samples, band, suppress_output)
+    mag_array = _convert_cps_to_magnitude(cps_array, band, suppress_output)
 
     # add point sources to Pandeia input
     norm_wave = _get_norm_wave(band)
     if num_samples:
-        calc, num_point_sources = _phonion_sample(calc, mag_array, lens, num_samples, norm_wave, suppress_output)
+        calc, num_point_sources = _phonion_sample(calc, mag_array, lens, norm_wave, suppress_output)
     elif oversample_factor:
-        calc, num_point_sources = _phonion_grid(calc, mag_array, lens, oversample_factor, norm_wave, suppress_output)
+        calc, num_point_sources = _phonion_grid(calc, mag_array, lens, norm_wave, suppress_output)
     else:
         raise Exception('Either provide num_samples to use sampling method or oversample_factor to use grid method')
 
@@ -106,7 +108,7 @@ def get_calculation_dict(init=True):
     }
 
 
-def _phonion_sample(calc, mag_array, lens, num_samples, norm_wave, suppress_output=False):
+def _phonion_sample(calc, mag_array, lens, norm_wave, suppress_output=False):
     i = 0
 
     # loop over non-zero pixels, i.e. ignore pixels with no phonions
@@ -141,12 +143,12 @@ def _phonion_sample(calc, mag_array, lens, num_samples, norm_wave, suppress_outp
     return calc, i
 
 
-def _get_mag_array(lens, array, num_samples, band, suppress_output):
+def _get_cps_array(lens, array, num_samples, band, suppress_output):
     # normalize the image to convert it into a PDF
     sum = np.sum(array)
     normalized_array = array / sum
 
-    # calculate flux in counts/sec of source and lens light. the total_flux attribute is a list with one element
+    # calculate flux in counts/sec of source and lens light. NB the total_flux attribute is a list with one element
     lens_flux_cps = lens.lens_light_model_class.total_flux([lens.kwargs_lens_light_amp_dict[band]])[0]
     source_flux_cps = lens.source_model_class.total_flux([lens.kwargs_source_amp_dict[band]])[0]
 
@@ -164,6 +166,8 @@ def _get_mag_array(lens, array, num_samples, band, suppress_output):
     reconstructed_array = np.zeros(array.shape)
     for x, y in adjusted_indices:
         reconstructed_array[x][y] += counts_per_pixel
+
+    # TODO return reconstructed array here
 
     # convert from counts/sec to astronomical magnitude
     return _convert_cps_to_magnitude(reconstructed_array, band, suppress_output)
@@ -186,39 +190,6 @@ def _convert_cps_to_magnitude(array, band, suppress_output):
     return mag_array
 
 
-def _convert_magnitude_to_cps(array, band, suppress_output):
-    lenstronomy_roman_config = Roman(band=band.upper(), psf_type='PIXEL',
-                                     survey_mode='wide_area').kwargs_single_band()  # band e.g. 'F106'
-    magnitude_zero_point = lenstronomy_roman_config.get('magnitude_zero_point')
-
-    i = 0
-    side, _ = array.shape
-    cps_array = np.zeros(array.shape)
-
-    for row_number, row in tqdm(enumerate(array), total=side, disable=suppress_output):
-        for item_number, item in enumerate(row):
-            cps_array[row_number][item_number] = data_util.magnitude2cps(item, magnitude_zero_point)
-            i += 1
-
-    return cps_array
-
-
-def get_background_noise(lens, band):
-    # load pre-generated Pandeia minzodi background
-    data_dir = _get_data_dir()
-    bkg = np.load(os.path.join(data_dir, f'pandeia_bkg_minzodi_benchmark_{band}.npy'))
-
-    # TODO account for supersampling
-
-    # crop and randomize
-    bkg_cropped = util.center_crop_image(bkg, (lens.num_pix, lens.num_pix))
-    flat = bkg_cropped.flatten()
-    np.random.shuffle(flat)
-    shuffled = flat.reshape(bkg_cropped.shape)
-
-    return shuffled
-
-
 def _get_norm_wave(band):
     band = band.upper()
     roman_params = _get_roman_params()
@@ -233,7 +204,7 @@ def _get_roman_params():
     return RomanParameters(csv_path)
 
 
-def _phonion_grid(calc, mag_array, lens, oversample_factor, norm_wave, suppress_output=False):
+def _phonion_grid(calc, mag_array, lens, norm_wave, suppress_output=False):
     i = 0
     side, _ = mag_array.shape
 

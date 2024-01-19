@@ -4,12 +4,9 @@ from lenstronomy.SimulationAPI.ObservationConfig import HST, LSST, Roman, DES, E
 from lenstronomy.SimulationAPI.sim_api import SimAPI
 
 
-def get_background_noise(lens, array, band='f106'):
+def get_roman_band_kwargs(band):
     roman_band = Roman.Roman(band=band.upper(), psf_type='PIXEL', survey_mode='wide_area')
-    kwargs_band = roman_band.kwargs_single_band()
-    sim_api = SimAPI(numpix=lens.num_pix, kwargs_single_band=kwargs_band, kwargs_model=lens.kwargs_model)
-    noise = sim_api.noise_for_model(array, background_noise=True, poisson_noise=False)
-    return np.abs(noise)
+    return roman_band.kwargs_single_band()   
 
 
 def get_image(lens, telescope, side):
