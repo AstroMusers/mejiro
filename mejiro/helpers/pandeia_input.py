@@ -12,7 +12,7 @@ from mejiro.helpers import bkg
 from mejiro.helpers.roman_params import RomanParameters
 
 
-def build_pandeia_calc(array, lens, background=False, band='f106', max_scene_size=5, noise=True, num_samples=None,
+def build_pandeia_calc(array, lens, background=None, band='f106', max_scene_size=5, noise=True, num_samples=None,
                        oversample_factor=None, canned_bkg=False, seed=None,
                        suppress_output=False):
     calc = build_default_calc('roman', 'wfi', 'imaging')
@@ -41,10 +41,10 @@ def build_pandeia_calc(array, lens, background=False, band='f106', max_scene_siz
     cps_array = _get_cps_array(lens, array, num_samples, band, suppress_output)
     
     # add sky background in cps
-    if background:
-        sky_background = bkg.get_high_galactic_lat_bkg(array, band, seed)
+    if background is not None:
+        # sky_background = bkg.get_high_galactic_lat_bkg(array, band, seed)
         # TODO reshape
-        cps_array += sky_background
+        cps_array += background
 
     # convert array from counts/sec to astronomical magnitude
     mag_array = _convert_cps_to_magnitude(cps_array, band, suppress_output)
