@@ -3,6 +3,7 @@
 /notebooks/old
 /scripts/old
 /config
+.nfs*
 
 # Jupyter
 .ipynb_checkpoints
