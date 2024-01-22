@@ -1,4 +1,5 @@
 import datetime
+import numpy as np
 import os
 import pickle as _pickle
 import shutil
@@ -6,6 +7,29 @@ from collections import ChainMap
 from glob import glob
 
 from omegaconf import OmegaConf
+
+
+def resize_with_pixels_centered(array, oversample_factor):
+    if oversample_factor % 2 == 0:
+        raise Exception('Oversampling factor must be odd')
+    
+    x, y = array.shape
+    if x != y:
+        raise Exception('Array must be square')
+    
+    flattened_array = array.flatten()
+    oversample_grid = np.zeros((x * oversample_factor, x * oversample_factor))
+
+    k = 0
+    for i, row in enumerate(oversample_grid):
+        for j, _ in enumerate(row):
+            if not (i % oversample_factor) - ((oversample_factor - 1) / 2) == 0:
+                continue
+            if (j % oversample_factor) - ((oversample_factor - 1) / 2) == 0:
+                oversample_grid[i][j] = flattened_array[k]
+                k += 1
+
+    return oversample_grid
 
 
 def center_crop_image(array, shape):
