@@ -26,8 +26,17 @@ def get_pandeia_psf_dir():
     return os.path.join(pandeia_dir, 'roman', 'wfi', 'psfs')
 
 
-def reset_pandeia_psfs(originals_dir, suppress_output=False):
+def _get_default_psf_dir():
     psf_dir = get_pandeia_psf_dir()
+    parent_dir = os.path.dirname(psf_dir)
+    return os.path.join(parent_dir, 'default_psfs')
+
+
+def reset_pandeia_psfs(originals_dir=None, suppress_output=False):
+    if originals_dir is None:
+        originals_dir = _get_default_psf_dir()
+        
+    psf_dir = get_pandeia_psf_dir()    
     file_list = glob(originals_dir + '/wfi_imaging-f062*')
 
     import shutil
