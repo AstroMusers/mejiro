@@ -12,9 +12,7 @@ from mejiro.helpers import bkg
 from mejiro.helpers.roman_params import RomanParameters
 
 
-def build_pandeia_calc(array, lens, background=None, band='f106', max_scene_size=5, noise=True, num_samples=None,
-                       oversample_factor=None, canned_bkg=False, seed=None,
-                       suppress_output=False):
+def build_pandeia_calc(array, lens, background=None, band='F106', max_scene_size=5, noise=True, num_samples=None, oversample_factor=None, canned_bkg=False, suppress_output=False):
     calc = build_default_calc('roman', 'wfi', 'imaging')
 
     # set scene size settings
@@ -38,16 +36,14 @@ def build_pandeia_calc(array, lens, background=None, band='f106', max_scene_size
         calc['background'] = 'none'
 
     # convert array from amp to counts/sec
-    cps_array = _get_cps_array(lens, array, num_samples, band, suppress_output)
+    cps_array = _get_cps_array(lens, array, num_samples, band)
     
     # add sky background in cps
     if background is not None:
-        # sky_background = bkg.get_high_galactic_lat_bkg(array, band, seed)
-        # TODO reshape
         cps_array += background
 
     # convert array from counts/sec to astronomical magnitude
-    mag_array = _convert_cps_to_magnitude(cps_array, band, suppress_output)
+    mag_array = _convert_cps_to_magnitude(cps_array, band)
 
     # add point sources to Pandeia input
     norm_wave = _get_norm_wave(band)
@@ -143,7 +139,7 @@ def _phonion_sample(calc, mag_array, lens, norm_wave, suppress_output=False):
     return calc, i
 
 
-def _get_cps_array(lens, array, num_samples, band, suppress_output):
+def _get_cps_array(lens, array, num_samples, band):
     # normalize the image to convert it into a PDF
     sum = np.sum(array)
     normalized_array = array / sum
@@ -167,13 +163,10 @@ def _get_cps_array(lens, array, num_samples, band, suppress_output):
     for x, y in adjusted_indices:
         reconstructed_array[x][y] += counts_per_pixel
 
-    # TODO return reconstructed array here
-
-    # convert from counts/sec to astronomical magnitude
-    return _convert_cps_to_magnitude(reconstructed_array, band, suppress_output)
+    return reconstructed_array
 
 
-def _convert_cps_to_magnitude(array, band, suppress_output):
+def _convert_cps_to_magnitude(array, band):
     lenstronomy_roman_config = Roman(band=band.upper(), psf_type='PIXEL',
                                      survey_mode='wide_area').kwargs_single_band()  # band e.g. 'F106'
     magnitude_zero_point = lenstronomy_roman_config.get('magnitude_zero_point')
@@ -182,7 +175,7 @@ def _convert_cps_to_magnitude(array, band, suppress_output):
     side, _ = array.shape
     mag_array = np.zeros(array.shape)
 
-    for row_number, row in tqdm(enumerate(array), total=side, disable=suppress_output):
+    for row_number, row in enumerate(array):
         for item_number, item in enumerate(row):
             mag_array[row_number][item_number] = data_util.cps2magnitude(item, magnitude_zero_point)
             i += 1

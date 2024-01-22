@@ -41,6 +41,9 @@ class StrongLens:
         # set kwargs_model
         self.update_model()
 
+        # set place to store amp versions of kwargs_light dicts
+        self.kwargs_lens_light_amp_dict, self.kwargs_source_amp_dict = {}, {}
+
     def _build_kwargs_light_dict(self, mag_dict, kwargs_light):
         kwargs_light_dict = {}
         for band, mag in mag_dict.items():
@@ -143,7 +146,6 @@ class StrongLens:
         kwargs_lens_light_amp = self._get_amp_light_kwargs(magnitude_zero_point, self.lens_light_model_class, self.kwargs_lens_light_dict[band])
         kwargs_source_amp = self._get_amp_light_kwargs(magnitude_zero_point, self.source_model_class, self.kwargs_source_dict[band])
 
-        self.kwargs_lens_light_amp_dict, self.kwargs_source_amp_dict = {}, {}
         self.kwargs_lens_light_amp_dict[band] = kwargs_lens_light_amp[0]
         self.kwargs_source_amp_dict[band] = kwargs_source_amp[0]
 

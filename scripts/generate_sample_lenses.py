@@ -13,7 +13,7 @@ def main(config):
     # enable use of local packages
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
-    from mejiro.helpers import pyhalo, pandeia_input
+    from mejiro.helpers import pyhalo, pandeia_input, bkg
     from mejiro.lenses.test import SampleStrongLens
     from mejiro.utils import util
 
@@ -24,6 +24,8 @@ def main(config):
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
 
+    seed = 42
+    band = 'F129'
     grid_oversample_list = [1, 3, 5]
     num_samples_list = [100, 1000, 10000, 100000, 1000000, 10000000]
 
@@ -42,14 +44,16 @@ def main(config):
             start = time.time()
 
             model = lens.get_array(num_pix=97 * grid_oversample,
-                                   side=10.67)  # .get_array(num_pix=51 * grid_oversample, side=5.61)
+                                   side=10.67, band=band)  # .get_array(num_pix=51 * grid_oversample, side=5.61)
+            
+            background = bkg.get_high_galactic_lat_bkg(model.shape, band, seed=seed)
+            reshaped_bkg = util.resize_with_pixels_centered(background[0], grid_oversample)
 
             # build Pandeia input
-            calc, _ = pandeia_input.build_pandeia_calc(model, lens, max_scene_size=10., num_samples=num_samples,
-                                                       suppress_output=True)
+            calc, _ = pandeia_input.build_pandeia_calc(model, lens, background=reshaped_bkg, band=band, max_scene_size=10., num_samples=num_samples, suppress_output=False)
 
             # do Pandeia calculation        
-            image, _ = pandeia_input.get_pandeia_image(calc, suppress_output=True)
+            image, _ = pandeia_input.get_pandeia_image(calc, suppress_output=False)
             assert image.shape == (91, 91)  # 45, 45
 
             # save image
