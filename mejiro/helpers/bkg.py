@@ -11,7 +11,10 @@ from mejiro.utils import util
 
 
 def get_high_galactic_lat_bkg(shape, bands, seed=None):
+    # was only one band provided as a string? or a list of bands?
+    single_band = False
     if not isinstance(bands, list):
+        single_band = True
         bands = [bands]
 
     # get a random multiplier which will vary zodiacal light between 1 and 2 times minimum, centered on 1.5 which is typical at high galactic latitudes
@@ -52,7 +55,10 @@ def get_high_galactic_lat_bkg(shape, bands, seed=None):
         # add baseline and variance
         backgrounds.append(baseline + variance)
 
-    return backgrounds
+    if single_band:
+        return backgrounds[0]
+    else:
+        return backgrounds
 
 
 def get_jbt_bkg(suppress_output=False):

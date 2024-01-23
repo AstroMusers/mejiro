@@ -23,13 +23,14 @@ def main(config):
     input_dir = config.machine.dir_03
 
     # directory to write the output to
-    output_dir = config.machine.dir_04  # os.path.join(config.machine.pipeline_dir, '04_test')
+    output_dir = os.path.join(config.machine.pipeline_dir, '04_test')  # config.machine.dir_04
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
 
     # open pickled lens list
     # TODO LIMIT IS TEMP
-    lens_list = util.unpickle_all(input_dir, 'lens_', 100)
+    limit = 25
+    lens_list = util.unpickle_all(input_dir, 'lens_', limit)
 
     # get bands
     bands = util.hydra_to_dict(config.pipeline)['band']
@@ -37,6 +38,8 @@ def main(config):
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - 4
+    if limit < process_count:
+        process_count = limit       
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     # tuple the parameters
@@ -63,23 +66,31 @@ def main(config):
 
 
 def get_image(input):
-    from mejiro.helpers import pandeia_input
+    from mejiro.helpers import pandeia_input, bkg
     from mejiro.utils import util
 
     # unpack tuple
     (lens, pipeline_params, input_dir, output_dir, bands) = input
 
     # unpack pipeline_params
+    grid_oversample = pipeline_params['grid_oversample']
     max_scene_size = pipeline_params['max_scene_size']
     num_samples = pipeline_params['num_samples']
 
+    # load an array to get its shape
+    num_pix, _ = np.load(f'{input_dir}/array_{lens.uid}_{bands[0]}.npy').shape
+
+    # generate sky background
+    bkgs = bkg.get_high_galactic_lat_bkg((num_pix, num_pix), bands, seed=None)
+    reshaped_bkgs = [util.resize_with_pixels_centered(i, grid_oversample) for i in bkgs]
+
     execution_times = []
-    for band in bands:
-        # unpickle the appropriate array
-        array = util.unpickle(f'{input_dir}/array_{lens.uid}_{band}')
+    for i, band in enumerate(bands):
+        # load the appropriate array
+        array = np.load(f'{input_dir}/array_{lens.uid}_{band}.npy')
 
         # build Pandeia input
-        calc, _ = pandeia_input.build_pandeia_calc(array, lens, background=True, noise=True, band=band,
+        calc, _ = pandeia_input.build_pandeia_calc(array, lens, background=reshaped_bkgs[i], noise=True, band=band,
                                                 max_scene_size=max_scene_size,
                                                 num_samples=num_samples, suppress_output=True)
 

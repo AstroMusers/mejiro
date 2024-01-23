@@ -36,11 +36,11 @@ def build_pandeia_calc(array, lens, background=None, band='F106', max_scene_size
         calc['background'] = 'none'
 
     # convert array from amp to counts/sec
-    cps_array = _get_cps_array(lens, array, num_samples, band)
+    cps_array = _get_cps_array(lens, array, num_samples, band, background)
     
     # add sky background in cps
-    if background is not None:
-        cps_array += background
+    # if background is not None:
+    #     cps_array += background
 
     # convert array from counts/sec to astronomical magnitude
     mag_array = _convert_cps_to_magnitude(cps_array, band)
@@ -139,7 +139,7 @@ def _phonion_sample(calc, mag_array, lens, norm_wave, suppress_output=False):
     return calc, i
 
 
-def _get_cps_array(lens, array, num_samples, band):
+def _get_cps_array(lens, array, num_samples, band, background):
     # normalize the image to convert it into a PDF
     sum = np.sum(array)
     normalized_array = array / sum
@@ -148,8 +148,14 @@ def _get_cps_array(lens, array, num_samples, band):
     lens_flux_cps = lens.lens_light_model_class.total_flux([lens.kwargs_lens_light_amp_dict[band]])[0]
     source_flux_cps = lens.source_model_class.total_flux([lens.kwargs_source_amp_dict[band]])[0]
 
-    # get total flux in counts/sec so we know how bright to make each pixel (in counts/sec)
-    total_flux_cps = source_flux_cps + lens_flux_cps
+    # if including sky background, account for it; NB it must be in units of counts/sec/pixel
+    bkg_cps = 0
+    if background is not None:
+        # calculate total flux due to background
+        bkg_cps = np.sum(background)
+
+    # get total flux so we know how bright to make each pixel (in counts/sec)
+    total_flux_cps = source_flux_cps + lens_flux_cps + bkg_cps
     counts_per_pixel = total_flux_cps / num_samples
 
     # turn array into probability distribution function and sample from it
@@ -172,7 +178,6 @@ def _convert_cps_to_magnitude(array, band):
     magnitude_zero_point = lenstronomy_roman_config.get('magnitude_zero_point')
 
     i = 0
-    side, _ = array.shape
     mag_array = np.zeros(array.shape)
 
     for row_number, row in enumerate(array):

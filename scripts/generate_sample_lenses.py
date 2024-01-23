@@ -26,8 +26,11 @@ def main(config):
 
     seed = 42
     band = 'F129'
+    num_pix = 97  # 
+    side = 10.67  # 
+    max_scene_size = 10.  # 
     grid_oversample_list = [1, 3, 5]
-    num_samples_list = [100, 1000, 10000, 100000, 1000000, 10000000]
+    num_samples_list = [100, 1000, 10000, 100000, 1000000, 10000000]  # 
 
     # use test lens
     lens = SampleStrongLens()
@@ -36,25 +39,30 @@ def main(config):
     pickle_dir = os.path.join(pickle_dir, 'pyhalo')
     lens.add_subhalos(*pyhalo.unpickle_subhalos(os.path.join(pickle_dir, 'cdm_subhalos_tuple')))
 
+    # generate sky background and reshape for each grid oversampling
+    bkgs = []
+    background = bkg.get_high_galactic_lat_bkg((num_pix, num_pix), band, seed=seed)
     for grid_oversample in grid_oversample_list:
+        reshaped_bkg = util.resize_with_pixels_centered(background, grid_oversample)
+        np.save(os.path.join(array_dir, f'bkg_{grid_oversample}'), reshaped_bkg)
+        bkgs.append(reshaped_bkg)
+
+    # generate each image
+    for i, grid_oversample in enumerate(grid_oversample_list):
         execution_time = []
         execution_time_x = []
 
         for num_samples in tqdm(num_samples_list):
             start = time.time()
 
-            model = lens.get_array(num_pix=97 * grid_oversample,
-                                   side=10.67, band=band)  # .get_array(num_pix=51 * grid_oversample, side=5.61)
-            
-            background = bkg.get_high_galactic_lat_bkg(model.shape, band, seed=seed)
-            reshaped_bkg = util.resize_with_pixels_centered(background[0], grid_oversample)
+            model = lens.get_array(num_pix=num_pix * grid_oversample,
+                                   side=side, band=band)
 
             # build Pandeia input
-            calc, _ = pandeia_input.build_pandeia_calc(model, lens, background=reshaped_bkg, band=band, max_scene_size=10., num_samples=num_samples, suppress_output=False)
+            calc, _ = pandeia_input.build_pandeia_calc(model, lens, background=bkgs[i], band=band, max_scene_size=max_scene_size, num_samples=num_samples, suppress_output=False)
 
             # do Pandeia calculation        
             image, _ = pandeia_input.get_pandeia_image(calc, suppress_output=False)
-            assert image.shape == (91, 91)  # 45, 45
 
             # save image
             np.save(os.path.join(array_dir, f'sample_skypy_lens_{grid_oversample}_{num_samples}'), image)
