@@ -108,6 +108,15 @@ class StrongLens:
             # source redshift to which the reduced deflections are computed, is the maximal redshift of the ray-tracing
         }
 
+    def get_lens_flux_cps(self, band):
+        return self.lens_light_model_class.total_flux([self.kwargs_lens_light_amp_dict[band]])[0]
+
+    def get_source_flux_cps(self, band):
+        return self.source_model_class.total_flux([self.kwargs_source_amp_dict[band]])[0]
+    
+    def get_total_flux_cps(self, band):
+        return self.get_lens_flux_cps(band) + self.get_source_flux_cps(band)
+
     def get_array(self, num_pix, side, band, kwargs_psf={'psf_type': 'NONE'}):
         self.num_pix = num_pix
         self.side = side

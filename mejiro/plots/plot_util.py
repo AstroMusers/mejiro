@@ -44,6 +44,19 @@ def get_limit(array):
     return np.max([abs_min, abs_max])
 
 
+def get_v(array_list):
+    max_list = []
+    for array in array_list:
+        abs_min, abs_max = abs(np.min(array)), abs(np.max(array))
+        max_list.append(np.max([abs_min, abs_max]))
+    return np.max(max_list)
+
+def set_v(array_list):
+    limit = get_v(array_list)
+    return {'vmin': -limit,
+            'vmax': limit}
+
+
 def get_min_max(array_list):
     min_list, max_list = [], []
     for array in array_list:
