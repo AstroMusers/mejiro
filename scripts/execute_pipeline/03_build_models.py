@@ -30,7 +30,7 @@ def main(config):
     util.clear_directory(output_dir)
 
     # count number of lenses and build indices of uids
-    lens_pickles = glob(config.machine.dir_02 + '/*')
+    lens_pickles = glob(config.machine.dir_02 + '/lens_with_subhalos_*')
     count = len(lens_pickles)
     lens_uids = list(range(count))
 

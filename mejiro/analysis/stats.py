@@ -6,6 +6,12 @@ def chi_square(observed, expected):
     return (((observed - expected) ** 2) / expected).sum().sum()
 
 
+def chi2_distance(A, B):
+    chi = 0.5 * np.sum([((a - b) ** 2) / (a + b) 
+                      for (a, b) in zip(A, B)])
+    return chi
+
+
 def normalize(array):
     sum = np.sum(array)
     return array / sum
