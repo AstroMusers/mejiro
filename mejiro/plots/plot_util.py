@@ -6,6 +6,10 @@ from os import path
 from mejiro.utils import util
 
 
+def normalize(array):
+    return array / np.linalg.norm(array)
+
+
 def get_residual_list(array_list):
     last_array = array_list[-1]
     residual_list = [(last_array - i) for i in array_list]
