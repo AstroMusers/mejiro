@@ -1,3 +1,4 @@
+import datetime
 import hydra
 import multiprocessing
 import numpy as np
@@ -20,34 +21,28 @@ def main(config):
         sys.path.append(repo_dir)
     from mejiro.utils import util
 
+    # directory to read from
+    input_dir = os.path.join(config.machine.pipeline_dir, '04_test')  # config.machine.dir_04
+
     # directory to write the output to
     output_dir = os.path.join(config.machine.pipeline_dir, '05_test')  # config.machine.dir_05
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
 
-    # open pandeia arrays
-    input_dir = os.path.join(config.machine.pipeline_dir, '04_test')  # config.machine.dir_04
-    file_list = glob(input_dir + '/*.npy')
-    num = int(len(file_list) / 3)
-    pandeia_list = []
-    for i in range(num):
-        if len(glob(input_dir + f'/pandeia_{str(i).zfill(8)}*.npy')) == 3:
-            f106 = np.load(input_dir + f'/pandeia_{str(i).zfill(8)}_f106.npy')
-            f129 = np.load(input_dir + f'/pandeia_{str(i).zfill(8)}_f129.npy')
-            # f158 = np.load(input_dir + f'/pandeia_{str(i).zfill(8)}_f158.npy')
-            f184 = np.load(input_dir + f'/pandeia_{str(i).zfill(8)}_f184.npy')
-            rgb_tuple = (f106, f129, f184, output_dir, str(i).zfill(8))
-            pandeia_list.append(rgb_tuple)
+    # list uids and build input list
+    # TODO LIMIT IS TEMP
+    limit = 25
+    input_list = [(str(uid).zfill(8), input_dir, output_dir) for uid in list(range(limit))]
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - 4
-    if len(pandeia_list) < process_count:
-        process_count = len(pandeia_list)
+    if len(input_list) < process_count:
+        process_count = len(input_list)
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     # batch
-    generator = util.batch_list(pandeia_list, process_count)
+    generator = util.batch_list(input_list, process_count)
     batches = list(generator)
 
     # process the batches
@@ -57,7 +52,7 @@ def main(config):
         for output in pool.map(get_image, batch):
             execution_times.append(output)
 
-    # TODO update and append results from each batch, instead of writing all at end
+    # TODO update and append results from each batch, instead of writing all at end; or maybe this is fine for the number of images we'll be generating
     np.save(os.path.join(array_dir, 'execution_times.npy'), execution_times)
 
     stop = time.time()
@@ -65,13 +60,24 @@ def main(config):
 
 
 def get_image(input):
+    start = time.time()
+
     # unpack tuple
-    (f106, f129, f184, output_dir, uid) = input
+    (uid, input_dir, output_dir) = input
+
+    f106 = np.load(input_dir + f'/galsim_{uid}_F106.npy')
+    f129 = np.load(input_dir + f'/galsim_{uid}_F129.npy')
+    f184 = np.load(input_dir + f'/galsim_{uid}_F184.npy')
 
     # generate and save color image
     from mejiro.helpers import color
     rgb_image = color.get_rgb(image_b=f106, image_g=f129, image_r=f184)
-    np.save(os.path.join(output_dir, f'pandeia_color_{uid}.npy'), rgb_image)
+    # rgb_image = color.get_rgb_log10(image_b=f106, image_g=f129, image_r=f184)
+    np.save(os.path.join(output_dir, f'galsim_color_{uid}.npy'), rgb_image)
+
+    stop = time.time()
+    execution_time = str(datetime.timedelta(seconds=round(stop - start)))
+    return execution_time
 
 
 if __name__ == '__main__':

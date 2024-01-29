@@ -9,6 +9,10 @@ from glob import glob
 from omegaconf import OmegaConf
 
 
+def replace_negatives_with_zeros(array):
+    return np.where(array < 0, 0, array)
+
+
 def resize_with_pixels_centered(array, oversample_factor):
     if oversample_factor % 2 == 0:
         raise Exception('Oversampling factor must be odd')

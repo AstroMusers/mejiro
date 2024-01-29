@@ -29,10 +29,10 @@ def main(config):
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
 
-    # open pickled lens list
+    # list uids
     # TODO LIMIT IS TEMP
     limit = 25
-    lens_list = util.unpickle_all(input_dir, 'lens_', limit)
+    uid_list = list(range(limit))
 
     # get bands
     bands = util.hydra_to_dict(config.pipeline)['band']
@@ -47,8 +47,8 @@ def main(config):
     # tuple the parameters
     pipeline_params = util.hydra_to_dict(config.pipeline)
     tuple_list = []
-    for lens in lens_list:
-        tuple_list.append((lens, pipeline_params, input_dir, output_dir, bands))
+    for uid in uid_list:
+        tuple_list.append((uid, pipeline_params, input_dir, output_dir, bands))
 
     # batch
     generator = util.batch_list(tuple_list, process_count)
@@ -68,20 +68,32 @@ def main(config):
 
 
 def get_image(input):
-    from mejiro.helpers import bkg, gs
+    from mejiro.helpers import gs
     from mejiro.utils import util
 
     # unpack tuple
-    (lens, pipeline_params, input_dir, output_dir, bands) = input
+    (uid, pipeline_params, input_dir, output_dir, bands) = input
 
     # unpack pipeline_params
     grid_oversample = pipeline_params['grid_oversample']
     exposure_time = pipeline_params['exposure_time']
+    suppress_output = pipeline_params['suppress_output']
+
+    # load lens
+    lens = util.unpickle(os.path.join(input_dir, f'lens_{str(uid).zfill(8)}'))
 
     # create galsim rng
     rng = galsim.UniformDeviate()
 
-    # generate sky background
+    # determine detector and position
+    detector = gs.get_random_detector(suppress_output)
+    detector_pos = gs.get_random_detector_pos(suppress_output)
+
+    # get wcs
+    wcs_dict = gs.get_random_hlwas_wcs(suppress_output)
+
+    # calculate sky backgrounds for each band
+    bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix=45)
 
 
     execution_times = []
@@ -95,16 +107,13 @@ def get_image(input):
         total_flux_cps = lens.get_total_flux_cps(band)  
         
         # get interpolated image
-        interp = galsim.InterpolatedImage(galsim.Image(array), scale=0.11 / grid_oversample, flux=total_flux_cps * exposure_time)
+        interp = galsim.InterpolatedImage(galsim.Image(array, xmin=0, ymin=0), scale=0.11 / grid_oversample, flux=total_flux_cps * exposure_time)
 
         # generate PSF and convolve
-        convolved = gs.convolve()
-        
-        # add sky background
-        sky_bkg = gs.get_sky_bkg()
+        convolved = gs.convolve(interp, band, detector, detector_pos, 45, pupil_bin=1)
 
         # add sky background to convolved image
-        final_image = convolved + sky_bkg
+        final_image = convolved + bkgs[band]
 
         # integer number of photons are being detected, so quantize
         final_image.quantize()
@@ -112,13 +121,24 @@ def get_image(input):
         # add all detector effects
         galsim.roman.allDetectorEffects(final_image, prev_exposures=(), rng=rng, exptime=exposure_time)
 
-        # quantize, as the analog-to-digital converter reads in an integer value
-        final_image.quantize()
+        # make sure there are no negative values from Poisson noise generator
+        final_image.replaceNegative()
 
-        # this has float values, so convert to integer values
-        final_image = galsim.Image(final_image, dtype=int).array
+        # this has float values, so convert to integer values - use this if wanting all counts and not dividing through by exposure time i.e. want units of pixels to be counts instead of counts/sec
+        # final_image = galsim.Image(final_image, dtype=int).array
 
-        np.save(os.path.join(output_dir, f'galsim_{lens.uid}_{band}.npy'), final_image)
+        # get the array
+        final_array = final_image.array
+
+        # check for negative values. if there are, wtf is galsim doing
+        if np.any(final_array < 0):
+            print('Negative value(s) found')
+            util.replace_negatives_with_zeros(final_array)
+
+        # divide through by exposure time to get in units of counts/sec/pixel
+        final_array /= exposure_time
+
+        np.save(os.path.join(output_dir, f'galsim_{lens.uid}_{band}.npy'), final_array)
 
         stop = time.time()
         execution_time = str(datetime.timedelta(seconds=round(stop - start)))

@@ -1,29 +1,37 @@
+import datetime
 import galsim
 import random
+from astropy.coordinates import SkyCoord
 from galsim import roman
 from galsim import InterpolatedImage, Image
 
 
-def get_random_hlwas_wcs(detector, suppress_output=False):
+def get_random_hlwas_wcs(suppress_output=False):
     ra = random.uniform(15, 45)
     dec = random.uniform(-45, -15)
 
-    # TODO fix
-    ra_targ = galsim.Angle.from_hms('16:01:41.01257')
-    dec_targ = galsim.Angle.from_dms('66:48:10.1312')
+    # set observation datetime to midnight on July 7th, 2027 - this seems to be fine for all high galactic latitudes
+    date = datetime.datetime(year=2027, month=7, day=7, hour=0, minute=0, second=0)
+
+    skycoord = SkyCoord(ra, dec, frame='icrs', unit='deg')
+    ra_hms, dec_dms = skycoord.to_string('hmsdms').split(' ')
+
+    ra_targ = galsim.Angle.from_hms(ra_hms)
+    dec_targ = galsim.Angle.from_dms(dec_dms)
     targ_pos = galsim.CelestialCoord(ra=ra_targ, dec=dec_targ)
 
-    wcs_dict = roman.getWCS(world_pos=targ_pos, SCAs=detector)
+    # NB targ_pos indicates the position to observe at the center of the focal plane array
+    wcs_dict = roman.getWCS(world_pos=targ_pos, date=date)
 
     if not suppress_output:
         print(f'RA: {ra}, DEC: {dec}')
 
-    return wcs_dict[detector]
+    return wcs_dict
 
 
-def get_bandpass(band):
+def get_bandpass_key(band):
     band = band.upper()
-    translate: {
+    translate = {
         'F087': 'Z087',
         'F106': 'Y106',
         'F129': 'J129',
@@ -34,8 +42,13 @@ def get_bandpass(band):
     return translate[band]
 
 
+def get_bandpass(band):
+    bandpass_key = get_bandpass_key(band)
+    return roman.getBandpasses()[bandpass_key]
+
+
 def get_random_detector(suppress_output=False):
-    detector = str(random.randint(1, 18))
+    detector = random.randint(1, 18)
     if not suppress_output:
         print(f'Detector: {detector}')
     return detector
@@ -49,11 +62,11 @@ def get_random_detector_pos(suppress_output=False):
     return galsim.PositionD(x, y)
 
 
-def convolve(interp, bandpass, detector, detector_position, num_pix, pupil_bin=1):
+def convolve(interp, band, detector, detector_position, num_pix, pupil_bin=1):
     galsim_psf = roman.getPSF(detector, 
                               SCA_pos=detector_position, 
                               bandpass=None, 
-                              wavelength=bandpass, 
+                              wavelength=get_bandpass(band), 
                               pupil_bin=pupil_bin)
 
     # https://galsim-developers.github.io/GalSim/_build/html/composite.html#galsim.Convolve
@@ -66,22 +79,14 @@ def convolve(interp, bandpass, detector, detector_position, num_pix, pupil_bin=1
     return convolved.drawImage(im)
 
 
-def get_sky_bkg(wcs, band, exposure_time, num_pix, seed=None):
-    # was only one band provided as a string? or a list of bands?
-    single_band = False
-    if not isinstance(bands, list):
-        single_band = True
-        bands = [bands]
-
-    # set rng
-    if seed is None:
-        rng = galsim.UniformDeviate()
-    else:
-        rng = galsim.UniformDeviate(seed)
-
-    bkgs = []
+def get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix):
+    bkgs = {}
     for band in bands:
+        # get bandpass object
         bandpass = get_bandpass(band)
+
+        # get wcs
+        wcs = wcs_dict[detector]
 
         # build Image
         sky_image = galsim.ImageF(num_pix, num_pix, wcs=wcs)
@@ -91,15 +96,9 @@ def get_sky_bkg(wcs, band, exposure_time, num_pix, seed=None):
         sky_level *= (1.0 + roman.stray_light_fraction)
         wcs.makeSkyImage(sky_image, sky_level)
 
-        thermal_bkg = roman.thermal_backgrounds[bandpass] * exposure_time
+        thermal_bkg = roman.thermal_backgrounds[get_bandpass_key(band)] * exposure_time
         sky_image += thermal_bkg
 
-        poisson_noise = galsim.PoissonNoise(rng)
-        sky_image.addNoise(poisson_noise)
+        bkgs[band] = sky_image
 
-        bkgs.append(sky_image)
-
-    if single_band:
-        return bkgs[0]
-    else:
-        return bkgs
+    return bkgs
