@@ -1,3 +1,5 @@
+import datetime
+import galsim
 import hydra
 import multiprocessing
 import numpy as np
@@ -66,7 +68,7 @@ def main(config):
 
 
 def get_image(input):
-    from mejiro.helpers import pandeia_input, bkg
+    from mejiro.helpers import bkg, gs
     from mejiro.utils import util
 
     # unpack tuple
@@ -74,30 +76,52 @@ def get_image(input):
 
     # unpack pipeline_params
     grid_oversample = pipeline_params['grid_oversample']
-    max_scene_size = pipeline_params['max_scene_size']
-    num_samples = pipeline_params['num_samples']
+    exposure_time = pipeline_params['exposure_time']
 
-    # load an array to get its shape
-    num_pix, _ = np.load(f'{input_dir}/array_{lens.uid}_{bands[0]}.npy').shape
+    # create galsim rng
+    rng = galsim.UniformDeviate()
 
     # generate sky background
-    bkgs = bkg.get_high_galactic_lat_bkg((num_pix, num_pix), bands, seed=None)
-    reshaped_bkgs = [util.resize_with_pixels_centered(i, grid_oversample) for i in bkgs]
+
 
     execution_times = []
     for i, band in enumerate(bands):
+        start = time.time()      
+
         # load the appropriate array
         array = np.load(f'{input_dir}/array_{lens.uid}_{band}.npy')
 
-        # build Pandeia input
-        calc, _ = pandeia_input.build_pandeia_calc(array, lens, background=reshaped_bkgs[i], noise=True, band=band,
-                                                max_scene_size=max_scene_size,
-                                                num_samples=num_samples, suppress_output=True)
+        # get flux
+        total_flux_cps = lens.get_total_flux_cps(band)  
+        
+        # get interpolated image
+        interp = galsim.InterpolatedImage(galsim.Image(array), scale=0.11 / grid_oversample, flux=total_flux_cps * exposure_time)
 
-        # generate Pandeia image and save
-        image, execution_time = pandeia_input.get_pandeia_image(calc, suppress_output=True)
-        np.save(os.path.join(output_dir, f'pandeia_{lens.uid}_{band}.npy'), image)
+        # generate PSF and convolve
+        convolved = gs.convolve()
+        
+        # add sky background
+        sky_bkg = gs.get_sky_bkg()
 
+        # add sky background to convolved image
+        final_image = convolved + sky_bkg
+
+        # integer number of photons are being detected, so quantize
+        final_image.quantize()
+
+        # add all detector effects
+        galsim.roman.allDetectorEffects(final_image, prev_exposures=(), rng=rng, exptime=exposure_time)
+
+        # quantize, as the analog-to-digital converter reads in an integer value
+        final_image.quantize()
+
+        # this has float values, so convert to integer values
+        final_image = galsim.Image(final_image, dtype=int).array
+
+        np.save(os.path.join(output_dir, f'galsim_{lens.uid}_{band}.npy'), final_image)
+
+        stop = time.time()
+        execution_time = str(datetime.timedelta(seconds=round(stop - start)))
         execution_times.append(execution_time)
 
     return execution_times
