@@ -9,6 +9,16 @@ from glob import glob
 from omegaconf import OmegaConf
 
 
+def check_negative_values(array):
+    # takes an array or a list of arrays
+    if isinstance(array, list):
+        for a in array:
+            if np.any(a < 0):
+                return True
+    else:
+        return np.any(array < 0)
+
+
 def replace_negatives_with_zeros(array):
     return np.where(array < 0, 0, array)
 

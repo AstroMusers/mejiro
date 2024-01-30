@@ -78,6 +78,7 @@ def get_image(input):
     grid_oversample = pipeline_params['grid_oversample']
     exposure_time = pipeline_params['exposure_time']
     suppress_output = pipeline_params['suppress_output']
+    final_pixel_side = pipeline_params['final_pixel_side']
 
     # load lens
     lens = util.unpickle(os.path.join(input_dir, f'lens_{str(uid).zfill(8)}'))
@@ -130,10 +131,8 @@ def get_image(input):
         # get the array
         final_array = final_image.array
 
-        # check for negative values. if there are, wtf is galsim doing
-        if np.any(final_array < 0):
-            print('Negative value(s) found')
-            util.replace_negatives_with_zeros(final_array)
+        # center crop to get rid of edge effects
+        util.center_crop_image(final_array, (final_pixel_side, final_pixel_side))
 
         # divide through by exposure time to get in units of counts/sec/pixel
         final_array /= exposure_time
