@@ -72,7 +72,6 @@ def get_image(input):
     # generate and save color image
     from mejiro.helpers import color
     rgb_image = color.get_rgb(image_b=f106, image_g=f129, image_r=f184)
-    # rgb_image = color.get_rgb_log10(image_b=f106, image_g=f129, image_r=f184)
     np.save(os.path.join(output_dir, f'galsim_color_{uid}.npy'), rgb_image)
 
     stop = time.time()

@@ -49,33 +49,48 @@ def plot(array, title='', cmap='viridis', colorbar=False, colorbar_label=None):
     plt.show()
 
 
-# def plot_grid(array_list, side, cmap='viridis', log10=True, title='', save=None, colorbar=False):
-#     array_list = array_list[:side ** 2]
-#     if colorbar:
-#         vmin, vmax = plot_util.get_min_max(array_list)
+def rgb_plot_grid(array_list, side, titles=False):
+    f, ax = plt.subplots(side, side, figsize=(20, 20), gridspec_kw={'hspace': 0.02, 'wspace': 0.02})
 
-#     f, ax = plt.subplots(nrows=side, ncols=side, figsize=(20, 20), gridspec_kw={'hspace': 0.02, 'wspace': 0.02})
+    i = 0
+    for x in range(side):
+        for y in range(side):
+            ax[x][y].imshow(array_list[i])
+            ax[x][y].set_axis_off()
+            if titles:
+                ax[x][y].set_title(f'{i}')
+            i += 1
 
-#     for i, image in enumerate(array_list):
-#         if log10:
-#             image = np.log10(image)
-#         if colorbar:
-#             ax[i // side, i % side].imshow(image, cmap=cmap, vmin=vmin, vmax=vmax)
-#         else:
-#             ax[i // side, i % side].imshow(image, cmap=cmap)
-#         ax[i // side, i % side].get_xaxis().set_visible(False)
-#         ax[i // side, i % side].get_yaxis().set_visible(False)
+    plt.show()
 
-#     plt.suptitle(title)
 
-#     # TODO fix
-#     # if colorbar:
-#     #     plt.colorbar()
+def _plot_grid(array_list, side, cmap='viridis', log10=True, title='', save=None, colorbar=False):
+    array_list = array_list[:side ** 2]
+    if colorbar:
+        vmin, vmax = plot_util.get_min_max(array_list)
 
-#     if save is not None:
-#         plt.savefig(save)
+    f, ax = plt.subplots(nrows=side, ncols=side, figsize=(20, 20), gridspec_kw={'hspace': 0.02, 'wspace': 0.02})
 
-#     plt.show()
+    for i, image in enumerate(array_list):
+        if log10:
+            image = np.log10(image)
+        if colorbar:
+            ax[i // side, i % side].imshow(image, cmap=cmap, vmin=vmin, vmax=vmax)
+        else:
+            ax[i // side, i % side].imshow(image, cmap=cmap)
+        ax[i // side, i % side].get_xaxis().set_visible(False)
+        ax[i // side, i % side].get_yaxis().set_visible(False)
+
+    plt.suptitle(title)
+
+    # TODO fix
+    # if colorbar:
+    #     plt.colorbar()
+
+    if save is not None:
+        plt.savefig(save)
+
+    plt.show()
 
 
 def plot_grid(array_list, side, cmap='viridis', log10=True, title='', save=None, colorbar=False, colorbar_label=None):

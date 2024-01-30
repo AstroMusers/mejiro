@@ -7,9 +7,9 @@
 cd scripts/execute_pipeline
 
 # execute Python scripts sequentially
-echo 'Checking installation...'
-python3 00_pipeline_setup.py
-echo 'Installation check passed.'
+# echo 'Checking installation...'
+# python3 00_pipeline_setup.py
+# echo 'Installation check passed.'
 
 echo 'Building lens list from SkyPy...'
 python3 01_lens_list_from_skypy.py
@@ -23,9 +23,9 @@ echo 'Building models...'
 python3 03_build_models.py
 echo 'Built models.'
 
-echo 'Simulating Pandeia images...'
-python3 -W ignore 04_pandeia.py  # suppress warnings
-echo 'Pandeia simulations complete.'
+echo 'Simulating images...'
+python3 04_galsim.py
+echo 'GalSim simulations complete.'
 
 echo 'Generating color images...'
 python3 05_color.py
