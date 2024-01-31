@@ -5,7 +5,7 @@ repo_dir: /nfshome/bwedig/mejiro
 data_dir: /data/bwedig/mejiro
 
 # input data
-skypy_dir: /data/bwedig/roman-population/data
+skypy_dir: ${machine.data_dir}/skypy
 
 # specify additional directories here to ensure consistency
 array_dir: ${machine.data_dir}/output/arrays

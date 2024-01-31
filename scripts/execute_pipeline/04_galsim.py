@@ -7,6 +7,7 @@ import os
 import sys
 import time
 from multiprocessing import Pool
+from glob import glob
 from tqdm import tqdm
 
 
@@ -25,14 +26,18 @@ def main(config):
     input_dir = config.machine.dir_03
 
     # directory to write the output to
-    output_dir = os.path.join(config.machine.pipeline_dir, '04_test')  # config.machine.dir_04
+    output_dir = config.machine.dir_04
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
 
     # list uids
     # TODO LIMIT IS TEMP
-    limit = 25
-    uid_list = list(range(limit))
+    # limit = 9
+    # uid_list = list(range(limit))
+    # count number of lenses and build indices of uids
+    lens_pickles = glob(config.machine.dir_02 + '/lens_with_subhalos_*')
+    count = len(lens_pickles)
+    uid_list = list(range(count))
 
     # get bands
     bands = util.hydra_to_dict(config.pipeline)['band']
@@ -40,8 +45,8 @@ def main(config):
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - 4
-    if limit < process_count:
-        process_count = limit       
+    if count < process_count:
+        process_count = count       
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     # tuple the parameters
@@ -79,6 +84,7 @@ def get_image(input):
     exposure_time = pipeline_params['exposure_time']
     suppress_output = pipeline_params['suppress_output']
     final_pixel_side = pipeline_params['final_pixel_side']
+    num_pix = pipeline_params['num_pix']
 
     # load lens
     lens = util.unpickle(os.path.join(input_dir, f'lens_{str(uid).zfill(8)}'))
@@ -94,11 +100,11 @@ def get_image(input):
     wcs_dict = gs.get_random_hlwas_wcs(suppress_output)
 
     # calculate sky backgrounds for each band
-    bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix=45)
+    bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix=num_pix)
 
 
     execution_times = []
-    for i, band in enumerate(bands):
+    for _, band in enumerate(bands):
         start = time.time()      
 
         # load the appropriate array
@@ -111,7 +117,7 @@ def get_image(input):
         interp = galsim.InterpolatedImage(galsim.Image(array, xmin=0, ymin=0), scale=0.11 / grid_oversample, flux=total_flux_cps * exposure_time)
 
         # generate PSF and convolve
-        convolved = gs.convolve(interp, band, detector, detector_pos, 45, pupil_bin=1)
+        convolved = gs.convolve(interp, band, detector, detector_pos, num_pix, pupil_bin=1)
 
         # add sky background to convolved image
         final_image = convolved + bkgs[band]

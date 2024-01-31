@@ -5,11 +5,18 @@
 
 # Execution times
 
-* 2992 models, num_pix=97, side=10.67, grid_oversample=3, num_samples=100000
-  `01` on galileo (64 cores), 00:00:12
-  `02` on galileo (64 cores), 00:33:23
-  `03` on galileo (64 cores), ; on uzay (64 cores), 13:16:50
+* Pandeia: 2992 models, num_pix=97, side=10.67, grid_oversample=3, num_samples=100000
+  `01` on galileo (64 cores), 00:00:12 (0.004s/image)
+  `02` on galileo (64 cores), 00:33:23 (0.67s/image)
+  `03` on galileo (64 cores), ; on uzay (64 cores), 13:16:50 (15.98s/image)
   `04` on galileo (64 cores),
+
+* GalSim: 259 models, num_pix=96, side=10.56, grid_oversample=3
+  `01` on galileo (64 cores), 00:00:06 (0.02s/image)
+  `02` on galileo (64 cores), 00:02:50 (0.66s/image)
+  `03` on galileo (64 cores), 01:23:49 (19.42s/image)
+  `04` on galileo (64 cores), 00:05:37 (19.42s/image)
+  `05` on galileo (64 cores), 00:00:06 (19.42s/image)
 
 # Ideal state
 
@@ -26,8 +33,3 @@
     2. advanced: same lenstronomy lens to image with different options e.g. off-center PSF. expose the methods that
        comprise the wrapper in the previous example
     3. use the `plots` module to compare the two
-
-# TODO
-
-* tests, e.g. `pandeia.engine.pandeia_version()`, lenstronomy has a test
-* automatically run Jupyter notebooks on commit via gh action as regression test

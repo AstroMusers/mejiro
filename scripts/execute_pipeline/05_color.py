@@ -22,23 +22,25 @@ def main(config):
     from mejiro.utils import util
 
     # directory to read from
-    input_dir = os.path.join(config.machine.pipeline_dir, '04_test')  # config.machine.dir_04
+    input_dir = config.machine.dir_04
 
     # directory to write the output to
-    output_dir = os.path.join(config.machine.pipeline_dir, '05_test')  # config.machine.dir_05
+    output_dir = config.machine.dir_05
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
 
     # list uids and build input list
     # TODO LIMIT IS TEMP
-    limit = 25
-    input_list = [(str(uid).zfill(8), input_dir, output_dir) for uid in list(range(limit))]
+    # limit = 9
+    lens_pickles = glob(config.machine.dir_02 + '/lens_with_subhalos_*')
+    count = len(lens_pickles)
+    input_list = [(str(uid).zfill(8), input_dir, output_dir) for uid in list(range(count))]
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - 4
-    if len(input_list) < process_count:
-        process_count = len(input_list)
+    if count < process_count:
+        process_count = count
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     # batch
@@ -71,7 +73,7 @@ def get_image(input):
 
     # generate and save color image
     from mejiro.helpers import color
-    rgb_image = color.get_rgb(image_b=f106, image_g=f129, image_r=f184)
+    rgb_image = color.get_rgb(image_b=f106, image_g=f129, image_r=f184, stretch=4, Q=5)
     np.save(os.path.join(output_dir, f'galsim_color_{uid}.npy'), rgb_image)
 
     stop = time.time()

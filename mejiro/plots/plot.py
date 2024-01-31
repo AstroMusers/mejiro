@@ -58,7 +58,7 @@ def rgb_plot_grid(array_list, side, titles=False):
             ax[x][y].imshow(array_list[i])
             ax[x][y].set_axis_off()
             if titles:
-                ax[x][y].set_title(f'{i}')
+                ax[x][y].set_title(f'{i}', color='red')
             i += 1
 
     plt.show()

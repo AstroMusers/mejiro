@@ -19,17 +19,23 @@ def main(config):
 
     # create directory that this script will write to
     util.create_directory_if_not_exists(config.machine.dir_01)
-    util.clear_directory(config.machine.dir_01)
+    # util.clear_directory(config.machine.dir_01)
 
-    # unpickle the lenses from the population survey and create lens objects
-    lens_paths = glob(config.machine.skypy_dir + '/lenses_strict_5/*')
+    runs = util.hydra_to_dict(config.pipeline)['runs']
+
+    uid = 0
     lens_list = []
-    for i, lens in tqdm(enumerate(lens_paths), total=len(lens_paths)):
-        lens = lens_util.unpickle_lens(lens, str(i).zfill(8))
-        lens_list.append(lens)
+    for run in runs:
+        print(f'Run {run + 1} of {len(runs)}')
+        # unpickle the lenses from the population survey and create lens objects
+        lens_paths = glob(config.machine.skypy_dir + f'/lenses_5_run{run}/*')
+        for _, lens in tqdm(enumerate(lens_paths), total=len(lens_paths)):
+            lens = lens_util.unpickle_lens(lens, str(uid).zfill(8))
+            uid += 1
+            lens_list.append(lens)
 
     # pickle lens list
-    pickle_target = os.path.join(config.machine.dir_01, '01_skypy_output_lens_list')
+    pickle_target = os.path.join(config.machine.dir_01, f'01_skypy_output_lens_list')
     util.delete_if_exists(pickle_target)
     util.pickle(pickle_target, lens_list)
 
