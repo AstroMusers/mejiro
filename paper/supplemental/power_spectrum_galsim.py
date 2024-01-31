@@ -19,6 +19,7 @@ def main(config):
     # set save path for everything
     save_dir = os.path.join(config.machine.data_dir, 'output', 'power_spectrum_galsim')
     util.create_directory_if_not_exists(save_dir)
+    util.clear_directory(save_dir)
 
     band = 'F184'
     oversample_factor = 3
@@ -49,9 +50,9 @@ def main(config):
                 log_mlow=8.,
                 log_mhigh=10.)
 
-    np.save(os.path.join(save_dir, 'no_cut'), no_cut)
-    np.save(os.path.join(save_dir, 'cut_7'), cut_7)
-    np.save(os.path.join(save_dir, 'cut_8'), cut_8)
+    util.pickle(os.path.join(save_dir, 'no_cut'), no_cut)
+    util.pickle(os.path.join(save_dir, 'cut_7'), cut_7)
+    util.pickle(os.path.join(save_dir, 'cut_8'), cut_8)
 
     no_cut_masses = [halo.mass for halo in no_cut.halos]
     cut_7_masses = [halo.mass for halo in cut_7.halos]
