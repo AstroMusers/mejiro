@@ -1,0 +1,25 @@
+defaults:
+  - _self_
+  - machine: hpc
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+
+seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
+
+pipeline:
+  - num_pix: 96  # 45  # 97
+  - side: 10.56  # 4.95  # 10.67
+  - final_pixel_side: 90
+  - grid_oversample: 3
+  - num_samples: 100000  # 100000
+  - max_scene_size: 10.  # 10.01
+  - subhalo_cone: 11.  # 6.
+  - los_normalization: 0.
+  - band: [ F106, F129, F184 ]
+  - exposure_time: 146
+  - suppress_output: True
+
+hydra:
+  output_subdir: null
+  run:
+    dir: .

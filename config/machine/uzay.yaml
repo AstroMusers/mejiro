@@ -1,0 +1,18 @@
+# where the repository lives
+repo_dir: /home/btwedig/mejiro
+
+# where output data should be written
+data_dir: /data/scratch/btwedig/mejiro
+
+# specify additional directories here to ensure consistency
+array_dir: ${machine.data_dir}/output/arrays
+figure_dir: ${machine.repo_dir}/figures
+pickle_dir: ${machine.data_dir}/output/pickles
+
+# pipeline directories
+pipeline_dir: ${machine.data_dir}/pipeline
+dir_01: ${machine.pipeline_dir}/01
+dir_02: ${machine.pipeline_dir}/02
+dir_03: ${machine.pipeline_dir}/03
+dir_04: ${machine.pipeline_dir}/04
+dir_05: ${machine.pipeline_dir}/05

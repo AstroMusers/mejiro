@@ -1,9 +1,10 @@
 /pandeia_docs
-/roman_tools
+.nfs*
+
+# old stuff that I'll keep locally
+/figures/old
 /notebooks/old
 /scripts/old
-/config
-.nfs*
 
 # Jupyter
 .ipynb_checkpoints
