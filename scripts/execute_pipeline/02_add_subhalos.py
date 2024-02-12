@@ -71,9 +71,16 @@ def add(tuple):
     z_lens = round(lens.z_lens, 2)
     z_source = round(lens.z_source, 2)
 
+    # TODO calculate the main halo mass
+
+    # TODO generate 
+
+    # TODO calculate r_tidal: the core radius of the host halo in units of the host halo scale radius. Subhalos are distributed in 3D with a cored NFW profile with this core radius
+    # by default, it's 0.25
+
     # randomly generate CDM subhalos
     halo_tuple = pyhalo.generate_CDM_halos(z_lens, z_source, cone_opening_angle_arcsec=subhalo_cone,
-                                           LOS_normalization=los_normalization)
+                                           LOS_normalization=los_normalization, log_m_host=)
 
     # pickle the subhalos
     util.pickle(os.path.join(output_dir, 'subhalos', f'subhalo_tuple_{lens.uid}'), halo_tuple)

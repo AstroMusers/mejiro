@@ -131,9 +131,6 @@ def get_image(input):
         # make sure there are no negative values from Poisson noise generator
         final_image.replaceNegative()
 
-        # this has float values, so convert to integer values - use this if wanting all counts and not dividing through by exposure time i.e. want units of pixels to be counts instead of counts/sec
-        # final_image = galsim.Image(final_image, dtype=int).array
-
         # get the array
         final_array = final_image.array
 

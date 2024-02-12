@@ -51,17 +51,21 @@ def plot_projected_mass(lens):
     return ax.imshow(kappa_subs, vmin=-0.1, vmax=0.1, cmap='bwr')
 
 
-def get_sample(pickle_dir, pandeia_dir, index):
-    files = glob(pickle_dir + f'/lens_dict_{str(index).zfill(8)}_*')
+def get_sample(pickle_dir, color_dir, index):
+    # get lens
+    lens_path = os.path.join(pickle_dir, f'lens_{str(index).zfill(8)}')
+    lens = util.unpickle(lens_path)
 
-    f106 = [util.unpickle(i) for i in files if 'f106' in i][0]
-    f129 = [util.unpickle(i) for i in files if 'f129' in i][0]
-    # f158 = [util.unpickle(i) for i in files if 'f158' in i][0]
-    f184 = [util.unpickle(i) for i in files if 'f184' in i][0]
+    # get rgb model
+    files = glob(pickle_dir + f'/array_{str(index).zfill(8)}_*')
+    f106 = [np.load(i) for i in files if 'F106' in i][0]
+    f129 = [np.load(i) for i in files if 'F129' in i][0]
+    # f158 = [np.load(i) for i in files if 'F158' in i][0]
+    f184 = [np.load(i) for i in files if 'F184' in i][0]
+    rgb_model = color.get_rgb(f106, f129, f184, minimum=None, stretch=3, Q=8)
 
-    rgb_model = color.get_rgb(f106['model'], f129['model'], f184['model'], minimum=None, stretch=3, Q=8)
-
-    image_path = os.path.join(pandeia_dir, f'pandeia_color_{str(index).zfill(8)}.npy')
+    # get rgb image
+    image_path = os.path.join(color_dir, f'galsim_color_{str(index).zfill(8)}.npy')
     rgb_image = np.load(image_path)
 
-    return f106, rgb_image, rgb_model
+    return lens, rgb_model, rgb_image

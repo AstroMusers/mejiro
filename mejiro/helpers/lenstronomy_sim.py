@@ -31,27 +31,47 @@ def get_image(lens, telescope, side):
 
 
 def set_up_magnitudes(lens):
-    # r-band
-    kwargs_lens_light_mag_r = lens.kwargs_lens_light
-    kwargs_source_mag_r = lens.kwargs_source
+    kwargs_lens_light_dict = lens.kwargs_lens_light_dict
+    kwargs_source_dict = lens.kwargs_source_dict
 
     # g-band
-    kwargs_lens_light_mag_g = deepcopy(kwargs_lens_light_mag_r)
-    kwargs_lens_light_mag_g[0]['magnitude'] -= 1
+    kwargs_lens_light_mag_g = [kwargs_lens_light_dict['F106']]
+    kwargs_source_mag_g = [kwargs_source_dict['F106']]
 
-    kwargs_source_mag_g = deepcopy(kwargs_source_mag_r)
-    kwargs_source_mag_g[0]['magnitude'] -= 1
+    # r-band
+    kwargs_lens_light_mag_r = [kwargs_lens_light_dict['F129']]
+    kwargs_source_mag_r = [kwargs_source_dict['F129']]
 
     # i-band
-    kwargs_lens_light_mag_i = deepcopy(kwargs_lens_light_mag_r)
-    kwargs_lens_light_mag_i[0]['magnitude'] += 1
+    kwargs_lens_light_mag_i = [kwargs_lens_light_dict['F184']]
+    kwargs_source_mag_i = [kwargs_source_dict['F184']]
+    
 
-    kwargs_source_mag_i = deepcopy(kwargs_source_mag_r)
-    kwargs_source_mag_i[0]['magnitude'] += 1
+    return (kwargs_lens_light_mag_g, kwargs_lens_light_mag_r, kwargs_lens_light_mag_i), (kwargs_source_mag_g, kwargs_source_mag_r, kwargs_source_mag_i)
 
-    return [kwargs_lens_light_mag_g, kwargs_lens_light_mag_r, kwargs_lens_light_mag_i], [kwargs_source_mag_g,
-                                                                                         kwargs_source_mag_r,
-                                                                                         kwargs_source_mag_i]
+# TODO this might be useful if magnitudes aren't defined in each band, to get a rough rgb image anyways
+# def set_up_magnitudes(lens):
+#     # r-band
+#     kwargs_lens_light_mag_r = lens.kwargs_lens_light
+#     kwargs_source_mag_r = lens.kwargs_source
+
+#     # g-band
+#     kwargs_lens_light_mag_g = deepcopy(kwargs_lens_light_mag_r)
+#     kwargs_lens_light_mag_g[0]['magnitude'] -= 1
+
+#     kwargs_source_mag_g = deepcopy(kwargs_source_mag_r)
+#     kwargs_source_mag_g[0]['magnitude'] -= 1
+
+#     # i-band
+#     kwargs_lens_light_mag_i = deepcopy(kwargs_lens_light_mag_r)
+#     kwargs_lens_light_mag_i[0]['magnitude'] += 1
+
+#     kwargs_source_mag_i = deepcopy(kwargs_source_mag_r)
+#     kwargs_source_mag_i[0]['magnitude'] += 1
+
+#     return [kwargs_lens_light_mag_g, kwargs_lens_light_mag_r, kwargs_lens_light_mag_i], [kwargs_source_mag_g,
+#                                                                                          kwargs_source_mag_r,
+#                                                                                          kwargs_source_mag_i]
 
 
 def simulate_rgb(lens, kwargs_lens_list, kwargs_source_list, config_list, size):
@@ -126,15 +146,15 @@ def _scale_max(image):
 
 
 def lsst_config_list():
-    LSST_g = LSST.LSST(band='g', psf_type='GAUSSIAN', coadd_years=10)
-    LSST_r = LSST.LSST(band='r', psf_type='GAUSSIAN', coadd_years=10)
-    LSST_i = LSST.LSST(band='i', psf_type='GAUSSIAN', coadd_years=10)
+    LSST_g = LSST.LSST(band='g', psf_type='GAUSSIAN', coadd_years=1)
+    LSST_r = LSST.LSST(band='r', psf_type='GAUSSIAN', coadd_years=1)
+    LSST_i = LSST.LSST(band='i', psf_type='GAUSSIAN', coadd_years=1)
     return [LSST_g, LSST_r, LSST_i]
 
 
 def roman_rgb_config_list():
-    Roman_g = Roman.Roman(band='F062', psf_type='PIXEL', survey_mode='wide_area')
-    Roman_r = Roman.Roman(band='F106', psf_type='PIXEL', survey_mode='wide_area')
+    Roman_g = Roman.Roman(band='F106', psf_type='PIXEL', survey_mode='wide_area')
+    Roman_r = Roman.Roman(band='F129', psf_type='PIXEL', survey_mode='wide_area')
     Roman_i = Roman.Roman(band='F184', psf_type='PIXEL', survey_mode='wide_area')
     return [Roman_g, Roman_r, Roman_i]
 
