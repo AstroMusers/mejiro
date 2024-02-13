@@ -102,7 +102,6 @@ def get_image(input):
     # calculate sky backgrounds for each band
     bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix=num_pix)
 
-
     execution_times = []
     for _, band in enumerate(bands):
         start = time.time()      
