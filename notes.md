@@ -3,6 +3,10 @@
 * `ps u --sort -pcpu $(pgrep -vu root) | head -5`
 * `pkill -9 -f script.py`
 
+# Environment management
+
+* `requirements.txt`: `pip list --format=freeze > requirements.txt`
+
 # Execution times
 
 * Pandeia: 2992 models, num_pix=97, side=10.67, grid_oversample=3, num_samples=100000
