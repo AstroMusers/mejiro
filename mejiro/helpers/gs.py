@@ -1,9 +1,95 @@
 import datetime
 import galsim
 import random
+import time
 from astropy.coordinates import SkyCoord
 from galsim import roman
 from galsim import InterpolatedImage, Image
+
+from mejiro.utils import util
+
+
+def get_images(lens, arrays, bands, output_size, grid_oversample, detector=2, detector_pos=None, exposure_time=146, ra=30, dec=-30, seed=42):
+    start = time.time()
+
+    # was only one band provided as a string? or a list of bands?
+    single_band = False
+    if not isinstance(bands, list):
+        single_band = True
+        bands = [bands]
+
+    # was only one array provided? or a list of array?
+    single_array = False
+    if not isinstance(arrays, list):
+        single_array = True
+        arrays = [arrays]
+
+    # if a color image is desired, then three bands and three arrays should be provided
+    if not single_band or not single_array:
+        assert len(bands) == 3, 'For a color image, provide three bands'
+        assert len(arrays) == 3, 'For a color image, provide three arrays'
+
+     # make sure the arrays are square
+    for array in arrays:
+        assert array.shape[0] == array.shape[1], 'Input image must be square'
+        num_pix = array.shape[0]
+
+    # TODO they should also all have the same dimensions
+
+    # create galsim rng
+    rng = galsim.UniformDeviate(seed)
+
+    # get wcs
+    wcs_dict = get_wcs(ra, dec, date=None)
+
+    # calculate sky backgrounds for each band
+    bkgs = get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix=num_pix)
+
+    results = []
+    for _, (band, array) in enumerate(zip(bands, arrays)):
+        # get flux
+        total_flux_cps = lens.get_total_flux_cps(band)  
+        
+        # get interpolated image
+        interp = galsim.InterpolatedImage(galsim.Image(array, xmin=0, ymin=0), scale=0.11 / grid_oversample, flux=total_flux_cps * exposure_time)
+
+        # generate PSF and convolve
+        convolved = convolve(interp, band, detector, detector_pos, num_pix, pupil_bin=1)
+
+        # add sky background to convolved image
+        final_image = convolved + bkgs[band]
+
+        # integer number of photons are being detected, so quantize
+        final_image.quantize()
+
+        # add all detector effects
+        galsim.roman.allDetectorEffects(final_image, prev_exposures=(), rng=rng, exptime=exposure_time)
+
+        # make sure there are no negative values from Poisson noise generator
+        final_image.replaceNegative()
+
+        # get the array
+        final_array = final_image.array
+
+        # center crop to get rid of edge effects
+        util.center_crop_image(final_array, (output_size, output_size))
+
+        # divide through by exposure time to get in units of counts/sec/pixel
+        final_array /= exposure_time
+
+        results.append(final_array)
+
+    stop = time.time()
+    execution_time = str(datetime.timedelta(seconds=round(stop - start)))
+    
+    return results, execution_time
+
+
+def get_wcs(ra, dec, date=None):
+    if date is None:
+        date = datetime.datetime(year=2027, month=7, day=7, hour=0, minute=0, second=0)
+
+    return _get_wcs_dict(ra, dec, date)
 
 
 def get_random_hlwas_wcs(suppress_output=False):
@@ -13,6 +99,13 @@ def get_random_hlwas_wcs(suppress_output=False):
     # set observation datetime to midnight on July 7th, 2027 - this seems to be fine for all high galactic latitudes
     date = datetime.datetime(year=2027, month=7, day=7, hour=0, minute=0, second=0)
 
+    if not suppress_output:
+        print(f'RA: {ra}, DEC: {dec}')
+
+    return _get_wcs_dict(ra, dec, date)
+
+
+def _get_wcs_dict(ra, dec, date):
     skycoord = SkyCoord(ra, dec, frame='icrs', unit='deg')
     ra_hms, dec_dms = skycoord.to_string('hmsdms').split(' ')
 
@@ -21,12 +114,7 @@ def get_random_hlwas_wcs(suppress_output=False):
     targ_pos = galsim.CelestialCoord(ra=ra_targ, dec=dec_targ)
 
     # NB targ_pos indicates the position to observe at the center of the focal plane array
-    wcs_dict = roman.getWCS(world_pos=targ_pos, date=date)
-
-    if not suppress_output:
-        print(f'RA: {ra}, DEC: {dec}')
-
-    return wcs_dict
+    return roman.getWCS(world_pos=targ_pos, date=date)
 
 
 def get_bandpass_key(band):
@@ -56,6 +144,7 @@ def get_random_detector(suppress_output=False):
 
 def get_random_detector_pos(suppress_output=False):
     # Roman WFI detectors are 4096x4096 pixels, but the outermost four rows and columns are reference pixels
+    # TODO should constrain based on final image size? this is center of image to get PSF at
     x, y = random.randrange(4, 4092), random.randrange(4, 4092)
     if not suppress_output:
         print(f'Detector position: {x}, {y}')
