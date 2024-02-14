@@ -3,6 +3,36 @@ import numpy as np
 import scipy.stats as stats
 
 
+def power_spectrum(image):
+    # get Fourier amplitudes
+    fft = np.fft.fft2(image)
+    fft_squared = np.square(np.abs(fft))
+
+    assert image.shape[0] == image.shape[1], '2D array must be square'
+    radius_list = range(image.shape[0])
+
+    # compute power in each radius of Fourier amplitudes array
+    power_list = []
+    for radius in radius_list:
+        power_per_radius = []
+        for x, row in enumerate(fft_squared):
+            for y, _ in enumerate(row):
+                if radius == round(np.sqrt((x ** 2) + (y ** 2))):
+                    power_per_radius.append(fft_squared[x][y])
+
+        power_list.append(np.sum(power_per_radius))
+
+    return power_list
+
+
+def get_k_list(min_arcsec, max_arcsec, length):
+    k_min = (2 * np.pi) / max_arcsec
+    k_max = (2 * np.pi) / min_arcsec
+
+    return np.linspace(k_min, k_max, length, endpoint=True)
+
+
+# TODO delete, once my method finalized
 def twod_ft(array, box_size, threads=1):
     # compute the Pk of that image
     Pk2D = PKL.Pk_plane(array.astype(dtype=np.float32), box_size, 'None', threads)
@@ -14,6 +44,7 @@ def twod_ft(array, box_size, threads=1):
     return Pk2D.k, Pk2D.Pk, Pk2D.Nmodes
 
 
+# TODO delete, once my method finalized
 # https://bertvandenbroucke.netlify.app/2019/05/24/computing-a-power-spectrum-in-python/
 def power_spectrum(array, k_min=1, k_max=22):
     side = array.shape[0]
