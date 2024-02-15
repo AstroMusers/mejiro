@@ -13,7 +13,7 @@ def main(config):
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
     from mejiro.lenses.test import SampleStrongLens
-    from mejiro.helpers import pyhalo
+    from mejiro.helpers import gs, pyhalo
     from mejiro.utils import util
 
     # set save path for everything
@@ -22,7 +22,7 @@ def main(config):
     util.clear_directory(save_dir)
 
     band = 'F184'
-    oversample_factor = 3
+    grid_oversample = 3
     num_pix = 45
     side = 4.95
 
@@ -66,53 +66,25 @@ def main(config):
     cut_7_lens = deepcopy(lens)
     cut_8_lens = deepcopy(lens)
 
-    lenses = [no_cut_lens, cut_7_lens, cut_8_lens]
-
     no_cut_lens.add_subhalos(*pyhalo.realization_to_lensing_quantities(no_cut))
     cut_7_lens.add_subhalos(*pyhalo.realization_to_lensing_quantities(cut_7))
     cut_8_lens.add_subhalos(*pyhalo.realization_to_lensing_quantities(cut_8))
 
-    no_cut_model = no_cut_lens.get_array(num_pix=num_pix * oversample_factor, side=side, band=band)
-    cut_7_model = cut_7_lens.get_array(num_pix=num_pix * oversample_factor, side=side, band=band)
-    cut_8_model = cut_8_lens.get_array(num_pix=num_pix * oversample_factor, side=side, band=band)
+    no_cut_model = no_cut_lens.get_array(num_pix=num_pix * grid_oversample, side=side, band=band)
+    cut_7_model = cut_7_lens.get_array(num_pix=num_pix * grid_oversample, side=side, band=band)
+    cut_8_model = cut_8_lens.get_array(num_pix=num_pix * grid_oversample, side=side, band=band)
 
     np.save(os.path.join(save_dir, 'no_cut_model'), no_cut_model)
     np.save(os.path.join(save_dir, 'cut_7_model'), cut_7_model)
     np.save(os.path.join(save_dir, 'cut_8_model'), cut_8_model)
 
+    lenses = [no_cut_lens, cut_7_lens, cut_8_lens]
     models = [no_cut_model, cut_7_model, cut_8_model]
-
     titles = ['substructure_no_cut', 'substructure_cut_7', 'substructure_cut_8']
 
-    # for lens, model, title in zip(lenses, models, titles):
-    #     calc = build_default_calc('roman', 'wfi', 'imaging')
-
-    #     # set scene size settings
-    #     calc['configuration']['max_scene_size'] = 5
-
-    #     # set instrument
-    #     calc['configuration']['instrument']['filter'] = band
-
-    #     # set detector
-    #     calc['configuration']['detector']['ma_table_name'] = 'hlwas_imaging'
-
-    #     # turn off noise sources
-    #     calc['calculation'] = pandeia_input.get_calculation_dict(init=False)
-
-    #     # set background
-    #     calc['background'] = 'none'
-
-    #     # convert array from counts/sec to astronomical magnitude
-    #     mag_array = pandeia_input._get_mag_array(lens, model, num_samples, band, suppress_output=False)
-
-    #     # add point sources to Pandeia input
-    #     norm_wave = pandeia_input._get_norm_wave(band)
-    #     calc, _ = pandeia_input._phonion_sample(calc, mag_array, lens, num_samples, norm_wave)
-
-    #     # get Pandeia image
-    #     pandeia, _ = pandeia_input.get_pandeia_image(calc)
-
-    #     np.save(os.path.join(array_dir, f'{title}.npy'), pandeia)
+    for lens, model, title in zip(lenses, models, titles):
+        gs_images, _ = gs.get_images(lens, model, band, input_size=num_pix, output_size=num_pix, grid_oversample=grid_oversample)
+        np.save(os.path.join(save_dir, f'{title}.npy'), gs_images[0])
 
 
 if __name__ == '__main__':

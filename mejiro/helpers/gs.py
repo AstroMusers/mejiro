@@ -9,7 +9,7 @@ from galsim import InterpolatedImage, Image
 from mejiro.utils import util
 
 
-def get_images(lens, arrays, bands, output_size, grid_oversample, detector=2, detector_pos=None, exposure_time=146, ra=30, dec=-30, seed=42):
+def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, detector=2, detector_pos=None, exposure_time=146, ra=30, dec=-30, seed=42):
     start = time.time()
 
     # was only one band provided as a string? or a list of bands?
@@ -18,7 +18,7 @@ def get_images(lens, arrays, bands, output_size, grid_oversample, detector=2, de
         single_band = True
         bands = [bands]
 
-    # was only one array provided? or a list of array?
+    # was only one array provided? or a list of arrays?
     single_array = False
     if not isinstance(arrays, list):
         single_array = True
@@ -32,7 +32,6 @@ def get_images(lens, arrays, bands, output_size, grid_oversample, detector=2, de
      # make sure the arrays are square
     for array in arrays:
         assert array.shape[0] == array.shape[1], 'Input image must be square'
-        num_pix = array.shape[0]
 
     # TODO they should also all have the same dimensions
 
@@ -43,7 +42,7 @@ def get_images(lens, arrays, bands, output_size, grid_oversample, detector=2, de
     wcs_dict = get_wcs(ra, dec, date=None)
 
     # calculate sky backgrounds for each band
-    bkgs = get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix=num_pix)
+    bkgs = get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix=input_size)
 
     results = []
     for _, (band, array) in enumerate(zip(bands, arrays)):
@@ -54,7 +53,7 @@ def get_images(lens, arrays, bands, output_size, grid_oversample, detector=2, de
         interp = galsim.InterpolatedImage(galsim.Image(array, xmin=0, ymin=0), scale=0.11 / grid_oversample, flux=total_flux_cps * exposure_time)
 
         # generate PSF and convolve
-        convolved = convolve(interp, band, detector, detector_pos, num_pix, pupil_bin=1)
+        convolved = convolve(interp, band, detector, detector_pos, input_size, pupil_bin=1)
 
         # add sky background to convolved image
         final_image = convolved + bkgs[band]
@@ -72,7 +71,7 @@ def get_images(lens, arrays, bands, output_size, grid_oversample, detector=2, de
         final_array = final_image.array
 
         # center crop to get rid of edge effects
-        util.center_crop_image(final_array, (output_size, output_size))
+        final_array = util.center_crop_image(final_array, (output_size, output_size))
 
         # divide through by exposure time to get in units of counts/sec/pixel
         final_array /= exposure_time

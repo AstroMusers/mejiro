@@ -134,7 +134,7 @@ def get_image(input):
         final_array = final_image.array
 
         # center crop to get rid of edge effects
-        util.center_crop_image(final_array, (final_pixel_side, final_pixel_side))
+        final_array = util.center_crop_image(final_array, (final_pixel_side, final_pixel_side))
 
         # divide through by exposure time to get in units of counts/sec/pixel
         final_array /= exposure_time

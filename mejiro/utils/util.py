@@ -47,6 +47,9 @@ def resize_with_pixels_centered(array, oversample_factor):
 
 
 def center_crop_image(array, shape):
+    if array.shape == shape:
+        return array
+    
     y_out, x_out = shape
     tuple = array.shape
     y, x = tuple[0], tuple[1]
