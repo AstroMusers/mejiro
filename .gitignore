@@ -6,6 +6,9 @@
 /notebooks/old
 /scripts/old
 
+# pytest
+.pytest_cache
+
 # Jupyter
 .ipynb_checkpoints
 
