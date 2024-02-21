@@ -15,11 +15,13 @@ def unpickle_lens(pickle_path, uid):
     kwargs_params = unpickled['kwargs_params']
     lens_mags = unpickled['lens_mags']
     source_mags = unpickled['source_mags']
+    main_halo_mass = unpickled['lens_mass']
 
     return StrongLens(kwargs_model=kwargs_model,
                       kwargs_params=kwargs_params,
                       lens_mags=lens_mags,
                       source_mags=source_mags,
+                      main_halo_mass=main_halo_mass,
                       uid=uid)
 
 

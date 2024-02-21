@@ -1,5 +1,6 @@
 import astropy.cosmology as astropy_cosmo
 from copy import deepcopy
+from lenstronomy.Cosmo.lens_cosmo import LensCosmo
 from lenstronomy.Data.coord_transforms import Coordinates
 from lenstronomy.Data.pixel_grid import PixelGrid
 from lenstronomy.Data.psf import PSF
@@ -30,15 +31,13 @@ class StrongLens:
         # confirm that magnitudes are set up correctly
         self._validate_mags(self.lens_mags, self.source_mags)
 
-        # build light kwargs dicts
-        kwargs_lens_light, kwargs_source = self._unpack_kwargs_params(kwargs_params)
-        self.kwargs_lens_light_dict = self._build_kwargs_light_dict(lens_mags, kwargs_lens_light)
-        self.kwargs_source_dict = self._build_kwargs_light_dict(source_mags, kwargs_source)
-
+        # set light kwargs dicts and set kwargs_lens
+        self._unpack_kwargs_params(kwargs_params)
+        
         # set lens_model_list, lens_light_model_list, source_light_model_list
         self._unpack_kwargs_model(kwargs_model)
 
-        # set kwargs_model
+        # set kwargs_model TODO is this necessary?
         self.update_model()
 
         # set place to store amp versions of kwargs_light dicts
@@ -58,8 +57,14 @@ class StrongLens:
         assert lens_bands == source_bands, 'Pair of lens and source magnitudes not available for all filters.'
 
     def _unpack_kwargs_params(self, kwargs_params):
+        # set kwargs_lens
         self.kwargs_lens = kwargs_params['kwargs_lens']
-        return kwargs_params['kwargs_lens_light'], kwargs_params['kwargs_source']
+
+        # set light dicts
+        kwargs_lens_light = kwargs_params['kwargs_lens_light']
+        kwargs_source = kwargs_params['kwargs_source']
+        self.kwargs_lens_light_dict = self._build_kwargs_light_dict(self.lens_mags, kwargs_lens_light)
+        self.kwargs_source_dict = self._build_kwargs_light_dict(self.source_mags, kwargs_source)
 
     def _unpack_kwargs_model(self, kwargs_model):
         # get model lists, which are required(TODO ?)
@@ -83,7 +88,16 @@ class StrongLens:
         if 'z_source_convention' in kwargs_model:
             self.z_source_convention = kwargs_model['z_source_convention']
 
-    def add_subhalos(self, halo_lens_model_list, halo_redshift_list, kwargs_halos):
+
+    def get_main_halo_mass(self):
+        # instantiate LensCosmo object which handles unit conversions given a lens plane
+        lens_cosmo = LensCosmo(z_lens=self.z_lens, z_source=self.z_source, cosmo=self.cosmo)
+
+        # return the main halo mass in units of solar masses
+        return lens_cosmo.mass_in_theta_E(theta_E=self.kwargs_lens[0]['theta_E'])
+
+
+    def add_subhalos(self, halo_lens_model_list, halo_redshift_list, kwargs_halos, total_subhalo_mass):
         # add subhalos to list of lensing objects
         self.kwargs_lens += kwargs_halos
 
@@ -93,6 +107,16 @@ class StrongLens:
         # update other lenstronomy objects
         self.lens_model_list += halo_lens_model_list
         self.lens_model_class = LensModel(self.lens_model_list)
+
+        # TODO update the mass of the main halo to account for the added subhalos
+        main_halo_mass = self.get_main_halo_mass()
+
+        # TODO calculate updated Einstein radius based on total subhalo mass
+        # updated_theta_E = 
+
+        # update lens_kwargs with the adjusted Einstein radius
+        # self.kwargs_lens[0]['theta_E'] = updated_theta_E
+
 
     def update_model(self):
         # update model

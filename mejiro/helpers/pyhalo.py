@@ -1,4 +1,5 @@
 import astropy.cosmology as astropy_cosmo
+import numpy as np
 import pickle
 from lenstronomy.Cosmo.lens_cosmo import LensCosmo
 from pyHalo.Cosmology.cosmology import Cosmology
@@ -19,11 +20,14 @@ def cut_mass(realization, log_m_cutoff):
     return realization
 
 
-def generate_CDM_halos(z_lens, z_source, cone_opening_angle_arcsec=11, LOS_normalization=0.0):
-    realizationCDM = CDM(z_lens, z_source, cone_opening_angle_arcsec=cone_opening_angle_arcsec,
+def generate_CDM_halos(z_lens, z_source, log_m_host=13.3, r_tidal=0.25, cone_opening_angle_arcsec=11, LOS_normalization=0.0):
+    realizationCDM = CDM(z_lens, z_source, log_m_host, r_tidal, cone_opening_angle_arcsec=cone_opening_angle_arcsec,
                          LOS_normalization=LOS_normalization)
+    
+    # calculate total subhalo mass in solar masses
+    total_subhalo_mass = np.sum([halo.mass for halo in realizationCDM.halos])
 
-    return realization_to_lensing_quantities(realizationCDM)
+    return realization_to_lensing_quantities(realizationCDM), total_subhalo_mass
 
 
 def realization_to_lensing_quantities(realization):
