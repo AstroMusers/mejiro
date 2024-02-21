@@ -194,15 +194,17 @@ class StrongLens:
         self.lens_light_model_class = LightModel(self.lens_light_model_list)
         self.source_model_class = LightModel(self.source_model_list)
 
-    def get_source_pixel_coords(self):  # TODO need to test this
+    def get_source_pixel_coords(self, coords):
+        # the kwargs_source_dict has has key/value pairs band/kwargs_source. center_x and y are the same across all kwargs_source, so grab the first key/value pair
         first_key = next(iter(self.kwargs_source_dict))
-        source_ra = self.kwargs_source_dict[first_key][0]['center_x']
-        source_dec = self.kwargs_source_dict[first_key][0]['center_y']
-        return self.coords.map_coord2pix(ra=source_ra, dec=source_dec)
 
-    def get_lens_pixel_coords(self):
+        source_ra = self.kwargs_source_dict[first_key]['center_x']
+        source_dec = self.kwargs_source_dict[first_key]['center_y']
+        return coords.map_coord2pix(ra=source_ra, dec=source_dec)
+
+    def get_lens_pixel_coords(self, coords):
         lens_ra, lens_dec = self.kwargs_lens[0]['center_x'], self.kwargs_lens[0]['center_y']
-        return self.coords.map_coord2pix(ra=lens_ra, dec=lens_dec)
+        return coords.map_coord2pix(ra=lens_ra, dec=lens_dec)
 
     def _mass_physical_to_lensing_units(self):
         sim_g = SimAPI(numpix=self.num_pix, kwargs_single_band=self.lenstronomy_roman_config,
@@ -212,7 +214,7 @@ class StrongLens:
     def _set_up_pixel_grid(self):
         self.delta_pix = self.side / self.num_pix  # size of pixel in angular coordinates
 
-        ra_grid, dec_grid, self.ra_at_xy_0, self.dec_at_xy_0, x_at_radec_0, y_at_radec_0, self.Mpix2coord, self.Mcoord2pix = util.make_grid_with_coordtransform(
+        _, _, self.ra_at_xy_0, self.dec_at_xy_0, _, _, self.Mpix2coord, self.Mcoord2pix = util.make_grid_with_coordtransform(
             numPix=self.num_pix,
             deltapix=self.delta_pix,
             subgrid_res=1,

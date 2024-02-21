@@ -2,10 +2,24 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from glob import glob
+from lenstronomy.Data.coord_transforms import Coordinates
+from lenstronomy.Data.pixel_grid import PixelGrid
+from lenstronomy.Util import util as lenstronomy_util
 
 from mejiro.helpers import color
 from mejiro.lenses.strong_lens import StrongLens
 from mejiro.utils import util
+
+
+def get_coords(num_pix):
+    _, _, ra_at_xy_0, dec_at_xy_0, _, _, Mpix2coord, Mcoord2pix = lenstronomy_util.make_grid_with_coordtransform(
+        numPix=num_pix,
+        deltapix=0.11,
+        subgrid_res=1,
+        left_lower=False,
+        inverse=False)
+
+    return Coordinates(Mpix2coord, ra_at_xy_0, dec_at_xy_0)
 
 
 def unpickle_lens(pickle_path, uid):
