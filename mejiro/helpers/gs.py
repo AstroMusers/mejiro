@@ -141,16 +141,20 @@ def get_random_detector(suppress_output=False):
     return detector
 
 
-def get_random_detector_pos(suppress_output=False):
+def get_random_detector_pos(input_size, suppress_output=False):
     # Roman WFI detectors are 4096x4096 pixels, but the outermost four rows and columns are reference pixels
-    # TODO should constrain based on final image size? this is center of image to get PSF at
-    x, y = random.randrange(4, 4092), random.randrange(4, 4092)
+    # we're adjusting inwards by the input_size because we want to make sure that the entire image fits on the detector, even before final cropping to remove any edge effects
+    min = 4 + input_size
+    max = 4092 - input_size
+
+    x, y = random.randrange(min, max), random.randrange(min, max)
+    
     if not suppress_output:
         print(f'Detector position: {x}, {y}')
     return galsim.PositionD(x, y)
 
 
-def convolve(interp, band, detector, detector_position, num_pix, pupil_bin=1):
+def convolve(interp, band, detector, detector_position, input_size, pupil_bin=1):
     galsim_psf = roman.getPSF(detector, 
                               SCA_pos=detector_position, 
                               bandpass=None, 
@@ -160,8 +164,8 @@ def convolve(interp, band, detector, detector_position, num_pix, pupil_bin=1):
     # https://galsim-developers.github.io/GalSim/_build/html/composite.html#galsim.Convolve
     convolved = galsim.Convolve(interp, galsim_psf)
 
-    # draw interpolated image
-    im = galsim.ImageF(num_pix, num_pix, scale=0.11)
+    # draw interpolated image at the final pixel scale
+    im = galsim.ImageF(input_size, input_size, scale=0.11)  # NB setting dimensions to "input_size" because we'll crop down to "output_size" at the very end
     im.setOrigin(0, 0)
 
     return convolved.drawImage(im)
