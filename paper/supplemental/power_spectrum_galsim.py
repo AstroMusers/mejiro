@@ -26,6 +26,9 @@ def main(config):
     num_pix = 45
     side = 4.95
 
+    
+
+
     # TODO collect num=1000 lenses
 
     # TODO make a copy then add a given subhalo population

@@ -94,7 +94,7 @@ def get_image(input):
 
     # determine detector and position
     detector = gs.get_random_detector(suppress_output)
-    detector_pos = gs.get_random_detector_pos(suppress_output)
+    detector_pos = gs.get_random_detector_pos(input_size=num_pix, suppress_output=suppress_output)
 
     # get wcs
     wcs_dict = gs.get_random_hlwas_wcs(suppress_output)

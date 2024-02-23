@@ -9,7 +9,7 @@ from galsim import InterpolatedImage, Image
 from mejiro.utils import util
 
 
-def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, detector=2, detector_pos=None, exposure_time=146, ra=30, dec=-30, seed=42):
+def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, detector=1, detector_pos=None, exposure_time=146, ra=30, dec=-30, seed=42):
     start = time.time()
 
     # was only one band provided as a string? or a list of bands?
@@ -50,7 +50,7 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, de
         total_flux_cps = lens.get_total_flux_cps(band)  
         
         # get interpolated image
-        interp = galsim.InterpolatedImage(galsim.Image(array, xmin=0, ymin=0), scale=0.11 / grid_oversample, flux=total_flux_cps * exposure_time)
+        interp = InterpolatedImage(Image(array, xmin=0, ymin=0), scale=0.11 / grid_oversample, flux=total_flux_cps * exposure_time)
 
         # generate PSF and convolve
         convolved = convolve(interp, band, detector, detector_pos, input_size, pupil_bin=1)
