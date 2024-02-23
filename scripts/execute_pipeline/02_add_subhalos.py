@@ -1,5 +1,6 @@
 import hydra
 import multiprocessing
+import numpy as np
 import os
 import sys
 import time
@@ -18,14 +19,10 @@ def main(config):
         sys.path.append(repo_dir)
     from mejiro.utils import util
 
-    # split up the lenses into batches based on core count
-    cpu_count = multiprocessing.cpu_count()
-    process_count = cpu_count - 4
-    print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
-
     # open pickled lens list
     pickled_lens_list = os.path.join(config.machine.dir_01, '01_skypy_output_lens_list')
     lens_list = util.unpickle(pickled_lens_list)
+    count = len(lens_list)
 
     # directory to write the lenses with subhalos to
     output_dir = config.machine.dir_02
@@ -42,6 +39,13 @@ def main(config):
     tuple_list = []
     for lens in lens_list:
         tuple_list.append((lens, pipeline_params, output_dir))
+
+    # split up the lenses into batches based on core count
+    cpu_count = multiprocessing.cpu_count()
+    process_count = cpu_count - 4
+    if count < process_count:
+        process_count = count   
+    print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     # batch
     generator = util.batch_list(tuple_list, process_count)
@@ -72,6 +76,7 @@ def add(tuple):
     z_source = round(lens.z_source, 2)
 
     # TODO calculate the main halo mass
+    log_m_host = np.log10(lens.main_halo_mass)
 
     # TODO generate 
 
@@ -79,14 +84,13 @@ def add(tuple):
     # by default, it's 0.25
 
     # randomly generate CDM subhalos
-    halo_tuple = pyhalo.generate_CDM_halos(z_lens, z_source, cone_opening_angle_arcsec=subhalo_cone,
-                                           LOS_normalization=los_normalization, log_m_host=)
+    halo_tuple, total_subhalo_mass = pyhalo.generate_CDM_halos(z_lens, z_source, log_m_host=log_m_host, cone_opening_angle_arcsec=subhalo_cone, LOS_normalization=los_normalization)
 
     # pickle the subhalos
     util.pickle(os.path.join(output_dir, 'subhalos', f'subhalo_tuple_{lens.uid}'), halo_tuple)
 
     # add this subhalo population to the lens, and pickle
-    lens.add_subhalos(*halo_tuple)
+    lens.add_subhalos(*halo_tuple, None)
     pickle_target = os.path.join(output_dir, f'lens_with_subhalos_{lens.uid}')
     util.pickle(pickle_target, lens)
 

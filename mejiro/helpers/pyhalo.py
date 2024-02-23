@@ -21,7 +21,8 @@ def cut_mass(realization, log_m_cutoff):
 
 
 def generate_CDM_halos(z_lens, z_source, log_m_host=13.3, r_tidal=0.25, cone_opening_angle_arcsec=11, LOS_normalization=0.0):
-    realizationCDM = CDM(z_lens, z_source, log_m_host, r_tidal, cone_opening_angle_arcsec=cone_opening_angle_arcsec,
+
+    realizationCDM = CDM(z_lens, z_source, log_m_host=log_m_host, r_tidal=r_tidal, cone_opening_angle_arcsec=cone_opening_angle_arcsec,
                          LOS_normalization=LOS_normalization)
     
     # calculate total subhalo mass in solar masses

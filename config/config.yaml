@@ -18,7 +18,7 @@ pipeline:
   - band: [ F106, F129, F184 ]
   - exposure_time: 146
   - suppress_output: True
-  - runs: [0, 1, 2, 3]
+  - runs: [0]  #[0, 1, 2, 3]
 
 hydra:
   output_subdir: null
