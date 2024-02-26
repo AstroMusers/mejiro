@@ -1,3 +1,4 @@
+import galsim
 import hydra
 import numpy as np
 import os
@@ -21,19 +22,23 @@ def main(config):
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
 
+    # generate flat image
+    flat_image_save_path = os.path.join('flat.npy')
+    generate_flat_image(flat_image_save_path)
+
+    # TODO collect num=1000 lenses
+    # for loop
+    # 1. get lens
+    # for loop over subhalo populations, PSFs
+    # 2. add subhalos
+    # 3. generate image
+    # 4. generate power spectrum
+    # 5. save
+
     band = 'F184'
     grid_oversample = 3
     num_pix = 45
     side = 4.95
-
-    
-
-
-    # TODO collect num=1000 lenses
-
-    # TODO make a copy then add a given subhalo population
-
-    # TODO make another copy, etc.
 
     lens = SampleStrongLens()
 
@@ -94,6 +99,49 @@ def main(config):
     for lens, model, title in zip(lenses, models, titles):
         gs_images, _ = gs.get_images(lens, model, band, input_size=num_pix, output_size=num_pix, grid_oversample=grid_oversample)
         np.save(os.path.join(save_dir, f'{title}.npy'), gs_images[0])
+
+
+def generate_flat_image(save_path):
+    from mejiro.helpers import gs
+
+    band = 'F184'
+    num_pix = 45
+    ra = 30
+    dec = -30
+    wcs = gs.get_wcs(ra, dec)
+    exposure_time = 146
+    detector = 1
+    seed = 42
+
+    # calculate sky backgrounds for each band
+    bkgs = gs.get_sky_bkgs(wcs, band, detector, exposure_time, num_pix=num_pix)
+
+    # draw interpolated image at the final pixel scale
+    im = galsim.ImageF(num_pix, num_pix, scale=0.11)  # NB setting dimensions to "input_size" because we'll crop down to "output_size" at the very end
+    im.setOrigin(0, 0)
+
+    # add sky background to convolved image
+    final_image = im + bkgs[band]
+
+    # integer number of photons are being detected, so quantize
+    final_image.quantize()
+
+    # add all detector effects
+    # create galsim rng
+    rng = galsim.UniformDeviate(seed=seed)
+    galsim.roman.allDetectorEffects(final_image, prev_exposures=(), rng=rng, exptime=exposure_time)
+
+    # make sure there are no negative values from Poisson noise generator
+    final_image.replaceNegative()
+
+    # get the array
+    final_array = final_image.array
+
+    # divide through by exposure time to get in units of counts/sec/pixel
+    final_array /= exposure_time
+
+    # save
+    np.save(save_path, final_array)
 
 
 if __name__ == '__main__':
