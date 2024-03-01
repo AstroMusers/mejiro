@@ -13,7 +13,7 @@ from lenstronomy.Util import data_util, util
 
 
 class StrongLens:
-    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, main_halo_mass, uid=None):
+    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, main_halo_mass=None, uid=None):
         # set z_source convention default
         self.z_source_convention = 5
 
