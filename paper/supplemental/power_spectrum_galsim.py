@@ -27,13 +27,16 @@ def main(config):
     generate_flat_image(flat_image_save_path)
 
     # TODO collect num=1000 lenses
-    # for loop
-    # 1. get lens
+    lens_dir = config.machine.dir_01
+    uid_list = [str(i).zfill(8) for i in range(1000)]
+
+    for uid in uid_list:
+    # TODO get lens
     # for loop over subhalo populations, PSFs
     # 2. add subhalos
     # 3. generate image
     # 4. generate power spectrum
-    # 5. save
+    # 5. save 
 
     band = 'F184'
     grid_oversample = 3

@@ -85,10 +85,10 @@ def get_kernel_from_calc_psf(calc_psf):
 
 
 # TODO refactor this to accept a detector_position tuple instead of x, y
-def get_psf_kernel(band, x, y, detector, oversample=5, save=None, suppress_output=False):
+def get_psf_kernel(band, detector, detector_position, oversample=5, save=None, suppress_output=False):
     wfi = get_instrument(band)
     wfi.detector = detector
-    wfi.detector_position = (x, y)
+    wfi.detector_position = detector_position
     psf = wfi.calc_psf(oversample=oversample)
     if save is not None:
         psf.writeto(save, overwrite=True)
@@ -127,7 +127,7 @@ def get_random_position(suppress_output=False):
     x, y = random.randrange(4, 4092), random.randrange(4, 4092)
     if not suppress_output:
         print(f'Detector position: {x}, {y}')
-    return x, y
+    return (x, y)
 
 
 def get_random_detector(suppress_output=False):
