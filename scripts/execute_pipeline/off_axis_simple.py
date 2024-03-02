@@ -95,9 +95,8 @@ def main(config):
 
             # re-convolve with off-axis PSF
             off_axis_kernel = psf.get_psf_kernel(band=band,
-                                                 x=x,
-                                                 y=y,
                                                  detector=detector,
+                                                 detector_position=(x, y),
                                                  oversample=oversample,
                                                  suppress_output=False)
             off_axis_image = convolution.convolve(deconvolved, off_axis_kernel)

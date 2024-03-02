@@ -6,34 +6,37 @@ from astropy.coordinates import SkyCoord
 from galsim import roman
 from galsim import InterpolatedImage, Image
 
+from mejiro.helpers import psf
 from mejiro.utils import util
 
 
-def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, detector=1, detector_pos=None, exposure_time=146, ra=30, dec=-30, seed=42):
+def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, psf_oversample, detector=1, detector_pos=None, exposure_time=146, ra=30, dec=-30, seed=42, validate=True):
     start = time.time()
 
-    # was only one band provided as a string? or a list of bands?
-    single_band = False
-    if not isinstance(bands, list):
-        single_band = True
-        bands = [bands]
+    # check that the inputs are reasonable
+    if validate:
+        # was only one band provided as a string? or a list of bands?
+        single_band = False
+        if not isinstance(bands, list):
+            single_band = True
+            bands = [bands]
 
-    # was only one array provided? or a list of arrays?
-    single_array = False
-    if not isinstance(arrays, list):
-        single_array = True
-        arrays = [arrays]
+        # was only one array provided? or a list of arrays?
+        single_array = False
+        if not isinstance(arrays, list):
+            single_array = True
+            arrays = [arrays]
 
-    # if a color image is desired, then three bands and three arrays should be provided
-    if not single_band or not single_array:
-        assert len(bands) == 3, 'For a color image, provide three bands'
-        assert len(arrays) == 3, 'For a color image, provide three arrays'
+        # if a color image is desired, then three bands and three arrays should be provided
+        if not single_band or not single_array:
+            assert len(bands) == 3, 'For a color image, provide three bands'
+            assert len(arrays) == 3, 'For a color image, provide three arrays'
 
-     # make sure the arrays are square
-    for array in arrays:
-        assert array.shape[0] == array.shape[1], 'Input image must be square'
+         # make sure the arrays are square
+        for array in arrays:
+            assert array.shape[0] == array.shape[1], 'Input image must be square'
 
-    # TODO they should also all have the same dimensions
+        # TODO they should also all have the same dimensions
 
     # create galsim rng
     rng = galsim.UniformDeviate(seed)
@@ -52,8 +55,12 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, de
         # get interpolated image
         interp = InterpolatedImage(Image(array, xmin=0, ymin=0), scale=0.11 / grid_oversample, flux=total_flux_cps * exposure_time)
 
-        # generate PSF and convolve
-        convolved = convolve(interp, band, detector, detector_pos, input_size, pupil_bin=1)
+        # generate PSF
+        # galsim_psf = get_galsim_psf(band, detector, detector_pos)
+        galsim_psf = psf.get_webbpsf_psf(band, f'SCA{str(detector).zfill(2)}', detector_pos, psf_oversample)
+
+        # convolve
+        convolved = convolve(interp, galsim_psf, input_size, pupil_bin=1)
 
         # add sky background to convolved image
         final_image = convolved + bkgs[band]
@@ -82,6 +89,10 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, de
     execution_time = str(datetime.timedelta(seconds=round(stop - start)))
     
     return results, execution_time
+
+
+def get_webbpsf_psf():
+
 
 
 def get_wcs(ra, dec, date=None):
@@ -141,26 +152,15 @@ def get_random_detector(suppress_output=False):
     return detector
 
 
-def get_random_detector_pos(input_size, suppress_output=False):
-    # Roman WFI detectors are 4096x4096 pixels, but the outermost four rows and columns are reference pixels
-    # we're adjusting inwards by the input_size because we want to make sure that the entire image fits on the detector, even before final cropping to remove any edge effects
-    min = 4 + input_size
-    max = 4092 - input_size
-
-    x, y = random.randrange(min, max), random.randrange(min, max)
-    
-    if not suppress_output:
-        print(f'Detector position: {x}, {y}')
-    return galsim.PositionD(x, y)
+def get_galsim_psf(band, detector, detector_position):
+    return roman.getPSF(detector,
+                        SCA_pos=detector_position,
+                        bandpass=None,
+                        wavelength=get_bandpass(band),
+                        pupil_bin=pupil_bin)
 
 
-def convolve(interp, band, detector, detector_position, input_size, pupil_bin=1):
-    galsim_psf = roman.getPSF(detector, 
-                              SCA_pos=detector_position, 
-                              bandpass=None, 
-                              wavelength=get_bandpass(band), 
-                              pupil_bin=pupil_bin)
-
+def convolve(interp, galsim_psf, input_size, pupil_bin=1):
     # https://galsim-developers.github.io/GalSim/_build/html/composite.html#galsim.Convolve
     convolved = galsim.Convolve(interp, galsim_psf)
 
@@ -183,8 +183,8 @@ def get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix):
         # build Image
         sky_image = galsim.ImageF(num_pix, num_pix, wcs=wcs)
 
-        SCA_cent_pos = wcs.toWorld(sky_image.true_center)
-        sky_level = roman.getSkyLevel(bandpass, world_pos=SCA_cent_pos, exptime=exposure_time)
+        sca_cent_pos = wcs.toWorld(sky_image.true_center)
+        sky_level = roman.getSkyLevel(bandpass, world_pos=sca_cent_pos, exptime=exposure_time)
         sky_level *= (1.0 + roman.stray_light_fraction)
         wcs.makeSkyImage(sky_image, sky_level)
 

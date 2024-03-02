@@ -73,7 +73,7 @@ def main(config):
 
 
 def get_image(input):
-    from mejiro.helpers import gs
+    from mejiro.helpers import gs, psf
     from mejiro.utils import util
 
     # unpack tuple
@@ -94,7 +94,7 @@ def get_image(input):
 
     # determine detector and position
     detector = gs.get_random_detector(suppress_output)
-    detector_pos = gs.get_random_detector_pos(input_size=num_pix, suppress_output=suppress_output)
+    detector_pos = psf.get_random_detector_pos(input_size=num_pix, suppress_output=suppress_output)
 
     # get wcs
     wcs_dict = gs.get_random_hlwas_wcs(suppress_output)
@@ -103,6 +103,8 @@ def get_image(input):
     bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix=num_pix)
 
     execution_times = []
+
+    # TODO fix this loop once gs.py is finalized - it should only be a few lines because can save image for each band with list comprehension
     for _, band in enumerate(bands):
         start = time.time()      
 
