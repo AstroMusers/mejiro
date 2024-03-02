@@ -78,19 +78,19 @@ def add(tuple):
     # TODO calculate the main halo mass
     log_m_host = np.log10(lens.main_halo_mass)
 
-    # TODO generate 
-
-    # TODO calculate r_tidal: the core radius of the host halo in units of the host halo scale radius. Subhalos are distributed in 3D with a cored NFW profile with this core radius
-    # by default, it's 0.25
+    # TODO calculate r_tidal: the core radius of the host halo in units of the host halo scale radius. Subhalos are distributed in 3D with a cored NFW profile with this core radius; by default, it's 0.25
+    # r_tidal = 
 
     # randomly generate CDM subhalos
-    halo_tuple, total_subhalo_mass = pyhalo.generate_CDM_halos(z_lens, z_source, log_m_host=log_m_host, cone_opening_angle_arcsec=subhalo_cone, LOS_normalization=los_normalization)
+    halo_tuple, total_subhalo_mass = pyhalo.generate_CDM_halos(z_lens, z_source, cone_opening_angle_arcsec=subhalo_cone, LOS_normalization=los_normalization)  # TODO add log_m_host and r_tidal arguments
 
     # pickle the subhalos
     util.pickle(os.path.join(output_dir, 'subhalos', f'subhalo_tuple_{lens.uid}'), halo_tuple)
 
-    # add this subhalo population to the lens, and pickle
-    lens.add_subhalos(*halo_tuple, None)
+    # add this subhalo population to the lens; note that this method should account for subtracting subhalo combined mass from the main halo mass
+    lens.add_subhalos(*halo_tuple)  # TODO update the main halo mass argument
+
+    # pickle the lens with subhalos
     pickle_target = os.path.join(output_dir, f'lens_with_subhalos_{lens.uid}')
     util.pickle(pickle_target, lens)
 

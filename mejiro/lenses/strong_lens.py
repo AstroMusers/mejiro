@@ -100,7 +100,7 @@ class StrongLens:
         return lens_cosmo.mass_in_theta_E(theta_E=self.kwargs_lens[0]['theta_E'])
 
 
-    def add_subhalos(self, halo_lens_model_list, halo_redshift_list, kwargs_halos, total_subhalo_mass):
+    def add_subhalos(self, halo_lens_model_list, halo_redshift_list, kwargs_halos):
         # add subhalos to list of lensing objects
         self.kwargs_lens += kwargs_halos
 
