@@ -3,18 +3,21 @@ import os
 import random
 import galsim
 from glob import glob
+from galsim import roman
 from tqdm import tqdm
-from webbpsf import roman
+from webbpsf.roman import WFI
+
+from mejiro.helpers import gs
 
 
 def get_instrument(band):
-    wfi = roman.WFI()
+    wfi = WFI()
     wfi.filter = band.upper()
     return wfi
 
 
 def get_random_detector(suppress_output=False):
-    detector = random.choice(roman.WFI().detector_list)
+    detector = random.choice(WFI().detector_list)
     if not suppress_output:
         print(f'Detector: {detector}')
     return detector
@@ -34,11 +37,15 @@ def get_random_detector_pos(input_size, suppress_output=False):
     return galsim.PositionD(x, y)
 
 
-def get_webbpsf_psf(band, detector, detector_pos, oversample):
+def get_webbpsf_psf(band, detector, detector_position, oversample):
+    # detector might be int or string
+    if type(detector) == int:
+        detector = f'SCA{str(detector).zfill(2)}'
+
     # set PSF parameters
     wfi = get_instrument(band)
-    wfi.detector = detector
-    wfi.detector_position = detector_pos
+    wfi.detector = detector  # WebbPSF expects 'SCA01', 'SCA02', etc.
+    wfi.detector_position = detector_position
 
     # generate PSF in WebbPSF
     psf = wfi.calc_psf(oversample=oversample)
@@ -47,6 +54,14 @@ def get_webbpsf_psf(band, detector, detector_pos, oversample):
     oversampled_pixel_scale = wfi.pixelscale / oversample
     psf_image = galsim.Image(psf[0].data, scale=oversampled_pixel_scale)
     return galsim.InterpolatedImage(psf_image)
+
+
+def get_galsim_psf(band, detector, detector_position, pupil_bin=1):
+    return roman.getPSF(detector,
+                        SCA_pos=galsim.PositionD(*detector_position),
+                        bandpass=None,
+                        wavelength=gs.get_bandpass(band),
+                        pupil_bin=pupil_bin)
 
 
 def get_kwargs_psf(kernel, oversample):
@@ -133,7 +148,7 @@ def update_pandeia_psfs(detector=None, detector_position=None, suppress_output=F
                    '1.4714e-6', '1.5574e-6', '1.6484e-6', '1.7447e-6', '1.8467e-6', '1.9546e-6', '2.0688e-6',
                    '2.1897e-6']
 
-    wfi = roman.WFI()
+    wfi = WFI()
     wfi.filter = 'F062'
     wfi.options = _get_pandeia_psf_options()
 
@@ -155,3 +170,4 @@ def update_pandeia_psfs(detector=None, detector_position=None, suppress_output=F
                      outfile=os.path.join(get_pandeia_psf_dir(), f'{prefix}{wl[:-3]}.fits'))
 
     return detector, detector_position
+

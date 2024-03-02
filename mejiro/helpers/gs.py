@@ -57,7 +57,7 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
 
         # generate PSF
         # galsim_psf = get_galsim_psf(band, detector, detector_pos)
-        galsim_psf = psf.get_webbpsf_psf(band, f'SCA{str(detector).zfill(2)}', detector_pos, psf_oversample)
+        galsim_psf = psf.get_webbpsf_psf(band, detector, detector_pos, psf_oversample)
 
         # convolve
         convolved = convolve(interp, galsim_psf, input_size, pupil_bin=1)
@@ -89,10 +89,6 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
     execution_time = str(datetime.timedelta(seconds=round(stop - start)))
     
     return results, execution_time
-
-
-def get_webbpsf_psf():
-
 
 
 def get_wcs(ra, dec, date=None):
@@ -150,14 +146,6 @@ def get_random_detector(suppress_output=False):
     if not suppress_output:
         print(f'Detector: {detector}')
     return detector
-
-
-def get_galsim_psf(band, detector, detector_position):
-    return roman.getPSF(detector,
-                        SCA_pos=detector_position,
-                        bandpass=None,
-                        wavelength=get_bandpass(band),
-                        pupil_bin=pupil_bin)
 
 
 def convolve(interp, galsim_psf, input_size, pupil_bin=1):
