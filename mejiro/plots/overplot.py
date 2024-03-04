@@ -41,7 +41,8 @@ def critical_curves(ax, lens, coords, num_pix, delta_pix=0.11, linewidth=2, alph
         x_critical_list.append(x)
         y_critical_list.append(y)
 
-    return ax.plot(x_critical_list, y_critical_list, label='Critical curve', color=color, linewidth=linewidth, alpha=alpha)
+    return ax.plot(x_critical_list, y_critical_list, label='Critical curve', color=color, linewidth=linewidth,
+                   alpha=alpha)
 
 
 # TODO this is all a bit messy

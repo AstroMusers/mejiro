@@ -1,5 +1,6 @@
-import astropy.cosmology as astropy_cosmo
 from copy import deepcopy
+
+import astropy.cosmology as astropy_cosmo
 from lenstronomy.Cosmo.lens_cosmo import LensCosmo
 from lenstronomy.Data.coord_transforms import Coordinates
 from lenstronomy.Data.pixel_grid import PixelGrid
@@ -36,7 +37,7 @@ class StrongLens:
 
         # set light kwargs dicts and set kwargs_lens
         self._unpack_kwargs_params(kwargs_params)
-        
+
         # set lens_model_list, lens_light_model_list, source_light_model_list
         self._unpack_kwargs_model(kwargs_model)
 
@@ -91,14 +92,12 @@ class StrongLens:
         if 'z_source_convention' in kwargs_model:
             self.z_source_convention = kwargs_model['z_source_convention']
 
-
     def get_main_halo_mass(self):
         # instantiate LensCosmo object which handles unit conversions given a lens plane
         lens_cosmo = LensCosmo(z_lens=self.z_lens, z_source=self.z_source, cosmo=self.cosmo)
 
         # return the main halo mass in units of solar masses
         return lens_cosmo.mass_in_theta_E(theta_E=self.kwargs_lens[0]['theta_E'])
-
 
     def add_subhalos(self, halo_lens_model_list, halo_redshift_list, kwargs_halos):
         # add subhalos to list of lensing objects
@@ -120,7 +119,6 @@ class StrongLens:
         # update lens_kwargs with the adjusted Einstein radius
         # self.kwargs_lens[0]['theta_E'] = updated_theta_E
 
-
     def update_model(self):
         # update model
         self.kwargs_model = {
@@ -140,7 +138,7 @@ class StrongLens:
 
     def get_source_flux_cps(self, band):
         return self.source_model_class.total_flux([self.kwargs_source_amp_dict[band]])[0]
-    
+
     def get_total_flux_cps(self, band):
         return self.get_lens_flux_cps(band) + self.get_source_flux_cps(band)
 
@@ -179,8 +177,10 @@ class StrongLens:
                                               survey_mode='wide_area').kwargs_single_band()
         magnitude_zero_point = self.lenstronomy_roman_config.get('magnitude_zero_point')
 
-        kwargs_lens_light_amp = self._get_amp_light_kwargs(magnitude_zero_point, self.lens_light_model_class, self.kwargs_lens_light_dict[band])
-        kwargs_source_amp = self._get_amp_light_kwargs(magnitude_zero_point, self.source_model_class, self.kwargs_source_dict[band])
+        kwargs_lens_light_amp = self._get_amp_light_kwargs(magnitude_zero_point, self.lens_light_model_class,
+                                                           self.kwargs_lens_light_dict[band])
+        kwargs_source_amp = self._get_amp_light_kwargs(magnitude_zero_point, self.source_model_class,
+                                                       self.kwargs_source_dict[band])
 
         self.kwargs_lens_light_amp_dict[band] = kwargs_lens_light_amp[0]
         self.kwargs_source_amp_dict[band] = kwargs_source_amp[0]
@@ -188,7 +188,7 @@ class StrongLens:
         return image_model.image(kwargs_lens=self.kwargs_lens,
                                  kwargs_source=kwargs_source_amp,
                                  kwargs_lens_light=kwargs_lens_light_amp)
-    
+
     def _get_amp_light_kwargs(self, magnitude_zero_point, light_model_class, kwargs_light):
         return data_util.magnitude2amplitude(light_model_class, [kwargs_light], magnitude_zero_point)
 

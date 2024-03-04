@@ -1,8 +1,9 @@
-import hydra
-import numpy as np
 import os
 import sys
 import time
+
+import hydra
+import numpy as np
 from tqdm import tqdm
 
 
@@ -62,8 +63,8 @@ def main(config):
 
             # build Pandeia input
             calc, _ = pandeia_input.build_pandeia_calc(array, lens, background=reshaped_bkgs[i], noise=True, band=band,
-                                                    max_scene_size=max_scene_size,
-                                                    num_samples=num_samples, suppress_output=False)
+                                                       max_scene_size=max_scene_size,
+                                                       num_samples=num_samples, suppress_output=False)
 
             # generate Pandeia image and save
             image, execution_time = pandeia_input.get_pandeia_image(calc, suppress_output=False)

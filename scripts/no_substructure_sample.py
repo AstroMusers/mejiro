@@ -1,7 +1,8 @@
-import hydra
-import numpy as np
 import os
 import sys
+
+import hydra
+import numpy as np
 from tqdm import tqdm
 
 from mejiro.helpers import pandeia_input

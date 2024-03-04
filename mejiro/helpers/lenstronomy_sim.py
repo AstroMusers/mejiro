@@ -1,12 +1,13 @@
-import numpy as np
 from copy import deepcopy
+
+import numpy as np
 from lenstronomy.SimulationAPI.ObservationConfig import HST, LSST, Roman, DES, Euclid
 from lenstronomy.SimulationAPI.sim_api import SimAPI
 
 
 def get_roman_band_kwargs(band):
     roman_band = Roman.Roman(band=band.upper(), psf_type='PIXEL', survey_mode='wide_area')
-    return roman_band.kwargs_single_band()   
+    return roman_band.kwargs_single_band()
 
 
 def get_image(lens, telescope, side):
@@ -45,9 +46,10 @@ def set_up_magnitudes(lens):
     # i-band
     kwargs_lens_light_mag_i = [kwargs_lens_light_dict['F184']]
     kwargs_source_mag_i = [kwargs_source_dict['F184']]
-    
 
-    return (kwargs_lens_light_mag_g, kwargs_lens_light_mag_r, kwargs_lens_light_mag_i), (kwargs_source_mag_g, kwargs_source_mag_r, kwargs_source_mag_i)
+    return (kwargs_lens_light_mag_g, kwargs_lens_light_mag_r, kwargs_lens_light_mag_i), (
+    kwargs_source_mag_g, kwargs_source_mag_r, kwargs_source_mag_i)
+
 
 # TODO this might be useful if magnitudes aren't defined in each band, to get a rough rgb image anyways
 # def set_up_magnitudes(lens):

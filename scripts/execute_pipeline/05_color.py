@@ -1,12 +1,13 @@
 import datetime
-import hydra
 import multiprocessing
-import numpy as np
 import os
 import sys
 import time
 from glob import glob
 from multiprocessing import Pool
+
+import hydra
+import numpy as np
 from tqdm import tqdm
 
 

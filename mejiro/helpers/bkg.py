@@ -1,12 +1,13 @@
-import lenstronomy.Util.data_util as data_util
 import os
-import numpy as np
 import random
+
+import lenstronomy.Util.data_util as data_util
+import numpy as np
 from jwst_backgrounds import jbt
 from scipy.stats import truncnorm
 
-from mejiro.helpers.roman_params import RomanParameters
 from mejiro.helpers import lenstronomy_sim
+from mejiro.helpers.roman_params import RomanParameters
 from mejiro.utils import util
 
 
@@ -45,11 +46,13 @@ def get_high_galactic_lat_bkg(shape, bands, seed=None):
 
         # construct an array for the baseline (uniform) sky background
         baseline = np.ones(shape) * min_count_rate * multiplier
-    
+
         # calculate variance in this baseline
         kwargs_band = lenstronomy_sim.get_roman_band_kwargs(band)
-        sigma_bkg = data_util.bkg_noise(readout_noise=0, 
-                                        exposure_time=kwargs_band['exposure_time'], sky_brightness=kwargs_band['sky_brightness'], pixel_scale=kwargs_band['pixel_scale'], num_exposures=1)
+        sigma_bkg = data_util.bkg_noise(readout_noise=0,
+                                        exposure_time=kwargs_band['exposure_time'],
+                                        sky_brightness=kwargs_band['sky_brightness'],
+                                        pixel_scale=kwargs_band['pixel_scale'], num_exposures=1)
         variance += (random_array * sigma_bkg)
 
         # add baseline and variance

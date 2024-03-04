@@ -1,11 +1,11 @@
 import datetime
-import numpy as np
 import os
 import pickle as _pickle
 import shutil
 from collections import ChainMap
 from glob import glob
 
+import numpy as np
 from omegaconf import OmegaConf
 
 
@@ -26,11 +26,11 @@ def replace_negatives_with_zeros(array):
 def resize_with_pixels_centered(array, oversample_factor):
     if oversample_factor % 2 == 0:
         raise Exception('Oversampling factor must be odd')
-    
+
     x, y = array.shape
     if x != y:
         raise Exception('Array must be square')
-    
+
     flattened_array = array.flatten()
     oversample_grid = np.zeros((x * oversample_factor, x * oversample_factor))
 
@@ -49,7 +49,7 @@ def resize_with_pixels_centered(array, oversample_factor):
 def center_crop_image(array, shape):
     if array.shape == shape:
         return array
-    
+
     y_out, x_out = shape
     tuple = array.shape
     y, x = tuple[0], tuple[1]

@@ -22,11 +22,13 @@ def test_get_image():
         arrays.append(array)
 
     # one band, one array (single band happy path)
-    gs_images, execution_time = gs.get_images(sample_lens, arrays[0], bands[0], input_size=num_pix, output_size=final_pixel_side, grid_oversample=grid_oversample)
+    gs_images, execution_time = gs.get_images(sample_lens, arrays[0], bands[0], input_size=num_pix,
+                                              output_size=final_pixel_side, grid_oversample=grid_oversample)
     # TODO some kind of check
 
     # 3 bands, 3 arrays (color happy path)
-    gs_images, execution_time = gs.get_images(sample_lens, arrays, bands, input_size=num_pix, output_size=final_pixel_side, grid_oversample=grid_oversample)
+    gs_images, execution_time = gs.get_images(sample_lens, arrays, bands, input_size=num_pix,
+                                              output_size=final_pixel_side, grid_oversample=grid_oversample)
     # TODO some kind of check
 
     # TODO one band, multiple arrays

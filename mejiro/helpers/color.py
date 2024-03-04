@@ -1,6 +1,7 @@
+from copy import deepcopy
+
 import numpy as np
 from astropy.visualization import make_lupton_rgb
-from copy import deepcopy
 
 from mejiro.plots import plot_util
 

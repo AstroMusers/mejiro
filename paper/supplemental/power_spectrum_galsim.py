@@ -1,15 +1,15 @@
-import galsim
-import hydra
-import numpy as np
 import os
 import sys
 from copy import deepcopy
+
+import galsim
+import hydra
+import numpy as np
 from pyHalo.preset_models import CDM
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
 def main(config):
-
     # enable use of local packages
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
@@ -100,7 +100,8 @@ def main(config):
     titles = ['substructure_no_cut', 'substructure_cut_7', 'substructure_cut_8']
 
     for lens, model, title in zip(lenses, models, titles):
-        gs_images, _ = gs.get_images(lens, model, band, input_size=num_pix, output_size=num_pix, grid_oversample=grid_oversample)
+        gs_images, _ = gs.get_images(lens, model, band, input_size=num_pix, output_size=num_pix,
+                                     grid_oversample=grid_oversample)
         np.save(os.path.join(save_dir, f'{title}.npy'), gs_images[0])
 
 
@@ -120,7 +121,8 @@ def generate_flat_image(save_path):
     bkgs = gs.get_sky_bkgs(wcs, band, detector, exposure_time, num_pix=num_pix)
 
     # draw interpolated image at the final pixel scale
-    im = galsim.ImageF(num_pix, num_pix, scale=0.11)  # NB setting dimensions to "input_size" because we'll crop down to "output_size" at the very end
+    im = galsim.ImageF(num_pix, num_pix,
+                       scale=0.11)  # NB setting dimensions to "input_size" because we'll crop down to "output_size" at the very end
     im.setOrigin(0, 0)
 
     # add sky background to convolved image

@@ -1,14 +1,14 @@
-import hydra
-import numpy as np
 import os
 import sys
 from copy import deepcopy
+
+import hydra
+import numpy as np
 from pyHalo.preset_models import CDM
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
 def main(config):
-
     # enable use of local packages
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
@@ -83,7 +83,8 @@ def main(config):
     titles = ['substructure_no_cut', 'substructure_cut_7', 'substructure_cut_8']
 
     for lens, model, title in zip(lenses, models, titles):
-        gs_images, _ = gs.get_images(lens, model, band, input_size=num_pix, output_size=num_pix, grid_oversample=grid_oversample)
+        gs_images, _ = gs.get_images(lens, model, band, input_size=num_pix, output_size=num_pix,
+                                     grid_oversample=grid_oversample)
         np.save(os.path.join(save_dir, f'{title}.npy'), gs_images[0])
 
 

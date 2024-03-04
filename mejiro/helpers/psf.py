@@ -1,8 +1,9 @@
-import astropy.io.fits as pyfits
 import os
 import random
-import galsim
 from glob import glob
+
+import astropy.io.fits as pyfits
+import galsim
 from galsim import roman
 from tqdm import tqdm
 from webbpsf.roman import WFI
@@ -170,4 +171,3 @@ def update_pandeia_psfs(detector=None, detector_position=None, suppress_output=F
                      outfile=os.path.join(get_pandeia_psf_dir(), f'{prefix}{wl[:-3]}.fits'))
 
     return detector, detector_position
-

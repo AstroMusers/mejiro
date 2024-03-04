@@ -1,7 +1,8 @@
-import matplotlib.pyplot as plt
-import numpy as np
 import os
 from glob import glob
+
+import matplotlib.pyplot as plt
+import numpy as np
 from lenstronomy.Data.coord_transforms import Coordinates
 from lenstronomy.Data.pixel_grid import PixelGrid
 from lenstronomy.Util import util as lenstronomy_util

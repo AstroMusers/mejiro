@@ -1,16 +1,17 @@
-import matplotlib
-import matplotlib.colors as colors
-import matplotlib.pyplot as plt
-import numpy as np
 import os
 import sys
 from copy import deepcopy
 from glob import glob
+from pprint import pprint
+
+import matplotlib
+import matplotlib.colors as colors
+import matplotlib.pyplot as plt
+import numpy as np
 from hydra import initialize, compose
 from matplotlib import rc
 from pandeia.engine.calc_utils import build_default_calc, build_default_source
 from pandeia.engine.perform_calculation import perform_calculation
-from pprint import pprint
 from tqdm import tqdm
 
 # set paths to various directories based on the machine this code is being executed on

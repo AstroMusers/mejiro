@@ -1,7 +1,8 @@
 import datetime
-import numpy as np
 import os
 import time
+
+import numpy as np
 from lenstronomy.SimulationAPI.ObservationConfig.Roman import Roman
 from lenstronomy.Util import data_util
 from pandeia.engine.calc_utils import build_default_calc, build_default_source
@@ -12,7 +13,8 @@ from mejiro.helpers import bkg
 from mejiro.helpers.roman_params import RomanParameters
 
 
-def build_pandeia_calc(array, lens, background=None, band='F106', max_scene_size=5, noise=True, num_samples=None, oversample_factor=None, canned_bkg=False, suppress_output=False):
+def build_pandeia_calc(array, lens, background=None, band='F106', max_scene_size=5, noise=True, num_samples=None,
+                       oversample_factor=None, canned_bkg=False, suppress_output=False):
     calc = build_default_calc('roman', 'wfi', 'imaging')
 
     # set scene size settings
@@ -37,7 +39,7 @@ def build_pandeia_calc(array, lens, background=None, band='F106', max_scene_size
 
     # convert array from amp to counts/sec
     cps_array = _get_cps_array(lens, array, num_samples, band, background)
-    
+
     # add sky background in cps
     # if background is not None:
     #     cps_array += background

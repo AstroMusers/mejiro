@@ -1,6 +1,7 @@
-import hydra
 import os
 import sys
+
+import hydra
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')

@@ -28,4 +28,3 @@ def test_get_array():
     array = sample_lens.get_array(num_pix, side, band, kwargs_psf)
 
     assert array.shape == (num_pix, num_pix)
-    

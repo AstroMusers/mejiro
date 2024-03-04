@@ -1,10 +1,11 @@
-import hydra
 import multiprocessing
-import numpy as np
 import os
 import sys
 import time
 from multiprocessing import Pool
+
+import hydra
+import numpy as np
 from tqdm import tqdm
 
 
@@ -44,7 +45,7 @@ def main(config):
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - 4
     if count < process_count:
-        process_count = count   
+        process_count = count
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     # batch
@@ -82,7 +83,8 @@ def add(tuple):
     # r_tidal = 
 
     # randomly generate CDM subhalos
-    halo_tuple, total_subhalo_mass = pyhalo.generate_CDM_halos(z_lens, z_source, cone_opening_angle_arcsec=subhalo_cone, LOS_normalization=los_normalization)  # TODO add log_m_host and r_tidal arguments
+    halo_tuple, total_subhalo_mass = pyhalo.generate_CDM_halos(z_lens, z_source, cone_opening_angle_arcsec=subhalo_cone,
+                                                               LOS_normalization=los_normalization)  # TODO add log_m_host and r_tidal arguments
 
     # pickle the subhalos
     util.pickle(os.path.join(output_dir, 'subhalos', f'subhalo_tuple_{lens.uid}'), halo_tuple)

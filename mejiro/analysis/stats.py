@@ -7,8 +7,8 @@ def chi_square(observed, expected):
 
 
 def chi2_distance(A, B):
-    chi = 0.5 * np.sum([((a - b) ** 2) / (a + b) 
-                      for (a, b) in zip(A, B)])
+    chi = 0.5 * np.sum([((a - b) ** 2) / (a + b)
+                        for (a, b) in zip(A, B)])
     return chi
 
 
