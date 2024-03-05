@@ -47,7 +47,6 @@ def twod_ft(array, box_size, threads=1):
 
     return Pk2D.k, Pk2D.Pk, Pk2D.Nmodes
 
-
 # TODO delete, once my method finalized
 # https://bertvandenbroucke.netlify.app/2019/05/24/computing-a-power-spectrum-in-python/
 # def power_spectrum(array, k_min=1, k_max=22):

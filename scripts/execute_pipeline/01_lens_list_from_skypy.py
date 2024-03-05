@@ -1,8 +1,9 @@
-import hydra
 import os
 import sys
 import time
 from glob import glob
+
+import hydra
 from tqdm import tqdm
 
 

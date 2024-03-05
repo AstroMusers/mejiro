@@ -1,13 +1,14 @@
 import datetime
-import galsim
-import hydra
 import multiprocessing
-import numpy as np
 import os
 import sys
 import time
-from multiprocessing import Pool
 from glob import glob
+from multiprocessing import Pool
+
+import galsim
+import hydra
+import numpy as np
 from tqdm import tqdm
 
 
@@ -46,7 +47,7 @@ def main(config):
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - 4
     if count < process_count:
-        process_count = count       
+        process_count = count
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     # tuple the parameters
@@ -106,16 +107,17 @@ def get_image(input):
 
     # TODO fix this loop once gs.py is finalized - it should only be a few lines because can save image for each band with list comprehension
     for _, band in enumerate(bands):
-        start = time.time()      
+        start = time.time()
 
         # load the appropriate array
         array = np.load(f'{input_dir}/array_{lens.uid}_{band}.npy')
 
         # get flux
-        total_flux_cps = lens.get_total_flux_cps(band)  
-        
+        total_flux_cps = lens.get_total_flux_cps(band)
+
         # get interpolated image
-        interp = galsim.InterpolatedImage(galsim.Image(array, xmin=0, ymin=0), scale=0.11 / grid_oversample, flux=total_flux_cps * exposure_time)
+        interp = galsim.InterpolatedImage(galsim.Image(array, xmin=0, ymin=0), scale=0.11 / grid_oversample,
+                                          flux=total_flux_cps * exposure_time)
 
         # generate PSF and convolve
         convolved = gs.convolve(interp, band, detector, detector_pos, num_pix, pupil_bin=1)

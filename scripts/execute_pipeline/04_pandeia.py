@@ -1,10 +1,11 @@
-import hydra
 import multiprocessing
-import numpy as np
 import os
 import sys
 import time
 from multiprocessing import Pool
+
+import hydra
+import numpy as np
 from tqdm import tqdm
 
 
@@ -39,7 +40,7 @@ def main(config):
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - 4
     if limit < process_count:
-        process_count = limit       
+        process_count = limit
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     # tuple the parameters
@@ -91,8 +92,8 @@ def get_image(input):
 
         # build Pandeia input
         calc, _ = pandeia_input.build_pandeia_calc(array, lens, background=reshaped_bkgs[i], noise=True, band=band,
-                                                max_scene_size=max_scene_size,
-                                                num_samples=num_samples, suppress_output=True)
+                                                   max_scene_size=max_scene_size,
+                                                   num_samples=num_samples, suppress_output=True)
 
         # generate Pandeia image and save
         image, execution_time = pandeia_input.get_pandeia_image(calc, suppress_output=True)

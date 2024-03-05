@@ -1,11 +1,12 @@
-import hydra
-import numpy as np
 import multiprocessing
 import os
 import sys
 import time
 from glob import glob
 from multiprocessing import Pool
+
+import hydra
+import numpy as np
 from tqdm import tqdm
 
 
@@ -38,7 +39,7 @@ def main(config):
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - 4
     if count < process_count:
-        process_count = count  
+        process_count = count
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     # get bands
@@ -81,7 +82,7 @@ def get_model(input):
     for band in bands:
         model = lens.get_array(num_pix=num_pix * grid_oversample, side=side, band=band)
         np.save(os.path.join(output_dir, f'array_{lens.uid}_{band}'), model)
-    
+
     # pickle lens to save attributes updated by get_array()
     pickle_target_lens = os.path.join(output_dir, f'lens_{lens.uid}')
     util.pickle(pickle_target_lens, lens)

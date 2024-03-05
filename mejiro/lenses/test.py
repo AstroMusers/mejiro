@@ -70,7 +70,7 @@ class SampleStrongLens(StrongLens):
         }
 
         # set kwargs_params, just for the StrongLens constructor
-        kwargs_params = {'kwargs_lens': self.kwargs_lens, 
+        kwargs_params = {'kwargs_lens': self.kwargs_lens,
                          'kwargs_source': self.kwargs_source,
                          'kwargs_lens_light': self.kwargs_lens_light}
 

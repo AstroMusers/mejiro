@@ -1,16 +1,18 @@
 import datetime
-import galsim
 import random
 import time
+
+import galsim
 from astropy.coordinates import SkyCoord
-from galsim import roman
 from galsim import InterpolatedImage, Image
+from galsim import roman
 
 from mejiro.helpers import psf
 from mejiro.utils import util
 
 
-def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, psf_oversample, detector=1, detector_pos=None, exposure_time=146, ra=30, dec=-30, seed=42, validate=True):
+def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, psf_oversample, detector=1,
+               detector_pos=None, exposure_time=146, ra=30, dec=-30, seed=42, validate=True):
     start = time.time()
 
     # check that the inputs are reasonable
@@ -32,7 +34,7 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
             assert len(bands) == 3, 'For a color image, provide three bands'
             assert len(arrays) == 3, 'For a color image, provide three arrays'
 
-         # make sure the arrays are square
+        # make sure the arrays are square
         for array in arrays:
             assert array.shape[0] == array.shape[1], 'Input image must be square'
 
@@ -50,10 +52,11 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
     results = []
     for _, (band, array) in enumerate(zip(bands, arrays)):
         # get flux
-        total_flux_cps = lens.get_total_flux_cps(band)  
-        
+        total_flux_cps = lens.get_total_flux_cps(band)
+
         # get interpolated image
-        interp = InterpolatedImage(Image(array, xmin=0, ymin=0), scale=0.11 / grid_oversample, flux=total_flux_cps * exposure_time)
+        interp = InterpolatedImage(Image(array, xmin=0, ymin=0), scale=0.11 / grid_oversample,
+                                   flux=total_flux_cps * exposure_time)
 
         # generate PSF
         # galsim_psf = get_galsim_psf(band, detector, detector_pos)
@@ -87,7 +90,7 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
 
     stop = time.time()
     execution_time = str(datetime.timedelta(seconds=round(stop - start)))
-    
+
     return results, execution_time
 
 
@@ -153,7 +156,8 @@ def convolve(interp, galsim_psf, input_size, pupil_bin=1):
     convolved = galsim.Convolve(interp, galsim_psf)
 
     # draw interpolated image at the final pixel scale
-    im = galsim.ImageF(input_size, input_size, scale=0.11)  # NB setting dimensions to "input_size" because we'll crop down to "output_size" at the very end
+    im = galsim.ImageF(input_size, input_size,
+                       scale=0.11)  # NB setting dimensions to "input_size" because we'll crop down to "output_size" at the very end
     im.setOrigin(0, 0)
 
     return convolved.drawImage(im)
