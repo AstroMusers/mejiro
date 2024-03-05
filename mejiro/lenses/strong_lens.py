@@ -25,17 +25,6 @@ class StrongLens:
         # set unique identifier
         self.uid = uid
 
-        # calculate comoving distance to lens in Mpc
-        z_l = self.z_lens * cu.redshift
-        self.d_l = z_l.to(u.Mpc, cu.redshift_distance(self.cosmo, kind='comoving'))
-
-        # calculate comoving distance to source in Mpc
-        z_s = self.z_source * cu.redshift
-        self.d_s = z_s.to(u.Mpc, cu.redshift_distance(self.cosmo, kind='comoving'))
-
-        # calculate comoving distance between source and lens in Mpc
-        self.d_ls = self.d_s - self.d_l
-
         # get redshifts
         self.z_lens = kwargs_model['lens_redshift_list'][0]
         self.z_source = kwargs_model['z_source']
@@ -58,6 +47,17 @@ class StrongLens:
 
         # set place to store amp versions of kwargs_light dicts
         self.kwargs_lens_light_amp_dict, self.kwargs_source_amp_dict = {}, {}
+
+        # calculate comoving distance to lens in Mpc
+        z_l = self.z_lens * cu.redshift
+        self.d_l = z_l.to(u.Mpc, cu.redshift_distance(self.cosmo, kind='comoving'))
+
+        # calculate comoving distance to source in Mpc
+        z_s = self.z_source * cu.redshift
+        self.d_s = z_s.to(u.Mpc, cu.redshift_distance(self.cosmo, kind='comoving'))
+
+        # calculate comoving distance between source and lens in Mpc
+        self.d_ls = self.d_s - self.d_l
 
     def _build_kwargs_light_dict(self, mag_dict, kwargs_light):
         kwargs_light_dict = {}
