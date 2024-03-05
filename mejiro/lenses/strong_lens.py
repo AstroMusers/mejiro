@@ -1,4 +1,7 @@
 import astropy.cosmology as astropy_cosmo
+import astropy.units as u
+import astropy.cosmology.units as cu
+from astropy import constants as const
 from copy import deepcopy
 from lenstronomy.Cosmo.lens_cosmo import LensCosmo
 from lenstronomy.Data.coord_transforms import Coordinates
@@ -13,15 +16,23 @@ from lenstronomy.Util import data_util, util
 
 
 class StrongLens:
-    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, main_halo_mass=None, uid=None):
+    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, uid=None):
         # set z_source convention default
         self.z_source_convention = 5
 
-        # set main halo mass
-        self.main_halo_mass = main_halo_mass
-
         # set unique identifier
         self.uid = uid
+
+        # calculate comoving distance to lens in Mpc
+        z_l = self.z_lens * cu.redshift
+        self.d_l = z_l.to(u.Mpc, cu.redshift_distance(self.cosmo, kind='comoving'))
+
+        # calculate comoving distance to source in Mpc
+        z_s = self.z_source * cu.redshift
+        self.d_s = z_s.to(u.Mpc, cu.redshift_distance(self.cosmo, kind='comoving'))
+
+        # calculate comoving distance between source and lens in Mpc
+        self.d_ls = self.d_s - self.d_l
 
         # get redshifts
         self.z_lens = kwargs_model['lens_redshift_list'][0]
@@ -93,11 +104,10 @@ class StrongLens:
 
 
     def get_main_halo_mass(self):
-        # instantiate LensCosmo object which handles unit conversions given a lens plane
-        lens_cosmo = LensCosmo(z_lens=self.z_lens, z_source=self.z_source, cosmo=self.cosmo)
-
-        # return the main halo mass in units of solar masses
-        return lens_cosmo.mass_in_theta_E(theta_E=self.kwargs_lens[0]['theta_E'])
+        theta_E = self.kwargs_lens[0]['theta_E']
+        # G: m3 / (kg s2)
+        # c: m / (s)
+        return ((self.d_l * self.d_s) / (self.d_ls)) * ((const.c.to(u.Mpc / u.Ps) ** 2) / (4 * const.G.to((u.Mpc ** 3) / (u.M_sun * (u.Ps ** 2))))) * (theta_E ** 2) 
 
 
     def add_subhalos(self, halo_lens_model_list, halo_redshift_list, kwargs_halos):
