@@ -6,13 +6,14 @@ dependencies:
   - python==3.10
   - astropy
   - astroquery
+  - galsim
   - jupyter
   - lenstronomy
   - pip
   - scikit-image
   - tqdm
   - pip:
-      - galsim
+      - speclite
       - pyhalo
       - hydra-core
       - colossus
