@@ -11,13 +11,17 @@ from webbpsf.roman import WFI
 from mejiro.helpers import gs
 
 
-def get_instrument(band):
-    wfi = WFI()
-    wfi.filter = band.upper()
-    return wfi
-
-
 def get_random_detector(suppress_output=False):
+    """
+    Get a random detector from the list of detectors.
+
+    Parameters:
+    - suppress_output (bool): If True, the detector name will not be printed. Default is False.
+
+    Returns:
+    - detector (str): The name of the random detector.
+
+    """
     detector = random.choice(WFI().detector_list)
     if not suppress_output:
         print(f'Detector: {detector}')
@@ -25,9 +29,21 @@ def get_random_detector(suppress_output=False):
 
 
 def get_random_detector_pos(input_size, suppress_output=False):
-    # Roman WFI detectors are 4096x4096 pixels, but the outermost four rows and columns are reference pixels. We're
-    # adjusting inwards by the input_size because we want to make sure that the entire image fits on the detector,
-    # even before final cropping to remove any edge effects
+    """
+    Generate a random detector position within the valid range.
+
+    Parameters
+    ----------
+    input_size : int
+        The size of the input image.
+    suppress_output : bool, optional
+        Whether to suppress the output of the detector position. Default is False.
+
+    Returns
+    -------
+    galsim.PositionD
+        The random detector position as a `galsim.PositionD` object.
+    """
     min_pixel = 4 + input_size
     max_pixel = 4092 - input_size
 
@@ -39,13 +55,34 @@ def get_random_detector_pos(input_size, suppress_output=False):
 
 
 def get_webbpsf_psf(band, detector, detector_position, oversample):
-    # detector might be int or string
+    """
+    Generate a Point Spread Function (PSF) using WebbPSF and return it as an InterpolatedImage.
+
+    Parameters
+    ----------
+    band : str
+        The filter band.
+    detector : int or str
+        The detector number or name. If an int is provided, it will be converted to the corresponding detector name.
+    detector_position : tuple
+        The (x, y) position on the detector to generate the PSF at.
+    oversample : int
+        The oversampling factor for the PSF.
+
+    Returns
+    -------
+    galsim.InterpolatedImage
+        The PSF as a `galsim.InterpolatedImage` object.
+
+    """
+    # detector might be int or string, and WebbPSF expects 'SCA01', 'SCA02', etc.
     if type(detector) == int:
         detector = f'SCA{str(detector).zfill(2)}'
 
     # set PSF parameters
-    wfi = get_instrument(band)
-    wfi.detector = detector  # WebbPSF expects 'SCA01', 'SCA02', etc.
+    wfi = WFI()
+    wfi.filter = band.upper()
+    wfi.detector = detector
     wfi.detector_position = detector_position
 
     # generate PSF in WebbPSF
@@ -58,6 +95,26 @@ def get_webbpsf_psf(band, detector, detector_position, oversample):
 
 
 def get_galsim_psf(band, detector, detector_position, pupil_bin=1):
+    """
+    Get the GalSim Point Spread Function (PSF) for a given band, detector, and detector position.
+
+    Parameters
+    ----------
+    band : str
+        The filter band.
+    detector : str
+        The detector for which the PSF is obtained.
+    detector_position : tuple
+        The position on the detector in (x, y) coordinates.
+    pupil_bin : int, optional
+        The pupil binning factor. Default is 1.
+
+    Returns
+    -------
+    galsim.PSF
+        The GalSim Point Spread Function.
+
+    """
     return roman.getPSF(detector,
                         SCA_pos=galsim.PositionD(*detector_position),
                         bandpass=None,
@@ -74,7 +131,8 @@ def get_kwargs_psf(kernel, oversample):
 
 
 def get_psf_kernel(band, detector, detector_position, oversample=5, save=None):
-    wfi = get_instrument(band)
+    wfi = WFI()
+    wfi.filter = band.upper()
     wfi.detector = detector
     wfi.detector_position = detector_position
     psf = wfi.calc_psf(oversample=oversample)
@@ -84,7 +142,8 @@ def get_psf_kernel(band, detector, detector_position, oversample=5, save=None):
 
 
 def get_random_psf_kernel(band, oversample=5, save=None, suppress_output=False):
-    wfi = get_instrument(band)
+    wfi = WFI()
+    wfi.filter = band.upper()
     wfi.detector = get_random_detector(suppress_output)
     wfi.detector_position = get_random_detector_pos(100, suppress_output)  # TODO refactor so input_size is meaningful
     psf = wfi.calc_psf(oversample=oversample)
@@ -108,25 +167,9 @@ def load_default_psf(dir, band, oversample):
     return load_psf(filepath)
 
 
-def _get_pandeia_psf_options():
-    return {'source_offset_r': 0.,
-            'source_offset_theta': 0.,
-            'pupil_shift_x': 0.,
-            'pupil_shift_y': 0.,
-            'output_mode': 'oversampled',
-            'jitter': 'gaussian',
-            'jitter_sigma': 0.012}
-
-
 def get_pandeia_psf_dir():
     pandeia_dir = os.environ['pandeia_refdata']
     return os.path.join(pandeia_dir, 'roman', 'wfi', 'psfs')
-
-
-def _get_default_psf_dir():
-    psf_dir = get_pandeia_psf_dir()
-    parent_dir = os.path.dirname(psf_dir)
-    return os.path.join(parent_dir, 'default_psfs')
 
 
 def reset_pandeia_psfs(originals_dir=None, suppress_output=False):
@@ -171,3 +214,19 @@ def update_pandeia_psfs(detector=None, detector_position=None, suppress_output=F
                      outfile=os.path.join(get_pandeia_psf_dir(), f'{prefix}{wl[:-3]}.fits'))
 
     return detector, detector_position
+
+
+def _get_pandeia_psf_options():
+    return {'source_offset_r': 0.,
+            'source_offset_theta': 0.,
+            'pupil_shift_x': 0.,
+            'pupil_shift_y': 0.,
+            'output_mode': 'oversampled',
+            'jitter': 'gaussian',
+            'jitter_sigma': 0.012}
+
+
+def _get_default_psf_dir():
+    psf_dir = get_pandeia_psf_dir()
+    parent_dir = os.path.dirname(psf_dir)
+    return os.path.join(parent_dir, 'default_psfs')

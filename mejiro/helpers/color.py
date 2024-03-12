@@ -1,4 +1,3 @@
-from copy import deepcopy
 
 import numpy as np
 from astropy.visualization import make_lupton_rgb
@@ -35,10 +34,3 @@ def _rescale_rgb_float(image_b, image_g, image_r):
     image_r /= max
 
     return image_b, image_g, image_r
-
-
-def update_kwargs_magnitude(old_kwargs, new_magnitude):
-    new_kwargs = deepcopy(old_kwargs)
-    new_kwargs['magnitude'] = new_magnitude
-
-    return new_kwargs

@@ -1,3 +1,4 @@
+from copy import deepcopy
 import os
 from glob import glob
 
@@ -86,3 +87,10 @@ def get_sample(pickle_dir, color_dir, index):
     rgb_image = np.load(image_path)
 
     return lens, rgb_model, rgb_image
+
+
+def update_kwargs_magnitude(old_kwargs, new_magnitude):
+    new_kwargs = deepcopy(old_kwargs)
+    new_kwargs['magnitude'] = new_magnitude
+
+    return new_kwargs
