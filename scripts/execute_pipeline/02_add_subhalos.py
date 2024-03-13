@@ -8,6 +8,8 @@ import hydra
 import numpy as np
 from tqdm import tqdm
 
+from pyHalo.preset_models import CDM
+
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
 def main(config):
@@ -62,7 +64,6 @@ def main(config):
 
 
 def add(tuple):
-    from mejiro.helpers import pyhalo
     from mejiro.utils import util
 
     # unpack tuple
@@ -77,20 +78,20 @@ def add(tuple):
     z_source = round(lens.z_source, 2)
 
     # TODO calculate the main halo mass
-    log_m_host = np.log10(lens.main_halo_mass)
-
+    log_m_host = np.log10(lens.get_main_halo_mass())
     # TODO calculate r_tidal: the core radius of the host halo in units of the host halo scale radius. Subhalos are distributed in 3D with a cored NFW profile with this core radius; by default, it's 0.25
-    # r_tidal = 
+    r_tidal = 0.25
 
     # randomly generate CDM subhalos
-    halo_tuple, total_subhalo_mass = pyhalo.generate_CDM_halos(z_lens, z_source, cone_opening_angle_arcsec=subhalo_cone,
-                                                               LOS_normalization=los_normalization)  # TODO add log_m_host and r_tidal arguments
+    cdm_realization = CDM(z_lens, z_source, log_m_host=log_m_host, r_tidal=r_tidal,
+                          cone_opening_angle_arcsec=subhalo_cone,
+                          LOS_normalization=los_normalization)
 
-    # pickle the subhalos
-    util.pickle(os.path.join(output_dir, 'subhalos', f'subhalo_tuple_{lens.uid}'), halo_tuple)
+    # add subhalos
+    lens.add_subhalos(cdm_realization)
 
-    # add this subhalo population to the lens; note that this method should account for subtracting subhalo combined mass from the main halo mass
-    lens.add_subhalos(*halo_tuple)  # TODO update the main halo mass argument
+    # pickle the subhalo realization
+    util.pickle(os.path.join(output_dir, 'subhalos', f'subhalo_realization_{lens.uid}'), cdm_realization)
 
     # pickle the lens with subhalos
     pickle_target = os.path.join(output_dir, f'lens_with_subhalos_{lens.uid}')

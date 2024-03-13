@@ -1,8 +1,7 @@
-from copy import deepcopy
-
-import astropy.cosmology as astropy_cosmo
+import astropy.cosmology
 import astropy.units as u
 import astropy.cosmology.units as cu
+import numpy as np
 from astropy import constants as const
 from copy import deepcopy
 from lenstronomy.Cosmo.lens_cosmo import LensCosmo
@@ -15,6 +14,7 @@ from lenstronomy.LightModel.light_model import LightModel
 from lenstronomy.SimulationAPI.ObservationConfig.Roman import Roman
 from lenstronomy.SimulationAPI.sim_api import SimAPI
 from lenstronomy.Util import data_util, util
+from pyHalo.Cosmology.cosmology import Cosmology
 
 
 class StrongLens:
@@ -43,108 +43,66 @@ class StrongLens:
         self._unpack_kwargs_model(kwargs_model)
 
         # set kwargs_model TODO is this necessary?
-        self.update_model()
+        self._update_model()
 
         # set place to store amp versions of kwargs_light dicts
         self.kwargs_lens_light_amp_dict, self.kwargs_source_amp_dict = {}, {}
 
-        # calculate comoving distance to lens in Mpc
-        z_l = self.z_lens * cu.redshift
-        self.d_l = z_l.to(u.Mpc, cu.redshift_distance(self.cosmo, kind='comoving'))
-
-        # calculate comoving distance to source in Mpc
-        z_s = self.z_source * cu.redshift
-        self.d_s = z_s.to(u.Mpc, cu.redshift_distance(self.cosmo, kind='comoving'))
-
-        # calculate comoving distance between source and lens in Mpc
+        # calculate comoving distances (in Gpc)
+        # TODO may not need these
+        self.d_l = redshift_to_comoving_distance(self.z_lens, self.cosmo)
+        self.d_s = redshift_to_comoving_distance(self.z_source, self.cosmo)
         self.d_ls = self.d_s - self.d_l
 
-    def _build_kwargs_light_dict(self, mag_dict, kwargs_light):
-        kwargs_light_dict = {}
-        for band, mag in mag_dict.items():
-            kwargs_light_band = deepcopy(kwargs_light[0])
-            kwargs_light_band['magnitude'] = mag
-            kwargs_light_dict[band] = kwargs_light_band
-        return kwargs_light_dict
+        # additional fields to initialize
+        self.lens_model_class = None
+        self.kwargs_model = None
+        self.lenstronomy_roman_config = None
+        self.oversample_factor = None
+        self.side = None
+        self.num_pix = None
 
-    def _validate_mags(self, lens_mags, source_mags):
-        lens_bands = list(lens_mags.keys())
-        source_bands = list(source_mags.keys())
-        assert lens_bands == source_bands, 'Pair of lens and source magnitudes not available for all filters.'
-
-    def _unpack_kwargs_params(self, kwargs_params):
-        # set kwargs_lens
-        self.kwargs_lens = kwargs_params['kwargs_lens']
-
-        # set light dicts
-        kwargs_lens_light = kwargs_params['kwargs_lens_light']
-        kwargs_source = kwargs_params['kwargs_source']
-        self.kwargs_lens_light_dict = self._build_kwargs_light_dict(self.lens_mags, kwargs_lens_light)
-        self.kwargs_source_dict = self._build_kwargs_light_dict(self.source_mags, kwargs_source)
-
-    def _unpack_kwargs_model(self, kwargs_model):
-        # get model lists, which are required(TODO ?)
-        self.lens_model_list = kwargs_model['lens_model_list']
-        self.lens_light_model_list = kwargs_model['lens_light_model_list']
-        self.source_model_list = kwargs_model['source_light_model_list']
-
-        # set any optional key/value pairs
-        self.lens_redshift_list, self.source_redshift_list, self.z_source = None, None, None
-
-        if 'lens_redshift_list' in kwargs_model:
-            self.lens_redshift_list = kwargs_model['lens_redshift_list']
-        if 'source_redshift_list' in kwargs_model:
-            self.source_redshift_list = kwargs_model['source_redshift_list']
-        if 'cosmo' in kwargs_model:
-            self.cosmo = kwargs_model['cosmo']
-        else:
-            self.cosmo = astropy_cosmo.default_cosmology.get()
-        if 'z_source' in kwargs_model:
-            self.z_source = kwargs_model['z_source']
-        if 'z_source_convention' in kwargs_model:
-            self.z_source_convention = kwargs_model['z_source_convention']
+    def get_einstein_radius(self):
+        return self.kwargs_lens[0]['theta_E']
 
     def get_main_halo_mass(self):
-        # instantiate LensCosmo object which handles unit conversions given a lens plane
-        lens_cosmo = LensCosmo(z_lens=self.z_lens, z_source=self.z_source, cosmo=self.cosmo)
+        return einstein_radius_to_mass(self.get_einstein_radius(), self.z_lens, self.z_source, self.cosmo)
 
-        # return the main halo mass in units of solar masses
-        return lens_cosmo.mass_in_theta_E(theta_E=self.kwargs_lens[0]['theta_E'])
+    def add_subhalos(self, realization, suppress_output=True):
+        # set cosmology by initializing pyHalo's Cosmology object, otherwise Colossus throws an error down the line
+        Cosmology(astropy_instance=self.cosmo)
 
+        # generate lenstronomy objects
+        halo_lens_model_list, halo_redshift_list, kwargs_halos, _ = realization.lensing_quantities()
 
-    def add_subhalos(self, halo_lens_model_list, halo_redshift_list, kwargs_halos):
-        # add subhalos to list of lensing objects
+        # for some reason, halo_lens_model_list and kwargs_halos are lists, but halo_redshift_list is ndarray
+        halo_redshift_list = halo_redshift_list.tolist()
+
+        # add subhalos to lenstronomy objects that model the strong lens
         self.kwargs_lens += kwargs_halos
-
-        # set redshifts of subhalos
         self.lens_redshift_list += halo_redshift_list
-
-        # update other lenstronomy objects
         self.lens_model_list += halo_lens_model_list
         self.lens_model_class = LensModel(self.lens_model_list)
 
-        # TODO update the mass of the main halo to account for the added subhalos
-        main_halo_mass = self.get_main_halo_mass()
+        # save original Einstein radius, for comparison later
+        original_einstein_radius = self.get_einstein_radius()
 
-        # TODO calculate updated Einstein radius based on total subhalo mass
-        # updated_theta_E = 
+        # update the mass of the main halo to account for the added subhalos
+        main_halo_mass = self.get_main_halo_mass()
+        total_subhalo_mass = np.sum([halo.mass for halo in realization.halos])
+        adjusted_main_halo_mass = main_halo_mass - total_subhalo_mass
+        adjusted_einstein_radius = mass_to_einstein_radius(adjusted_main_halo_mass, self.z_lens, self.z_source, self.cosmo)
 
         # update lens_kwargs with the adjusted Einstein radius
-        # self.kwargs_lens[0]['theta_E'] = updated_theta_E
+        self.kwargs_lens[0]['theta_E'] = adjusted_einstein_radius
 
-    def update_model(self):
-        # update model
-        self.kwargs_model = {
-            'lens_model_list': self.lens_model_list,
-            'lens_redshift_list': self.lens_redshift_list,
-            'lens_light_model_list': self.lens_light_model_list,
-            'source_light_model_list': self.source_model_list,
-            'source_redshift_list': self.source_redshift_list,
-            'cosmo': self.cosmo,
-            'z_source': self.z_source,
-            'z_source_convention': self.z_source_convention,
-            # source redshift to which the reduced deflections are computed, is the maximal redshift of the ray-tracing
-        }
+        if not suppress_output:
+            print(f'Main halo mass (10^12 solar masses): {round(main_halo_mass * (10 ** -12), 3)}')
+            print(f'Einstein radius: {original_einstein_radius}')
+            print(f'Total subhalo mass: {total_subhalo_mass}')
+            print(f'Subhalos are {round(total_subhalo_mass / main_halo_mass, 3) * 100}% of total mass')
+            print(f'Adjusted main halo mass: {round(adjusted_main_halo_mass * (10 ** -12), 3)}')
+            print(f'Adjusted Einstein radius: {adjusted_einstein_radius}')
 
     def get_lens_flux_cps(self, band):
         return self.lens_light_model_class.total_flux([self.kwargs_lens_light_amp_dict[band]])[0]
@@ -155,13 +113,15 @@ class StrongLens:
     def get_total_flux_cps(self, band):
         return self.get_lens_flux_cps(band) + self.get_source_flux_cps(band)
 
-    def get_array(self, num_pix, side, band, kwargs_psf={'psf_type': 'NONE'}):
+    def get_array(self, num_pix, side, band, kwargs_psf=None):
         self.num_pix = num_pix
         self.side = side
         self.oversample_factor = round((0.11 * self.num_pix) / self.side)
         self._set_up_pixel_grid()
 
         # define PSF, e.g. kwargs_psf = {'psf_type': 'NONE'}, {'psf_type': 'GAUSSIAN', 'fwhm': psf_fwhm}
+        if kwargs_psf is None:
+            kwargs_psf = {'psf_type': 'NONE'}
         psf_class = PSF(**kwargs_psf)
 
         # define numerics
@@ -202,16 +162,50 @@ class StrongLens:
                                  kwargs_source=kwargs_source_amp,
                                  kwargs_lens_light=kwargs_lens_light_amp)
 
-    def _get_amp_light_kwargs(self, magnitude_zero_point, light_model_class, kwargs_light):
+    @staticmethod
+    def _get_amp_light_kwargs(magnitude_zero_point, light_model_class, kwargs_light):
         return data_util.magnitude2amplitude(light_model_class, [kwargs_light], magnitude_zero_point)
+
+    @staticmethod
+    def _build_kwargs_light_dict(mag_dict, kwargs_light):
+        kwargs_light_dict = {}
+        for band, mag in mag_dict.items():
+            kwargs_light_band = deepcopy(kwargs_light[0])
+            kwargs_light_band['magnitude'] = mag
+            kwargs_light_dict[band] = kwargs_light_band
+        return kwargs_light_dict
+
+    @staticmethod
+    def _validate_mags(lens_mags, source_mags):
+        lens_bands = list(lens_mags.keys())
+        source_bands = list(source_mags.keys())
+        assert lens_bands == source_bands, 'Pair of lens and source magnitudes not available for all filters.'
 
     def _set_classes(self):
         self.lens_model_class = LensModel(self.lens_model_list)
         self.lens_light_model_class = LightModel(self.lens_light_model_list)
         self.source_model_class = LightModel(self.source_model_list)
 
+    def _set_lens_cosmo(self):
+        self.lens_cosmo = get_lens_cosmo(self.z_lens, self.z_source, self.cosmo)
+
+    def _update_model(self):
+        # update model
+        self.kwargs_model = {
+            'lens_model_list': self.lens_model_list,
+            'lens_redshift_list': self.lens_redshift_list,
+            'lens_light_model_list': self.lens_light_model_list,
+            'source_light_model_list': self.source_model_list,
+            'source_redshift_list': self.source_redshift_list,
+            'cosmo': self.cosmo,
+            'z_source': self.z_source,
+            'z_source_convention': self.z_source_convention,
+            # source redshift to which the reduced deflections are computed, is the maximal redshift of the ray-tracing
+        }
+
     def get_source_pixel_coords(self, coords):
-        # the kwargs_source_dict has has key/value pairs band/kwargs_source. center_x and y are the same across all kwargs_source, so grab the first key/value pair
+        # the kwargs_source_dict has key/value pairs band/kwargs_source
+        # center_x and y are the same across all kwargs_source, so grab the first key/value pair
         first_key = next(iter(self.kwargs_source_dict))
 
         source_ra = self.kwargs_source_dict[first_key]['center_x']
@@ -230,12 +224,13 @@ class StrongLens:
     def _set_up_pixel_grid(self):
         self.delta_pix = self.side / self.num_pix  # size of pixel in angular coordinates
 
-        _, _, self.ra_at_xy_0, self.dec_at_xy_0, _, _, self.Mpix2coord, self.Mcoord2pix = util.make_grid_with_coordtransform(
-            numPix=self.num_pix,
-            deltapix=self.delta_pix,
-            subgrid_res=1,
-            left_lower=False,
-            inverse=False)
+        _, _, self.ra_at_xy_0, self.dec_at_xy_0, _, _, self.Mpix2coord, self.Mcoord2pix = (
+            util.make_grid_with_coordtransform(
+                numPix=self.num_pix,
+                deltapix=self.delta_pix,
+                subgrid_res=1,
+                left_lower=False,
+                inverse=False))
 
         kwargs_pixel = {'nx': self.num_pix, 'ny': self.num_pix,  # number of pixels per axis
                         'ra_at_xy_0': self.ra_at_xy_0,
@@ -245,5 +240,91 @@ class StrongLens:
         self.pixel_grid = PixelGrid(**kwargs_pixel)
         self.coords = Coordinates(self.Mpix2coord, self.ra_at_xy_0, self.dec_at_xy_0)
 
+    def _unpack_kwargs_params(self, kwargs_params):
+        # set kwargs_lens
+        self.kwargs_lens = kwargs_params['kwargs_lens']
+
+        # set light dicts
+        kwargs_lens_light = kwargs_params['kwargs_lens_light']
+        kwargs_source = kwargs_params['kwargs_source']
+        self.kwargs_lens_light_dict = self._build_kwargs_light_dict(self.lens_mags, kwargs_lens_light)
+        self.kwargs_source_dict = self._build_kwargs_light_dict(self.source_mags, kwargs_source)
+
+    def _unpack_kwargs_model(self, kwargs_model):
+        # get model lists, which are required(TODO ?)
+        self.lens_model_list = kwargs_model['lens_model_list']
+        self.lens_light_model_list = kwargs_model['lens_light_model_list']
+        self.source_model_list = kwargs_model['source_light_model_list']
+
+        # set any optional key/value pairs
+        self.lens_redshift_list, self.source_redshift_list, self.z_source = None, None, None
+
+        if 'lens_redshift_list' in kwargs_model:
+            self.lens_redshift_list = kwargs_model['lens_redshift_list']
+        if 'source_redshift_list' in kwargs_model:
+            self.source_redshift_list = kwargs_model['source_redshift_list']
+        if 'cosmo' in kwargs_model:
+            self.cosmo = kwargs_model['cosmo']
+        else:
+            self.cosmo = astropy.cosmology.default_cosmology.get()
+        if 'z_source' in kwargs_model:
+            self.z_source = kwargs_model['z_source']
+        if 'z_source_convention' in kwargs_model:
+            self.z_source_convention = kwargs_model['z_source_convention']
+
     def __str__(self):
         return f'StrongLens {self.uid}'
+
+
+def redshift_to_comoving_distance(redshift, cosmo):
+    # TODO docs should include that unit is Gpc
+    z = redshift * cu.redshift
+    return z.to(u.Gpc, cu.redshift_distance(cosmo, kind='comoving')).value
+
+
+def einstein_radius_to_mass(einstein_radius, z_lens, z_source, cosmo):
+    velocity_dispersion = einstein_radius_to_velocity_dispersion(einstein_radius, z_lens, z_source, cosmo)
+    return velocity_dispersion_to_mass(velocity_dispersion)
+
+
+def mass_to_einstein_radius(mass, z_lens, z_source, cosmo):
+    velocity_dispersion = mass_to_velocity_dispersion(mass)
+    return velocity_dispersion_to_einstein_radius(velocity_dispersion, z_lens, z_source, cosmo)
+
+
+def einstein_radius_to_velocity_dispersion(einstein_radius, z_lens, z_source, cosmo):
+    # TODO docs: for a SIS profile
+    lens_cosmo = get_lens_cosmo(z_lens, z_source, cosmo)
+    return lens_cosmo.sis_theta_E2sigma_v(einstein_radius)
+
+
+def velocity_dispersion_to_einstein_radius(velocity_dispersion, z_lens, z_source, cosmo):
+    # TODO docs: for a SIS profile
+    lens_cosmo = get_lens_cosmo(z_lens, z_source, cosmo)
+    return lens_cosmo.sis_sigma_v2theta_E(velocity_dispersion)
+
+
+def velocity_dispersion_to_mass(velocity_dispersion):
+    # TODO docs: cite paper and slsim
+    # https://ui.adsabs.harvard.edu/abs/2010ApJ...724..511A/abstract
+    return 1e11 * np.power(np.power(10, 2.32) / velocity_dispersion, 0.24)
+
+
+def mass_to_velocity_dispersion(mass):
+    # TODO docs: cite paper and slsim
+    # https://ui.adsabs.harvard.edu/abs/2010ApJ...724..511A/abstract
+    return np.power(10, 2.32) * np.power(mass / 1e11, 0.24)
+
+
+def get_lens_cosmo(z_lens, z_source, cosmo):
+    return LensCosmo(z_lens=z_lens, z_source=z_source, cosmo=cosmo)
+
+
+# def mass_to_einstein_radius(m, d_l, d_s, d_ls):
+#     # TODO docs: for a point mass
+#     return np.sqrt(m / np.power(10, 11.09)) * np.sqrt(d_ls / (d_l * d_s))
+#
+#
+# def einstein_radius_to_mass(einstein_radius, d_l, d_s, d_ls):
+#     # TODO docs: for a point mass
+#     return ((d_l * d_s) / d_ls) * np.power(einstein_radius, 2) * np.power(10, 11.09)
