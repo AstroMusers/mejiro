@@ -99,7 +99,7 @@ def get_image(input):
     detector_pos = psf.get_random_detector_pos(input_size=num_pix, suppress_output=suppress_output)
 
     results, execution_time = gs.get_images(lens, arrays, bands, input_size=num_pix, output_size=final_pixel_side, grid_oversample=grid_oversample, psf_oversample=grid_oversample, detector=detector,
-               detector_pos=detector_pos, exposure_time=146, ra=None, dec=None, seed=seed, validate=True, suppress_output=suppress_output)  # TODO set validate False once tested once
+               detector_pos=detector_pos, exposure_time=exposure_time, ra=None, dec=None, seed=seed, validate=False, suppress_output=suppress_output)
     
     for band, result in zip(bands, results):
         np.save(os.path.join(output_dir, f'galsim_{lens.uid}_{band}.npy'), result)

@@ -41,8 +41,8 @@ def get_random_detector_pos(input_size, suppress_output=False):
 
     Returns
     -------
-    galsim.PositionD
-        The random detector position as a `galsim.PositionD` object.
+    tuple
+        The random detector position as a tuple of two integers (x, y).
     """
     min_pixel = 4 + input_size
     max_pixel = 4092 - input_size
@@ -51,7 +51,7 @@ def get_random_detector_pos(input_size, suppress_output=False):
 
     if not suppress_output:
         print(f'Detector position: {x}, {y}')
-    return galsim.PositionD(x, y)
+    return x, y
 
 
 def get_webbpsf_psf(band, detector, detector_position, oversample):

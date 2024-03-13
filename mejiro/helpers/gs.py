@@ -40,11 +40,14 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
 
         # TODO they should also all have the same dimensions
 
+        # make sure there's an array for each band
+        assert len(bands) == len(arrays)
+
     # create galsim rng
     rng = galsim.UniformDeviate(seed)
 
     # check provided coordinates
-    assert (ra is None and dec is not None) or (ra is not None and dec is None), 'Provide both RA and DEC or neither'
+    assert (ra is None and dec is None) or (ra is not None and dec is not None), 'Provide both RA and DEC or neither'
     if ra is None and dec is None:
         # get random wcs
         wcs_dict = get_random_hlwas_wcs(suppress_output)  
