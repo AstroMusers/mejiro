@@ -86,70 +86,25 @@ def get_image(input):
     suppress_output = pipeline_params['suppress_output']
     final_pixel_side = pipeline_params['final_pixel_side']
     num_pix = pipeline_params['num_pix']
+    seed = pipeline_params['seed']
 
     # load lens
     lens = util.unpickle(os.path.join(input_dir, f'lens_{str(uid).zfill(8)}'))
 
-    # create galsim rng
-    rng = galsim.UniformDeviate()
+    # load the appropriate arrays
+    arrays = [np.load(f'{input_dir}/array_{lens.uid}_{band}.npy') for band in bands]
 
     # determine detector and position
     detector = gs.get_random_detector(suppress_output)
     detector_pos = psf.get_random_detector_pos(input_size=num_pix, suppress_output=suppress_output)
 
-    # get wcs
-    wcs_dict = gs.get_random_hlwas_wcs(suppress_output)
+    results, execution_time = gs.get_images(lens, arrays, bands, input_size=num_pix, output_size=final_pixel_side, grid_oversample=grid_oversample, psf_oversample=grid_oversample, detector=detector,
+               detector_pos=detector_pos, exposure_time=146, ra=None, dec=None, seed=seed, validate=True, suppress_output=suppress_output)  # TODO set validate False once tested once
+    
+    for band, result in zip(bands, results):
+        np.save(os.path.join(output_dir, f'galsim_{lens.uid}_{band}.npy'), result)
 
-    # calculate sky backgrounds for each band
-    bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix=num_pix)
-
-    execution_times = []
-
-    # TODO fix this loop once gs.py is finalized - it should only be a few lines because can save image for each band with list comprehension
-    for _, band in enumerate(bands):
-        start = time.time()
-
-        # load the appropriate array
-        array = np.load(f'{input_dir}/array_{lens.uid}_{band}.npy')
-
-        # get flux
-        total_flux_cps = lens.get_total_flux_cps(band)
-
-        # get interpolated image
-        interp = galsim.InterpolatedImage(galsim.Image(array, xmin=0, ymin=0), scale=0.11 / grid_oversample,
-                                          flux=total_flux_cps * exposure_time)
-
-        # generate PSF and convolve
-        convolved = gs.convolve(interp, band, detector, detector_pos, num_pix, pupil_bin=1)
-
-        # add sky background to convolved image
-        final_image = convolved + bkgs[band]
-
-        # integer number of photons are being detected, so quantize
-        final_image.quantize()
-
-        # add all detector effects
-        galsim.roman.allDetectorEffects(final_image, prev_exposures=(), rng=rng, exptime=exposure_time)
-
-        # make sure there are no negative values from Poisson noise generator
-        final_image.replaceNegative()
-
-        # get the array
-        final_array = final_image.array
-
-        # center crop to get rid of edge effects
-        final_array = util.center_crop_image(final_array, (final_pixel_side, final_pixel_side))
-
-        # divide through by exposure time to get in units of counts/sec/pixel
-        final_array /= exposure_time
-
-        np.save(os.path.join(output_dir, f'galsim_{lens.uid}_{band}.npy'), final_array)
-
-        stop = time.time()
-        execution_time = str(datetime.timedelta(seconds=round(stop - start)))
-        execution_times.append(execution_time)
-
-    return execution_times
+    return execution_time
 
 
 if __name__ == '__main__':

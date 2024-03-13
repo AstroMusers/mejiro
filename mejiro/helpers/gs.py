@@ -12,7 +12,7 @@ from mejiro.utils import util
 
 
 def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, psf_oversample, detector=1,
-               detector_pos=None, exposure_time=146, ra=30, dec=-30, seed=42, validate=True):
+               detector_pos=None, exposure_time=146, ra=30, dec=-30, seed=42, validate=True, suppress_output=True):
     start = time.time()
 
     # check that the inputs are reasonable
@@ -43,8 +43,14 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
     # create galsim rng
     rng = galsim.UniformDeviate(seed)
 
-    # get wcs
-    wcs_dict = get_wcs(ra, dec, date=None)
+    # check provided coordinates
+    assert (ra is None and dec is not None) or (ra is not None and dec is None), 'Provide both RA and DEC or neither'
+    if ra is None and dec is None:
+        # get random wcs
+        wcs_dict = get_random_hlwas_wcs(suppress_output)  
+    else:
+        # get wcs
+        wcs_dict = get_wcs(ra, dec, date=None)
 
     # calculate sky backgrounds for each band
     bkgs = get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix=input_size)

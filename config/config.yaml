@@ -4,8 +4,6 @@ defaults:
   - override hydra/hydra_logging: disabled
   - override hydra/job_logging: disabled
 
-seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
-
 pipeline:
   - num_pix: 96  # 45  # 97
   - side: 10.56  # 4.95  # 10.67
@@ -19,6 +17,7 @@ pipeline:
   - exposure_time: 146
   - suppress_output: True
   - runs: [ 0, 1, 2, 3 ]  #[0, 1, 2, 3]
+  - seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
 
 hydra:
   output_subdir: null

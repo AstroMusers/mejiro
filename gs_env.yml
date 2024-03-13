@@ -1,14 +1,13 @@
-name: mej-gs
+name: gs
 channels:
   - conda-forge
   - defaults
 dependencies:
-  - python==3.10
+  - python==3.11
   - astropy
   - astroquery
   - galsim
   - jupyter
-  - lenstronomy
   - pip
   - scikit-image
   - tqdm
@@ -19,3 +18,4 @@ dependencies:
       - colossus
       - mcfit
       - webbpsf
+      - lenstronomy==1.11.7
