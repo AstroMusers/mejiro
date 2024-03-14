@@ -1,5 +1,13 @@
 #!/bin/bash
 
+handle_error() {
+    echo "An error occurred on line $1"
+    exit 1
+}
+
+# escape if error encountered
+set -e
+
 # make sure appropriate conda env is active
 # conda activate mejiro
 

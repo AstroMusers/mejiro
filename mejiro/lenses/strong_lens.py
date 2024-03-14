@@ -18,11 +18,12 @@ from pyHalo.Cosmology.cosmology import Cosmology
 
 
 class StrongLens:
-    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, uid=None):
+    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, lens_mass, lens_vel_disp, uid=None):
         # set z_source convention default
         self.z_source_convention = 5
 
-        # set unique identifier
+        self.lens_mass = lens_mass
+        self.lens_vel_disp = lens_vel_disp
         self.uid = uid
 
         # get redshifts
