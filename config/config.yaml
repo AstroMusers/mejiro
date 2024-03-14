@@ -16,7 +16,7 @@ pipeline:
   - band: [ F106, F129, F184 ]
   - exposure_time: 146
   - suppress_output: True
-  - runs: 13
+  - runs: 2
   - seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
 
 hydra:
