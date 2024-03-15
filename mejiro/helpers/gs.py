@@ -11,8 +11,64 @@ from mejiro.helpers import psf
 from mejiro.utils import util
 
 
-def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, psf_oversample, detector=1,
+def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, psf_oversample, detector=None,
                detector_pos=None, exposure_time=146, ra=30, dec=-30, seed=42, validate=True, suppress_output=True):
+    """
+    Generate images with lensing effects.
+
+    Parameters
+    ----------
+    lens : Lens
+        The lens object used for lensing effects.
+    arrays : array-like
+        Input arrays representing the images.
+    bands : str or list of str
+        The bands for which the images are generated.
+    input_size : int
+        The size of the input images.
+    output_size : int
+        The size of the output images.
+    grid_oversample : float
+        The oversampling factor for the grid.
+    psf_oversample : float
+        The oversampling factor for the PSF.
+    detector : int, optional
+        The detector number, by default 1.
+    detector_pos : tuple or None, optional
+        The position of the detector, by default None.
+    exposure_time : int, optional
+        The exposure time in seconds, by default 146.
+    ra : float or None, optional
+        The right ascension, by default 30.
+    dec : float or None, optional
+        The declination, by default -30.
+    seed : int, optional
+        The seed for the random number generator, by default 42.
+    validate : bool, optional
+        Whether to validate the inputs, by default True.
+    suppress_output : bool, optional
+        Whether to suppress the output, by default True.
+
+    Returns
+    -------
+    results : list of ndarray
+        The generated images.
+    execution_time : str
+        The execution time of the function.
+
+    Raises
+    ------
+    AssertionError
+        If the inputs are not valid.
+
+    Notes
+    -----
+    This function generates images with lensing effects using the provided lens object and input arrays.
+    The lensing effects include interpolation, PSF generation, convolution, addition of sky background,
+    quantization, addition of detector effects, and cropping.
+
+    The function returns a list of generated images and the execution time of the function.
+    """
     start = time.time()
 
     # check that the inputs are reasonable
@@ -43,9 +99,6 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
         # make sure there's an array for each band
         assert len(bands) == len(arrays)
 
-    # create galsim rng
-    rng = galsim.UniformDeviate(seed)
-
     # check provided coordinates
     assert (ra is None and dec is None) or (ra is not None and dec is not None), 'Provide both RA and DEC or neither'
     if ra is None and dec is None:
@@ -54,6 +107,15 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
     else:
         # get wcs
         wcs_dict = get_wcs(ra, dec, date=None)
+
+    # check provided detector and detector position
+    if detector is None:
+        detector = psf.get_random_detector(suppress_output)
+    if detector_pos is None:
+        detector_pos = psf.get_random_detector_pos(input_size, suppress_output)
+
+    # create galsim rng
+    rng = galsim.UniformDeviate(seed)
 
     # calculate sky backgrounds for each band
     bkgs = get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix=input_size)

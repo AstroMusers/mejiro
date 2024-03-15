@@ -85,25 +85,26 @@ class StrongLens:
         self.lens_model_list += halo_lens_model_list
         self.lens_model_class = LensModel(self.lens_model_list)
 
-        # save original Einstein radius, for comparison later
-        original_einstein_radius = self.get_einstein_radius()
+        # TODO fix this
+        # # save original Einstein radius, for comparison later
+        # original_einstein_radius = self.get_einstein_radius()
 
-        # update the mass of the main halo to account for the added subhalos
-        main_halo_mass = self.get_main_halo_mass()
-        total_subhalo_mass = np.sum([halo.mass for halo in realization.halos])
-        adjusted_main_halo_mass = main_halo_mass - total_subhalo_mass
-        adjusted_einstein_radius = mass_to_einstein_radius(adjusted_main_halo_mass, self.z_lens, self.z_source, self.cosmo)
+        # # update the mass of the main halo to account for the added subhalos
+        # main_halo_mass = self.get_main_halo_mass()
+        # total_subhalo_mass = np.sum([halo.mass for halo in realization.halos])
+        # adjusted_main_halo_mass = main_halo_mass - total_subhalo_mass
+        # adjusted_einstein_radius = mass_to_einstein_radius(adjusted_main_halo_mass, self.z_lens, self.z_source, self.cosmo)
 
-        # update lens_kwargs with the adjusted Einstein radius
-        self.kwargs_lens[0]['theta_E'] = adjusted_einstein_radius
+        # # update lens_kwargs with the adjusted Einstein radius
+        # self.kwargs_lens[0]['theta_E'] = adjusted_einstein_radius
 
-        if not suppress_output:
-            print(f'Main halo mass (10^12 solar masses): {round(main_halo_mass * (10 ** -12), 3)}')
-            print(f'Einstein radius: {original_einstein_radius}')
-            print(f'Total subhalo mass: {total_subhalo_mass}')
-            print(f'Subhalos are {round(total_subhalo_mass / main_halo_mass, 3) * 100}% of total mass')
-            print(f'Adjusted main halo mass: {round(adjusted_main_halo_mass * (10 ** -12), 3)}')
-            print(f'Adjusted Einstein radius: {adjusted_einstein_radius}')
+        # if not suppress_output:
+        #     print(f'Main halo mass (10^9 solar masses): {round(main_halo_mass * 1e-9, 3)}')
+        #     print(f'Einstein radius: {round(original_einstein_radius, 3)}')
+        #     print(f'Total subhalo mass (10^9 solar masses): {round(total_subhalo_mass * 1e-9, 3)}')
+        #     print(f'Subhalos are {round(total_subhalo_mass / main_halo_mass, 3) * 100}% of total mass')
+        #     print(f'Adjusted main halo mass: {round(adjusted_main_halo_mass * 1e-9, 3)}')
+        #     print(f'Adjusted Einstein radius: {round(adjusted_einstein_radius, 3)}')
 
     def get_lens_flux_cps(self, band):
         return self.lens_light_model_class.total_flux([self.kwargs_lens_light_amp_dict[band]])[0]

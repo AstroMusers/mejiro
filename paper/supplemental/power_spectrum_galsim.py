@@ -30,6 +30,9 @@ def main(config):
     lens_dir = config.machine.dir_01
     uid_list = [str(i).zfill(8) for i in range(1000)]
 
+    lens_list = util.unpickle(pickled_lens_list)
+    count = len(lens_list)
+
     for uid in uid_list:
     # TODO get lens
     # for loop over subhalo populations, PSFs
@@ -37,11 +40,25 @@ def main(config):
     # 3. generate image
     # 4. generate power spectrum
     # 5. save 
+        
+    z_lens = round(lens.z_lens, 2)
+    z_source = round(lens.z_source, 2)  
 
     band = 'F184'
     grid_oversample = 3
     num_pix = 45
     side = 4.95
+
+    # randomly generate CDM subhalos
+    log_m_host = np.log10(lens.get_main_halo_mass())
+    # TODO calculate r_tidal: the core radius of the host halo in units of the host halo scale radius. Subhalos are distributed in 3D with a cored NFW profile with this core radius; by default, it's 0.25
+    r_tidal = 0.25
+    cdm_realization = CDM(z_lens, z_source, log_m_host=log_m_host, r_tidal=r_tidal,
+                          cone_opening_angle_arcsec=subhalo_cone,
+                          LOS_normalization=los_normalization)
+
+    # add subhalos
+    lens.add_subhalos(cdm_realization)
 
     lens = SampleStrongLens()
 
