@@ -18,7 +18,7 @@ from pyHalo.Cosmology.cosmology import Cosmology
 
 
 class StrongLens:
-    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, lens_mass, lens_vel_disp, uid=None):
+    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, lens_mass=None, lens_vel_disp=None, uid=None):
         # set z_source convention default
         self.z_source_convention = 5
 

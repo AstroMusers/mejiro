@@ -15,7 +15,7 @@ def main(config):
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
     from mejiro.analysis import ft
-    from mejiro.helpers import gs
+    from mejiro.helpers import gs, psf
     from mejiro.utils import util
 
     # set save path for everything
@@ -49,13 +49,12 @@ def main(config):
     side = 4.95
 
     # generate k_list
-    print('Generating k list...')
-    k_list = ft.get_k_list(0.11, side, num_pix)
-    np.save(os.path.join(save_dir, 'k_list.npy'), k_list)
-    print('Generated k list.')
+    print('Generating theta list...')
+    theta_list = ft.get_theta_list(0.11, side, num_pix)
+    np.save(os.path.join(save_dir, 'theta_list.npy'), theta_list)
+    print('Generated theta list.')
 
-    # generate subhalo power spectra
-    print('Generating subhalo power spectra...')
+    # generate power spectra for all lenses
     for lens in tqdm(lens_list):
         z_lens = round(lens.z_lens, 2)
         z_source = round(lens.z_source, 2)
@@ -112,14 +111,43 @@ def main(config):
         detector_pos = gs.get_random_detector_pos(num_pix, suppress_output=True)
 
         for lens, model, title in zip(lenses, models, titles):
+            # generate subhalo images and save power spectra
             gs_images, _ = gs.get_images(lens, model, band, input_size=num_pix, output_size=num_pix,
                                             grid_oversample=grid_oversample, psf_oversample=grid_oversample, 
                                             detector=detector, detector_pos=detector_pos, suppress_output=True)
-
-            # generate power spectrum
             power_spectrum = ft.power_spectrum(gs_images[0])
             np.save(os.path.join(save_dir, f'power_spectrum_{title}.npy'), power_spectrum)
-    print('Generated subhalo power spectra.')
+
+            # TODO generate convergence maps
+
+        # generate PSF power spectra
+        # no PSF
+        no_psf_lens = deepcopy(lens)
+        no_psf = no_psf_lens.get_array(num_pix=num_pix, side=side, band=band)
+
+        # Gaussian PSF
+        gaussian_psf_lens = deepcopy(lens)
+        # PSF FWHM for F184; see https://roman.gsfc.nasa.gov/science/WFI_technical.html
+        kwargs_psf_gaussian = {'psf_type': 'GAUSSIAN', 'fwhm': 0.151}  
+        gaussian_psf = gaussian_psf_lens.get_array(num_pix=num_pix, side=side, band=band, kwargs_psf=kwargs_psf_gaussian)
+
+        # WebbPSF
+        webbpsf_lens = deepcopy(lens)
+        webbpsf_kernel = psf.get_psf_kernel(band, detector=1, detector_position=(2048, 2048), oversample=grid_oversample)
+        kwargs_webbpsf = {
+            'psf_type': 'PIXEL',
+            'kernel_point_source': webbpsf_kernel,
+            'point_source_supersampling_factor': 5
+        }
+        webbpsf_psf = webbpsf_lens.get_array(band=band, num_pix=num_pix, kwargs_psf=kwargs_webbpsf, side=side)
+        
+        no_psf_power = ft.power_spectrum(no_psf)
+        gaussian_psf_power = ft.power_spectrum(gaussian_psf)
+        webbpsf_psf_power = ft.power_spectrum(webbpsf_psf)
+        
+        np.save(os.path.join(save_dir, f'power_spectrum_{title}_psf_none.npy'), no_psf_power)
+        np.save(os.path.join(save_dir, f'power_spectrum_{title}_psf_gaussian.npy'), gaussian_psf_power)
+        np.save(os.path.join(save_dir, f'power_spectrum_{title}_psf_webbpsf.npy'), webbpsf_psf_power)
 
 
 def generate_flat_image(save_path):

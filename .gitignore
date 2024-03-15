@@ -7,7 +7,7 @@
 /scripts/old
 
 # pytest
-.pytest_cache
+.pytest_cache/
 
 # Jupyter
 .ipynb_checkpoints
