@@ -6,6 +6,7 @@ import galsim
 import hydra
 import numpy as np
 from pyHalo.preset_models import CDM
+from tqdm import tqdm
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -13,113 +14,112 @@ def main(config):
     # enable use of local packages
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
-    from mejiro.lenses.test import SampleStrongLens
-    from mejiro.helpers import gs, pyhalo
+    from mejiro.analysis import ft
+    from mejiro.helpers import gs
     from mejiro.utils import util
 
     # set save path for everything
-    save_dir = os.path.join(config.machine.data_dir, 'output', 'power_spectrum_galsim')
+    save_dir = os.path.join(config.machine.data_dir, 'output', 'power_spectra')
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
 
     # generate flat image
-    flat_image_save_path = os.path.join('flat.npy')
+    print('Generating flat image...')
+    flat_image_save_path = os.path.join(save_dir, 'flat.npy')
     generate_flat_image(flat_image_save_path)
+    print('Generated flat image.')
 
-    # TODO collect num=1000 lenses
-    lens_dir = config.machine.dir_01
-    uid_list = [str(i).zfill(8) for i in range(1000)]
+    # collect lenses
+    num_lenses = 100
+    print(f'Collecting {num_lenses} lenses...')
+    pickled_lens_list = os.path.join(config.machine.dir_01, '01_skypy_output_lens_list')
+    lens_list = util.unpickle(pickled_lens_list)[:num_lenses]
+    print('Collected lenses.')
 
-    lens_list = util.unpickle(pickled_lens_list)
-    count = len(lens_list)
+    # set subhalo params
+    r_tidal = 0.25
+    sigma_sub = 0.055
+    subhalo_cone = 6
+    los_normalization = 0
 
-    for uid in uid_list:
-    # TODO get lens
-    # for loop over subhalo populations, PSFs
-    # 2. add subhalos
-    # 3. generate image
-    # 4. generate power spectrum
-    # 5. save 
-        
-    z_lens = round(lens.z_lens, 2)
-    z_source = round(lens.z_source, 2)  
-
+    # set imaging params
     band = 'F184'
     grid_oversample = 3
     num_pix = 45
     side = 4.95
 
-    # randomly generate CDM subhalos
-    log_m_host = np.log10(lens.get_main_halo_mass())
-    # TODO calculate r_tidal: the core radius of the host halo in units of the host halo scale radius. Subhalos are distributed in 3D with a cored NFW profile with this core radius; by default, it's 0.25
-    r_tidal = 0.25
-    cdm_realization = CDM(z_lens, z_source, log_m_host=log_m_host, r_tidal=r_tidal,
-                          cone_opening_angle_arcsec=subhalo_cone,
-                          LOS_normalization=los_normalization)
+    # generate k_list
+    print('Generating k list...')
+    k_list = ft.get_k_list(0.11, side, num_pix)
+    np.save(os.path.join(save_dir, 'k_list.npy'), k_list)
+    print('Generated k list.')
 
-    # add subhalos
-    lens.add_subhalos(cdm_realization)
+    # generate subhalo power spectra
+    print('Generating subhalo power spectra...')
+    for lens in tqdm(lens_list):
+        z_lens = round(lens.z_lens, 2)
+        z_source = round(lens.z_source, 2)
+        # m_host = lens.get_main_halo_mass()
+        m_host = lens.lens_mass
+        log_m_host = np.log10(m_host)
 
-    lens = SampleStrongLens()
+        cut_6 = CDM(z_lens,
+                    z_source,
+                    sigma_sub=sigma_sub,
+                    log_mlow=6.,
+                    log_mhigh=10.,
+                    log_m_host=log_m_host, 
+                    r_tidal=r_tidal,
+                    cone_opening_angle_arcsec=subhalo_cone,
+                    LOS_normalization=los_normalization)
 
-    # generate subhalos
-    no_cut = CDM(lens.z_lens,
-                 lens.z_source,
-                 cone_opening_angle_arcsec=6.,
-                 LOS_normalization=0.,
-                 log_mlow=6.,
-                 log_mhigh=10.)
+        cut_7 = CDM(z_lens,
+                    z_source,
+                    sigma_sub=sigma_sub,
+                    log_mlow=7.,
+                    log_mhigh=10.,
+                    log_m_host=log_m_host, 
+                    r_tidal=r_tidal,
+                    cone_opening_angle_arcsec=subhalo_cone,
+                    LOS_normalization=los_normalization)
 
-    cut_7 = CDM(lens.z_lens,
-                lens.z_source,
-                cone_opening_angle_arcsec=6.,
-                LOS_normalization=0.,
-                log_mlow=7.,
-                log_mhigh=10.)
+        cut_8 = CDM(z_lens,
+                    z_source,
+                    sigma_sub=sigma_sub,
+                    log_mlow=8.,
+                    log_mhigh=10.,
+                    log_m_host=log_m_host, 
+                    r_tidal=r_tidal,
+                    cone_opening_angle_arcsec=subhalo_cone,
+                    LOS_normalization=los_normalization)
+        
+        lens_cut_6 = deepcopy(lens)
+        lens_cut_7 = deepcopy(lens)
+        lens_cut_8 = deepcopy(lens)
 
-    cut_8 = CDM(lens.z_lens,
-                lens.z_source,
-                cone_opening_angle_arcsec=6.,
-                LOS_normalization=0.,
-                log_mlow=8.,
-                log_mhigh=10.)
+        lens_cut_6.add_subhalos(cut_6, suppress_output=True)
+        lens_cut_7.add_subhalos(cut_7, suppress_output=True)
+        lens_cut_8.add_subhalos(cut_8, suppress_output=True)
 
-    util.pickle(os.path.join(save_dir, 'no_cut'), no_cut)
-    util.pickle(os.path.join(save_dir, 'cut_7'), cut_7)
-    util.pickle(os.path.join(save_dir, 'cut_8'), cut_8)
+        lenses = [lens, lens_cut_6, lens_cut_7, lens_cut_8]
+        titles = [f'lens_{lens.uid}_no_subhalos', f'lens_{lens.uid}_cut_6', f'lens_{lens.uid}_cut_7', f'lens_{lens.uid}_cut_8']
 
-    no_cut_masses = [halo.mass for halo in no_cut.halos]
-    cut_7_masses = [halo.mass for halo in cut_7.halos]
-    cut_8_masses = [halo.mass for halo in cut_8.halos]
+        # generate models
+        models = [lens.get_array(num_pix=num_pix * grid_oversample, side=side, band=band) for lens in lenses]
 
-    np.save(os.path.join(save_dir, 'no_cut_masses'), no_cut_masses)
-    np.save(os.path.join(save_dir, 'cut_7_masses'), cut_7_masses)
-    np.save(os.path.join(save_dir, 'cut_8_masses'), cut_8_masses)
+        # generate images
+        detector = gs.get_random_detector(suppress_output=True)
+        detector_pos = gs.get_random_detector_pos(num_pix, suppress_output=True)
 
-    no_cut_lens = deepcopy(lens)
-    cut_7_lens = deepcopy(lens)
-    cut_8_lens = deepcopy(lens)
+        for lens, model, title in zip(lenses, models, titles):
+            gs_images, _ = gs.get_images(lens, model, band, input_size=num_pix, output_size=num_pix,
+                                            grid_oversample=grid_oversample, psf_oversample=grid_oversample, 
+                                            detector=detector, detector_pos=detector_pos, suppress_output=True)
 
-    no_cut_lens.add_subhalos(*pyhalo.realization_to_lensing_quantities(no_cut))
-    cut_7_lens.add_subhalos(*pyhalo.realization_to_lensing_quantities(cut_7))
-    cut_8_lens.add_subhalos(*pyhalo.realization_to_lensing_quantities(cut_8))
-
-    no_cut_model = no_cut_lens.get_array(num_pix=num_pix * grid_oversample, side=side, band=band)
-    cut_7_model = cut_7_lens.get_array(num_pix=num_pix * grid_oversample, side=side, band=band)
-    cut_8_model = cut_8_lens.get_array(num_pix=num_pix * grid_oversample, side=side, band=band)
-
-    np.save(os.path.join(save_dir, 'no_cut_model'), no_cut_model)
-    np.save(os.path.join(save_dir, 'cut_7_model'), cut_7_model)
-    np.save(os.path.join(save_dir, 'cut_8_model'), cut_8_model)
-
-    lenses = [no_cut_lens, cut_7_lens, cut_8_lens]
-    models = [no_cut_model, cut_7_model, cut_8_model]
-    titles = ['substructure_no_cut', 'substructure_cut_7', 'substructure_cut_8']
-
-    for lens, model, title in zip(lenses, models, titles):
-        gs_images, _ = gs.get_images(lens, model, band, input_size=num_pix, output_size=num_pix,
-                                     grid_oversample=grid_oversample)
-        np.save(os.path.join(save_dir, f'{title}.npy'), gs_images[0])
+            # generate power spectrum
+            power_spectrum = ft.power_spectrum(gs_images[0])
+            np.save(os.path.join(save_dir, f'power_spectrum_{lens.uid}_{title}.npy'), power_spectrum)
+    print('Generated subhalo power spectra.')
 
 
 def generate_flat_image(save_path):

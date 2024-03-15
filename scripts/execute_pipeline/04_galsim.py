@@ -74,7 +74,7 @@ def main(config):
 
 
 def get_image(input):
-    from mejiro.helpers import gs, psf
+    from mejiro.helpers import gs, gs
     from mejiro.utils import util
 
     # unpack tuple
@@ -96,7 +96,7 @@ def get_image(input):
 
     # determine detector and position
     detector = gs.get_random_detector(suppress_output)
-    detector_pos = psf.get_random_detector_pos(input_size=num_pix, suppress_output=suppress_output)
+    detector_pos = gs.get_random_detector_pos(input_size=num_pix, suppress_output=suppress_output)
 
     results, execution_time = gs.get_images(lens, arrays, bands, input_size=num_pix, output_size=final_pixel_side, grid_oversample=grid_oversample, psf_oversample=grid_oversample, detector=detector,
                detector_pos=detector_pos, exposure_time=exposure_time, ra=None, dec=None, seed=seed, validate=False, suppress_output=suppress_output)

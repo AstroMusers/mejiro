@@ -110,9 +110,9 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
 
     # check provided detector and detector position
     if detector is None:
-        detector = psf.get_random_detector(suppress_output)
+        detector = get_random_detector(suppress_output)
     if detector_pos is None:
-        detector_pos = psf.get_random_detector_pos(input_size, suppress_output)
+        detector_pos = get_random_detector_pos(input_size, suppress_output)
 
     # create galsim rng
     rng = galsim.UniformDeviate(seed)
@@ -130,11 +130,11 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
                                    flux=total_flux_cps * exposure_time)
 
         # generate PSF
-        # galsim_psf = get_galsim_psf(band, detector, detector_pos)
-        galsim_psf = psf.get_webbpsf_psf(band, detector, detector_pos, psf_oversample)
+        psf_kernel = psf.get_galsim_psf(band, detector, detector_pos)
+        # psf_kernel = psf.get_webbpsf_psf(band, detector, detector_pos, psf_oversample)
 
-        # convolve
-        convolved = convolve(interp, galsim_psf, input_size, pupil_bin=1)
+        # convolve image with PSF
+        convolved = convolve(interp, psf_kernel, input_size, pupil_bin=1)
 
         # add sky background to convolved image
         final_image = convolved + bkgs[band]
@@ -163,6 +163,52 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
     execution_time = str(datetime.timedelta(seconds=round(stop - start)))
 
     return results, execution_time
+
+
+def get_random_detector(suppress_output=False):
+    """
+    Generate a random detector number.
+
+    Parameters
+    ----------
+    suppress_output : bool, optional
+        If True, the detector number will not be printed. Default is False.
+
+    Returns
+    -------
+    int
+        A random detector number between 1 and 18.
+    """
+    detector = random.randint(1, 18)
+    if not suppress_output:
+        print(f'Detector: {detector}')
+    return detector
+
+
+def get_random_detector_pos(input_size, suppress_output=False):
+    """
+    Generate a random detector position within the valid range.
+
+    Parameters
+    ----------
+    input_size : int
+        The size of the input image.
+    suppress_output : bool, optional
+        Whether to suppress the output of the detector position. Default is False.
+
+    Returns
+    -------
+    tuple
+        The random detector position as a tuple of two integers (x, y).
+    """
+    min_pixel = 4 + input_size
+    max_pixel = 4092 - input_size
+
+    x, y = random.randrange(min_pixel, max_pixel), random.randrange(min_pixel, max_pixel)
+
+    if not suppress_output:
+        print(f'Detector position: {x}, {y}')
+    return x, y
 
 
 def get_wcs(ra, dec, date=None):
@@ -215,13 +261,6 @@ def get_bandpass(band):
     return roman.getBandpasses()[bandpass_key]
 
 
-def get_random_detector(suppress_output=False):
-    detector = random.randint(1, 18)
-    if not suppress_output:
-        print(f'Detector: {detector}')
-    return detector
-
-
 def convolve(interp, galsim_psf, input_size, pupil_bin=1):
     # https://galsim-developers.github.io/GalSim/_build/html/composite.html#galsim.Convolve
     convolved = galsim.Convolve(interp, galsim_psf)
@@ -235,6 +274,12 @@ def convolve(interp, galsim_psf, input_size, pupil_bin=1):
 
 
 def get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix):
+    # was only one band provided as a string? or a list of bands?
+    single_band = False
+    if not isinstance(bands, list):
+        single_band = True
+        bands = [bands]
+
     bkgs = {}
     for band in bands:
         # get bandpass object
