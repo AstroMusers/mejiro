@@ -118,7 +118,7 @@ def main(config):
 
             # generate power spectrum
             power_spectrum = ft.power_spectrum(gs_images[0])
-            np.save(os.path.join(save_dir, f'power_spectrum_{lens.uid}_{title}.npy'), power_spectrum)
+            np.save(os.path.join(save_dir, f'power_spectrum_{title}.npy'), power_spectrum)
     print('Generated subhalo power spectra.')
 
 
