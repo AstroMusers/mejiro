@@ -23,14 +23,16 @@ def main(config):
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
 
+    num_lenses = 100
+
     # generate flat image
-    print('Generating flat image...')
-    flat_image_save_path = os.path.join(save_dir, 'flat.npy')
-    generate_flat_image(flat_image_save_path)
-    print('Generated flat image.')
+    print('Generating flat images...')
+    for i in tqdm(range(num_lenses)):
+        flat_image_save_path = os.path.join(save_dir, f'flat_{str(i).zfill(4)}.npy')
+        generate_flat_image(flat_image_save_path)
+    print('Generated flat images.')
 
     # collect lenses
-    num_lenses = 100
     print(f'Collecting {num_lenses} lenses...')
     pickled_lens_list = os.path.join(config.machine.dir_01, '01_skypy_output_lens_list')
     lens_list = util.unpickle(pickled_lens_list)[:num_lenses]
