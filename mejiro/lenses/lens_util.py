@@ -33,6 +33,7 @@ def unpickle_lens(pickle_path, uid):
     source_mags = unpickled['source_mags']
     lens_mass = unpickled['deflector_stellar_mass']
     lens_vel_disp = unpickled['deflector_velocity_dispersion']
+    snr = unpickled['snr']
 
     return StrongLens(kwargs_model=kwargs_model,
                       kwargs_params=kwargs_params,
@@ -40,6 +41,7 @@ def unpickle_lens(pickle_path, uid):
                       source_mags=source_mags,
                       lens_mass=lens_mass,
                       lens_vel_disp=lens_vel_disp,
+                      snr=snr,
                       uid=uid)
 
 

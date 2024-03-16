@@ -18,12 +18,13 @@ from pyHalo.Cosmology.cosmology import Cosmology
 
 
 class StrongLens:
-    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, lens_mass=None, lens_vel_disp=None, uid=None):
+    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, lens_mass=None, lens_vel_disp=None, snr=None, uid=None):
         # set z_source convention default
         self.z_source_convention = 5
 
         self.lens_mass = lens_mass
         self.lens_vel_disp = lens_vel_disp
+        self.snr = snr
         self.uid = uid
 
         # get redshifts
@@ -106,6 +107,10 @@ class StrongLens:
         #     print(f'Adjusted main halo mass: {round(adjusted_main_halo_mass * 1e-9, 3)}')
         #     print(f'Adjusted Einstein radius: {round(adjusted_einstein_radius, 3)}')
 
+    # TODO method to calculate snr and update snr attribute based on the full image
+
+    # TODO put final image as an attribute on this class?
+    
     def get_lens_flux_cps(self, band):
         return self.lens_light_model_class.total_flux([self.kwargs_lens_light_amp_dict[band]])[0]
 
