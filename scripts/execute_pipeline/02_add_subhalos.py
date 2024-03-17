@@ -25,6 +25,7 @@ def main(config):
     # open pickled lens list
     pickled_lens_list = os.path.join(config.machine.dir_01, '01_skypy_output_lens_list')
     lens_list = util.unpickle(pickled_lens_list)
+    assert len(lens_list) != 0, f'No pickled lenses found. Check {pickled_lens_list}.'
     count = len(lens_list)
 
     # directory to write the lenses with subhalos to

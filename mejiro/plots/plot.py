@@ -49,7 +49,7 @@ def plot(array, title='', cmap='viridis', colorbar=False, colorbar_label=None):
     plt.show()
 
 
-def rgb_plot_grid(array_list, side, titles=False):
+def rgb_plot_grid(array_list, side, titles=False, save=None):
     f, ax = plt.subplots(side, side, figsize=(20, 20), gridspec_kw={'hspace': 0.02, 'wspace': 0.02})
 
     i = 0
@@ -60,6 +60,9 @@ def rgb_plot_grid(array_list, side, titles=False):
             if titles:
                 ax[x][y].set_title(f'{i}', color='red')
             i += 1
+
+    if save is not None:
+        plt.savefig(save)
 
     plt.show()
 

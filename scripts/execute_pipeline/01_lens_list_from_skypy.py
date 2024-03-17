@@ -22,7 +22,9 @@ def main(config):
     util.create_directory_if_not_exists(config.machine.dir_01)
     util.clear_directory(config.machine.dir_01)
 
-    num_runs = util.hydra_to_dict(config.pipeline)['runs']
+    output_files = glob(config.machine.skypy_dir + '/skypy_output_*.csv')
+    assert len(output_files) != 0, f'No output files found. Check SkyPy output directory ({config.machine.skypy_dir}).'
+    num_runs = len(output_files)
 
     uid = 0
     lens_list = []
@@ -30,6 +32,8 @@ def main(config):
         print(f'Run {run + 1} of {num_runs}')
         # unpickle the lenses from the population survey and create lens objects
         lens_paths = glob(config.machine.skypy_dir + f'/lenses_5_run{str(run).zfill(3)}/*')
+        assert len(lens_paths) != 0, f'No pickled lenses found. Check SkyPy output directory ({config.machine.skypy_dir}).'
+
         for _, lens in tqdm(enumerate(lens_paths), total=len(lens_paths)):
             lens = lens_util.unpickle_lens(lens, str(uid).zfill(8))
             uid += 1
