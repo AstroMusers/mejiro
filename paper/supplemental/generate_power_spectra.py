@@ -18,19 +18,36 @@ def main(config):
     from mejiro.helpers import gs, psf
     from mejiro.utils import util
 
-    # set save path for everything
+    # set directory for all output of this script
     save_dir = os.path.join(config.machine.data_dir, 'output', 'power_spectra')
     util.create_directory_if_not_exists(save_dir)
-    util.clear_directory(save_dir)
+
+    # prepare directory for lenses
+    lens_dir = os.path.join(save_dir, 'lenses')
+    util.create_directory_if_not_exists(lens_dir)
+    util.clear_directory(lens_dir)
 
     num_lenses = 100
 
     # generate flat image
     print('Generating flat images...')
+    flat_image_dir = os.path.join(save_dir, 'flat_images')
+    util.create_directory_if_not_exists(flat_image_dir)
+    util.clear_directory(flat_image_dir)
     for i in tqdm(range(num_lenses)):
-        flat_image_save_path = os.path.join(save_dir, f'flat_{str(i).zfill(4)}.npy')
+        flat_image_save_path = os.path.join(flat_image_dir, f'flat_{str(i).zfill(4)}.npy')
         generate_flat_image(flat_image_save_path)
     print('Generated flat images.')
+
+    # generate Poisson noise
+    print('Generating Poisson noise...')
+    poisson_noise_dir = os.path.join(save_dir, 'poisson_noise')
+    util.create_directory_if_not_exists(poisson_noise_dir)
+    util.clear_directory(poisson_noise_dir)
+    for i in tqdm(range(num_lenses)):
+        poisson_noise_save_path = os.path.join(poisson_noise_dir, f'poisson_noise_{str(i).zfill(4)}.npy')
+        generate_poisson_noise(poisson_noise_save_path)
+    print('Generated Poisson noise.')
 
     # collect lenses
     print(f'Collecting {num_lenses} lenses...')
@@ -118,7 +135,7 @@ def main(config):
                                             grid_oversample=grid_oversample, psf_oversample=grid_oversample, 
                                             detector=detector, detector_pos=detector_pos, suppress_output=True)
             power_spectrum = ft.power_spectrum(gs_images[0])
-            np.save(os.path.join(save_dir, f'power_spectrum_{title}.npy'), power_spectrum)
+            np.save(os.path.join(lens_dir, f'power_spectrum_{title}.npy'), power_spectrum)
 
             # TODO generate convergence maps
 
@@ -130,7 +147,7 @@ def main(config):
         # Gaussian PSF
         gaussian_psf_lens = deepcopy(lens)
         # PSF FWHM for F184; see https://roman.gsfc.nasa.gov/science/WFI_technical.html
-        kwargs_psf_gaussian = {'psf_type': 'GAUSSIAN', 'fwhm': 0.151}  
+        kwargs_psf_gaussian = {'psf_type': 'GAUSSIAN', 'fwhm': 0.151}  # TODO get FWHM from roman_params
         gaussian_psf = gaussian_psf_lens.get_array(num_pix=num_pix, side=side, band=band, kwargs_psf=kwargs_psf_gaussian)
 
         # WebbPSF
@@ -147,9 +164,19 @@ def main(config):
         gaussian_psf_power = ft.power_spectrum(gaussian_psf)
         webbpsf_psf_power = ft.power_spectrum(webbpsf_psf)
         
-        np.save(os.path.join(save_dir, f'power_spectrum_{title}_psf_none.npy'), no_psf_power)
-        np.save(os.path.join(save_dir, f'power_spectrum_{title}_psf_gaussian.npy'), gaussian_psf_power)
-        np.save(os.path.join(save_dir, f'power_spectrum_{title}_psf_webbpsf.npy'), webbpsf_psf_power)
+        np.save(os.path.join(lens_dir, f'power_spectrum_{title}_psf_none.npy'), no_psf_power)
+        np.save(os.path.join(lens_dir, f'power_spectrum_{title}_psf_gaussian.npy'), gaussian_psf_power)
+        np.save(os.path.join(lens_dir, f'power_spectrum_{title}_psf_webbpsf.npy'), webbpsf_psf_power)
+
+
+def generate_poisson_noise(save_path):
+    num_pix = 45
+
+    # estimated total noise in 180s from https://roman.gsfc.nasa.gov/science/WFI_technical.html
+    noise_180s = 5.5  # e- RMS
+    noise_rms = noise_180s * (146 / 180)
+    poisson_noise = np.random.poisson(noise_rms, (num_pix, num_pix))
+    np.save(save_path, poisson_noise)
 
 
 def generate_flat_image(save_path):

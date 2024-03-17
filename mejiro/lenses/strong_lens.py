@@ -63,6 +63,7 @@ class StrongLens:
         self.oversample_factor = None
         self.side = None
         self.num_pix = None
+        self.num_subhalos = None
 
     def get_einstein_radius(self):
         return self.kwargs_lens[0]['theta_E']
@@ -73,6 +74,9 @@ class StrongLens:
     def add_subhalos(self, realization, suppress_output=True):
         # set cosmology by initializing pyHalo's Cosmology object, otherwise Colossus throws an error down the line
         Cosmology(astropy_instance=self.cosmo)
+
+        # set number of subhalos
+        self.num_subhalos = len(realization.halos)
 
         # generate lenstronomy objects
         halo_lens_model_list, halo_redshift_list, kwargs_halos, _ = realization.lensing_quantities()
