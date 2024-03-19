@@ -23,12 +23,12 @@ def power_spectrum(image):
     return power_list
 
 
-def get_k_list(min_arcsec, max_arcsec, num_pix):
+def get_k_list(min_arcsec, max_arcsec, num_points):
     k_min = (2 * np.pi) / max_arcsec
     k_max = (2 * np.pi) / min_arcsec
 
-    return np.linspace(k_min, k_max, num_pix, endpoint=True)
+    return np.linspace(k_min, k_max, num_points, endpoint=True)
 
 
-def get_theta_list(arcsec_min, arcsec_max, length):
-    return np.linspace(arcsec_min, arcsec_max, length, endpoint=True)
+def get_theta_list(arcsec_min, arcsec_max, num_points):
+    return np.linspace(arcsec_min, arcsec_max, num_points, endpoint=True)
