@@ -1,3 +1,6 @@
+# number of cores to subtract off from total available
+headroom_cores: 10
+
 # where the repository lives
 repo_dir: /nfshome/bwedig/mejiro
 
