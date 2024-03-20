@@ -6,6 +6,7 @@ import galsim
 import hydra
 import numpy as np
 from pyHalo.preset_models import CDM
+from pyHalo import plotting_routines
 from tqdm import tqdm
 
 
@@ -119,6 +120,7 @@ def main(config):
         lens_cut_7.add_subhalos(cut_7, suppress_output=True)
         lens_cut_8.add_subhalos(cut_8, suppress_output=True)
 
+        realizations = [None, cut_6, cut_7, cut_8]
         lenses = [lens, lens_cut_6, lens_cut_7, lens_cut_8]
         titles = [f'lens_{lens.uid}_no_subhalos', f'lens_{lens.uid}_cut_6', f'lens_{lens.uid}_cut_7', f'lens_{lens.uid}_cut_8']
 
@@ -129,15 +131,26 @@ def main(config):
         detector = gs.get_random_detector(suppress_output=True)
         detector_pos = gs.get_random_detector_pos(num_pix, suppress_output=True)
 
-        for lens, model, title in zip(lenses, models, titles):
+        for lens, model, realization, title in zip(lenses, models, realizations, titles):
             # generate subhalo images and save power spectra
             gs_images, _ = gs.get_images(lens, model, band, input_size=num_pix, output_size=num_pix,
                                             grid_oversample=grid_oversample, psf_oversample=grid_oversample, 
                                             detector=detector, detector_pos=detector_pos, suppress_output=True)
-            power_spectrum = ft.power_spectrum(gs_images[0])
-            np.save(os.path.join(lens_dir, f'power_spectrum_{title}.npy'), power_spectrum)
+            image_power_spectrum = ft.power_spectrum(gs_images[0])
+            np.save(os.path.join(lens_dir, f'power_spectrum_{title}.npy'), image_power_spectrum)
 
-            # TODO generate convergence maps
+            # generate convergence maps
+            plotting_routines.plot_multiplane_convergence(sample_realization, 
+                                    npix=55,
+                                cone_opening_angle_arcsec=6., 
+                                lens_model_list_macro=sample_lens.lens_model_list[:1], 
+                                kwargs_lens_macro=sample_lens.kwargs_lens[:1], 
+                                redshift_list_macro=sample_lens.lens_redshift_list[:1],
+                                show_critical_curve=False,
+                                vmin_max=0.005)
+            image_power_spectrum = ft.power_spectrum(gs_images[0])
+            np.save(os.path.join(lens_dir, f'power_spectrum_{title}.npy'), image_power_spectrum)
+            
 
         # generate PSF power spectra
         # no PSF
