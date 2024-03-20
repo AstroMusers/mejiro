@@ -1,5 +1,6 @@
 from lenstronomy.LensModel.lens_model_extensions import LensModelExtensions
 
+# TODO all of these should be moved to the plotting module and be options for plotting any lens
 
 def text_boxes(ax, text_list, alpha=0.5):
     props = dict(boxstyle='round', facecolor='w', alpha=alpha)
