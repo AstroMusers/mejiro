@@ -56,6 +56,12 @@ class StrongLens:
         self.d_s = redshift_to_comoving_distance(self.z_source, self.cosmo)
         self.d_ls = self.d_s - self.d_l
 
+        # ASSUMING StrongLens will NOT be initialized with subhalos
+        # then, we can grab the macrolens
+        self.lens_model_list_macro = deepcopy(self.lens_model_list)
+        self.kwargs_lens_macro = deepcopy(self.kwargs_lens)
+        self.redshift_list_macro = deepcopy(self.lens_redshift_list)
+
         # additional fields to initialize
         self.lens_model_class = None
         self.kwargs_model = None
@@ -64,6 +70,45 @@ class StrongLens:
         self.side = None
         self.num_pix = None
         self.num_subhalos = None
+        self.realization = None
+
+    def get_macrolens_kappa(self, num_pix, cone):
+        # TODO docs; this method borrows from pyhalo.utilities.multiplane_convergence
+        lens_model_macro = LensModel(self.lens_model_list_macro)
+
+        _r = np.linspace(-cone/2, cone/2, num_pix)
+        xx, yy = np.meshgrid(_r, _r)
+        kappa_macro = lens_model_macro.kappa(xx.ravel(), yy.ravel(), self.kwargs_lens_macro)
+        return kappa_macro.reshape(num_pix, num_pix)  
+        
+    def get_kappa(self, num_pix, subhalo_cone, _get_kappa_macro=False):
+        # TODO docs; this method is essentially pyhalo.utilities.multiplane_convergence; I needed that result but with a bit of flexibility that pyhalo's method didn't offer OOTB
+        if self.realization is None:
+            raise ValueError('No subhalos have been added to this StrongLens object.')
+        
+        lens_model_list_halos, redshift_array_halos, kwargs_lens_halos, _ = self.realization.lensing_quantities()
+        
+        lens_model_macro = LensModel(self.lens_model_list_macro)
+        lens_model = LensModel(self.lens_model_list_macro + lens_model_list_halos,
+                               z_source=self.realization.lens_cosmo.z_source, 
+                               multi_plane=True,
+                               lens_redshift_list=self.redshift_list_macro + list(redshift_array_halos),
+                               cosmo=self.cosmo)
+        
+        _r = np.linspace(-subhalo_cone/2, subhalo_cone/2, num_pix)
+        xx, yy = np.meshgrid(_r, _r)
+
+        kappa_macro = lens_model_macro.kappa(xx.ravel(), yy.ravel(), self.kwargs_lens_macro)
+        kappa = lens_model.kappa(xx.ravel(), yy.ravel(), self.kwargs_lens_macro + kwargs_lens_halos)
+
+        if _get_kappa_macro:
+            return kappa, kappa_macro
+        else:
+            return kappa.reshape(num_pix, num_pix)
+
+    def get_delta_kappa(self, num_pix, subhalo_cone):
+        kappa, kappa_macro = self.get_kappa(num_pix, subhalo_cone, _get_kappa_macro=True)
+        return (kappa - kappa_macro).reshape(num_pix, num_pix)
 
     def get_einstein_radius(self):
         return self.kwargs_lens[0]['theta_E']
@@ -75,7 +120,8 @@ class StrongLens:
         # set cosmology by initializing pyHalo's Cosmology object, otherwise Colossus throws an error down the line
         Cosmology(astropy_instance=self.cosmo)
 
-        # set number of subhalos
+        # set some params on the StrongLens object
+        self.realization = realization
         self.num_subhalos = len(realization.halos)
 
         # generate lenstronomy objects

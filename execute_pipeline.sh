@@ -8,8 +8,6 @@ handle_error() {
 # escape if error encountered
 set -e
 
-start=`date +%s`
-
 # make sure appropriate conda env is active
 # conda activate mejiro
 
@@ -40,6 +38,3 @@ echo 'GalSim simulations complete.'
 echo 'Generating color images...'
 python3 05_color.py
 echo 'Color image generation complete.'
-
-end=`date +%s`
-runtime=$((end-start))
