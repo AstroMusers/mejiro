@@ -130,8 +130,8 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
                                    flux=total_flux_cps * exposure_time)
 
         # generate PSF
-        psf_kernel = psf.get_galsim_psf(band, detector, detector_pos)
-        # psf_kernel = psf.get_webbpsf_psf(band, detector, detector_pos, psf_oversample)
+        # psf_kernel = psf.get_galsim_psf(band, detector, detector_pos)
+        psf_kernel = psf.get_webbpsf_psf(band, detector, detector_pos, psf_oversample)
 
         # convolve image with PSF
         convolved = convolve(interp, psf_kernel, input_size, pupil_bin=1)
