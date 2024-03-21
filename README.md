@@ -4,8 +4,7 @@
 
 `mejiro` ("MEH-ji-roe")[^1] is a pipeline to simulate Roman Space Telescope WFI images of galaxy-galaxy strong
 gravitational lenses
-built on [`lenstronomy`](https://github.com/lenstronomy/lenstronomy), [`pyHalo`](https://github.com/dangilman/pyHalo),
-and [Pandeia](https://outerspace.stsci.edu/display/PEN).
+built on [`lenstronomy`](https://github.com/lenstronomy/lenstronomy), [`pyHalo`](https://github.com/dangilman/pyHalo), [GalSim](https://github.com/GalSim-developers/GalSim), and [Pandeia](https://outerspace.stsci.edu/display/PEN).
 
 # Setup
 
@@ -15,11 +14,11 @@ Create a conda environment:
 conda env create -f environment.yml
 ```
 
+## Optional setup: Pandeia
+
 Install Pandeia by following the
 instructions [here](https://outerspace.stsci.edu/display/PEN/Pandeia+Engine+Installation). Version 3.1 is current (as of
 2023-12-16) but `mejiro` uses v3.0. Make sure to download the Roman dataset for v3.0.
-
-Then, follow the instructions in the `setup` directory to modify the local `lenstronomy` installation.
 
 # Getting Started
 
@@ -36,7 +35,7 @@ Update pipeline parameters in `config/config.yaml` and ensure `defaults.machine`
 of the yaml file created earlier. The bash script `execute_pipeline.sh` will execute the pipeline end-to-end:
 
 ```
-bash execute_pipeline.sh
+time bash execute_pipeline.sh
 ```
 
 [^1]: "mejiro" ([メジロ](https://ja.wikipedia.org/wiki/%E3%83%A1%E3%82%B8%E3%83%AD) in Japanese) or "warbling
