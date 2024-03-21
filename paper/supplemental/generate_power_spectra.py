@@ -28,7 +28,7 @@ def main(config):
     util.create_directory_if_not_exists(lens_dir)
     util.clear_directory(lens_dir)
 
-    num_lenses = 10
+    num_lenses = 1000
 
     # generate flat image
     print('Generating flat images...')
