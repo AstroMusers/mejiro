@@ -1,5 +1,4 @@
 import os
-import random
 from glob import glob
 
 import astropy.io.fits as pyfits
@@ -98,13 +97,16 @@ def get_psf_kernel(band, detector, detector_position, oversample=5, save=None):
     if save is not None:
         psf.writeto(save, overwrite=True)
     return psf[0].data
+
+
 # TODO collapse these methods into one that randomizes if None is provided
 
 def get_random_psf_kernel(band, oversample=5, save=None, suppress_output=False):
     wfi = WFI()
     wfi.filter = band.upper()
     wfi.detector = detector_int_to_sca(gs.get_random_detector(suppress_output))
-    wfi.detector_position = gs.get_random_detector_pos(100, suppress_output)  # TODO refactor so input_size is meaningful
+    wfi.detector_position = gs.get_random_detector_pos(100,
+                                                       suppress_output)  # TODO refactor so input_size is meaningful
     psf = wfi.calc_psf(oversample=oversample)
     if save is not None:
         psf.writeto(save, overwrite=True)
@@ -160,7 +162,8 @@ def update_pandeia_psfs(detector=None, detector_position=None, suppress_output=F
         detector = detector_int_to_sca(gs.get_random_detector(suppress_output))
     wfi.detector = detector_int_to_sca(detector)
     if detector_position is None:
-        detector_position = gs.get_random_detector_pos(100, suppress_output)  # TODO refactor so input_size is meaningful
+        detector_position = gs.get_random_detector_pos(100,
+                                                       suppress_output)  # TODO refactor so input_size is meaningful
     wfi.detector_position = detector_position
 
     # generate monochromatic PSFs for each of the 29 wavelengths

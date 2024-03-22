@@ -1,19 +1,9 @@
-import pickle
-
-import astropy.cosmology as astropy_cosmo
-import numpy as np
-from lenstronomy.Cosmo.lens_cosmo import LensCosmo
-from pyHalo.Cosmology.cosmology import Cosmology
-from pyHalo.preset_models import CDM
-
-
 def cut_mass(realization, log_m_cutoff):
     for i, halo in enumerate(realization.halos):
         if halo.mass < 10 ** log_m_cutoff:
             del realization.halos[i]
 
     return realization
-
 
 # def generate_cdm_halos(z_lens, z_source, log_m_host=13.3, r_tidal=0.25, cone_opening_angle_arcsec=11,
 #                        los_normalization=0.0):

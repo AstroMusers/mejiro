@@ -1,4 +1,3 @@
-
 import numpy as np
 from astropy.visualization import make_lupton_rgb
 

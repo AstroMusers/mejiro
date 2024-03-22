@@ -4,7 +4,9 @@
 
 `mejiro` ("MEH-ji-roe")[^1] is a pipeline to simulate Roman Space Telescope WFI images of galaxy-galaxy strong
 gravitational lenses
-built on [`lenstronomy`](https://github.com/lenstronomy/lenstronomy), [`pyHalo`](https://github.com/dangilman/pyHalo), [GalSim](https://github.com/GalSim-developers/GalSim), and [Pandeia](https://outerspace.stsci.edu/display/PEN).
+built
+on [`lenstronomy`](https://github.com/lenstronomy/lenstronomy), [`pyHalo`](https://github.com/dangilman/pyHalo), [GalSim](https://github.com/GalSim-developers/GalSim),
+and [Pandeia](https://outerspace.stsci.edu/display/PEN).
 
 # Setup
 

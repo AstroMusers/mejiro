@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 import numpy as np
 from lenstronomy.SimulationAPI.ObservationConfig import HST, LSST, Roman, DES, Euclid
 from lenstronomy.SimulationAPI.sim_api import SimAPI
@@ -48,7 +46,7 @@ def set_up_magnitudes(lens):
     kwargs_source_mag_i = [kwargs_source_dict['F184']]
 
     return (kwargs_lens_light_mag_g, kwargs_lens_light_mag_r, kwargs_lens_light_mag_i), (
-    kwargs_source_mag_g, kwargs_source_mag_r, kwargs_source_mag_i)
+        kwargs_source_mag_g, kwargs_source_mag_r, kwargs_source_mag_i)
 
 
 # TODO this might be useful if magnitudes aren't defined in each band, to get a rough rgb image anyways

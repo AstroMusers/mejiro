@@ -9,7 +9,6 @@ from pandeia.engine.calc_utils import build_default_calc, build_default_source
 from pandeia.engine.perform_calculation import perform_calculation
 from tqdm import tqdm
 
-from mejiro.helpers import bkg
 from mejiro.helpers.roman_params import RomanParameters
 
 

@@ -103,7 +103,7 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
     assert (ra is None and dec is None) or (ra is not None and dec is not None), 'Provide both RA and DEC or neither'
     if ra is None and dec is None:
         # get random wcs
-        wcs_dict = get_random_hlwas_wcs(suppress_output)  
+        wcs_dict = get_random_hlwas_wcs(suppress_output)
     else:
         # get wcs
         wcs_dict = get_wcs(ra, dec, date=None)

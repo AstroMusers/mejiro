@@ -1,10 +1,7 @@
-import pytest
+import astropy.cosmology
 from pytest import approx
 
-import astropy.cosmology
-
 from mejiro.lenses import strong_lens
-from mejiro.lenses.strong_lens import StrongLens
 from mejiro.lenses.test import SampleStrongLens
 
 
@@ -65,14 +62,16 @@ def test_einstein_radius_to_velocity_dispersion():
     z_lens = 0.2478444815301060
     z_source = 1.7249902383698100
     velocity_dispersion = 255.25047210330000
-    test_velocity_dispersion = strong_lens.einstein_radius_to_velocity_dispersion(einstein_radius, z_lens, z_source, cosmo)
+    test_velocity_dispersion = strong_lens.einstein_radius_to_velocity_dispersion(einstein_radius, z_lens, z_source,
+                                                                                  cosmo)
     assert velocity_dispersion == approx(test_velocity_dispersion, rel=1e-6)
 
     einstein_radius = 1.9724261658572900
     z_lens = 0.11804160736612800
     z_source = 1.0785714350247300
     velocity_dispersion = 282.2882717656310
-    test_velocity_dispersion = strong_lens.einstein_radius_to_velocity_dispersion(einstein_radius, z_lens, z_source, cosmo)
+    test_velocity_dispersion = strong_lens.einstein_radius_to_velocity_dispersion(einstein_radius, z_lens, z_source,
+                                                                                  cosmo)
     assert velocity_dispersion == approx(test_velocity_dispersion, rel=1e-6)
 
 
@@ -83,14 +82,16 @@ def test_velocity_dispersion_to_einstein_radius():
     z_lens = 0.2478444815301060
     z_source = 1.7249902383698100
     einstein_radius = 1.4811764093086500
-    test_einstein_radius = strong_lens.velocity_dispersion_to_einstein_radius(velocity_dispersion, z_lens, z_source, cosmo)
+    test_einstein_radius = strong_lens.velocity_dispersion_to_einstein_radius(velocity_dispersion, z_lens, z_source,
+                                                                              cosmo)
     assert einstein_radius == approx(test_einstein_radius, rel=1e-6)
 
     velocity_dispersion = 282.2882717656310
     z_lens = 0.11804160736612800
     z_source = 1.0785714350247300
     einstein_radius = 1.9724261658572900
-    test_einstein_radius = strong_lens.velocity_dispersion_to_einstein_radius(velocity_dispersion, z_lens, z_source, cosmo)
+    test_einstein_radius = strong_lens.velocity_dispersion_to_einstein_radius(velocity_dispersion, z_lens, z_source,
+                                                                              cosmo)
     assert einstein_radius == approx(test_einstein_radius, rel=1e-6)
 
 

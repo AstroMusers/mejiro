@@ -1,9 +1,9 @@
-import astropy.cosmology
-import astropy.units as u
-import astropy.cosmology.units as cu
-import numpy as np
-from astropy import constants as const
 from copy import deepcopy
+
+import astropy.cosmology
+import astropy.cosmology.units as cu
+import astropy.units as u
+import numpy as np
 from lenstronomy.Cosmo.lens_cosmo import LensCosmo
 from lenstronomy.Data.coord_transforms import Coordinates
 from lenstronomy.Data.pixel_grid import PixelGrid
@@ -18,7 +18,8 @@ from pyHalo.Cosmology.cosmology import Cosmology
 
 
 class StrongLens:
-    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, lens_mass=None, lens_vel_disp=None, snr=None, uid=None):
+    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, lens_mass=None, lens_vel_disp=None,
+                 snr=None, uid=None):
         # set z_source convention default
         self.z_source_convention = 5
 
@@ -76,26 +77,26 @@ class StrongLens:
         # TODO docs; this method borrows from pyhalo.utilities.multiplane_convergence
         lens_model_macro = LensModel(self.lens_model_list_macro)
 
-        _r = np.linspace(-cone/2, cone/2, num_pix)
+        _r = np.linspace(-cone / 2, cone / 2, num_pix)
         xx, yy = np.meshgrid(_r, _r)
         kappa_macro = lens_model_macro.kappa(xx.ravel(), yy.ravel(), self.kwargs_lens_macro)
-        return kappa_macro.reshape(num_pix, num_pix)  
-        
+        return kappa_macro.reshape(num_pix, num_pix)
+
     def get_kappa(self, num_pix, subhalo_cone, _get_kappa_macro=False):
         # TODO docs; this method is essentially pyhalo.utilities.multiplane_convergence; I needed that result but with a bit of flexibility that pyhalo's method didn't offer OOTB
         if self.realization is None:
             raise ValueError('No subhalos have been added to this StrongLens object.')
-        
+
         lens_model_list_halos, redshift_array_halos, kwargs_lens_halos, _ = self.realization.lensing_quantities()
-        
+
         lens_model_macro = LensModel(self.lens_model_list_macro)
         lens_model = LensModel(self.lens_model_list_macro + lens_model_list_halos,
-                               z_source=self.realization.lens_cosmo.z_source, 
+                               z_source=self.realization.lens_cosmo.z_source,
                                multi_plane=True,
                                lens_redshift_list=self.redshift_list_macro + list(redshift_array_halos),
                                cosmo=self.cosmo)
-        
-        _r = np.linspace(-subhalo_cone/2, subhalo_cone/2, num_pix)
+
+        _r = np.linspace(-subhalo_cone / 2, subhalo_cone / 2, num_pix)
         xx, yy = np.meshgrid(_r, _r)
 
         kappa_macro = lens_model_macro.kappa(xx.ravel(), yy.ravel(), self.kwargs_lens_macro)
@@ -160,7 +161,7 @@ class StrongLens:
     # TODO method to calculate snr and update snr attribute based on the full image
 
     # TODO put final image as an attribute on this class?
-    
+
     def get_lens_flux_cps(self, band):
         return self.lens_light_model_class.total_flux([self.kwargs_lens_light_amp_dict[band]])[0]
 
@@ -375,7 +376,6 @@ def mass_to_velocity_dispersion(mass):
 
 def get_lens_cosmo(z_lens, z_source, cosmo):
     return LensCosmo(z_lens=z_lens, z_source=z_source, cosmo=cosmo)
-
 
 # def mass_to_einstein_radius(m, d_l, d_s, d_ls):
 #     # TODO docs: for a point mass

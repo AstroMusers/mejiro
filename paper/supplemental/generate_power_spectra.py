@@ -2,7 +2,6 @@ import multiprocessing
 import os
 import sys
 from copy import deepcopy
-from multiprocessing import Pool
 
 import galsim
 import hydra
@@ -136,7 +135,7 @@ def generate_power_spectra(tuple):
                 sigma_sub=sigma_sub,
                 log_mlow=6.,
                 log_mhigh=10.,
-                log_m_host=log_m_host, 
+                log_m_host=log_m_host,
                 r_tidal=r_tidal,
                 cone_opening_angle_arcsec=subhalo_cone,
                 LOS_normalization=los_normalization)
@@ -146,7 +145,7 @@ def generate_power_spectra(tuple):
                 sigma_sub=sigma_sub,
                 log_mlow=7.,
                 log_mhigh=10.,
-                log_m_host=log_m_host, 
+                log_m_host=log_m_host,
                 r_tidal=r_tidal,
                 cone_opening_angle_arcsec=subhalo_cone,
                 LOS_normalization=los_normalization)
@@ -156,11 +155,11 @@ def generate_power_spectra(tuple):
                 sigma_sub=sigma_sub,
                 log_mlow=8.,
                 log_mhigh=10.,
-                log_m_host=log_m_host, 
+                log_m_host=log_m_host,
                 r_tidal=r_tidal,
                 cone_opening_angle_arcsec=subhalo_cone,
                 LOS_normalization=los_normalization)
-    
+
     lens_cut_6 = deepcopy(lens)
     lens_cut_7 = deepcopy(lens)
     lens_cut_8 = deepcopy(lens)
@@ -170,7 +169,8 @@ def generate_power_spectra(tuple):
     lens_cut_8.add_subhalos(cut_8, suppress_output=True)
 
     lenses = [lens, lens_cut_6, lens_cut_7, lens_cut_8]
-    titles = [f'lens_{lens.uid}_no_subhalos', f'lens_{lens.uid}_cut_6', f'lens_{lens.uid}_cut_7', f'lens_{lens.uid}_cut_8']
+    titles = [f'lens_{lens.uid}_no_subhalos', f'lens_{lens.uid}_cut_6', f'lens_{lens.uid}_cut_7',
+              f'lens_{lens.uid}_cut_8']
 
     # generate models
     models = [i.get_array(num_pix=num_pix * grid_oversample, side=side, band=band) for i in lenses]
@@ -182,8 +182,8 @@ def generate_power_spectra(tuple):
     for sl, model, title in zip(lenses, models, titles):
         # generate subhalo images and save power spectra
         gs_images, _ = gs.get_images(sl, model, band, input_size=num_pix, output_size=num_pix,
-                                        grid_oversample=grid_oversample, psf_oversample=grid_oversample, 
-                                        detector=detector, detector_pos=detector_pos, suppress_output=True)
+                                     grid_oversample=grid_oversample, psf_oversample=grid_oversample,
+                                     detector=detector, detector_pos=detector_pos, suppress_output=True)
         image_power_spectrum = ft.power_spectrum(gs_images[0])
         np.save(os.path.join(lens_dir, f'power_spectrum_{title}_image.npy'), image_power_spectrum)
 
@@ -215,11 +215,11 @@ def generate_power_spectra(tuple):
         'point_source_supersampling_factor': 5
     }
     webbpsf_psf = webbpsf_lens.get_array(band=band, num_pix=num_pix, kwargs_psf=kwargs_webbpsf, side=side)
-    
+
     no_psf_power = ft.power_spectrum(no_psf)
     gaussian_psf_power = ft.power_spectrum(gaussian_psf)
     webbpsf_psf_power = ft.power_spectrum(webbpsf_psf)
-    
+
     np.save(os.path.join(lens_dir, f'power_spectrum_{title}_psf_none.npy'), no_psf_power)
     np.save(os.path.join(lens_dir, f'power_spectrum_{title}_psf_gaussian.npy'), gaussian_psf_power)
     np.save(os.path.join(lens_dir, f'power_spectrum_{title}_psf_webbpsf.npy'), webbpsf_psf_power)

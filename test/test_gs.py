@@ -1,7 +1,4 @@
-import pytest
-
 from mejiro.helpers import gs
-from mejiro.lenses.strong_lens import StrongLens
 from mejiro.lenses.test import SampleStrongLens
 
 

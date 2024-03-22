@@ -32,7 +32,8 @@ def main(config):
         print(f'Run {run + 1} of {num_runs}')
         # unpickle the lenses from the population survey and create lens objects
         lens_paths = glob(config.machine.skypy_dir + f'/lenses_5_run{str(run).zfill(3)}/*')
-        assert len(lens_paths) != 0, f'No pickled lenses found. Check SkyPy output directory ({config.machine.skypy_dir}).'
+        assert len(
+            lens_paths) != 0, f'No pickled lenses found. Check SkyPy output directory ({config.machine.skypy_dir}).'
 
         for _, lens in tqdm(enumerate(lens_paths), total=len(lens_paths)):
             lens = lens_util.unpickle_lens(lens, str(uid).zfill(8))
