@@ -48,7 +48,7 @@ class StrongLens:
         # set kwargs_model TODO is this necessary?
         self._update_model()
 
-        # set place to store amp versions of kwargs_light dicts
+        # set place to store amp versions of kwargs_light dicts TODO can initialize as none?
         self.kwargs_lens_light_amp_dict, self.kwargs_source_amp_dict = {}, {}
 
         # calculate comoving distances (in Gpc)
