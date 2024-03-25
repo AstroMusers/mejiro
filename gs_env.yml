@@ -19,3 +19,4 @@ dependencies:
       - mcfit
       - webbpsf
       - lenstronomy==1.11.7
+      - slsim
