@@ -145,8 +145,9 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
         # add all detector effects
         galsim.roman.allDetectorEffects(final_image, prev_exposures=(), rng=rng, exptime=exposure_time)
 
+        # TODO this shouldn't be necessary
         # make sure there are no negative values from Poisson noise generator
-        final_image.replaceNegative()
+        # final_image.replaceNegative()
 
         # get the array
         final_array = final_image.array
@@ -261,7 +262,7 @@ def get_bandpass(band):
     return roman.getBandpasses()[bandpass_key]
 
 
-def convolve(interp, galsim_psf, input_size, pupil_bin=1):
+def convolve(interp, galsim_psf, input_size):
     # https://galsim-developers.github.io/GalSim/_build/html/composite.html#galsim.Convolve
     convolved = galsim.Convolve(interp, galsim_psf)
 
