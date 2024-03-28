@@ -73,6 +73,11 @@ class StrongLens:
         self.num_subhalos = None
         self.realization = None
 
+    def get_lenstronomy_kwargs(self, band):
+        # TODO finish
+        kwargs_params = {}
+        return self.kwargs_model, kwargs_params
+
     def get_macrolens_kappa(self, num_pix, cone):
         # TODO docs; this method borrows from pyhalo.utilities.multiplane_convergence
         lens_model_macro = LensModel(self.lens_model_list_macro)
@@ -332,6 +337,16 @@ class StrongLens:
 
     def __str__(self):
         return f'StrongLens {self.uid}'
+    
+    # TODO overload __iter__()?
+    # https://www.geeksforgeeks.org/python-__iter__-__next__-converting-object-iterator/
+    def csv_row(self):
+        return [self.uid, self.z_lens, self.z_source, self.lens_mass, self.lens_vel_disp]
+    
+    @staticmethod
+    def get_csv_headers():
+        # TODO this is a helper method for exporting to CSV using the __iter__() method
+        return ['uid', 'z_lens', 'z_source', 'lens_mass', 'lens_vel']
 
 
 def redshift_to_comoving_distance(redshift, cosmo):

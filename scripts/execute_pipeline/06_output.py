@@ -1,3 +1,4 @@
+import csv
 import h5py
 import os
 import sys
@@ -20,10 +21,13 @@ def main(config):
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
     from mejiro.utils import util
+    from mejiro.lenses.strong_lens import StrongLens
 
     now_string = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
     output_file = os.path.join(config.machine.pipeline_dir, f'mejiro_output_{now_string}.hdf5')
+    output_csv = os.path.join(config.machine.pipeline_dir, f'mejiro_metadata_{now_string}.csv')
 
+    # generate hdf5 file
     image_paths = glob(f'{config.machine.dir_05}/*.npy')
     subhalo_paths = glob(f'{config.machine.dir_02}/subhalos/*')
 
@@ -44,7 +48,21 @@ def main(config):
         for key, value in util.hydra_to_dict(config.pipeline).items():
             hf.attrs[key] = value
 
-    print(f'Output file: {output_file}')
+    print(f'Output .hdf5 file: {output_file}')
+
+    # generate csv file
+    lens_paths = glob(f'{config.machine.dir_03}/lens_*')
+    lens_paths.sort()
+
+    with open(output_csv, 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(StrongLens.get_csv_headers())
+
+        for lens_path in tqdm(lens_paths):
+            lens = util.unpickle(lens_path)
+            writer.writerow(lens.csv_row())
+
+    print(f'Output .csv file: {output_csv}')
 
     stop = time.time()
     util.print_execution_time(start, stop)
