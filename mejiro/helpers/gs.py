@@ -145,14 +145,17 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
         # add all detector effects
         galsim.roman.allDetectorEffects(final_image, prev_exposures=(), rng=rng, exptime=exposure_time)
 
-        # TODO this shouldn't be necessary
-        # make sure there are no negative values from Poisson noise generator
-        # final_image.replaceNegative()
+        # convert from electrons to ADU
+        # roman.gain is currently 1, but may be updated with an empirical value from ground testing
+        final_image /= roman.gain
+
+        # ADU reads counts, so quantize
+        final_image.quantize()
 
         # get the array
         final_array = final_image.array
 
-        # center crop to get rid of edge effects
+        # center crop to get rid of edge effects (e.g., IPC)
         final_array = util.center_crop_image(final_array, (output_size, output_size))
 
         # divide through by exposure time to get in units of counts/sec/pixel
@@ -294,7 +297,7 @@ def get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix):
 
         sca_cent_pos = wcs.toWorld(sky_image.true_center)
         sky_level = roman.getSkyLevel(bandpass, world_pos=sca_cent_pos, exptime=exposure_time)
-        sky_level *= (1.0 + roman.stray_light_fraction)
+        sky_level *= (1. + roman.stray_light_fraction)
         wcs.makeSkyImage(sky_image, sky_level)
 
         thermal_bkg = roman.thermal_backgrounds[get_bandpass_key(band)] * exposure_time
