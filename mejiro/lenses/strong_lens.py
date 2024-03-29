@@ -45,8 +45,8 @@ class StrongLens:
         # set lens_model_list, lens_light_model_list, source_light_model_list
         self._unpack_kwargs_model(kwargs_model)
 
-        # set kwargs_model TODO is this necessary?
-        self._update_model()
+        # set kwargs_model
+        self.kwargs_model = self._set_model()
 
         # set place to store amp versions of kwargs_light dicts TODO can initialize as none?
         self.kwargs_lens_light_amp_dict, self.kwargs_source_amp_dict = {}, {}
@@ -65,7 +65,6 @@ class StrongLens:
 
         # additional fields to initialize
         self.lens_model_class = None
-        self.kwargs_model = None
         self.lenstronomy_roman_config = None
         self.oversample_factor = None
         self.side = None
@@ -252,9 +251,8 @@ class StrongLens:
     def _set_lens_cosmo(self):
         self.lens_cosmo = get_lens_cosmo(self.z_lens, self.z_source, self.cosmo)
 
-    def _update_model(self):
-        # update model
-        self.kwargs_model = {
+    def _set_model(self):
+        return {
             'lens_model_list': self.lens_model_list,
             'lens_redshift_list': self.lens_redshift_list,
             'lens_light_model_list': self.lens_light_model_list,
