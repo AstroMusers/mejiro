@@ -1,4 +1,7 @@
+import os
 import numpy as np
+import pandas as pd
+from tqdm import tqdm
 
 from lenstronomy.LensModel.lens_model import LensModel
 from lenstronomy.LightModel.light_model import LightModel
@@ -85,4 +88,54 @@ def get_image(gglens, band):
                                  kwargs_lens_light=kwargs_lens_light_amp)
     
     return total_image, lens_surface_brightness, source_surface_brightness
+
+
+def write_lens_pop_to_csv(output_path, gg_lenses, bands):
+    dictparaggln = {}
+    dictparaggln['Candidate'] = {}
+    listnamepara = ['velodisp', 'massstel', 'angleins', 'redssour', 'redslens', 'xposlens', 'yposlens', 'xpossour',
+                    'ypossour', 'numbimag', 'magnsour', 'maxmdistimag']
+    for nameband in bands:
+        listnamepara += ['magtlens%s' % nameband]
+        listnamepara += ['magtsour%s' % nameband]
+        listnamepara += ['magtsourMagnified%s' % nameband]
+
+    for namepara in listnamepara:
+        dictparaggln['Candidate'][namepara] = np.empty(len(gg_lenses))
+
+    df = pd.DataFrame(columns=listnamepara)
+
+    for i, gg_lens in tqdm(enumerate(gg_lenses), total=len(gg_lenses)):
+        dict = {
+            'velodisp': gg_lens.deflector_velocity_dispersion(),
+            'massstel': gg_lens.deflector_stellar_mass() * 1e-12, 
+            'angleins': gg_lens.einstein_radius, 
+            'redssour': gg_lens.source_redshift(), 
+            'redslens': gg_lens.deflector_redshift(), 
+            'magnsour': gg_lens.host_magnification()
+            # TODO add SNR?
+        }
+
+        posiimag = gg_lens.get_image_positions()
+        dict['numbimag'] = int(posiimag[0].size)
+
+        dict['maxmdistimag'] = np.amax(np.sqrt((posiimag[0][:, None] - posiimag[0][None, :]) ** 2 + (posiimag[1][:, None] - posiimag[1][None, :]) ** 2))
+
+        posilens, posisour = gg_lens.position_alignment()
+        dict['xposlens'] = posilens[0]
+        dict['yposlens'] = posilens[1]
+        dict['xpossour'] = posisour[0]
+        dict['ypossour'] = posisour[1]
+
+        for nameband in bands:
+            dict['magtsour%s' % nameband] = gg_lens.source_magnitude(band=nameband)
+            dict['magtsourMagnified%s' % nameband] = gg_lens.source_magnitude(band=nameband, lensed=True)
+            dict['magtlens%s' % nameband] = gg_lens.deflector_magnitude(band=nameband)
+
+        df.loc[i] = pd.Series(dict)
+
+    print('Writing to %s..' % output_path)
+    if os.path.exists(output_path): 
+        os.remove(output_path)
+    df.to_csv(output_path, index=False)
     
