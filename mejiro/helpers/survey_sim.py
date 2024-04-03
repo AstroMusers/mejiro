@@ -107,12 +107,12 @@ def write_lens_pop_to_csv(output_path, gg_lenses, bands):
 
     for i, gg_lens in tqdm(enumerate(gg_lenses), total=len(gg_lenses)):
         dict = {
-            'velodisp': gg_lens.deflector_velocity_dispersion(),
+            'velodisp': gg_lens.deflector_velocity_dispersion,
             'massstel': gg_lens.deflector_stellar_mass() * 1e-12, 
             'angleins': gg_lens.einstein_radius, 
-            'redssour': gg_lens.source_redshift(), 
-            'redslens': gg_lens.deflector_redshift(), 
-            'magnsour': gg_lens.host_magnification()
+            'redssour': gg_lens.source_redshift, 
+            'redslens': gg_lens.deflector_redshift, 
+            'magnsour': gg_lens.host_magnification
             # TODO add SNR?
         }
 
