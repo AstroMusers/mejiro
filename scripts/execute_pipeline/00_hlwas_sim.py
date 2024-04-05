@@ -1,0 +1,200 @@
+import numpy as np
+import os
+import sys
+import speclite
+from astropy.cosmology import default_cosmology
+from astropy.units import Quantity
+from slsim.lens_pop import LensPop
+from slsim.Observations.roman_speclite import configure_roman_filters, filter_names
+from tqdm import tqdm
+from pprint import pprint
+import time
+import datetime
+import hydra
+
+
+@hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
+def main(config):
+    start = time.time()
+
+    # enable use of local packages
+    repo_dir = config.machine.repo_dir
+    if repo_dir not in sys.path:
+        sys.path.append(repo_dir)
+    import mejiro
+    from mejiro.helpers import survey_sim
+    from mejiro.utils import util
+
+    # set up output directory
+    data_dir = config.machine.data_dir
+    output_dir = os.path.join(data_dir, 'output', 'hlwas_sim')
+    util.create_directory_if_not_exists(output_dir)
+    util.clear_directory(output_dir)
+    print(f'Set up output directory {output_dir}')
+
+    # set HLWAS parameters
+    survey_area = 5.
+    sky_area = Quantity(value=survey_area, unit='deg2')
+    area_hlwas = 1700.
+    cosmo = default_cosmology.get()
+    bands_hlwas = ['F106', 'F129', 'F184']
+
+    # load Roman WFI filters
+    configure_roman_filters()
+    roman_filters = filter_names()
+    roman_filters.sort()
+    _ = speclite.filters.load_filters(*roman_filters[:8])
+    print('Configured Roman filters')
+
+    # load SkyPy config file
+    module_path = os.path.dirname(mejiro.__file__)
+    skypy_config = os.path.join(module_path, 'data', 'roman_hlwas.yml')
+    print(f'Loaded SkyPy configuration file {skypy_config}')
+
+    # define cuts on the intrinsic deflector and source populations (in addition to the skypy config file)
+    kwargs_deflector_cut = {'band': 'F106', 'band_max': 23, 'z_min': 0.01, 'z_max': 2.}
+    kwargs_source_cut = {'band': 'F106', 'band_max': 24, 'z_min': 0.01, 'z_max': 5.}
+
+    # create the lens population
+    lens_pop = LensPop(deflector_type="all-galaxies",
+        source_type="galaxies",
+        kwargs_deflector_cut=kwargs_deflector_cut,
+        kwargs_source_cut=kwargs_source_cut,
+        kwargs_mass2light=None,
+        skypy_config=skypy_config,
+        sky_area=sky_area,
+        cosmo=cosmo)
+    print('Defined galaxy population')
+
+    num_lenses = lens_pop.deflector_number()
+    num_sources = lens_pop.source_number()
+    print(f'Number of deflectors: {num_lenses}, scaled to HLWAS ({area_hlwas} sq deg): {int((area_hlwas / survey_area) * num_lenses)}')
+    print(f'Number of sources: {num_sources}, scaled to HLWAS ({area_hlwas} sq deg): {int((area_hlwas / survey_area) * num_sources)}')
+
+    # draw the total lens population
+    print('Identifying lenses...')
+    total_lens_population = lens_pop.draw_population(kwargs_lens_cuts={})
+    print(f'Number of total lenses: {len(total_lens_population)}')
+
+    # compute SNRs and save
+    print(f'Computing SNRs for {len(total_lens_population)} lenses')
+    snr_list = []
+    for candidate in tqdm(total_lens_population):
+        snr, _ = survey_sim.get_snr(candidate, 'F106')
+        snr_list.append(snr)
+    np.save(os.path.join(output_dir, 'snr_list.npy'), snr_list)
+
+    # save other params to CSV
+    total_pop_csv = os.path.join(output_dir, 'total_pop.csv')
+    print(f'Writing total population to {total_pop_csv}')
+    survey_sim.write_lens_pop_to_csv(total_pop_csv, total_lens_population, bands_hlwas)
+
+    kwargs_lens_cut = {
+        'min_image_separation': 0.2,
+        'max_image_separation': 5,
+        'mag_arc_limit': {'F106': 25},
+    }
+
+    lens_population = lens_pop.draw_population(kwargs_lens_cuts=kwargs_lens_cut)
+    print(f'Number of detectable lenses from first set of criteria: {len(lens_population)}')
+
+    # set up dict to capture some information about which candidates got filtered out
+    filtered_sample = {}
+    filtered_sample['total'] = len(lens_population)
+    num_samples = 100
+    filter_1, filter_2 = 0, 0
+    filtered_sample['filter_1'] = []
+    filtered_sample['filter_2'] = []
+
+    limit = None
+    detectable_gglenses = []
+
+    for candidate in tqdm(lens_population):
+        # 1. Einstein radius and Sersic radius
+        _, kwargs_params = candidate.lenstronomy_kwargs(band='F106')
+        lens_mag = candidate.deflector_magnitude(band='F106')
+
+        if kwargs_params['kwargs_lens'][0]['theta_E'] < kwargs_params['kwargs_lens_light'][0]['R_sersic'] and lens_mag < 15:
+            filter_1 += 1
+            if filter_1 <= num_samples:
+                filtered_sample['filter_1'].append(candidate)
+            continue
+
+        # 2. SNR
+        snr, _ = survey_sim.get_snr(candidate, 'F106')
+
+        if snr < 10:
+            filter_2 += 1
+            if filter_2 <= num_samples:
+                filtered_sample['filter_2'].append(candidate)
+            continue
+
+        # if both criteria satisfied, consider detectable
+        detectable_gglenses.append(candidate)
+
+        # if I've imposed a limit above this loop, exit the loop
+        if limit is not None and len(detectable_gglenses) == limit:
+            break
+
+    filtered_sample['num_filter_1'] = filter_1
+    filtered_sample['num_filter_2'] = filter_2
+
+    print(f'{len(detectable_gglenses)} detectable lens(es)')
+
+    if len(detectable_gglenses) > 0:
+        print(filtered_sample['num_filter_1']) 
+        print(filtered_sample['num_filter_2'])
+
+    print('Retrieving lenstronomy parameters')
+    dict_list = []
+    for gglens in tqdm(detectable_gglenses):
+
+        # get lens params from gglens object
+        kwargs_model, kwargs_params = gglens.lenstronomy_kwargs(band='F106')
+
+        # build dicts for lens and source magnitudes
+        lens_mags, source_mags = {}, {}
+        for band in ['F106', 'F129', 'F184']:
+            lens_mags[band] = gglens.deflector_magnitude(band)
+            source_mags[band] = gglens.extended_source_magnitude(band)
+
+        z_lens, z_source = gglens.deflector_redshift, gglens.source_redshift
+        kwargs_lens = kwargs_params['kwargs_lens']
+
+        # add additional necessary key/value pairs to kwargs_model
+        kwargs_model['lens_redshift_list'] = [z_lens] * len(kwargs_lens)
+        kwargs_model['source_redshift_list'] = [z_source]
+        kwargs_model['cosmo'] = cosmo
+        kwargs_model['z_source'] = z_source
+        kwargs_model['z_source_convention'] = 5
+
+        # create dict to pickle
+        gglens_dict = {
+            'kwargs_model': kwargs_model,
+            'kwargs_params': kwargs_params,
+            'lens_mags': lens_mags,
+            'source_mags': source_mags,
+            'deflector_stellar_mass': gglens.deflector_stellar_mass(),
+            'deflector_velocity_dispersion': gglens.deflector_velocity_dispersion(),
+            # 'snr': gglens.snr
+        }
+
+        dict_list.append(gglens_dict)
+
+    print('Pickling lenses...')
+    for i, each in tqdm(enumerate(dict_list)):
+        save_path = os.path.join(data_dir, 'skypy', f'skypy_output_{str(i).zfill(5)}.pkl')
+        util.pickle(save_path, each)
+
+
+    detectable_pop_csv = os.path.join(output_dir, 'detectable_pop.csv')
+    survey_sim.write_lens_pop_to_csv(detectable_pop_csv, detectable_gglenses, bands_hlwas)
+
+
+    stop = time.time()
+    execution_time = str(datetime.timedelta(seconds=round(stop - start)))
+    print(f'Execution time: {execution_time}')
+
+
+if __name__ == '__main__':
+    main()

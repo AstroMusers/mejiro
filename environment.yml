@@ -20,3 +20,4 @@ dependencies:
       - mcfit
       - jwst_backgrounds
       - webbpsf==1.1.1
+      - pysiaf
