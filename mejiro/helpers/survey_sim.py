@@ -107,29 +107,30 @@ def write_lens_pop_to_csv(output_path, gg_lenses, bands):
 
     for i, gg_lens in tqdm(enumerate(gg_lenses), total=len(gg_lenses)):
         dict = {
-            'velodisp': gg_lens.deflector_velocity_dispersion,
+            'velodisp': gg_lens.deflector_velocity_dispersion(),
             'massstel': gg_lens.deflector_stellar_mass() * 1e-12, 
             'angleins': gg_lens.einstein_radius, 
             'redssour': gg_lens.source_redshift, 
             'redslens': gg_lens.deflector_redshift, 
-            'magnsour': gg_lens.host_magnification
+            'magnsour': gg_lens.extended_source_magnification()
             # TODO add SNR?
         }
 
-        posiimag = gg_lens.get_image_positions()
+        posiimag = gg_lens.point_source_image_positions()
         dict['numbimag'] = int(posiimag[0].size)
 
         dict['maxmdistimag'] = np.amax(np.sqrt((posiimag[0][:, None] - posiimag[0][None, :]) ** 2 + (posiimag[1][:, None] - posiimag[1][None, :]) ** 2))
 
-        posilens, posisour = gg_lens.position_alignment()
+        posilens = gg_lens.deflector_position
+        posisour = gg_lens.extended_source_image_positions()[0]
         dict['xposlens'] = posilens[0]
         dict['yposlens'] = posilens[1]
         dict['xpossour'] = posisour[0]
         dict['ypossour'] = posisour[1]
 
         for nameband in bands:
-            dict['magtsour%s' % nameband] = gg_lens.source_magnitude(band=nameband)
-            dict['magtsourMagnified%s' % nameband] = gg_lens.source_magnitude(band=nameband, lensed=True)
+            dict['magtsour%s' % nameband] = gg_lens.extended_source_magnitude(band=nameband)
+            dict['magtsourMagnified%s' % nameband] = gg_lens.extended_source_magnitude(band=nameband, lensed=True)
             dict['magtlens%s' % nameband] = gg_lens.deflector_magnitude(band=nameband)
 
         df.loc[i] = pd.Series(dict)
