@@ -188,7 +188,7 @@ class StrongLens:
 
         # define numerics
         kwargs_numerics = {
-            'supersampling_factor': 1,
+            'supersampling_factor': 5,  # TODO should figure out how to set this optimally
             'supersampling_convolution': False
         }
 
