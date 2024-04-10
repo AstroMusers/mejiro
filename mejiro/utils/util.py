@@ -2,11 +2,28 @@ import datetime
 import os
 import pickle as _pickle
 import shutil
+import pandas as pd
 from collections import ChainMap
 from glob import glob
 
 import numpy as np
 from omegaconf import OmegaConf
+
+
+def combine_all_csvs(path, filename):
+    # list all files in directory
+    csv_files = glob(os.path.join(path, '*.csv'))
+
+    # concatenate CSVs
+    pd_list = [pd.read_csv(os.path.join(path, f)) for f in csv_files]
+    df_res = pd.concat(pd_list, ignore_index=True)
+
+    # save as combined CSV
+    df_res.to_csv(filename)
+    print(f'Wrote combined CSV to {filename}')
+
+    # return as DataFrame
+    return df_res
 
 
 def check_negative_values(array):
@@ -113,23 +130,3 @@ def scientific_notation_string(input):
 def delete_if_exists(path):
     if os.path.exists(path):
         os.remove(path)
-
-# TODO finish
-# def scientific_notation_string(input):
-#     # convert to Python scientific notion
-#     string = '{:e}'.format(input)
-#     num_string, exponent = string.split('e')
-#     num = str(round(float(num_string), 2))
-
-#     # handle exponent
-#     if exponent[0] == '+':
-#         _, power = exponent.split('+')
-#     elif exponent[0] == '-':
-#         _, power = exponent.split('-')
-#         power = '-' + power
-
-
-#     power = str(int(power))
-#     exponent = '10^{' + power + '}'
-
-#     return ''.join((num, '\cross', exponent))
