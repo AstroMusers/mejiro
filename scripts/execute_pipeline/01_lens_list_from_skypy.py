@@ -22,8 +22,8 @@ def main(config):
     util.create_directory_if_not_exists(config.machine.dir_01)
     util.clear_directory(config.machine.dir_01)
 
-    output_files = glob(config.machine.skypy_dir + '/skypy_output_*.csv')
-    assert len(output_files) != 0, f'No output files found. Check SkyPy output directory ({config.machine.skypy_dir}).'
+    output_files = glob(config.machine.dir_00 + '/detectable_pop_*.csv')
+    assert len(output_files) != 0, f'No output files found. Check HLWAS simulation output directory ({config.machine.dir_00}).'
     num_runs = len(output_files)
 
     uid = 0
@@ -31,7 +31,7 @@ def main(config):
     for run in range(num_runs):
         print(f'Run {run + 1} of {num_runs}')
         # unpickle the lenses from the population survey and create lens objects
-        lens_paths = glob(config.machine.skypy_dir + f'/lenses_5_run{str(run).zfill(3)}/*.pkl')
+        lens_paths = glob(config.machine.dir_00 + f'/run{str(run).zfill(2)}/detectable_lens_run{str(run).zfill(2)}_*.pkl')
         assert len(
             lens_paths) != 0, f'No pickled lenses found. Check SkyPy output directory ({config.machine.skypy_dir}).'
 
@@ -41,7 +41,7 @@ def main(config):
             lens_list.append(lens)
 
     # pickle lens list
-    pickle_target = os.path.join(config.machine.dir_01, f'01_skypy_output_lens_list')
+    pickle_target = os.path.join(config.machine.dir_01, f'01_hlwas_sim_detectable_lens_list')
     util.delete_if_exists(pickle_target)
     util.pickle(pickle_target, lens_list)
 

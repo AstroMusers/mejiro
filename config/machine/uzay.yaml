@@ -1,3 +1,6 @@
+# number of cores to subtract off from total available
+headroom_cores: 4
+
 # where the repository lives
 repo_dir: /home/btwedig/mejiro
 
@@ -11,6 +14,7 @@ pickle_dir: ${machine.data_dir}/output/pickles
 
 # pipeline directories
 pipeline_dir: ${machine.data_dir}/pipeline
+dir_00: ${machine.pipeline_dir}/00
 dir_01: ${machine.pipeline_dir}/01
 dir_02: ${machine.pipeline_dir}/02
 dir_03: ${machine.pipeline_dir}/03

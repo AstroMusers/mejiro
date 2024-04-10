@@ -20,7 +20,7 @@ def main(config):
     start = time.time()
 
     # set number of runs
-    runs = 20
+    runs = 2
 
     # enable use of local packages
     repo_dir = config.machine.repo_dir
@@ -30,8 +30,7 @@ def main(config):
     from mejiro.utils import util
 
     # set up output directory
-    data_dir = config.machine.data_dir
-    output_dir = os.path.join(data_dir, 'output', 'hlwas_sim')
+    output_dir = config.machine.dir_00
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
     print(f'Set up output directory {output_dir}')
@@ -178,6 +177,7 @@ def run_slsim(tuple):
 
     filtered_sample['num_filter_1'] = filter_1
     filtered_sample['num_filter_2'] = filter_2
+    util.pickle(os.path.join(output_dir, f'filtered_sample_{str(run).zfill(2)}.pkl'), filtered_sample)
 
     print(f'Run {str(run).zfill(2)}: {len(detectable_gglenses)} detectable lens(es)')
 
@@ -223,9 +223,8 @@ def run_slsim(tuple):
 
     # print('Pickling lenses...')
     for i, each in tqdm(enumerate(dict_list)):
-        save_path = os.path.join(lens_output_dir, f'skypy_output_{str(i).zfill(5)}.pkl')
+        save_path = os.path.join(lens_output_dir, f'detectable_lens_{str(run).zfill(2)}_{str(i).zfill(5)}.pkl')
         util.pickle(save_path, each)
-
 
     detectable_pop_csv = os.path.join(output_dir, f'detectable_pop_{str(run).zfill(2)}.csv')
     survey_sim.write_lens_pop_to_csv(detectable_pop_csv, detectable_gglenses, bands_hlwas)

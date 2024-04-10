@@ -22,7 +22,7 @@ def main(config):
     from mejiro.utils import util
 
     # open pickled lens list
-    pickled_lens_list = os.path.join(config.machine.dir_01, '01_skypy_output_lens_list')
+    pickled_lens_list = os.path.join(config.machine.dir_01, '01_hlwas_sim_detectable_lens_list')
     lens_list = util.unpickle(pickled_lens_list)
     assert len(lens_list) != 0, f'No pickled lenses found. Check {pickled_lens_list}.'
     count = len(lens_list)
