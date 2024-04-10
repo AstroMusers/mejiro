@@ -22,6 +22,9 @@ def main(config):
     # set number of runs
     runs = 40
 
+    # debugging mode will print statements to console
+    debugging = False
+
     # enable use of local packages
     repo_dir = config.machine.repo_dir
     if repo_dir not in sys.path:
@@ -48,7 +51,7 @@ def main(config):
     print(f'Loaded SkyPy configuration file {skypy_config}')
 
     # tuple the parameters
-    tuple_list = [(i, output_dir, skypy_config) for i in range(runs)]
+    tuple_list = [(i, output_dir, skypy_config, debugging) for i in range(runs)]
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -77,7 +80,7 @@ def run_slsim(tuple):
     from mejiro.utils import util
 
     # unpack tuple
-    run, output_dir, skypy_config = tuple
+    run, output_dir, skypy_config, debugging = tuple
 
     # prepare a directory for this particular run
     lens_output_dir = os.path.join(output_dir, f'run_{str(run).zfill(2)}')
@@ -103,7 +106,7 @@ def run_slsim(tuple):
         skypy_config=skypy_config,
         sky_area=sky_area,
         cosmo=cosmo)
-    # print('Defined galaxy population')
+    if debugging: print('Defined galaxy population')
 
     # num_lenses = lens_pop.deflector_number()
     # num_sources = lens_pop.source_number()
@@ -111,21 +114,21 @@ def run_slsim(tuple):
     # print(f'Number of sources: {num_sources}, scaled to HLWAS ({area_hlwas} sq deg): {int((area_hlwas / survey_area) * num_sources)}')
 
     # draw the total lens population
-    # print('Identifying lenses...')
+    if debugging: print('Identifying lenses...')
     total_lens_population = lens_pop.draw_population(kwargs_lens_cuts={})
-    # print(f'Number of total lenses: {len(total_lens_population)}')
+    if debugging: print(f'Number of total lenses: {len(total_lens_population)}')
 
     # compute SNRs and save
-    # print(f'Computing SNRs for {len(total_lens_population)} lenses')
+    if debugging: print(f'Computing SNRs for {len(total_lens_population)} lenses')
     snr_list = []
-    for candidate in tqdm(total_lens_population):
+    for candidate in tqdm(total_lens_population, disable=not debugging):
         snr, _ = survey_sim.get_snr(candidate, 'F106')
         snr_list.append(snr)
     np.save(os.path.join(output_dir, f'snr_list_{str(run).zfill(2)}.npy'), snr_list)
 
     # save other params to CSV
     total_pop_csv = os.path.join(output_dir, f'total_pop_{str(run).zfill(2)}.csv')
-    print(f'Writing total population to {total_pop_csv}')
+    if debugging: print(f'Writing total population to {total_pop_csv}')
     survey_sim.write_lens_pop_to_csv(total_pop_csv, total_lens_population, bands_hlwas)
 
     # draw initial lens population
@@ -135,7 +138,7 @@ def run_slsim(tuple):
         'mag_arc_limit': {'F106': 25},
     }
     lens_population = lens_pop.draw_population(kwargs_lens_cuts=kwargs_lens_cut)
-    print(f'Number of detectable lenses from first set of criteria: {len(lens_population)}')
+    if debugging: print(f'Number of detectable lenses from first set of criteria: {len(lens_population)}')
 
     # set up dict to capture some information about which candidates got filtered out
     filtered_sample = {}
@@ -148,7 +151,7 @@ def run_slsim(tuple):
     # apply additional detectability criteria
     limit = None
     detectable_gglenses = []
-    for candidate in tqdm(lens_population):
+    for candidate in tqdm(lens_population, disable=not debugging):
         # 1. Einstein radius and Sersic radius
         _, kwargs_params = candidate.lenstronomy_kwargs(band='F106')
         lens_mag = candidate.deflector_magnitude(band='F106')
@@ -175,7 +178,7 @@ def run_slsim(tuple):
         if limit is not None and len(detectable_gglenses) == limit:
             break
 
-    print(f'Run {str(run).zfill(2)}: {len(detectable_gglenses)} detectable lens(es)')
+    if debugging: print(f'Run {str(run).zfill(2)}: {len(detectable_gglenses)} detectable lens(es)')
 
     # save information about which lenses got filtered out
     filtered_sample['num_filter_1'] = filter_1
@@ -186,9 +189,9 @@ def run_slsim(tuple):
     #     print(filtered_sample['num_filter_1']) 
     #     print(filtered_sample['num_filter_2'])
 
-    print('Retrieving lenstronomy parameters...')
+    if debugging: print('Retrieving lenstronomy parameters...')
     dict_list = []
-    for gglens in tqdm(detectable_gglenses):
+    for gglens in tqdm(detectable_gglenses, disable=not debugging):
 
         # get lens params from gglens object
         kwargs_model, kwargs_params = gglens.lenstronomy_kwargs(band='F106')
@@ -222,8 +225,8 @@ def run_slsim(tuple):
 
         dict_list.append(gglens_dict)
 
-    print('Pickling lenses...')
-    for i, each in tqdm(enumerate(dict_list)):
+    if debugging: print('Pickling lenses...')
+    for i, each in tqdm(enumerate(dict_list), disable=not debugging):
         save_path = os.path.join(lens_output_dir, f'detectable_lens_{str(run).zfill(2)}_{str(i).zfill(5)}.pkl')
         util.pickle(save_path, each)
 
