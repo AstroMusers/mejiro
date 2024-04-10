@@ -10,7 +10,7 @@ import numpy as np
 from omegaconf import OmegaConf
 
 
-def combine_all_csvs(path, filename=None):
+def combine_all_csvs(path, prefix='', filename=None):
     """
     Combine all CSV files in a directory into a single DataFrame.
 
@@ -18,6 +18,8 @@ def combine_all_csvs(path, filename=None):
     -----------
     path : str
         The path to the directory containing the CSV files.
+    prefix : str, optional
+        The prefix of the CSV files to be combined. Default is an empty string.
     filename : str, optional
         The name of the combined CSV file to save. If not provided, the DataFrame will not be saved.
 
@@ -33,7 +35,7 @@ def combine_all_csvs(path, filename=None):
     <DataFrame object>
     """
     # list all files in directory
-    csv_files = glob.glob(os.path.join(path, '*.csv'))
+    csv_files = glob(os.path.join(path, f'{prefix}*.csv'))
 
     # concatenate CSVs
     pd_list = [pd.read_csv(f) for f in csv_files]

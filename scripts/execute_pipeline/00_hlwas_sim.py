@@ -20,7 +20,7 @@ def main(config):
     start = time.time()
 
     # set number of runs
-    runs = 2
+    runs = 40
 
     # enable use of local packages
     repo_dir = config.machine.repo_dir
@@ -128,14 +128,14 @@ def run_slsim(tuple):
     print(f'Writing total population to {total_pop_csv}')
     survey_sim.write_lens_pop_to_csv(total_pop_csv, total_lens_population, bands_hlwas)
 
+    # draw initial lens population
     kwargs_lens_cut = {
         'min_image_separation': 0.2,
         'max_image_separation': 5,
         'mag_arc_limit': {'F106': 25},
     }
-
     lens_population = lens_pop.draw_population(kwargs_lens_cuts=kwargs_lens_cut)
-    # print(f'Number of detectable lenses from first set of criteria: {len(lens_population)}')
+    print(f'Number of detectable lenses from first set of criteria: {len(lens_population)}')
 
     # set up dict to capture some information about which candidates got filtered out
     filtered_sample = {}
@@ -145,9 +145,9 @@ def run_slsim(tuple):
     filtered_sample['filter_1'] = []
     filtered_sample['filter_2'] = []
 
+    # apply additional detectability criteria
     limit = None
     detectable_gglenses = []
-
     for candidate in tqdm(lens_population):
         # 1. Einstein radius and Sersic radius
         _, kwargs_params = candidate.lenstronomy_kwargs(band='F106')
@@ -175,17 +175,18 @@ def run_slsim(tuple):
         if limit is not None and len(detectable_gglenses) == limit:
             break
 
+    print(f'Run {str(run).zfill(2)}: {len(detectable_gglenses)} detectable lens(es)')
+
+    # save information about which lenses got filtered out
     filtered_sample['num_filter_1'] = filter_1
     filtered_sample['num_filter_2'] = filter_2
     util.pickle(os.path.join(output_dir, f'filtered_sample_{str(run).zfill(2)}.pkl'), filtered_sample)
-
-    print(f'Run {str(run).zfill(2)}: {len(detectable_gglenses)} detectable lens(es)')
 
     # if len(detectable_gglenses) > 0:
     #     print(filtered_sample['num_filter_1']) 
     #     print(filtered_sample['num_filter_2'])
 
-    # print('Retrieving lenstronomy parameters')
+    print('Retrieving lenstronomy parameters...')
     dict_list = []
     for gglens in tqdm(detectable_gglenses):
 
@@ -221,7 +222,7 @@ def run_slsim(tuple):
 
         dict_list.append(gglens_dict)
 
-    # print('Pickling lenses...')
+    print('Pickling lenses...')
     for i, each in tqdm(enumerate(dict_list)):
         save_path = os.path.join(lens_output_dir, f'detectable_lens_{str(run).zfill(2)}_{str(i).zfill(5)}.pkl')
         util.pickle(save_path, each)
