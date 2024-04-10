@@ -14,13 +14,23 @@ def combine_all_csvs(path, filename=None):
     """
     Combine all CSV files in a directory into a single DataFrame.
 
-    Parameters:
-    path (str): The path to the directory containing the CSV files.
-    filename (str, optional): The name of the combined CSV file to save.
+    Parameters
+    -----------
+    path : str
+        The path to the directory containing the CSV files.
+    filename : str, optional
+        The name of the combined CSV file to save. If not provided, the DataFrame will not be saved.
 
-    Returns:
-    pandas.DataFrame: The combined DataFrame.
+    Returns
+    --------
+    df_res : pandas.DataFrame
+        The combined DataFrame containing all the CSV data.
 
+    Example:
+    --------
+    >>> combine_all_csvs('/path/to/csvs', 'combined.csv')
+    Wrote combined CSV to combined.csv
+    <DataFrame object>
     """
     # list all files in directory
     csv_files = glob.glob(os.path.join(path, '*.csv'))
@@ -96,16 +106,25 @@ def resize_with_pixels_centered(array, oversample_factor):
     """
     Resize the input array with centered pixels using the specified oversample factor.
 
-    Parameters:
-        array (ndarray): The input array to be resized. It must be a square array.
-        oversample_factor (int): The factor by which to oversample the array. It must be an odd number.
+    Parameters
+    ----------
+    array : numpy.ndarray
+        The input array to be resized.
+    oversample_factor : int
+        The factor by which to oversample the array. Must be odd.
 
-    Returns:
-        ndarray: The resized array with centered pixels.
+    Returns
+    -------
+    numpy.ndarray
+        The resized array with centered pixels.
 
-    Raises:
-        Exception: If the oversample factor is even.
-        Exception: If the input array is not square.
+    Raises
+    ------
+    Exception
+        If the oversample factor is not odd.
+    Exception
+        If the array is not square.
+
     """
     if oversample_factor % 2 == 0:
         raise Exception('Oversampling factor must be odd')
@@ -131,15 +150,38 @@ def resize_with_pixels_centered(array, oversample_factor):
 
 def center_crop_image(array, shape):
     """
-    Crop the input array to the specified shape by centering the crop.
+    Crop the input array to the specified shape by centering the image.
 
-    Parameters:
-    array (ndarray): The input array to be cropped.
-    shape (tuple): The desired shape of the cropped array.
+    Parameters
+    ----------
+    array : numpy.ndarray
+        The input array to be cropped.
+    shape : tuple
+        The desired shape of the cropped array.
 
-    Returns:
-    ndarray: The cropped array.
+    Returns
+    -------
+    numpy.ndarray
+        The cropped array.
 
+    Notes
+    -----
+    If the input array already has the specified shape, it will be returned as is.
+
+    Examples
+    --------
+    >>> array = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    >>> shape = (2, 2)
+    >>> center_crop_image(array, shape)
+    array([[5, 6],
+           [8, 9]])
+
+    >>> array = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    >>> shape = (3, 3)
+    >>> center_crop_image(array, shape)
+    array([[1, 2, 3],
+           [4, 5, 6],
+           [7, 8, 9]])
     """
     if array.shape == shape:
         return array
@@ -246,13 +288,19 @@ def unpickle_all(dir_path, prefix='', limit=None):
     """
     Load and unpickle all files in a directory.
 
-    Parameters:
-    dir_path (str): The path to the directory containing the files.
-    prefix (str, optional): The prefix of the files to be loaded. Defaults to an empty string.
-    limit (int, optional): The maximum number of files to load. Defaults to None.
+    Parameters
+    ----------
+    dir_path : str
+        The path to the directory containing the files.
+    prefix : str, optional
+        The prefix of the files to be loaded. Default is an empty string.
+    limit : int, optional
+        The maximum number of files to be loaded. Default is None.
 
-    Returns:
-    list: A list of unpickled objects.
+    Returns
+    -------
+    list
+        A list of unpickled objects.
 
     """
     file_list = glob(dir_path + f'/{prefix}*')
