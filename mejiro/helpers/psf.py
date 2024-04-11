@@ -88,12 +88,12 @@ def detector_int_to_sca(detector):
         return f'SCA{str(detector).zfill(2)}'
 
 
-def get_psf_kernel(band, detector, detector_position, oversample=5, save=None):
+def get_psf_kernel(band, detector, detector_position, oversample=5, fov_arcsec=None, save=None):
     wfi = WFI()
     wfi.filter = band.upper()
     wfi.detector = detector_int_to_sca(detector)
     wfi.detector_position = detector_position
-    psf = wfi.calc_psf(oversample=oversample)
+    psf = wfi.calc_psf(oversample=oversample, fov_arcsec=fov_arcsec)
     if save is not None:
         psf.writeto(save, overwrite=True)
     return psf[0].data
