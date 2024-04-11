@@ -3,21 +3,22 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python
-  - astropy==5.1.1
+  - python==3.11
+  - astropy
   - astroquery
+  - galsim
   - jupyter
-  - healpy
-  - lenstronomy==1.11.0
   - pip
   - scikit-image
   - tqdm
   - pip:
-      - pandeia-engine==3.0
+      - speclite
       - pyhalo
       - hydra-core
       - colossus
       - mcfit
-      - jwst_backgrounds
-      - webbpsf==1.1.1
+      - webbpsf
+      - lenstronomy
+      - slsim
       - pysiaf
+      - pandeia-engine
