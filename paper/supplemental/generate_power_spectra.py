@@ -66,7 +66,7 @@ def main(config):
 
     # collect lenses
     print(f'Collecting {num_lenses} lenses...')
-    pickled_lens_list = os.path.join(config.machine.dir_01, '01_skypy_output_lens_list')
+    pickled_lens_list = os.path.join(config.machine.dir_01, '01_hlwas_sim_detectable_lens_list')
     lens_list = util.unpickle(pickled_lens_list)[:num_lenses]
     print('Collected lenses.')
 
@@ -95,9 +95,9 @@ def main(config):
     batches = list(generator)
 
     # process the batches
-    # for batch in tqdm(batches):
-    #     pool = Pool(processes=process_count)
-    #     pool.map(generate_power_spectra, batch)     
+    for batch in tqdm(batches):
+        pool = Pool(processes=process_count)
+        pool.map(generate_power_spectra, batch)     
 
     for tuple in tqdm(tuple_list):
         generate_power_spectra(tuple)
@@ -120,7 +120,7 @@ def generate_power_spectra(tuple):
 
     # set imaging params
     band = 'F184'
-    grid_oversample = 3
+    grid_oversample = 5
     num_pix = 45
     side = 4.95
 
@@ -176,35 +176,32 @@ def generate_power_spectra(tuple):
     models = [i.get_array(num_pix=num_pix * grid_oversample, side=side, band=band) for i in lenses]
 
     # generate images
-    detector = gs.get_random_detector(suppress_output=True)
-    detector_pos = gs.get_random_detector_pos(num_pix, suppress_output=True)
-
     for sl, model, title in zip(lenses, models, titles):
         # generate subhalo images and save power spectra
         gs_images, _ = gs.get_images(sl, model, band, input_size=num_pix, output_size=num_pix,
                                      grid_oversample=grid_oversample, psf_oversample=grid_oversample,
-                                     detector=detector, detector_pos=detector_pos, suppress_output=True)
+                                     detector=1, detector_pos=(2048, 2048), suppress_output=True)
         image_power_spectrum = ft.power_spectrum(gs_images[0])
         np.save(os.path.join(lens_dir, f'power_spectrum_{title}_image.npy'), image_power_spectrum)
 
         # generate convergence maps
-        if sl.realization is None:
-            kappa = sl.get_macrolens_kappa(num_pix, subhalo_cone)
-        else:
-            kappa = sl.get_kappa(num_pix, subhalo_cone)
-        kappa_power_spectrum = ft.power_spectrum(kappa)
-        np.save(os.path.join(lens_dir, f'power_spectrum_{title}_kappa.npy'), kappa_power_spectrum)
+        # if sl.realization is None:
+        #     kappa = sl.get_macrolens_kappa(num_pix, subhalo_cone)
+        # else:
+        #     kappa = sl.get_kappa(num_pix, subhalo_cone)
+        # kappa_power_spectrum = ft.power_spectrum(kappa)
+        # np.save(os.path.join(lens_dir, f'power_spectrum_{title}_kappa.npy'), kappa_power_spectrum)
 
     # generate PSF power spectra
     # no PSF
-    no_psf_lens = deepcopy(lens)
-    no_psf = no_psf_lens.get_array(num_pix=num_pix, side=side, band=band)
+    # no_psf_lens = deepcopy(lens)
+    # no_psf = no_psf_lens.get_array(num_pix=num_pix, side=side, band=band)
 
     # Gaussian PSF
-    gaussian_psf_lens = deepcopy(lens)
-    # PSF FWHM for F184; see https://roman.gsfc.nasa.gov/science/WFI_technical.html
-    kwargs_psf_gaussian = {'psf_type': 'GAUSSIAN', 'fwhm': 0.151}  # TODO get FWHM from roman_params
-    gaussian_psf = gaussian_psf_lens.get_array(num_pix=num_pix, side=side, band=band, kwargs_psf=kwargs_psf_gaussian)
+    # gaussian_psf_lens = deepcopy(lens)
+    # # PSF FWHM for F184; see https://roman.gsfc.nasa.gov/science/WFI_technical.html
+    # kwargs_psf_gaussian = {'psf_type': 'GAUSSIAN', 'fwhm': 0.151}  # TODO get FWHM from roman_params
+    # gaussian_psf = gaussian_psf_lens.get_array(num_pix=num_pix, side=side, band=band, kwargs_psf=kwargs_psf_gaussian)
 
     # WebbPSF
     webbpsf_lens = deepcopy(lens)
@@ -220,9 +217,9 @@ def generate_power_spectra(tuple):
     gaussian_psf_power = ft.power_spectrum(gaussian_psf)
     webbpsf_psf_power = ft.power_spectrum(webbpsf_psf)
 
-    np.save(os.path.join(lens_dir, f'power_spectrum_{title}_psf_none.npy'), no_psf_power)
-    np.save(os.path.join(lens_dir, f'power_spectrum_{title}_psf_gaussian.npy'), gaussian_psf_power)
-    np.save(os.path.join(lens_dir, f'power_spectrum_{title}_psf_webbpsf.npy'), webbpsf_psf_power)
+    np.save(os.path.join(lens_dir, f'power_spectrum_{title}_psf_webbpsf_nominal.npy'), no_psf_power)
+    np.save(os.path.join(lens_dir, f'power_spectrum_{title}_psf_webbpsf_9.npy'), gaussian_psf_power)
+    np.save(os.path.join(lens_dir, f'power_spectrum_{title}_psf_webbpsf_17.npy'), webbpsf_psf_power)
 
 
 def generate_poisson_noise(save_path, mean):
