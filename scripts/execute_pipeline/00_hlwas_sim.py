@@ -20,16 +20,15 @@ def main(config):
     start = time.time()
 
     # set number of runs
-    runs = 40
+    runs = 2
 
     # debugging mode will print statements to console
-    debugging = False
+    debugging = True
 
     # enable use of local packages
     repo_dir = config.machine.repo_dir
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
-    import mejiro
     from mejiro.utils import util
 
     # set up output directory
@@ -38,20 +37,8 @@ def main(config):
     util.clear_directory(output_dir)
     print(f'Set up output directory {output_dir}')
 
-    # load Roman WFI filters
-    configure_roman_filters()
-    roman_filters = filter_names()
-    roman_filters.sort()
-    _ = speclite.filters.load_filters(*roman_filters[:8])
-    print('Configured Roman filters')
-
-    # load SkyPy config file
-    module_path = os.path.dirname(mejiro.__file__)
-    skypy_config = os.path.join(module_path, 'data', 'roman_hlwas.yml')
-    print(f'Loaded SkyPy configuration file {skypy_config}')
-
     # tuple the parameters
-    tuple_list = [(i, output_dir, skypy_config, debugging) for i in range(runs)]
+    tuple_list = [(i, output_dir, debugging) for i in range(runs)]
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -76,11 +63,24 @@ def main(config):
 
 
 def run_slsim(tuple):
+    import mejiro
     from mejiro.helpers import survey_sim
     from mejiro.utils import util
 
     # unpack tuple
-    run, output_dir, skypy_config, debugging = tuple
+    run, output_dir, debugging = tuple
+
+    # load Roman WFI filters
+    configure_roman_filters()
+    roman_filters = filter_names()
+    roman_filters.sort()
+    _ = speclite.filters.load_filters(*roman_filters[:8])
+    if debugging: print('Configured Roman filters')
+
+    # load SkyPy config file
+    module_path = os.path.dirname(mejiro.__file__)
+    skypy_config = os.path.join(module_path, 'data', 'roman_hlwas.yml')
+    if debugging: print(f'Loaded SkyPy configuration file {skypy_config}')
 
     # prepare a directory for this particular run
     lens_output_dir = os.path.join(output_dir, f'run_{str(run).zfill(2)}')
