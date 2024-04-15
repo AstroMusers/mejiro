@@ -2,12 +2,13 @@ import multiprocessing
 import os
 import sys
 from copy import deepcopy
-
+from lenstronomy.Util.correlation import power_spectrum_1d
 import galsim
 import hydra
 import numpy as np
 from pyHalo.preset_models import CDM
 from tqdm import tqdm
+from multiprocessing import Pool
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -27,7 +28,7 @@ def main(config):
     util.create_directory_if_not_exists(lens_dir)
     util.clear_directory(lens_dir)
 
-    num_lenses = 1000
+    num_lenses = 10
 
     # generate flat image
     print('Generating flat images...')
@@ -55,28 +56,20 @@ def main(config):
     print('Generated Poisson noise.')
 
     # generate Gaussian noise
-    print('Generating Gaussian noise...')
-    gaussian_noise_dir = os.path.join(save_dir, 'gaussian_noise')
-    util.create_directory_if_not_exists(gaussian_noise_dir)
-    util.clear_directory(gaussian_noise_dir)
-    for i in tqdm(range(num_lenses)):
-        gaussian_noise_save_path = os.path.join(gaussian_noise_dir, f'gaussian_noise_{str(i).zfill(4)}.npy')
-        generate_gaussian_noise(gaussian_noise_save_path, mean, stdev)
-    print('Generated Gaussian noise.')
+    # print('Generating Gaussian noise...')
+    # gaussian_noise_dir = os.path.join(save_dir, 'gaussian_noise')
+    # util.create_directory_if_not_exists(gaussian_noise_dir)
+    # util.clear_directory(gaussian_noise_dir)
+    # for i in tqdm(range(num_lenses)):
+    #     gaussian_noise_save_path = os.path.join(gaussian_noise_dir, f'gaussian_noise_{str(i).zfill(4)}.npy')
+    #     generate_gaussian_noise(gaussian_noise_save_path, mean, stdev)
+    # print('Generated Gaussian noise.')
 
     # collect lenses
     print(f'Collecting {num_lenses} lenses...')
     pickled_lens_list = os.path.join(config.machine.dir_01, '01_hlwas_sim_detectable_lens_list')
     lens_list = util.unpickle(pickled_lens_list)[:num_lenses]
     print('Collected lenses.')
-
-    # generate k_list
-    print('Generating theta list...')
-    num_pix = 45
-    side = 4.95
-    theta_list = ft.get_theta_list(0.11, side, num_pix)
-    np.save(os.path.join(save_dir, 'theta_list.npy'), theta_list)
-    print('Generated theta list.')
 
     print('Generating power spectra...')
     # tuple the parameters
@@ -99,9 +92,6 @@ def main(config):
         pool = Pool(processes=process_count)
         pool.map(generate_power_spectra, batch)     
 
-    for tuple in tqdm(tuple_list):
-        generate_power_spectra(tuple)
-
     print('Done.')
 
 
@@ -119,8 +109,8 @@ def generate_power_spectra(tuple):
     los_normalization = 0
 
     # set imaging params
-    band = 'F184'
-    grid_oversample = 5
+    bands = ['F106', 'F129', 'F184']
+    oversample = 5
     num_pix = 45
     side = 4.95
 
@@ -171,18 +161,24 @@ def generate_power_spectra(tuple):
     lenses = [lens, lens_cut_6, lens_cut_7, lens_cut_8]
     titles = [f'lens_{lens.uid}_no_subhalos', f'lens_{lens.uid}_cut_6', f'lens_{lens.uid}_cut_7',
               f'lens_{lens.uid}_cut_8']
+    
+    detectors = [4, 1, 9, 17]
+    detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
 
-    # generate models
-    models = [i.get_array(num_pix=num_pix * grid_oversample, side=side, band=band) for i in lenses]
+    for band in bands:
+        # generate models
+        models = [i.get_array(num_pix=num_pix * oversample, side=side, band=band) for i in lenses]
 
-    # generate images
-    for sl, model, title in zip(lenses, models, titles):
-        # generate subhalo images and save power spectra
-        gs_images, _ = gs.get_images(sl, model, band, input_size=num_pix, output_size=num_pix,
-                                     grid_oversample=grid_oversample, psf_oversample=grid_oversample,
-                                     detector=1, detector_pos=(2048, 2048), suppress_output=True)
-        image_power_spectrum = ft.power_spectrum(gs_images[0])
-        np.save(os.path.join(lens_dir, f'power_spectrum_{title}_image.npy'), image_power_spectrum)
+        for sl, model, title in zip(lenses, models, titles):
+            for detector, detector_pos in zip(detectors, detector_positions):
+                gs_images, _ = gs.get_images(sl, model, band, input_size=num_pix, output_size=num_pix,
+                                            grid_oversample=oversample, psf_oversample=oversample,
+                                            detector=detector, detector_pos=detector_pos, suppress_output=True)
+                ps, r = power_spectrum_1d(gs_images[0])
+                np.save(os.path.join(lens_dir, f'im_{title}_{band}_{detector}.npy'), gs_images[0])
+                np.save(os.path.join(lens_dir, f'ps_{title}_{band}_{detector}.npy'), ps)
+    
+    np.save(os.path.join(lens_dir, 'r.npy'), r)
 
         # generate convergence maps
         # if sl.realization is None:
@@ -191,35 +187,6 @@ def generate_power_spectra(tuple):
         #     kappa = sl.get_kappa(num_pix, subhalo_cone)
         # kappa_power_spectrum = ft.power_spectrum(kappa)
         # np.save(os.path.join(lens_dir, f'power_spectrum_{title}_kappa.npy'), kappa_power_spectrum)
-
-    # generate PSF power spectra
-    # no PSF
-    # no_psf_lens = deepcopy(lens)
-    # no_psf = no_psf_lens.get_array(num_pix=num_pix, side=side, band=band)
-
-    # Gaussian PSF
-    # gaussian_psf_lens = deepcopy(lens)
-    # # PSF FWHM for F184; see https://roman.gsfc.nasa.gov/science/WFI_technical.html
-    # kwargs_psf_gaussian = {'psf_type': 'GAUSSIAN', 'fwhm': 0.151}  # TODO get FWHM from roman_params
-    # gaussian_psf = gaussian_psf_lens.get_array(num_pix=num_pix, side=side, band=band, kwargs_psf=kwargs_psf_gaussian)
-
-    # WebbPSF
-    webbpsf_lens = deepcopy(lens)
-    webbpsf_kernel = psf.get_psf_kernel(band, detector=1, detector_position=(2048, 2048), oversample=grid_oversample)
-    kwargs_webbpsf = {
-        'psf_type': 'PIXEL',
-        'kernel_point_source': webbpsf_kernel,
-        'point_source_supersampling_factor': 5
-    }
-    webbpsf_psf = webbpsf_lens.get_array(band=band, num_pix=num_pix, kwargs_psf=kwargs_webbpsf, side=side)
-
-    no_psf_power = ft.power_spectrum(no_psf)
-    gaussian_psf_power = ft.power_spectrum(gaussian_psf)
-    webbpsf_psf_power = ft.power_spectrum(webbpsf_psf)
-
-    np.save(os.path.join(lens_dir, f'power_spectrum_{title}_psf_webbpsf_nominal.npy'), no_psf_power)
-    np.save(os.path.join(lens_dir, f'power_spectrum_{title}_psf_webbpsf_9.npy'), gaussian_psf_power)
-    np.save(os.path.join(lens_dir, f'power_spectrum_{title}_psf_webbpsf_17.npy'), webbpsf_psf_power)
 
 
 def generate_poisson_noise(save_path, mean):
