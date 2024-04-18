@@ -20,7 +20,7 @@ def main(config):
     start = time.time()
 
     # set number of runs
-    runs = 2
+    runs = 40
 
     # debugging mode will print statements to console
     debugging = True
@@ -38,7 +38,7 @@ def main(config):
     print(f'Set up output directory {output_dir}')
 
     # tuple the parameters
-    tuple_list = [(i, output_dir, debugging) for i in range(runs)]
+    tuple_list = [(run, output_dir, debugging) for run in range(runs)]
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -63,6 +63,9 @@ def main(config):
 
 
 def run_slsim(tuple):
+    # a legacy function but prevents duplicate runs
+    np.random.seed()
+
     import mejiro
     from mejiro.helpers import survey_sim
     from mejiro.utils import util
