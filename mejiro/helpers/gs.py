@@ -25,9 +25,9 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
     bands : str or list of str
         The bands for which the images are generated.
     input_size : int
-        The size of the input images.
+        The size of the input images (one side), in pixels.
     output_size : int
-        The size of the output images.
+        The size of the output images (one side), in pixels.
     grid_oversample : float
         The oversampling factor for the grid.
     psf_oversample : float
@@ -70,6 +70,9 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
     The function returns a list of generated images and the execution time of the function.
     """
     start = time.time()
+
+    # TODO shouldn't need to do this because it should already be set, but getting AttributeError: 'SampleStrongLens' object has no attribute 'lens_light_model_class'
+    lens._set_classes()
 
     # check that the inputs are reasonable
     if validate:

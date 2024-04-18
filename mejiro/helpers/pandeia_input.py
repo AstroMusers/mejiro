@@ -14,6 +14,10 @@ from mejiro.helpers.roman_params import RomanParameters
 
 def build_pandeia_calc(array, lens, background=None, band='F106', max_scene_size=5, noise=True, num_samples=None,
                        oversample_factor=None, canned_bkg=False, suppress_output=False):
+    # make sure num_samples is int
+    if not isinstance(num_samples, int):
+        num_samples = int(num_samples)
+
     calc = build_default_calc('roman', 'wfi', 'imaging')
 
     # set scene size settings
@@ -24,6 +28,12 @@ def build_pandeia_calc(array, lens, background=None, band='F106', max_scene_size
 
     # set detector
     calc['configuration']['detector']['ma_table_name'] = 'hlwas_imaging'
+    calc['configuration']['detector']['nresultants'] = 8  # resultant number 8 to achieve HLWAS total integration duration of 145.96 s; see https://roman-docs.stsci.edu/raug/astronomers-proposal-tool-apt/appendix/appendix-wfi-multiaccum-tables
+
+    # seems to be a bug with v3.0 where it wants ngroup, nint, and readout_pattern, but these are JWST params and shouldn't be required for Roman
+    # calc['configuration']['detector']['ngroup'] = 1
+    # calc['configuration']['detector']['nint'] = 1
+    # calc['configuration']['detector']['readout_pattern'] = ''
 
     # turn on noise sources
     calc['calculation'] = get_calculation_dict(init=noise)
@@ -32,7 +42,7 @@ def build_pandeia_calc(array, lens, background=None, band='F106', max_scene_size
     if canned_bkg:
         # calc['background'] = bkg.get_jbt_bkg(suppress_output)
         calc['background'] = 'minzodi'
-        calc['background_level'] = 'benchmark'
+        calc['background_level'] = 'high'  # 'benchmark'
     else:
         calc['background'] = 'none'
 
@@ -100,7 +110,7 @@ def get_calculation_dict(init=True):
             'scatter': False  # doesn't seem to have an effect
         },
         'effects': {
-            'saturation': True  # only has an effect for bright (>19mag) sources
+            'saturation': True  # NB only has an effect for bright (>19mag) sources
         }
     }
 
@@ -144,6 +154,11 @@ def _get_cps_array(lens, array, num_samples, band, background):
     # normalize the image to convert it into a PDF
     sum = np.sum(array)
     normalized_array = array / sum
+
+    # TODO why does this need to be here?
+    # AttributeError: 'SampleStrongLens' object has no attribute 'lens_light_model_class'
+    # so hasn't been defined yet...
+    lens._set_classes()
 
     # calculate flux in counts/sec of source and lens light. NB the total_flux attribute is a list with one element
     lens_flux_cps = lens.lens_light_model_class.total_flux([lens.kwargs_lens_light_amp_dict[band]])[0]
