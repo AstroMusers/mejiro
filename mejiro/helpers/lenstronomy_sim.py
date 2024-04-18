@@ -74,7 +74,7 @@ def set_up_magnitudes(lens):
 #                                                                                          kwargs_source_mag_i]
 
 
-def simulate_rgb(lens, kwargs_lens_list, kwargs_source_list, config_list, size):
+def simulate_rgb(lens, kwargs_lens_list, kwargs_source_list, config_list, side):
     if len(config_list) == 3:
         band_b, band_g, band_r = config_list
         kwargs_b_band = band_b.kwargs_single_band()
@@ -87,14 +87,14 @@ def simulate_rgb(lens, kwargs_lens_list, kwargs_source_list, config_list, size):
         kwargs_r_band = band_g.kwargs_single_band()
     else:
         raise Exception('Unknown telescope configuration')
-
+    
     # set number of pixels from pixel scale
     pixel_scale = kwargs_g_band['pixel_scale']
-    numpix = int(round(size / pixel_scale))
+    num_pix = int(round(side / pixel_scale))
 
-    sim_b = SimAPI(numpix=numpix, kwargs_single_band=kwargs_b_band, kwargs_model=lens.kwargs_model)
-    sim_g = SimAPI(numpix=numpix, kwargs_single_band=kwargs_g_band, kwargs_model=lens.kwargs_model)
-    sim_r = SimAPI(numpix=numpix, kwargs_single_band=kwargs_r_band, kwargs_model=lens.kwargs_model)
+    sim_b = SimAPI(numpix=num_pix, kwargs_single_band=kwargs_b_band, kwargs_model=lens.kwargs_model)
+    sim_g = SimAPI(numpix=num_pix, kwargs_single_band=kwargs_g_band, kwargs_model=lens.kwargs_model)
+    sim_r = SimAPI(numpix=num_pix, kwargs_single_band=kwargs_r_band, kwargs_model=lens.kwargs_model)
 
     kwargs_numerics = {}
     imSim_b = sim_b.image_model_class(kwargs_numerics)
@@ -146,9 +146,9 @@ def _scale_max(image):
 
 
 def lsst_config_list():
-    LSST_g = LSST.LSST(band='g', psf_type='GAUSSIAN', coadd_years=1)
-    LSST_r = LSST.LSST(band='r', psf_type='GAUSSIAN', coadd_years=1)
-    LSST_i = LSST.LSST(band='i', psf_type='GAUSSIAN', coadd_years=1)
+    LSST_g = LSST.LSST(band='g', psf_type='GAUSSIAN', coadd_years=3)
+    LSST_r = LSST.LSST(band='r', psf_type='GAUSSIAN', coadd_years=3)
+    LSST_i = LSST.LSST(band='i', psf_type='GAUSSIAN', coadd_years=3)
     return [LSST_g, LSST_r, LSST_i]
 
 
@@ -164,9 +164,9 @@ def roman_config_list():
 
 
 def des_config_list():
-    DES_g = DES.DES(band='g', psf_type='GAUSSIAN', coadd_years=3)
-    DES_r = DES.DES(band='r', psf_type='GAUSSIAN', coadd_years=3)
-    DES_i = DES.DES(band='i', psf_type='GAUSSIAN', coadd_years=3)
+    DES_g = DES.DES(band='g', psf_type='GAUSSIAN', coadd_years=1)
+    DES_r = DES.DES(band='r', psf_type='GAUSSIAN', coadd_years=1)
+    DES_i = DES.DES(band='i', psf_type='GAUSSIAN', coadd_years=1)
     return [DES_g, DES_r, DES_i]
 
 
@@ -175,4 +175,4 @@ def hst_config_list():
 
 
 def euclid_config_list():
-    return [Euclid.Euclid(band='VIS', psf_type='GAUSSIAN', coadd_years=6)]
+    return [Euclid.Euclid(band='VIS', psf_type='GAUSSIAN', coadd_years=2)]

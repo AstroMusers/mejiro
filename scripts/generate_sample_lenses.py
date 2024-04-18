@@ -18,18 +18,18 @@ def main(config):
     from mejiro.lenses.test import SampleStrongLens
     from mejiro.utils import util
 
-    array_dir = os.path.join(array_dir, 'sample_skypy_lens')
-    util.create_directory_if_not_exists(array_dir)
+    output_dir = os.path.join(array_dir, 'sample_skypy_lens')
+    util.create_directory_if_not_exists(output_dir)
+    util.clear_directory(output_dir)
 
     # enable use of local packages
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
 
-    seed = 42
-    band = 'F129'
-    num_pix = 97  # 
-    side = 10.67  # 
-    max_scene_size = 10.  # 
+    band = 'F106'
+    num_pix = 51
+    side = 5.61
+    output_size = 45
     grid_oversample_list = [1, 3, 5]
     num_samples_list = [100, 1000, 10000, 100000, 1000000, 10000000]  # 
 
@@ -37,16 +37,16 @@ def main(config):
     lens = SampleStrongLens()
 
     # add CDM subhalos; NB same subhalo population for all
-    pickle_dir = os.path.join(pickle_dir, 'pyhalo')
-    lens.add_subhalos(*pyhalo.unpickle_subhalos(os.path.join(pickle_dir, 'cdm_subhalos_tuple')))
+    realization = util.unpickle(os.path.join(pickle_dir, 'cdm_subhalos_for_sample.pkl'))
+    lens.add_subhalos(realization)
 
-    # generate sky background and reshape for each grid oversampling
-    bkgs = []
-    background = bkg.get_high_galactic_lat_bkg((num_pix, num_pix), band, seed=seed)
-    for grid_oversample in grid_oversample_list:
-        reshaped_bkg = util.resize_with_pixels_centered(background, grid_oversample)
-        np.save(os.path.join(array_dir, f'bkg_{grid_oversample}'), reshaped_bkg)
-        bkgs.append(reshaped_bkg)
+    # # generate sky background and reshape for each grid oversampling
+    # bkgs = []
+    # background = bkg.get_high_galactic_lat_bkg((num_pix, num_pix), band, seed=seed)
+    # for grid_oversample in grid_oversample_list:
+    #     reshaped_bkg = util.resize_with_pixels_centered(background, grid_oversample)
+    #     np.save(os.path.join(array_dir, f'bkg_{grid_oversample}'), reshaped_bkg)
+    #     bkgs.append(reshaped_bkg)
 
     # generate each image
     for i, grid_oversample in enumerate(grid_oversample_list):
@@ -60,22 +60,25 @@ def main(config):
                                    side=side, band=band)
 
             # build Pandeia input
-            calc, _ = pandeia_input.build_pandeia_calc(model, lens, background=bkgs[i], band=band,
-                                                       max_scene_size=max_scene_size, num_samples=num_samples,
+            calc, _ = pandeia_input.build_pandeia_calc(model, lens, background=None, band=band,
+                                                       max_scene_size=output_size, num_samples=num_samples,
                                                        suppress_output=False)
 
             # do Pandeia calculation        
             image, _ = pandeia_input.get_pandeia_image(calc, suppress_output=False)
 
+            # center crop
+            image = util.center_crop_image(image, (output_size, output_size))
+
             # save image
-            np.save(os.path.join(array_dir, f'sample_skypy_lens_{grid_oversample}_{num_samples}'), image)
+            np.save(os.path.join(output_dir, f'sample_skypy_lens_{grid_oversample}_{num_samples}'), image)
 
             stop = time.time()
             execution_time.append(stop - start)
             execution_time_x.append((grid_oversample, num_samples))
 
-        np.save(os.path.join(array_dir, f'execution_time_{grid_oversample}'), execution_time)
-        np.save(os.path.join(array_dir, f'execution_time_x_{grid_oversample}'), execution_time_x)
+        np.save(os.path.join(output_dir, f'execution_time_{grid_oversample}'), execution_time)
+        np.save(os.path.join(output_dir, f'execution_time_x_{grid_oversample}'), execution_time_x)
 
 
 if __name__ == '__main__':
