@@ -157,7 +157,7 @@ def run_stips(tuple):
     # sorted_rows = sorted(output_rows, key=lambda d: d['re'], reverse=True)
 
     # filter out brightest galaxies
-    rows_to_write = [row for row in output_rows if row['re'] < 10]  # 1e2 < row['F106'] and 
+    rows_to_write = [row for row in output_rows if row['re'] < 5]  # 1e2 < row['F106'] and 
 
     # limit
     rows_to_write = random.sample(rows_to_write, 25)
@@ -196,8 +196,8 @@ def run_stips(tuple):
                         'distribution': 'uniform',
                         'radius': 275.,  # 100.
                         'radius_units': 'arcsec',
-                        'distance_low': 1.,  # 10.0
-                        'distance_high': 10.0,  # 10.0
+                        'distance_low': 5.,  # 10.0
+                        'distance_high': 15.0,  # 10.0
                         'offset_ra': 0.0,
                         'offset_dec': 0.0
                         }
