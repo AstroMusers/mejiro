@@ -137,7 +137,7 @@ def run_slsim(tuple):
     # draw initial lens population
     kwargs_lens_cut = {
         'min_image_separation': 0.2,
-        'max_image_separation': 5,
+        'max_image_separation': 10,
         'mag_arc_limit': {'F106': 25},
     }
     lens_population = lens_pop.draw_population(kwargs_lens_cuts=kwargs_lens_cut)
