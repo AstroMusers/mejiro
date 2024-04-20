@@ -35,8 +35,10 @@ class StrongLens:
             b = 0.36
             log_m_total_10 = (1 / a) * (np.log10(self.lens_stellar_mass / 1e10) - b)
             self.lens_total_mass = np.power(10, log_m_total_10) * 1e10 * (100 / 32)
+            self.main_halo_mass = self.lens_total_mass - self.lens_stellar_mass
         else:
             self.lens_total_mass = None
+            self.main_halo_mass = None
 
         # get redshifts
         self.z_lens = kwargs_model['lens_redshift_list'][0]
