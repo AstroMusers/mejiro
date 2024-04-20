@@ -31,7 +31,7 @@ def main(config):
     util.clear_directory(output_dir)
 
     # count number of lenses and build indices of uids
-    lens_pickles = glob(config.machine.dir_02 + '/lens_with_subhalos_*')
+    lens_pickles = glob(config.machine.dir_02 + '/lens_with_subhalos_*.pkl')
     count = len(lens_pickles)
     lens_uids = list(range(count))
 
@@ -76,7 +76,7 @@ def get_model(input):
     grid_oversample = pipeline_params['grid_oversample']
 
     # load the lens based on uid
-    lens = util.unpickle(os.path.join(input_dir, f'lens_with_subhalos_{str(i).zfill(8)}'))
+    lens = util.unpickle(os.path.join(input_dir, f'lens_with_subhalos_{str(i).zfill(8)}.pkl'))
 
     # generate lenstronomy model and save
     for band in bands:
@@ -84,7 +84,7 @@ def get_model(input):
         np.save(os.path.join(output_dir, f'array_{lens.uid}_{band}'), model)
 
     # pickle lens to save attributes updated by get_array()
-    pickle_target_lens = os.path.join(output_dir, f'lens_{lens.uid}')
+    pickle_target_lens = os.path.join(output_dir, f'lens_{lens.uid}.pkl')
     util.pickle(pickle_target_lens, lens)
 
 

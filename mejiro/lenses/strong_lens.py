@@ -13,8 +13,11 @@ from lenstronomy.LensModel.lens_model import LensModel
 from lenstronomy.LightModel.light_model import LightModel
 from lenstronomy.SimulationAPI.ObservationConfig.Roman import Roman
 from lenstronomy.SimulationAPI.sim_api import SimAPI
-from lenstronomy.Util import data_util, util
+from lenstronomy.Util import data_util
+from lenstronomy.Util import util as len_util
 from pyHalo.Cosmology.cosmology import Cosmology
+
+from mejiro.utils import util
 
 
 class StrongLens:
@@ -28,7 +31,7 @@ class StrongLens:
         self.snr = snr
         self.uid = uid
 
-        # calculate lens total mass
+        # calculate lens total mass and main halo mass
         if lens_stellar_mass is not None:
             # see Table 2, doi:10.1088/0004-637X/724/1/511
             a = 0.80
@@ -60,11 +63,13 @@ class StrongLens:
         # set kwargs_model
         self.kwargs_model = self._set_model()
 
+        # set lens_cosmo
+        self._set_lens_cosmo()
+
         # set place to store amp versions of kwargs_light dicts TODO can initialize as none?
         self.kwargs_lens_light_amp_dict, self.kwargs_source_amp_dict = {}, {}
 
         # calculate comoving distances (in Gpc)
-        # TODO may not need these
         self.d_l = redshift_to_comoving_distance(self.z_lens, self.cosmo)
         self.d_s = redshift_to_comoving_distance(self.z_source, self.cosmo)
         self.d_ls = self.d_s - self.d_l
@@ -132,13 +137,16 @@ class StrongLens:
 
     def get_main_halo_mass(self):
         return einstein_radius_to_mass(self.get_einstein_radius(), self.z_lens, self.z_source, self.cosmo)
+    
+    def mass_in_einstein_radius(self):
+        return self.lens_cosmo.mass_in_theta_E(self.get_einstein_radius())
 
     def add_subhalos(self, realization, suppress_output=True):
         # set cosmology by initializing pyHalo's Cosmology object, otherwise Colossus throws an error down the line
         Cosmology(astropy_instance=self.cosmo)
 
         # set some params on the StrongLens object
-        self.realization = realization
+        self.v = realization
         self.num_subhalos = len(realization.halos)
 
         # generate lenstronomy objects
@@ -153,26 +161,46 @@ class StrongLens:
         self.lens_model_list += halo_lens_model_list
         self.lens_model_class = LensModel(self.lens_model_list)
 
-        # TODO fix this
-        # # save original Einstein radius, for comparison later
-        # original_einstein_radius = self.get_einstein_radius()
+        # now, need to adjust the Einstein radius to account for the subhalos we're about to add
+        # convert Einstein radius to effective lensing mass
+        original_einstein_radius = self.get_einstein_radius()
+        effective_lensing_mass = einstein_radius_to_mass(original_einstein_radius, self.d_l, self.d_s, self.d_ls)
 
-        # # update the mass of the main halo to account for the added subhalos
-        # main_halo_mass = self.get_main_halo_mass()
-        # total_subhalo_mass = np.sum([halo.mass for halo in realization.halos])
-        # adjusted_main_halo_mass = main_halo_mass - total_subhalo_mass
-        # adjusted_einstein_radius = mass_to_einstein_radius(adjusted_main_halo_mass, self.z_lens, self.z_source, self.cosmo)
+        # calculate total mass of subhalos within Einstein radius and total mass of all subhalos
+        total_mass_subhalos_within_einstein_radius, total_subhalo_mass = 0, 0
+        for halo in realization.halos:
+            total_subhalo_mass += halo.mass
+            if np.sqrt(halo.x ** 2 + halo.y ** 2) < original_einstein_radius:
+                total_mass_subhalos_within_einstein_radius += halo.mass
 
-        # # update lens_kwargs with the adjusted Einstein radius
-        # self.kwargs_lens[0]['theta_E'] = adjusted_einstein_radius
+        # subtract off the mass of the subhalos within the Einstein radius to get the adjusted lensing mass
+        adjusted_lensing_mass = effective_lensing_mass - total_mass_subhalos_within_einstein_radius
 
-        # if not suppress_output:
-        #     print(f'Main halo mass (10^9 solar masses): {round(main_halo_mass * 1e-9, 3)}')
-        #     print(f'Einstein radius: {round(original_einstein_radius, 3)}')
-        #     print(f'Total subhalo mass (10^9 solar masses): {round(total_subhalo_mass * 1e-9, 3)}')
-        #     print(f'Subhalos are {round(total_subhalo_mass / main_halo_mass, 3) * 100}% of total mass')
-        #     print(f'Adjusted main halo mass: {round(adjusted_main_halo_mass * 1e-9, 3)}')
-        #     print(f'Adjusted Einstein radius: {round(adjusted_einstein_radius, 3)}')
+        # convert back to Einstein radius
+        adjusted_einstein_radius = mass_to_einstein_radius(adjusted_lensing_mass, self.d_l, self.d_s, self.d_ls)
+
+        # update lens_kwargs with the adjusted Einstein radius
+        self.kwargs_lens[0]['theta_E'] = adjusted_einstein_radius
+
+        if not suppress_output:
+            # calculate useful percentages
+            percent_subhalo_mass_within_einstein_radius = (total_mass_subhalos_within_einstein_radius / total_subhalo_mass) * 100
+            percent_change_lensing_mass = util.percent_change(effective_lensing_mass, adjusted_lensing_mass)
+            percent_change_einstein_radius = util.percent_change(original_einstein_radius, adjusted_einstein_radius)
+
+            print(f'Original Einstein radius: {original_einstein_radius:.4f} arcsec')
+            print(f'Adjusted Einstein radius: {adjusted_einstein_radius:.4f} arcsec')
+            print(f'Percent change of Einstein radius: {percent_change_einstein_radius:.2f}%')
+            print('------------------------------------')
+            print(f'Effective lensing mass: {effective_lensing_mass:.4e} M_Sun')
+            print(f'Adjusted lensing mass: {adjusted_lensing_mass:.4e} M_Sun')
+            print(f'Percent change of lensing mass: {percent_change_lensing_mass:.2f}%')
+            print('------------------------------------')
+            print(f'Total mass of CDM halos within Einstein radius: {total_mass_subhalos_within_einstein_radius:.4e} M_Sun')
+            print(f'Total mass of CDM halos: {total_subhalo_mass:.4e} M_Sun')
+            print(f'Percentage of total subhalo mass within Einstein radius: {percent_subhalo_mass_within_einstein_radius:.2f}%')
+            print('\n')
+            
 
     # TODO method to calculate snr and update snr attribute based on the full image
 
@@ -201,7 +229,7 @@ class StrongLens:
         # define numerics
         kwargs_numerics = {
             'supersampling_factor': 5,  # TODO should figure out how to set this optimally
-            'supersampling_convolution': False
+            'supersampling_convolution': True
         }
 
         # convert from physical to lensing units if necessary e.g. sigma_v specified instead of theta_E
@@ -298,7 +326,7 @@ class StrongLens:
         self.delta_pix = self.side / self.num_pix  # size of pixel in angular coordinates
 
         _, _, self.ra_at_xy_0, self.dec_at_xy_0, _, _, self.Mpix2coord, self.Mcoord2pix = (
-            util.make_grid_with_coordtransform(
+            len_util.make_grid_with_coordtransform(
                 numPix=self.num_pix,
                 deltapix=self.delta_pix,
                 subgrid_res=1,
@@ -365,14 +393,14 @@ def redshift_to_comoving_distance(redshift, cosmo):
     return z.to(u.Gpc, cu.redshift_distance(cosmo, kind='comoving')).value
 
 
-def einstein_radius_to_mass(einstein_radius, z_lens, z_source, cosmo):
-    velocity_dispersion = einstein_radius_to_velocity_dispersion(einstein_radius, z_lens, z_source, cosmo)
-    return velocity_dispersion_to_mass(velocity_dispersion)
+# def einstein_radius_to_mass(einstein_radius, z_lens, z_source, cosmo):
+#     velocity_dispersion = einstein_radius_to_velocity_dispersion(einstein_radius, z_lens, z_source, cosmo)
+#     return velocity_dispersion_to_mass(velocity_dispersion)
 
 
-def mass_to_einstein_radius(mass, z_lens, z_source, cosmo):
-    velocity_dispersion = mass_to_velocity_dispersion(mass)
-    return velocity_dispersion_to_einstein_radius(velocity_dispersion, z_lens, z_source, cosmo)
+# def mass_to_einstein_radius(mass, z_lens, z_source, cosmo):
+#     velocity_dispersion = mass_to_velocity_dispersion(mass)
+#     return velocity_dispersion_to_einstein_radius(velocity_dispersion, z_lens, z_source, cosmo)
 
 
 def einstein_radius_to_velocity_dispersion(einstein_radius, z_lens, z_source, cosmo):
@@ -387,26 +415,16 @@ def velocity_dispersion_to_einstein_radius(velocity_dispersion, z_lens, z_source
     return lens_cosmo.sis_sigma_v2theta_E(velocity_dispersion)
 
 
-def velocity_dispersion_to_mass(velocity_dispersion):
-    # TODO docs: cite paper and slsim
-    # https://ui.adsabs.harvard.edu/abs/2010ApJ...724..511A/abstract
-    return 1e11 * np.power(np.power(10, 2.32) / velocity_dispersion, 0.24)
-
-
-def mass_to_velocity_dispersion(mass):
-    # TODO docs: cite paper and slsim
-    # https://ui.adsabs.harvard.edu/abs/2010ApJ...724..511A/abstract
-    return np.power(10, 2.32) * np.power(mass / 1e11, 0.24)
-
-
 def get_lens_cosmo(z_lens, z_source, cosmo):
     return LensCosmo(z_lens=z_lens, z_source=z_source, cosmo=cosmo)
 
-# def mass_to_einstein_radius(m, d_l, d_s, d_ls):
-#     # TODO docs: for a point mass
-#     return np.sqrt(m / np.power(10, 11.09)) * np.sqrt(d_ls / (d_l * d_s))
-#
-#
-# def einstein_radius_to_mass(einstein_radius, d_l, d_s, d_ls):
-#     # TODO docs: for a point mass
-#     return ((d_l * d_s) / d_ls) * np.power(einstein_radius, 2) * np.power(10, 11.09)
+# G = 4.3009e-12  # in Gpc * (km/s)^2 / M_sun
+# C_SQUARED = 299792.458 ** 2  # in (km/s)^2
+# C_SQUARED_ON_4G = C_SQUARED / (4 * G)  # in M_sun
+
+def mass_to_einstein_radius(m, d_l, d_s, d_ls):
+    return np.sqrt(m / np.power(10, 11.09)) * np.sqrt(d_ls / (d_l * d_s))  # 
+
+
+def einstein_radius_to_mass(einstein_radius, d_l, d_s, d_ls):
+    return ((d_l * d_s) / d_ls) * np.power(einstein_radius, 2) * np.power(10, 11.09)
