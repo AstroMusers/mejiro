@@ -8,16 +8,13 @@ handle_error() {
 # escape if error encountered
 set -e
 
-# make sure appropriate conda env is active
-# conda activate mejiro
-
 # shellcheck disable=SC2164
 cd scripts/execute_pipeline
 
 # execute Python scripts sequentially
-# echo 'Checking installation...'
-# python3 00_pipeline_setup.py
-# echo 'Installation check passed.'
+echo 'Simulating HLWAS to find detectable strong lenses...'
+python3 00_hlwas_sim.py
+echo 'Identified detectable strong lenses.'
 
 echo 'Building lens list from SkyPy...'
 python3 01_lens_list_from_skypy.py
