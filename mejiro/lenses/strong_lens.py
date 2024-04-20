@@ -18,15 +18,25 @@ from pyHalo.Cosmology.cosmology import Cosmology
 
 
 class StrongLens:
-    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, lens_mass=None, lens_vel_disp=None,
+    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, lens_stellar_mass=None, lens_vel_disp=None,
                  snr=None, uid=None):
         # set z_source convention default
         self.z_source_convention = 5
 
-        self.lens_mass = lens_mass
+        self.lens_stellar_mass = lens_stellar_mass
         self.lens_vel_disp = lens_vel_disp
         self.snr = snr
         self.uid = uid
+
+        # calculate lens total mass
+        if lens_stellar_mass is not None:
+            # see Table 2, doi:10.1088/0004-637X/724/1/511
+            a = 0.80
+            b = 0.36
+            log_m_total_10 = (1 / a) * (np.log10(self.lens_stellar_mass / 1e10) - b)
+            self.lens_total_mass = np.power(10, log_m_total_10) * 1e10 * (100 / 32)
+        else:
+            self.lens_total_mass = None
 
         # get redshifts
         self.z_lens = kwargs_model['lens_redshift_list'][0]
