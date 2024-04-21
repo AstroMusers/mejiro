@@ -79,11 +79,10 @@ def add(tuple):
     z_lens = round(lens.z_lens, 2)
     z_source = round(lens.z_source, 2)
 
-    # randomly generate CDM subhalos
     log_m_host = np.log10(lens.main_halo_mass)
-    # TODO calculate r_tidal: the core radius of the host halo in units of the host halo scale radius. Subhalos are distributed in 3D with a cored NFW profile with this core radius; by default, it's 0.25
-    r_tidal = 0.25
-    sigma_sub = 0.055
+    r_tidal = 0.5  # see Section 3.1 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract 
+    sigma_sub = 0.055 # see Section 6.3 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract 
+
     cdm_realization = CDM(z_lens,
                           z_source,
                           sigma_sub=sigma_sub,

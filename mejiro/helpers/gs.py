@@ -14,14 +14,14 @@ from mejiro.utils import util
 def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, psf_oversample, detector=None,
                detector_pos=None, exposure_time=146, ra=30, dec=-30, seed=42, validate=True, suppress_output=True):
     """
-    Generate images with lensing effects.
+    Apply Roman detector effects to image(s) of a strong lens using Galsim and WebbPSF.
 
     Parameters
     ----------
-    lens : Lens
-        The lens object used for lensing effects.
+    lens : StrongLens
+        The strong lens object.
     arrays : array-like
-        Input arrays representing the images.
+        Synthetic images (for multiple bands) or a single image (for a single band) of the strong lens.
     bands : str or list of str
         The bands for which the images are generated.
     input_size : int

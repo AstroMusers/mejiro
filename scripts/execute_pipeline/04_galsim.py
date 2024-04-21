@@ -1,5 +1,5 @@
 import multiprocessing
-import multiprocessing
+import random
 import os
 import sys
 import time
@@ -85,7 +85,7 @@ def get_image(input):
     suppress_output = pipeline_params['suppress_output']
     final_pixel_side = pipeline_params['final_pixel_side']
     num_pix = pipeline_params['num_pix']
-    seed = pipeline_params['seed']
+    # seed = pipeline_params['seed']  # TODO think about what this is doing
 
     # load lens
     lens = util.unpickle(os.path.join(input_dir, f'lens_{str(uid).zfill(8)}'))
@@ -101,7 +101,7 @@ def get_image(input):
                                             grid_oversample=grid_oversample, psf_oversample=grid_oversample,
                                             detector=detector,
                                             detector_pos=detector_pos, exposure_time=exposure_time, ra=None, dec=None,
-                                            seed=seed, validate=False, suppress_output=suppress_output)
+                                            seed=random.randint(0, 2 ** 16 - 1), validate=False, suppress_output=suppress_output)
 
     for band, result in zip(bands, results):
         np.save(os.path.join(output_dir, f'galsim_{lens.uid}_{band}.npy'), result)
