@@ -92,15 +92,15 @@ def run_slsim(tuple):
     # set HLWAS parameters
     survey_area = 5.
     sky_area = Quantity(value=survey_area, unit='deg2')
-    # area_hlwas = 1700.
     cosmo = default_cosmology.get()
-    bands_hlwas = ['F106', 'F129', 'F184']
+    bands_hlwas = ['F106', 'F129', 'F158', 'F184']
 
     # define cuts on the intrinsic deflector and source populations (in addition to the skypy config file)
-    kwargs_deflector_cut = {'band': 'F106', 'band_max': 23, 'z_min': 0.01, 'z_max': 2.}
-    kwargs_source_cut = {'band': 'F106', 'band_max': 24, 'z_min': 0.01, 'z_max': 5.}
+    kwargs_deflector_cut = {'band': 'F106', 'band_max': 25, 'z_min': 0.01, 'z_max': 2.}
+    kwargs_source_cut = {'band': 'F106', 'band_max': 27, 'z_min': 0.01, 'z_max': 5.}
 
     # create the lens population
+    if debugging: print('Defining galaxy population...')
     lens_pop = LensPop(deflector_type="all-galaxies",
         source_type="galaxies",
         kwargs_deflector_cut=kwargs_deflector_cut,
@@ -118,7 +118,12 @@ def run_slsim(tuple):
 
     # draw the total lens population
     if debugging: print('Identifying lenses...')
-    total_lens_population = lens_pop.draw_population(kwargs_lens_cuts={})
+    kwargs_lens_total_cut = {
+        'min_image_separation': 0,
+        'max_image_separation': 10,
+        'mag_arc_limit': None
+    }
+    total_lens_population = lens_pop.draw_population(kwargs_lens_cuts=kwargs_lens_total_cut)
     if debugging: print(f'Number of total lenses: {len(total_lens_population)}')
 
     # compute SNRs and save
@@ -134,13 +139,13 @@ def run_slsim(tuple):
     if debugging: print(f'Writing total population to {total_pop_csv}')
     survey_sim.write_lens_pop_to_csv(total_pop_csv, total_lens_population, bands_hlwas)
 
-    # draw initial lens population
-    kwargs_lens_cut = {
+    # draw initial detectable lens population
+    kwargs_lens_detectable_cut = {
         'min_image_separation': 0.2,
         'max_image_separation': 10,
-        'mag_arc_limit': {'F106': 25},
+        'mag_arc_limit': {'F106': 25}
     }
-    lens_population = lens_pop.draw_population(kwargs_lens_cuts=kwargs_lens_cut)
+    lens_population = lens_pop.draw_population(kwargs_lens_cuts=kwargs_lens_detectable_cut)
     if debugging: print(f'Number of detectable lenses from first set of criteria: {len(lens_population)}')
 
     # set up dict to capture some information about which candidates got filtered out
@@ -201,7 +206,7 @@ def run_slsim(tuple):
 
         # build dicts for lens and source magnitudes
         lens_mags, source_mags = {}, {}
-        for band in ['F106', 'F129', 'F184']:
+        for band in bands_hlwas:  # add F158
             lens_mags[band] = gglens.deflector_magnitude(band)
             source_mags[band] = gglens.extended_source_magnitude(band)
 

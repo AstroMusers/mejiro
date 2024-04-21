@@ -33,8 +33,8 @@ class StrongLens:
         # calculate lens total mass and main halo mass
         if lens_stellar_mass is not None:
             # see Table 2, doi:10.1088/0004-637X/724/1/511
-            a = 0.80
-            b = 0.36
+            a = 0.81
+            b = 0.35
             log_m_total_10 = (1 / a) * (np.log10(self.lens_stellar_mass / 1e10) - b)
             self.lens_total_mass = np.power(10, log_m_total_10) * 1e10 * (100 / 32)
             self.main_halo_mass = self.lens_total_mass - self.lens_stellar_mass
@@ -140,7 +140,7 @@ class StrongLens:
     def mass_in_einstein_radius(self):
         return self.lens_cosmo.mass_in_theta_E(self.get_einstein_radius())
 
-    def add_subhalos(self, realization, suppress_output=True):
+    def add_subhalos(self, realization, return_stats=False, suppress_output=True):
         # set cosmology by initializing pyHalo's Cosmology object, otherwise Colossus throws an error down the line
         Cosmology(astropy_instance=self.cosmo)
 
@@ -199,6 +199,19 @@ class StrongLens:
             print(f'Total mass of CDM halos: {total_subhalo_mass:.4e} M_Sun')
             print(f'Percentage of total subhalo mass within Einstein radius: {percent_subhalo_mass_within_einstein_radius:.2f}%')
             print('\n')
+
+        if return_stats:
+            return {
+                'original_einstein_radius': original_einstein_radius,
+                'adjusted_einstein_radius': adjusted_einstein_radius,
+                'percent_change_einstein_radius': percent_change_einstein_radius,
+                'effective_lensing_mass': effective_lensing_mass,
+                'adjusted_lensing_mass': adjusted_lensing_mass,
+                'percent_change_lensing_mass': percent_change_lensing_mass,
+                'total_mass_subhalos_within_einstein_radius': total_mass_subhalos_within_einstein_radius,
+                'total_subhalo_mass': total_subhalo_mass,
+                'percent_subhalo_mass_within_einstein_radius': percent_subhalo_mass_within_einstein_radius
+            }
             
 
     # TODO method to calculate snr and update snr attribute based on the full image

@@ -81,7 +81,7 @@ def add(tuple):
 
     log_m_host = np.log10(lens.main_halo_mass)
     r_tidal = 0.5  # see Section 3.1 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract 
-    sigma_sub = 0.055 # see Section 6.3 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract 
+    sigma_sub = 0.055  # see Section 6.3 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract 
 
     cdm_realization = CDM(z_lens,
                           z_source,
@@ -94,7 +94,10 @@ def add(tuple):
                           LOS_normalization=los_normalization)
 
     # add subhalos
-    lens.add_subhalos(cdm_realization)
+    stats_dict = lens.add_subhalos(cdm_realization, return_stats=True)
+
+    # pickle the stats
+    util.pickle(os.path.join(output_dir, 'stats', f'subhalo_stats_{lens.uid}.pkl'), stats_dict)
 
     # pickle the subhalo realization
     util.pickle(os.path.join(output_dir, 'subhalos', f'subhalo_realization_{lens.uid}.pkl'), cdm_realization)
