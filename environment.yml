@@ -3,13 +3,14 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python==3.11
+  - python==3.10.6
   - astropy
   - astroquery
   - galsim
   - jupyter
   - pip
   - scikit-image
+  - skypy
   - tqdm
   - pip:
       - speclite

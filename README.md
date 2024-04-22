@@ -16,6 +16,14 @@ Create a conda environment:
 conda env create -f environment.yml
 ```
 
+Install `SLSim`:
+
+```
+git clone https://github.com/LSST-strong-lensing/slsim.git
+cd slsim
+pip install -e .
+```
+
 ## Optional setup: Pandeia
 
 Install Pandeia by following the
