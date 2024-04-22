@@ -181,12 +181,13 @@ class StrongLens:
         # update lens_kwargs with the adjusted Einstein radius
         self.kwargs_lens[0]['theta_E'] = adjusted_einstein_radius
 
-        if not suppress_output:
+        if not suppress_output or return_stats:
             # calculate useful percentages
             percent_subhalo_mass_within_einstein_radius = (total_mass_subhalos_within_einstein_radius / total_subhalo_mass) * 100
             percent_change_lensing_mass = util.percent_change(effective_lensing_mass, adjusted_lensing_mass)
             percent_change_einstein_radius = util.percent_change(original_einstein_radius, adjusted_einstein_radius)
 
+        if not suppress_output:
             print(f'Original Einstein radius: {original_einstein_radius:.4f} arcsec')
             print(f'Adjusted Einstein radius: {adjusted_einstein_radius:.4f} arcsec')
             print(f'Percent change of Einstein radius: {percent_change_einstein_radius:.2f}%')

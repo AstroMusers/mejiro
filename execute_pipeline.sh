@@ -17,7 +17,7 @@ python3 00_hlwas_sim.py
 echo 'Identified detectable strong lenses.'
 
 echo 'Building lens list from SkyPy...'
-python3 01_lens_list_from_skypy.py
+python3 01_build_lens_list.py
 echo 'Built lens list.'
 
 echo 'Adding subhalos with PyHalo...'

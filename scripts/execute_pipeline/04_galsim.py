@@ -35,7 +35,7 @@ def main(config):
     # limit = 9
     # uid_list = list(range(limit))
     # count number of lenses and build indices of uids
-    lens_pickles = glob(config.machine.dir_02 + '/lens_with_subhalos_*')
+    lens_pickles = glob(config.machine.dir_02 + '/lens_with_subhalos_*.pkl')
     count = len(lens_pickles)
     uid_list = list(range(count))
 
@@ -88,7 +88,7 @@ def get_image(input):
     # seed = pipeline_params['seed']  # TODO think about what this is doing
 
     # load lens
-    lens = util.unpickle(os.path.join(input_dir, f'lens_{str(uid).zfill(8)}'))
+    lens = util.unpickle(os.path.join(input_dir, f'lens_{str(uid).zfill(8)}.pkl'))
 
     # load the appropriate arrays
     arrays = [np.load(f'{input_dir}/array_{lens.uid}_{band}.npy') for band in bands]

@@ -32,8 +32,9 @@ def main(config):
         print(f'Run {run + 1} of {num_runs}')
         # unpickle the lenses from the population survey and create lens objects
         lens_paths = glob(config.machine.dir_00 + f'/run_{str(run).zfill(2)}/detectable_lens_{str(run).zfill(2)}_*.pkl')
-        assert len(
-            lens_paths) != 0, f'No pickled lenses found. Check SkyPy output directory {config.machine.dir_00}.'
+        # TODO this fails for small survey areas where no lenses are expected
+        # assert len(
+        #     lens_paths) != 0, f'No pickled lenses found. Check SkyPy output directory {config.machine.dir_00}.'
 
         for _, lens in tqdm(enumerate(lens_paths), total=len(lens_paths)):
             lens = lens_util.unpickle_lens(lens, str(uid).zfill(8))
@@ -44,6 +45,8 @@ def main(config):
     pickle_target = os.path.join(config.machine.dir_01, f'01_hlwas_sim_detectable_lens_list')
     util.delete_if_exists(pickle_target)
     util.pickle(pickle_target, lens_list)
+
+    print(f'Pickled {len(lens_list)} lenses to {pickle_target}')
 
     stop = time.time()
     util.print_execution_time(start, stop)

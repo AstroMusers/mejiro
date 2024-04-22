@@ -97,10 +97,14 @@ def add(tuple):
     stats_dict = lens.add_subhalos(cdm_realization, return_stats=True)
 
     # pickle the stats
-    util.pickle(os.path.join(output_dir, 'stats', f'subhalo_stats_{lens.uid}.pkl'), stats_dict)
+    stats_dir = os.path.join(output_dir, 'stats')
+    util.create_directory_if_not_exists(stats_dir)
+    util.pickle(os.path.join(stats_dir, f'subhalo_stats_{lens.uid}.pkl'), stats_dict)
 
     # pickle the subhalo realization
-    util.pickle(os.path.join(output_dir, 'subhalos', f'subhalo_realization_{lens.uid}.pkl'), cdm_realization)
+    subhalo_dir = os.path.join(output_dir, 'subhalos')
+    util.create_directory_if_not_exists(subhalo_dir)
+    util.pickle(os.path.join(subhalo_dir, f'subhalo_realization_{lens.uid}.pkl'), cdm_realization)
 
     # pickle the lens with subhalos
     pickle_target = os.path.join(output_dir, f'lens_with_subhalos_{lens.uid}.pkl')

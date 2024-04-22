@@ -37,6 +37,13 @@ def main(config):
     util.clear_directory(output_dir)
     print(f'Set up output directory {output_dir}')
 
+    # load Roman WFI filters
+    configure_roman_filters()
+    roman_filters = filter_names()
+    roman_filters.sort()
+    _ = speclite.filters.load_filters(*roman_filters[:8])
+    if debugging: print('Configured Roman filters')
+
     # tuple the parameters
     tuple_list = [(run, output_dir, debugging) for run in range(runs)]
 
@@ -73,13 +80,6 @@ def run_slsim(tuple):
     # unpack tuple
     run, output_dir, debugging = tuple
 
-    # load Roman WFI filters
-    configure_roman_filters()
-    roman_filters = filter_names()
-    roman_filters.sort()
-    _ = speclite.filters.load_filters(*roman_filters[:8])
-    if debugging: print('Configured Roman filters')
-
     # load SkyPy config file
     module_path = os.path.dirname(mejiro.__file__)
     skypy_config = os.path.join(module_path, 'data', 'roman_hlwas.yml')
@@ -90,7 +90,7 @@ def run_slsim(tuple):
     util.create_directory_if_not_exists(lens_output_dir)
 
     # set HLWAS parameters
-    survey_area = 5.
+    survey_area = 1.
     sky_area = Quantity(value=survey_area, unit='deg2')
     cosmo = default_cosmology.get()
     bands_hlwas = ['F106', 'F129', 'F158', 'F184']
