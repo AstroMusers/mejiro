@@ -120,7 +120,7 @@ def run_slsim(tuple):
     if debugging: print('Identifying lenses...')
     kwargs_lens_total_cut = {
         'min_image_separation': 0,
-        'max_image_separation': 10,
+        'max_image_separation': 100,
         'mag_arc_limit': None
     }
     total_lens_population = lens_pop.draw_population(kwargs_lens_cuts=kwargs_lens_total_cut)

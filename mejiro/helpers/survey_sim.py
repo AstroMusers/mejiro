@@ -93,8 +93,7 @@ def get_image(gglens, band):
 def write_lens_pop_to_csv(output_path, gg_lenses, bands):
     dictparaggln = {}
     dictparaggln['Candidate'] = {}
-    listnamepara = ['velodisp', 'massstel', 'angleins', 'redssour', 'redslens', 'xposlens', 'yposlens', 'xpossour',
-                    'ypossour', 'numbimag', 'magnsour', 'maxmdistimag']
+    listnamepara = ['velodisp', 'massstel', 'angleins', 'redssour', 'redslens', 'magnsour', 'numbimag', 'maxmdistimag']  # 'xposlens', 'yposlens', 'xpossour', 'ypossour',
     for nameband in bands:
         listnamepara += ['magtlens%s' % nameband]
         listnamepara += ['magtsour%s' % nameband]
@@ -121,17 +120,18 @@ def write_lens_pop_to_csv(output_path, gg_lenses, bands):
 
         dict['maxmdistimag'] = np.amax(np.sqrt((posiimag[0][:, None] - posiimag[0][None, :]) ** 2 + (posiimag[1][:, None] - posiimag[1][None, :]) ** 2))
 
-        posilens = gg_lens.deflector_position
-        posisour = gg_lens.extended_source_image_positions()[0]
-        dict['xposlens'] = posilens[0]
-        dict['yposlens'] = posilens[1]
-        dict['xpossour'] = posisour[0]
-        dict['ypossour'] = posisour[1]
+        # TODO ypossour was throwing index 1 out of bounds. but I also don't need this info (for now) so maybe just delete
+        # posilens = gg_lens.deflector_position
+        # posisour = gg_lens.extended_source_image_positions()[0]
+        # dict['xposlens'] = posilens[0]
+        # dict['yposlens'] = posilens[1]
+        # dict['xpossour'] = posisour[0]
+        # dict['ypossour'] = posisour[1]
 
         for nameband in bands:
+            dict['magtlens%s' % nameband] = gg_lens.deflector_magnitude(band=nameband)
             dict['magtsour%s' % nameband] = gg_lens.extended_source_magnitude(band=nameband)
             dict['magtsourMagnified%s' % nameband] = gg_lens.extended_source_magnitude(band=nameband, lensed=True)
-            dict['magtlens%s' % nameband] = gg_lens.deflector_magnitude(band=nameband)
 
         df.loc[i] = pd.Series(dict)
 

@@ -83,15 +83,19 @@ def add(tuple):
     r_tidal = 0.5  # see Section 3.1 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract 
     sigma_sub = 0.055  # see Section 6.3 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract 
 
-    cdm_realization = CDM(z_lens,
-                          z_source,
-                          sigma_sub=sigma_sub,
-                          log_mlow=6.,
-                          log_mhigh=10.,
-                          log_m_host=log_m_host,
-                          r_tidal=r_tidal,
-                          cone_opening_angle_arcsec=subhalo_cone,
-                          LOS_normalization=los_normalization)
+    try:
+        cdm_realization = CDM(z_lens,
+                            z_source,
+                            sigma_sub=sigma_sub,
+                            log_mlow=6.,
+                            log_mhigh=10.,
+                            log_m_host=log_m_host,
+                            r_tidal=r_tidal,
+                            cone_opening_angle_arcsec=subhalo_cone,
+                            LOS_normalization=los_normalization)
+    except:
+        print(f'Failed to generate subhalos for lens {lens.uid}')
+        return
 
     # add subhalos
     stats_dict = lens.add_subhalos(cdm_realization, return_stats=True)
