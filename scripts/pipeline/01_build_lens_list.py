@@ -42,7 +42,7 @@ def main(config):
             lens_list.append(lens)
 
     # pickle lens list
-    pickle_target = os.path.join(config.machine.dir_01, f'01_hlwas_sim_detectable_lens_list')
+    pickle_target = os.path.join(config.machine.dir_01, f'01_hlwas_sim_detectable_lens_list.pkl')
     util.delete_if_exists(pickle_target)
     util.pickle(pickle_target, lens_list)
 

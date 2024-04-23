@@ -20,23 +20,23 @@ def main(config):
     from mejiro.utils import util
 
     # set directory for all output of this script
-    save_dir = os.path.join(config.machine.data_dir, 'output', 'power_spectra')
-    util.create_directory_if_not_exists(save_dir)
+    lens_dir = os.path.join(config.machine.data_dir, 'output', 'power_spectra')
+    util.create_directory_if_not_exists(lens_dir)
 
     # prepare directory for lenses
-    lens_dir = os.path.join(save_dir, 'lenses')
+    lens_dir = os.path.join(lens_dir, 'lenses')
     util.create_directory_if_not_exists(lens_dir)
     util.clear_directory(lens_dir)
 
-    num_lenses = 10
+    num_sample_images = 100
 
     # generate flat image
     print('Generating flat images...')
-    flat_image_dir = os.path.join(save_dir, 'flat_images')
+    flat_image_dir = os.path.join(lens_dir, 'flat_images')
     util.create_directory_if_not_exists(flat_image_dir)
     util.clear_directory(flat_image_dir)
     flat_images = []
-    for i in tqdm(range(num_lenses)):
+    for i in tqdm(range(num_sample_images)):
         flat_image_save_path = os.path.join(flat_image_dir, f'flat_{str(i).zfill(4)}.npy')
         flat_images.append(generate_flat_image(flat_image_save_path))
     print('Generated flat images.')
@@ -47,33 +47,37 @@ def main(config):
 
     # generate Poisson noise
     print('Generating Poisson noise...')
-    poisson_noise_dir = os.path.join(save_dir, 'poisson_noise')
+    poisson_noise_dir = os.path.join(lens_dir, 'poisson_noise')
     util.create_directory_if_not_exists(poisson_noise_dir)
     util.clear_directory(poisson_noise_dir)
-    for i in tqdm(range(num_lenses)):
+    for i in tqdm(range(num_sample_images)):
         poisson_noise_save_path = os.path.join(poisson_noise_dir, f'poisson_noise_{str(i).zfill(4)}.npy')
         generate_poisson_noise(poisson_noise_save_path, mean)
     print('Generated Poisson noise.')
 
-    # generate Gaussian noise
-    # print('Generating Gaussian noise...')
-    # gaussian_noise_dir = os.path.join(save_dir, 'gaussian_noise')
-    # util.create_directory_if_not_exists(gaussian_noise_dir)
-    # util.clear_directory(gaussian_noise_dir)
-    # for i in tqdm(range(num_lenses)):
-    #     gaussian_noise_save_path = os.path.join(gaussian_noise_dir, f'gaussian_noise_{str(i).zfill(4)}.npy')
-    #     generate_gaussian_noise(gaussian_noise_save_path, mean, stdev)
-    # print('Generated Gaussian noise.')
+    subhalo_params = {
+        'r_tidal': 0.5,
+        'sigma_sub': 0.055,
+        'subhalo_cone': 5,
+        'los_normalization': 0
+    }
+    imaging_params = {
+        'bands': ['F106'],
+        'oversample': 5,
+        'num_pix': 45,
+        'side': 4.95
+    }
 
     # collect lenses
-    print(f'Collecting {num_lenses} lenses...')
-    pickled_lens_list = os.path.join(config.machine.dir_01, '01_hlwas_sim_detectable_lens_list')
-    lens_list = util.unpickle(pickled_lens_list)[:num_lenses]
-    print('Collected lenses.')
+    # num_lenses = 10
+    # print(f'Collecting {num_lenses} lenses...')
+    pickled_lens_list = os.path.join(config.machine.dir_01, '01_hlwas_sim_detectable_lens_list')  # .pkl
+    lens_list = util.unpickle(pickled_lens_list)  # [:num_lenses]
+    print(f'Collected {len(lens_list)} lens(es).')
 
     print('Generating power spectra...')
     # tuple the parameters
-    tuple_list = [(lens, lens_dir) for lens in lens_list]
+    tuple_list = [(lens, lens_dir, subhalo_params, imaging_params) for lens in lens_list]
 
     # split up the lenses into batches based on core count
     count = len(lens_list)
@@ -100,53 +104,55 @@ def generate_power_spectra(tuple):
     from mejiro.helpers import gs, psf
 
     # unpack tuple
-    (lens, lens_dir) = tuple
+    (lens, lens_dir, subhalo_params, imaging_params) = tuple
+    r_tidal = subhalo_params['r_tidal']
+    sigma_sub = subhalo_params['sigma_sub']
+    subhalo_cone = subhalo_params['subhalo_cone']
+    los_normalization = subhalo_params['los_normalization']
+    bands = imaging_params['bands']
+    oversample = imaging_params['oversample']
+    num_pix = imaging_params['num_pix']
+    side = imaging_params['side']
 
-    # set subhalo params
-    r_tidal = 0.5
-    sigma_sub = 0.055
-    subhalo_cone = 5
-    los_normalization = 0
-
-    # set imaging params
-    bands = ['F106', 'F129', 'F184']
-    oversample = 1
-    num_pix = 45
-    side = 4.95
+    print(f'Processing lens {lens.uid}...')
 
     z_lens = round(lens.z_lens, 2)
     z_source = round(lens.z_source, 2)
     log_m_host = np.log10(lens.main_halo_mass)
 
-    cut_6 = CDM(z_lens,
-                z_source,
-                sigma_sub=sigma_sub,
-                log_mlow=6.,
-                log_mhigh=10.,
-                log_m_host=log_m_host,
-                r_tidal=r_tidal,
-                cone_opening_angle_arcsec=subhalo_cone,
-                LOS_normalization=los_normalization)
+    try:
+        cut_6 = CDM(z_lens,
+                    z_source,
+                    sigma_sub=sigma_sub,
+                    log_mlow=6.,
+                    log_mhigh=10.,
+                    log_m_host=log_m_host,
+                    r_tidal=r_tidal,
+                    cone_opening_angle_arcsec=subhalo_cone,
+                    LOS_normalization=los_normalization)
 
-    cut_7 = CDM(z_lens,
-                z_source,
-                sigma_sub=sigma_sub,
-                log_mlow=7.,
-                log_mhigh=10.,
-                log_m_host=log_m_host,
-                r_tidal=r_tidal,
-                cone_opening_angle_arcsec=subhalo_cone,
-                LOS_normalization=los_normalization)
+        cut_7 = CDM(z_lens,
+                    z_source,
+                    sigma_sub=sigma_sub,
+                    log_mlow=7.,
+                    log_mhigh=10.,
+                    log_m_host=log_m_host,
+                    r_tidal=r_tidal,
+                    cone_opening_angle_arcsec=subhalo_cone,
+                    LOS_normalization=los_normalization)
 
-    cut_8 = CDM(z_lens,
-                z_source,
-                sigma_sub=sigma_sub,
-                log_mlow=8.,
-                log_mhigh=10.,
-                log_m_host=log_m_host,
-                r_tidal=r_tidal,
-                cone_opening_angle_arcsec=subhalo_cone,
-                LOS_normalization=los_normalization)
+        cut_8 = CDM(z_lens,
+                    z_source,
+                    sigma_sub=sigma_sub,
+                    log_mlow=8.,
+                    log_mhigh=10.,
+                    log_m_host=log_m_host,
+                    r_tidal=r_tidal,
+                    cone_opening_angle_arcsec=subhalo_cone,
+                    LOS_normalization=los_normalization)
+    except:
+        print(f'Failed to generate subhalos for lens {lens.uid}.')
+        return
 
     lens_cut_6 = deepcopy(lens)
     lens_cut_7 = deepcopy(lens)
@@ -157,35 +163,45 @@ def generate_power_spectra(tuple):
     lens_cut_8.add_subhalos(cut_8, suppress_output=True)
 
     lenses = [lens, lens_cut_6, lens_cut_7, lens_cut_8]
-    titles = [f'lens_{lens.uid}_no_subhalos', f'lens_{lens.uid}_cut_6', f'lens_{lens.uid}_cut_7',
-              f'lens_{lens.uid}_cut_8']
-    
-    detectors = [4, 1, 9, 17]
-    detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
+    titles = ['no_subhalos', 'cut_6', 'cut_7', 'cut_8']
+    models = [i.get_array(num_pix=num_pix * oversample, side=side, band='F106') for i in lenses]
 
-    for band in bands:
-        # generate models
-        models = [i.get_array(num_pix=num_pix * oversample, side=side, band=band) for i in lenses]
-
-        for sl, model, title in tqdm(zip(lenses, models, titles), total=len(lenses)):
-            for detector, detector_pos in zip(detectors, detector_positions):
-                gs_images, _ = gs.get_images(sl, model, band, input_size=num_pix, output_size=num_pix,
-                                            grid_oversample=oversample, psf_oversample=oversample,
-                                            detector=detector, detector_pos=detector_pos, suppress_output=True)
-                ps, r = power_spectrum_1d(gs_images[0])
-                np.save(os.path.join(lens_dir, f'im_{title}_{band}_{detector}.npy'), gs_images[0])
-                np.save(os.path.join(lens_dir, f'ps_{title}_{band}_{detector}.npy'), ps)
+    for sl, model, title in zip(lenses, models, titles):
+        print(f'    Processing model {title}...')
+        gs_images, _ = gs.get_images(sl, model, 'F106', input_size=num_pix, output_size=num_pix,
+                                    grid_oversample=oversample, psf_oversample=oversample,
+                                    detector=1, detector_pos=(2048, 2048), suppress_output=True)
+        ps, r = power_spectrum_1d(gs_images[0])
+        np.save(os.path.join(lens_dir, f'im_subs_{title}.npy'), gs_images[0])
+        np.save(os.path.join(lens_dir, f'ps_subs_{title}.npy'), ps)
     np.save(os.path.join(lens_dir, 'r.npy'), r)
 
-    for sl, model, title in tqdm(zip(lenses, models, titles), total=len(lenses)):
-        # generate convergence maps
+    for sl, model, title in zip(lenses, models, titles):
+        print(f'    Processing model {title} kappa...')
+    # generate convergence maps
         if sl.realization is None:
             kappa = sl.get_macrolens_kappa(num_pix, subhalo_cone)
         else:
             kappa = sl.get_kappa(num_pix, subhalo_cone)
         kappa_power_spectrum, kappa_r = power_spectrum_1d(kappa)
-        np.save(os.path.join(lens_dir, f'kappa_ps_{title}.npy'), kappa_power_spectrum)
+        np.save(os.path.join(lens_dir, f'kappa_ps_{title}_{lens.uid}.npy'), kappa_power_spectrum)
+        np.save(os.path.join(lens_dir, f'kappa_im_{title}_{lens.uid}.npy'), kappa)
     np.save(os.path.join(lens_dir, 'kappa_r.npy'), kappa_r)
+
+    # vary detector and detector position for cut_6 lens (default subhalo population)
+    detectors = [4, 1, 9, 17]
+    detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
+
+    for detector, detector_pos in zip(detectors, detector_positions):
+        print(f'    Processing detector {detector}, {detector_pos}...')
+        gs_images, _ = gs.get_images(lenses[1], models[1], 'F106', input_size=num_pix, output_size=num_pix,
+                                    grid_oversample=oversample, psf_oversample=oversample,
+                                    detector=detector, detector_pos=detector_pos, suppress_output=True)
+        ps, r = power_spectrum_1d(gs_images[0])
+        np.save(os.path.join(lens_dir, f'im_det_{detector}_{lens.uid}.npy'), gs_images[0])
+        np.save(os.path.join(lens_dir, f'ps_det_{detector}_{lens.uid}.npy'), ps)
+
+    print(f'Finished lens {lens.uid}.')
 
 
 def generate_poisson_noise(save_path, mean):
@@ -195,6 +211,20 @@ def generate_poisson_noise(save_path, mean):
 
 
 def generate_gaussian_noise(save_path, mean, stdev):
+    '''
+    ```
+    # generate Gaussian noise
+    print('Generating Gaussian noise...')
+    gaussian_noise_dir = os.path.join(lens_dir, 'gaussian_noise')
+    util.create_directory_if_not_exists(gaussian_noise_dir)
+    util.clear_directory(gaussian_noise_dir)
+    for i in tqdm(range(num_lenses)):
+        gaussian_noise_save_path = os.path.join(gaussian_noise_dir, f'gaussian_noise_{str(i).zfill(4)}.npy')
+        generate_gaussian_noise(gaussian_noise_save_path, mean, stdev)
+    print('Generated Gaussian noise.')
+    ```
+    '''
+
     num_pix = 45
     gaussian_noise = np.random.normal(mean, stdev, (num_pix, num_pix))
     np.save(save_path, gaussian_noise)

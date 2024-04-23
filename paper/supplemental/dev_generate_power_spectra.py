@@ -48,8 +48,8 @@ def main(config):
     # collect lenses
     num_lenses = 32
     print(f'Collecting {num_lenses} lenses...')
-    # pickled_lens_list = os.path.join(config.machine.dir_01, '01_hlwas_sim_detectable_lens_list')
-    pickled_lens_list = '/data/bwedig/mejiro/archive/2024-04-22 pipeline/01/01_hlwas_sim_detectable_lens_list'
+    # pickled_lens_list = os.path.join(config.machine.dir_01, '01_hlwas_sim_detectable_lens_list.pkl')
+    pickled_lens_list = '/data/bwedig/mejiro/archive/2024-04-22 pipeline/01/01_hlwas_sim_detectable_lens_list.pkl'
     lens_list = util.unpickle(pickled_lens_list)[:num_lenses]
     pprint(lens_list)
     print('Collected lenses.')
