@@ -1,5 +1,6 @@
 /pandeia_docs
 .nfs*
+/config/config.yaml
 
 # old stuff that I'll keep locally
 /figures/old

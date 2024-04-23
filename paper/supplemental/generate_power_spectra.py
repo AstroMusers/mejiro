@@ -103,22 +103,20 @@ def generate_power_spectra(tuple):
     (lens, lens_dir) = tuple
 
     # set subhalo params
-    r_tidal = 0.25
+    r_tidal = 0.5
     sigma_sub = 0.055
-    subhalo_cone = 6
+    subhalo_cone = 5
     los_normalization = 0
 
     # set imaging params
     bands = ['F106', 'F129', 'F184']
-    oversample = 5
+    oversample = 1
     num_pix = 45
     side = 4.95
 
     z_lens = round(lens.z_lens, 2)
     z_source = round(lens.z_source, 2)
-    # m_host = lens.get_main_halo_mass()
-    m_host = lens.lens_mass
-    log_m_host = np.log10(m_host)
+    log_m_host = np.log10(lens.main_halo_mass)
 
     cut_6 = CDM(z_lens,
                 z_source,
@@ -169,7 +167,7 @@ def generate_power_spectra(tuple):
         # generate models
         models = [i.get_array(num_pix=num_pix * oversample, side=side, band=band) for i in lenses]
 
-        for sl, model, title in zip(lenses, models, titles):
+        for sl, model, title in tqdm(zip(lenses, models, titles), total=len(lenses)):
             for detector, detector_pos in zip(detectors, detector_positions):
                 gs_images, _ = gs.get_images(sl, model, band, input_size=num_pix, output_size=num_pix,
                                             grid_oversample=oversample, psf_oversample=oversample,
@@ -177,16 +175,17 @@ def generate_power_spectra(tuple):
                 ps, r = power_spectrum_1d(gs_images[0])
                 np.save(os.path.join(lens_dir, f'im_{title}_{band}_{detector}.npy'), gs_images[0])
                 np.save(os.path.join(lens_dir, f'ps_{title}_{band}_{detector}.npy'), ps)
-    
     np.save(os.path.join(lens_dir, 'r.npy'), r)
 
+    for sl, model, title in tqdm(zip(lenses, models, titles), total=len(lenses)):
         # generate convergence maps
-        # if sl.realization is None:
-        #     kappa = sl.get_macrolens_kappa(num_pix, subhalo_cone)
-        # else:
-        #     kappa = sl.get_kappa(num_pix, subhalo_cone)
-        # kappa_power_spectrum = ft.power_spectrum(kappa)
-        # np.save(os.path.join(lens_dir, f'power_spectrum_{title}_kappa.npy'), kappa_power_spectrum)
+        if sl.realization is None:
+            kappa = sl.get_macrolens_kappa(num_pix, subhalo_cone)
+        else:
+            kappa = sl.get_kappa(num_pix, subhalo_cone)
+        kappa_power_spectrum, kappa_r = power_spectrum_1d(kappa)
+        np.save(os.path.join(lens_dir, f'kappa_ps_{title}.npy'), kappa_power_spectrum)
+    np.save(os.path.join(lens_dir, 'kappa_r.npy'), kappa_r)
 
 
 def generate_poisson_noise(save_path, mean):
