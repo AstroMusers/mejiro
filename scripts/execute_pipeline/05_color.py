@@ -35,7 +35,7 @@ def main(config):
     # limit = 9
     lens_pickles = glob(config.machine.dir_02 + '/lens_with_subhalos_*')
     count = len(lens_pickles)
-    input_list = [(str(uid).zfill(8), input_dir, output_dir) for uid in list(range(count))]
+    input_list = [(int(os.path.basename(i).split('_')[3].split('.')[0]), input_dir, output_dir) for i in lens_pickles]
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -68,14 +68,14 @@ def get_image(input):
     # unpack tuple
     (uid, input_dir, output_dir) = input
 
-    f106 = np.load(input_dir + f'/galsim_{uid}_F106.npy')
-    f129 = np.load(input_dir + f'/galsim_{uid}_F129.npy')
-    f184 = np.load(input_dir + f'/galsim_{uid}_F184.npy')
+    f106 = np.load(input_dir + f'/galsim_{str(uid).zfill(8)}_F106.npy')
+    f129 = np.load(input_dir + f'/galsim_{str(uid).zfill(8)}_F129.npy')
+    f184 = np.load(input_dir + f'/galsim_{str(uid).zfill(8)}_F184.npy')
 
     # generate and save color image
     from mejiro.helpers import color
     rgb_image = color.get_rgb(image_b=f106, image_g=f129, image_r=f184, stretch=4, Q=5)
-    np.save(os.path.join(output_dir, f'galsim_color_{uid}.npy'), rgb_image)
+    np.save(os.path.join(output_dir, f'galsim_color_{str(uid).zfill(8)}.npy'), rgb_image)
 
     stop = time.time()
     execution_time = str(datetime.timedelta(seconds=round(stop - start)))
