@@ -37,7 +37,7 @@ def main(config):
     # count number of lenses and build indices of uids
     lens_pickles = glob(config.machine.dir_02 + '/lens_with_subhalos_*.pkl')
     count = len(lens_pickles)
-    uid_list = list(range(count))
+    uid_list = [int(os.path.basename(i).split('_')[3].split('.')[0]) for i in lens_pickles]
 
     # get bands
     bands = util.hydra_to_dict(config.pipeline)['band']

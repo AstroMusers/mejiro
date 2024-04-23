@@ -140,6 +140,7 @@ def run_slsim(tuple):
     survey_sim.write_lens_pop_to_csv(total_pop_csv, total_lens_population, bands_hlwas)
 
     # draw initial detectable lens population
+    if debugging: print('Identifying detectable lenses...')
     kwargs_lens_detectable_cut = {
         'min_image_separation': 0.2,
         'max_image_separation': 10,

@@ -33,7 +33,7 @@ def main(config):
     # count number of lenses and build indices of uids
     lens_pickles = glob(config.machine.dir_02 + '/lens_with_subhalos_*.pkl')
     count = len(lens_pickles)
-    lens_uids = list(range(count))
+    lens_uids = [int(os.path.basename(i).split('_')[3].split('.')[0]) for i in lens_pickles]
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
