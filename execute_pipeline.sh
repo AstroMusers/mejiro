@@ -37,5 +37,5 @@ python3 05_color.py
 echo 'Color image generation complete.'
 
 echo 'Generating hdf5 file...'
-python3 06_generate_hdf5.py
+python3 06_output.py
 echo 'hdf5 file generation complete.'
