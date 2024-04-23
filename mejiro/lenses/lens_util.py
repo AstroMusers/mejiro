@@ -74,7 +74,7 @@ def plot_projected_mass(lens):
 
 def get_sample(pickle_dir, color_dir, index):
     # get lens
-    lens_path = os.path.join(pickle_dir, f'lens_{str(index).zfill(8)}')
+    lens_path = os.path.join(pickle_dir, f'lens_{str(index).zfill(8)}.pkl')
     lens = util.unpickle(lens_path)
 
     # get rgb model

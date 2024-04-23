@@ -90,7 +90,7 @@ def run_slsim(tuple):
     util.create_directory_if_not_exists(lens_output_dir)
 
     # set HLWAS parameters
-    survey_area = 1.
+    survey_area = 5.
     sky_area = Quantity(value=survey_area, unit='deg2')
     cosmo = default_cosmology.get()
     bands_hlwas = ['F106', 'F129', 'F158', 'F184']
