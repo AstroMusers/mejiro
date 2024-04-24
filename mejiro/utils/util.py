@@ -3,11 +3,25 @@ import os
 import pickle as _pickle
 import shutil
 import pandas as pd
+import yaml
 from collections import ChainMap
 from glob import glob
 
 import numpy as np
 from omegaconf import OmegaConf
+
+
+def load_skypy_config(path):
+    class SafeLoaderIgnoreUnknown(yaml.SafeLoader):
+        def ignore_unknown(self, node):
+            return None 
+
+    SafeLoaderIgnoreUnknown.add_constructor(None, SafeLoaderIgnoreUnknown.ignore_unknown)
+
+    with open(path, 'r') as file:
+        skypy_config = yaml.load(file, Loader=SafeLoaderIgnoreUnknown)
+
+    return skypy_config
 
 
 def percent_change(a, b):

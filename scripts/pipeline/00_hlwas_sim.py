@@ -20,7 +20,7 @@ def main(config):
     start = time.time()
 
     # set number of runs
-    runs = 40
+    runs = 10
 
     # debugging mode will print statements to console
     debugging = True
@@ -90,10 +90,11 @@ def run_slsim(tuple):
     util.create_directory_if_not_exists(lens_output_dir)
 
     # set HLWAS parameters
-    survey_area = 5.
+    config = util.load_skypy_config(skypy_config)  # read skypy config file to get survey area
+    survey_area = float(config['fsky'][:-5])
     sky_area = Quantity(value=survey_area, unit='deg2')
     cosmo = default_cosmology.get()
-    bands_hlwas = ['F106', 'F129', 'F158', 'F184']
+    bands_hlwas = ['F106', 'F129', 'F184']  # 'F158', TODO change before final execution
 
     # define cuts on the intrinsic deflector and source populations (in addition to the skypy config file)
     kwargs_deflector_cut = {'band': 'F106', 'band_max': 25, 'z_min': 0.01, 'z_max': 2.}
@@ -119,8 +120,8 @@ def run_slsim(tuple):
     # draw the total lens population
     if debugging: print('Identifying lenses...')
     kwargs_lens_total_cut = {
-        'min_image_separation': 0,
-        'max_image_separation': 100,
+        'min_image_separation': 0.01,
+        'max_image_separation': 10,
         'mag_arc_limit': None
     }
     total_lens_population = lens_pop.draw_population(kwargs_lens_cuts=kwargs_lens_total_cut)
