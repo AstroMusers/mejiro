@@ -20,7 +20,7 @@ def main(config):
     start = time.time()
 
     # set number of runs
-    runs = 10
+    runs = 4
 
     # debugging mode will print statements to console
     debugging = True
@@ -45,7 +45,8 @@ def main(config):
     if debugging: print('Configured Roman filters')
 
     # tuple the parameters
-    tuple_list = [(run, output_dir, debugging) for run in range(runs)]
+    pipeline_params = util.hydra_to_dict(config.pipeline)
+    tuple_list = [(run, pipeline_params, output_dir, debugging) for run in range(runs)]
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -78,7 +79,7 @@ def run_slsim(tuple):
     from mejiro.utils import util
 
     # unpack tuple
-    run, output_dir, debugging = tuple
+    run, pipeline_params, output_dir, debugging = tuple
 
     # load SkyPy config file
     module_path = os.path.dirname(mejiro.__file__)
@@ -94,7 +95,7 @@ def run_slsim(tuple):
     survey_area = float(config['fsky'][:-5])
     sky_area = Quantity(value=survey_area, unit='deg2')
     cosmo = default_cosmology.get()
-    bands_hlwas = ['F106', 'F129', 'F184']  # 'F158', TODO change before final execution
+    bands = pipeline_params['bands']
 
     # define cuts on the intrinsic deflector and source populations (in addition to the skypy config file)
     kwargs_deflector_cut = {'band': 'F106', 'band_max': 25, 'z_min': 0.01, 'z_max': 2.}
@@ -120,7 +121,7 @@ def run_slsim(tuple):
     # draw the total lens population
     if debugging: print('Identifying lenses...')
     kwargs_lens_total_cut = {
-        'min_image_separation': 0.01,
+        'min_image_separation': 0,
         'max_image_separation': 10,
         'mag_arc_limit': None
     }
@@ -138,7 +139,7 @@ def run_slsim(tuple):
     # save other params to CSV
     total_pop_csv = os.path.join(output_dir, f'total_pop_{str(run).zfill(2)}.csv')
     if debugging: print(f'Writing total population to {total_pop_csv}')
-    survey_sim.write_lens_pop_to_csv(total_pop_csv, total_lens_population, bands_hlwas)
+    survey_sim.write_lens_pop_to_csv(total_pop_csv, total_lens_population, bands)
 
     # draw initial detectable lens population
     if debugging: print('Identifying detectable lenses...')
@@ -208,7 +209,7 @@ def run_slsim(tuple):
 
         # build dicts for lens and source magnitudes
         lens_mags, source_mags = {}, {}
-        for band in bands_hlwas:  # add F158
+        for band in bands:  # add F158
             lens_mags[band] = gglens.deflector_magnitude(band)
             source_mags[band] = gglens.extended_source_magnitude(band)
 
@@ -241,7 +242,7 @@ def run_slsim(tuple):
         util.pickle(save_path, each)
 
     detectable_pop_csv = os.path.join(output_dir, f'detectable_pop_{str(run).zfill(2)}.csv')
-    survey_sim.write_lens_pop_to_csv(detectable_pop_csv, detectable_gglenses, bands_hlwas)
+    survey_sim.write_lens_pop_to_csv(detectable_pop_csv, detectable_gglenses, bands)
 
 
 if __name__ == '__main__':

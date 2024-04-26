@@ -35,7 +35,10 @@ def main(config):
     # limit = 9
     lens_pickles = glob(config.machine.dir_02 + '/lens_with_subhalos_*')
     count = len(lens_pickles)
-    input_list = [(int(os.path.basename(i).split('_')[3].split('.')[0]), input_dir, output_dir) for i in lens_pickles]
+    pipeline_params = util.hydra_to_dict(config.pipeline)
+    rgb_bands = pipeline_params['rgb_bands']
+    assert len(rgb_bands) == 3, 'rgb_bands must be a list of 3 bands'
+    input_list = [(int(os.path.basename(i).split('_')[3].split('.')[0]), pipeline_params, input_dir, output_dir) for i in lens_pickles]
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -66,15 +69,17 @@ def get_image(input):
     start = time.time()
 
     # unpack tuple
-    (uid, input_dir, output_dir) = input
+    (uid, pipeline_params, input_dir, output_dir) = input
+    rgb_bands = pipeline_params['rgb_bands']
 
-    f106 = np.load(input_dir + f'/galsim_{str(uid).zfill(8)}_F106.npy')
-    f129 = np.load(input_dir + f'/galsim_{str(uid).zfill(8)}_F129.npy')
-    f184 = np.load(input_dir + f'/galsim_{str(uid).zfill(8)}_F184.npy')
+    # assign bands to colors
+    red = np.load(input_dir + f'/galsim_{str(uid).zfill(8)}_{rgb_bands[0]}.npy')
+    green = np.load(input_dir + f'/galsim_{str(uid).zfill(8)}_{rgb_bands[1]}.npy')
+    blue = np.load(input_dir + f'/galsim_{str(uid).zfill(8)}_{rgb_bands[2]}.npy')
 
     # generate and save color image
     from mejiro.helpers import color
-    rgb_image = color.get_rgb(image_b=f106, image_g=f129, image_r=f184, stretch=4, Q=5)
+    rgb_image = color.get_rgb(image_b=blue, image_g=green, image_r=red, stretch=4, Q=5)
     np.save(os.path.join(output_dir, f'galsim_color_{str(uid).zfill(8)}.npy'), rgb_image)
 
     stop = time.time()

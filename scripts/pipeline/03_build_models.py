@@ -42,14 +42,11 @@ def main(config):
         process_count = count
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
-    # get bands
-    bands = util.hydra_to_dict(config.pipeline)['band']
-
     # tuple the parameters
     pipeline_params = util.hydra_to_dict(config.pipeline)
     tuple_list = []
     for i in lens_uids:
-        tuple_list.append((i, pipeline_params, bands, input_dir, output_dir))
+        tuple_list.append((i, pipeline_params, input_dir, output_dir))
 
     # batch
     generator = util.batch_list(tuple_list, process_count)
@@ -68,9 +65,10 @@ def get_model(input):
     from mejiro.utils import util
 
     # unpack tuple
-    (i, pipeline_params, bands, input_dir, output_dir) = input
+    (i, pipeline_params, input_dir, output_dir) = input
 
     # unpack pipeline params
+    bands = pipeline_params['bands']
     num_pix = pipeline_params['num_pix']
     side = pipeline_params['side']
     grid_oversample = pipeline_params['grid_oversample']

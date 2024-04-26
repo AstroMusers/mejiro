@@ -39,9 +39,6 @@ def main(config):
     count = len(lens_pickles)
     uid_list = [int(os.path.basename(i).split('_')[3].split('.')[0]) for i in lens_pickles]
 
-    # get bands
-    bands = util.hydra_to_dict(config.pipeline)['band']
-
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - config.machine.headroom_cores
@@ -53,7 +50,7 @@ def main(config):
     pipeline_params = util.hydra_to_dict(config.pipeline)
     tuple_list = []
     for uid in uid_list:
-        tuple_list.append((uid, pipeline_params, input_dir, output_dir, bands))
+        tuple_list.append((uid, pipeline_params, input_dir, output_dir))
 
     # batch
     generator = util.batch_list(tuple_list, process_count)
@@ -77,9 +74,10 @@ def get_image(input):
     from mejiro.utils import util
 
     # unpack tuple
-    (uid, pipeline_params, input_dir, output_dir, bands) = input
+    (uid, pipeline_params, input_dir, output_dir) = input
 
     # unpack pipeline_params
+    bands = pipeline_params['bands']
     grid_oversample = pipeline_params['grid_oversample']
     exposure_time = pipeline_params['exposure_time']
     suppress_output = pipeline_params['suppress_output']
