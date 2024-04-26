@@ -16,6 +16,7 @@ from lenstronomy.SimulationAPI.sim_api import SimAPI
 from lenstronomy.Util import data_util
 from lenstronomy.Util import util as len_util
 from pyHalo.Cosmology.cosmology import Cosmology
+from pyHalo.preset_models import CDM
 
 from mejiro.utils import util
 
@@ -139,6 +140,17 @@ class StrongLens:
     
     def mass_in_einstein_radius(self):
         return self.lens_cosmo.mass_in_theta_E(self.get_einstein_radius())
+    
+    def generate_cdm_subhalos(self, log_mlow=6, log_mhigh=10, subhalo_cone=10, los_normalization=0, r_tidal=0.5, sigma_sub=0.055):
+        return CDM(self.z_lens,
+                self.z_source,
+                sigma_sub=sigma_sub,
+                log_mlow=log_mlow,
+                log_mhigh=log_mhigh,
+                log_m_host=np.log10(self.main_halo_mass),
+                r_tidal=r_tidal,
+                cone_opening_angle_arcsec=subhalo_cone,
+                LOS_normalization=los_normalization)
 
     def add_subhalos(self, realization, return_stats=False, suppress_output=True):
         # set cosmology by initializing pyHalo's Cosmology object, otherwise Colossus throws an error down the line
@@ -228,7 +240,7 @@ class StrongLens:
     def get_total_flux_cps(self, band):
         return self.get_lens_flux_cps(band) + self.get_source_flux_cps(band)
 
-    def get_array(self, num_pix, side, band, kwargs_psf=None):
+    def get_array(self, num_pix, side, band, kwargs_psf=None, return_pieces=False):
         self.num_pix = num_pix
         self.side = side
         self.oversample_factor = round((0.11 * self.num_pix) / self.side)
@@ -273,9 +285,16 @@ class StrongLens:
         self.kwargs_lens_light_amp_dict[band] = kwargs_lens_light_amp[0]
         self.kwargs_source_amp_dict[band] = kwargs_source_amp[0]
 
-        return image_model.image(kwargs_lens=self.kwargs_lens,
-                                 kwargs_source=kwargs_source_amp,
-                                 kwargs_lens_light=kwargs_lens_light_amp)
+        total_image = image_model.image(kwargs_lens=self.kwargs_lens,
+                                    kwargs_source=kwargs_source_amp,
+                                    kwargs_lens_light=kwargs_lens_light_amp)
+
+        if return_pieces:
+            lens_surface_brightness = image_model.lens_surface_brightness(kwargs_lens_light_amp)
+            source_surface_brightness = image_model.source_surface_brightness(kwargs_source_amp, self.kwargs_lens)
+            return total_image, lens_surface_brightness, source_surface_brightness
+        else:
+            return total_image
 
     @staticmethod
     def _get_amp_light_kwargs(magnitude_zero_point, light_model_class, kwargs_light):
