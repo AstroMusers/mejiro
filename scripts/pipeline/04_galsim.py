@@ -42,6 +42,8 @@ def main(config):
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - config.machine.headroom_cores
+    # TODO for some reason, this particular script needs more headroom cores. maybe it's a memory thing?
+    process_count -= 28
     if count < process_count:
         process_count = count
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')

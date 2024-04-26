@@ -20,7 +20,7 @@ def main(config):
     start = time.time()
 
     # set number of runs
-    runs = 4
+    runs = 50
 
     # debugging mode will print statements to console
     debugging = True
@@ -98,8 +98,8 @@ def run_slsim(tuple):
     bands = pipeline_params['bands']
 
     # define cuts on the intrinsic deflector and source populations (in addition to the skypy config file)
-    kwargs_deflector_cut = {'band': 'F106', 'band_max': 25, 'z_min': 0.01, 'z_max': 2.}
-    kwargs_source_cut = {'band': 'F106', 'band_max': 27, 'z_min': 0.01, 'z_max': 5.}
+    kwargs_deflector_cut = {'band': 'F106', 'band_max': 23, 'z_min': 0.01, 'z_max': 2.}
+    kwargs_source_cut = {'band': 'F106', 'band_max': 24, 'z_min': 0.01, 'z_max': 5.}
 
     # create the lens population
     if debugging: print('Defining galaxy population...')

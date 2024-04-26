@@ -9,7 +9,7 @@ handle_error() {
 set -e
 
 # shellcheck disable=SC2164
-cd scripts/execute_pipeline
+cd scripts/pipeline
 
 # execute Python scripts sequentially
 echo 'Simulating HLWAS to find detectable strong lenses...'
