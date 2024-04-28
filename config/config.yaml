@@ -4,15 +4,15 @@ defaults:
   - override hydra/hydra_logging: disabled
   - override hydra/job_logging: disabled
 
-#   survey:
-    # - deflector_cut_band: F106
-    # - deflector_cut_band_max: 24
-    # - deflector_z_min: 0.01
-    # - deflector_z_max: 2.
-    # - source_cut_band: F106
-    # - source_cut_band_max: 24
-    # - source_z_min: 0.01
-    # - source_z_max: 5.
+survey:
+  - deflector_cut_band: F106
+  - deflector_cut_band_max: 24
+  - deflector_z_min: 0.01
+  - deflector_z_max: 2.
+  - source_cut_band: F106
+  - source_cut_band_max: 24
+  - source_z_min: 0.01
+  - source_z_max: 5.
 
 pipeline:
   - num_pix: 96  # 45  # 97

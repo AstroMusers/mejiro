@@ -45,8 +45,9 @@ def main(config):
     if debugging: print('Configured Roman filters')
 
     # tuple the parameters
+    survey_params = util.hydra_to_dict(config.survey)
     pipeline_params = util.hydra_to_dict(config.pipeline)
-    tuple_list = [(run, pipeline_params, output_dir, debugging) for run in range(runs)]
+    tuple_list = [(run, survey_params, pipeline_params, output_dir, debugging) for run in range(runs)]
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -79,7 +80,7 @@ def run_slsim(tuple):
     from mejiro.utils import util
 
     # unpack tuple
-    run, pipeline_params, output_dir, debugging = tuple
+    run, survey_params, pipeline_params, output_dir, debugging = tuple
 
     # load SkyPy config file
     module_path = os.path.dirname(mejiro.__file__)
@@ -98,9 +99,18 @@ def run_slsim(tuple):
     bands = pipeline_params['bands']
 
     # define cuts on the intrinsic deflector and source populations (in addition to the skypy config file)
-    # TODO pull in from config file
-    kwargs_deflector_cut = {'band': 'F106', 'band_max': 24, 'z_min': 0.01, 'z_max': 2.}
-    kwargs_source_cut = {'band': 'F106', 'band_max': 25, 'z_min': 0.01, 'z_max': 5.}
+    kwargs_deflector_cut = {
+        'band': 'F106', 
+        'band_max': survey_params['deflector_cut_band_max'], 
+        'z_min': 0.01, 
+        'z_max': 2.
+        }
+    kwargs_source_cut = {
+        'band': 'F106', 
+        'band_max': survey_params['source_cut_band_max'], 
+        'z_min': 0.01, 
+        'z_max': 5.
+        }
 
     # create the lens population
     if debugging: print('Defining galaxy population...')

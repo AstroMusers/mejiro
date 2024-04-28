@@ -184,11 +184,11 @@ def run_stips(tuple):
     scm = SceneModule(out_prefix=f'{obs_prefix}_{j}', ra=obs_ra, dec=obs_dec, out_path=output_dir)
 
     stellar_parameters = {
-                        'n_stars': 1000,  # 1000
+                        'n_stars': 2000,  # 1000
                         'age_low': 11e12,  # 7.5e12
                         'age_high': 2e12,  # 7.5e12
-                        'z_low': -2.0,
-                        'z_high': -2.0,
+                        'z_low': -4.0,
+                        'z_high': 0.5,
                         'imf': 'salpeter',
                         'alpha': -2.35,
                         'binary_fraction': 0.1,
@@ -196,8 +196,8 @@ def run_stips(tuple):
                         'distribution': 'uniform',
                         'radius': 275.,  # 100.
                         'radius_units': 'arcsec',
-                        'distance_low': 5.,  # 10.0
-                        'distance_high': 15.0,  # 10.0
+                        'distance_low': 0.5,  # 10.0
+                        'distance_high': 10.0,  # 10.0
                         'offset_ra': 0.0,
                         'offset_dec': 0.0
                         }
