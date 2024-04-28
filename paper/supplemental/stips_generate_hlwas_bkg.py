@@ -188,7 +188,7 @@ def run_stips(tuple):
                         'age_low': 11e12,  # 7.5e12
                         'age_high': 2e12,  # 7.5e12
                         'z_low': -4.0,
-                        'z_high': 0.5,
+                        'z_high': -0.1,
                         'imf': 'salpeter',
                         'alpha': -2.35,
                         'binary_fraction': 0.1,
