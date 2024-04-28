@@ -98,8 +98,9 @@ def run_slsim(tuple):
     bands = pipeline_params['bands']
 
     # define cuts on the intrinsic deflector and source populations (in addition to the skypy config file)
-    kwargs_deflector_cut = {'band': 'F106', 'band_max': 23, 'z_min': 0.01, 'z_max': 2.}
-    kwargs_source_cut = {'band': 'F106', 'band_max': 24, 'z_min': 0.01, 'z_max': 5.}
+    # TODO pull in from config file
+    kwargs_deflector_cut = {'band': 'F106', 'band_max': 24, 'z_min': 0.01, 'z_max': 2.}
+    kwargs_source_cut = {'band': 'F106', 'band_max': 25, 'z_min': 0.01, 'z_max': 5.}
 
     # create the lens population
     if debugging: print('Defining galaxy population...')
@@ -154,7 +155,7 @@ def run_slsim(tuple):
     # set up dict to capture some information about which candidates got filtered out
     filtered_sample = {}
     filtered_sample['total'] = len(lens_population)
-    num_samples = 100
+    num_samples = 16
     filter_1, filter_2 = 0, 0
     filtered_sample['filter_1'] = []
     filtered_sample['filter_2'] = []
