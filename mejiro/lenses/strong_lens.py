@@ -34,11 +34,18 @@ class StrongLens:
         # calculate lens total mass and main halo mass
         if lens_stellar_mass is not None:
             # see Table 2, doi:10.1088/0004-637X/724/1/511
-            a = 0.81
-            b = 0.35
-            log_m_total_10 = (1 / a) * (np.log10(self.lens_stellar_mass / 1e10) - b)
-            self.lens_total_mass = np.power(10, log_m_total_10) * 1e10 * (100 / 32)
-            self.main_halo_mass = self.lens_total_mass - self.lens_stellar_mass
+            # a = 0.81
+            # b = 0.35
+            # log_m_total_10 = (1 / a) * (np.log10(self.lens_stellar_mass / 1e10) - b)
+            # self.lens_total_mass = np.power(10, log_m_total_10) * 1e10 * (100 / 32)
+            # self.main_halo_mass = self.lens_total_mass - self.lens_stellar_mass
+
+            # try calculating from dark matter fraction, because above method was giving negative main halo masses for some stellar masses
+            # Table 6, assuming Chabirer IMF
+            a = 0.13
+            b = 0.54
+            self.f_dm = a * np.log10(self.lens_stellar_mass / 1e11) + b
+            self.main_halo_mass = self.lens_stellar_mass / (1 - self.f_dm)
         else:
             self.lens_total_mass = None
             self.main_halo_mass = None
