@@ -30,7 +30,7 @@ def main(config):
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
 
-    # count number of lenses and build indices of uids
+    # build indices of uids
     lens_pickles = sorted(glob(config.machine.dir_02 + '/lens_with_subhalos_*.pkl'))
     lens_uids = [int(os.path.basename(i).split('_')[3].split('.')[0]) for i in lens_pickles]
 
@@ -43,6 +43,8 @@ def main(config):
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - config.machine.headroom_cores
+    # TODO having resource issues here as well
+    process_count -= 10
     count = len(lens_uids)
     if count < process_count:
         process_count = count

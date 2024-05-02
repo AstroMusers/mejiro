@@ -11,96 +11,24 @@ from mejiro.helpers import psf
 from mejiro.utils import util
 
 
-def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, psf_oversample, detector=None,
-               detector_pos=None, exposure_time=146, ra=30, dec=-30, seed=42, validate=True, suppress_output=True):
+def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, psf_oversample, lens_surface_brightness=None, source_surface_brightness=None, detector=None, detector_pos=None, exposure_time=146, ra=30, dec=-30, seed=42, validate=True, suppress_output=True):
     """
     Apply Roman detector effects to image(s) of a strong lens using Galsim and WebbPSF.
-
-    Parameters
-    ----------
-    lens : StrongLens
-        The strong lens object.
-    arrays : array-like
-        Synthetic images (for multiple bands) or a single image (for a single band) of the strong lens.
-    bands : str or list of str
-        The bands for which the images are generated.
-    input_size : int
-        The size of the input images (one side), in pixels.
-    output_size : int
-        The size of the output images (one side), in pixels.
-    grid_oversample : float
-        The oversampling factor for the grid.
-    psf_oversample : float
-        The oversampling factor for the PSF.
-    detector : int, optional
-        The detector number, by default 1.
-    detector_pos : tuple or None, optional
-        The position of the detector, by default None.
-    exposure_time : int, optional
-        The exposure time in seconds, by default 146.
-    ra : float or None, optional
-        The right ascension, by default 30.
-    dec : float or None, optional
-        The declination, by default -30.
-    seed : int, optional
-        The seed for the random number generator, by default 42.
-    validate : bool, optional
-        Whether to validate the inputs, by default True.
-    suppress_output : bool, optional
-        Whether to suppress the output, by default True.
-
-    Returns
-    -------
-    results : list of ndarray
-        The generated images.
-    execution_time : str
-        The execution time of the function.
-
-    Raises
-    ------
-    AssertionError
-        If the inputs are not valid.
-
-    Notes
-    -----
-    This function generates images with lensing effects using the provided lens object and input arrays.
-    The lensing effects include interpolation, PSF generation, convolution, addition of sky background,
-    quantization, addition of detector effects, and cropping.
-
-    The function returns a list of generated images and the execution time of the function.
     """
     start = time.time()
+
+    if lens_surface_brightness is not None and source_surface_brightness is not None:
+        pieces = True
+    else:
+        pieces = False
 
     # TODO shouldn't need to do this because it should already be set, but getting AttributeError: 'SampleStrongLens' object has no attribute 'lens_light_model_class'
     lens._set_classes()
 
+    # TODO need to be consistent with when a single string band is provided etc.
     # check that the inputs are reasonable
     if validate:
-        # was only one band provided as a string? or a list of bands?
-        single_band = False
-        if not isinstance(bands, list):
-            single_band = True
-            bands = [bands]
-
-        # was only one array provided? or a list of arrays?
-        single_array = False
-        if not isinstance(arrays, list):
-            single_array = True
-            arrays = [arrays]
-
-        # if a color image is desired, then three bands and three arrays should be provided
-        if not single_band or not single_array:
-            assert len(bands) == 3, 'For a color image, provide three bands'
-            assert len(arrays) == 3, 'For a color image, provide three arrays'
-
-        # make sure the arrays are square
-        for array in arrays:
-            assert array.shape[0] == array.shape[1], 'Input image must be square'
-
-        # TODO they should also all have the same dimensions
-
-        # make sure there's an array for each band
-        assert len(bands) == len(arrays)
+        _validate_input(arrays, bands)
 
     # check provided coordinates
     assert (ra is None and dec is None) or (ra is not None and dec is not None), 'Provide both RA and DEC or neither'
@@ -123,53 +51,98 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
     # calculate sky backgrounds for each band
     bkgs = get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix=input_size)
 
-    results = []
+    # generate the PSFs I'll need for each unique band
+    psf_kernels = {}
+    for band in bands:
+        psf_kernels[band] = psf.get_webbpsf_psf(band, detector, detector_pos, psf_oversample)
+
+    results = []       
     for _, (band, array) in enumerate(zip(bands, arrays)):
         # get flux
         total_flux_cps = lens.get_total_flux_cps(band)
 
-        # get interpolated image
-        interp = InterpolatedImage(Image(array, xmin=0, ymin=0), scale=0.11 / grid_oversample,
-                                   flux=total_flux_cps * exposure_time)
-
-        # generate PSF
-        # psf_kernel = psf.get_galsim_psf(band, detector, detector_pos)
-        psf_kernel = psf.get_webbpsf_psf(band, detector, detector_pos, psf_oversample)
-
-        # convolve image with PSF
-        convolved = convolve(interp, psf_kernel, input_size)
-
-        # add sky background to convolved image
-        final_image = convolved + bkgs[band]
-
-        # integer number of photons are being detected, so quantize
-        final_image.quantize()
-
-        # add all detector effects
-        galsim.roman.allDetectorEffects(final_image, prev_exposures=(), rng=rng, exptime=exposure_time)
-
-        # convert from electrons to ADU
-        # roman.gain is currently 1, but may be updated with an empirical value from ground testing
-        final_image /= roman.gain
-
-        # ADU reads counts, so quantize
-        final_image.quantize()
-
-        # get the array
-        final_array = final_image.array
-
-        # center crop to get rid of edge effects (e.g., IPC)
-        final_array = util.center_crop_image(final_array, (output_size, output_size))
-
-        # divide through by exposure time to get in units of counts/sec/pixel
-        final_array /= exposure_time
+        final_array = _calculate_image(array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size, total_flux_cps, exposure_time, rng)
 
         results.append(final_array)
+
+    if pieces:
+        lenses, sources = [], []
+        for _, (band, lens_array, source_array) in enumerate(zip(bands, lens_surface_brightness, source_surface_brightness)):
+            lens_flux_cps = lens.get_lens_flux_cps(band)
+            source_flux_cps = lens.get_source_flux_cps(band)
+
+            lens_image = _calculate_image(lens_array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size, lens_flux_cps, exposure_time, rng)
+            source_image = _calculate_image(source_array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size, source_flux_cps, exposure_time, rng)
+
+            lenses.append(lens_image)
+            sources.append(source_image)
 
     stop = time.time()
     execution_time = str(datetime.timedelta(seconds=round(stop - start)))
 
-    return results, execution_time
+    if pieces:
+        return results, lenses, sources, execution_time
+    else:
+        return results, execution_time
+
+
+def _calculate_image(array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size, flux_cps, exposure_time, rng):
+    # get interpolated image
+    interp = InterpolatedImage(Image(array, xmin=0, ymin=0), scale=0.11 / grid_oversample,
+                                flux=flux_cps * exposure_time)
+
+    # get PSF
+    psf_kernel = psf_kernels[band]
+
+    # convolve image with PSF
+    convolved = convolve(interp, psf_kernel, input_size)
+
+    # add sky background to convolved image
+    final_image = convolved + bkgs[band]
+
+    # integer number of photons are being detected, so quantize
+    final_image.quantize()
+
+    # add all detector effects
+    galsim.roman.allDetectorEffects(final_image, prev_exposures=(), rng=rng, exptime=exposure_time)
+
+    # get the array
+    final_array = final_image.array
+
+    # center crop to get rid of edge effects (e.g., IPC)
+    final_array = util.center_crop_image(final_array, (output_size, output_size))
+
+    # divide through by exposure time to get in units of counts/sec/pixel
+    final_array /= exposure_time
+
+    return final_array
+
+def _validate_input(arrays, bands):
+    # was only one band provided as a string? or a list of bands?
+    single_band = False
+    if not isinstance(bands, list):
+        single_band = True
+        bands = [bands]
+
+    # was only one array provided? or a list of arrays?
+    single_array = False
+    if not isinstance(arrays, list):
+        single_array = True
+        arrays = [arrays]
+
+    # if a color image is desired, then three bands and three arrays should be provided
+    if not single_band or not single_array:
+        assert len(bands) == 3, 'For a color image, provide three bands'
+        assert len(arrays) == 3, 'For a color image, provide three arrays'
+
+    # make sure the arrays are square
+    for array in arrays:
+        assert array.shape[0] == array.shape[1], 'Input image must be square'
+
+    # TODO they should also all have the same dimensions
+
+    # make sure there's an array for each band
+    assert len(bands) == len(arrays), 'Provide an array for each band'
 
 
 def get_random_detector(suppress_output=False):

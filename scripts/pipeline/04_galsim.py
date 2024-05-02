@@ -30,7 +30,7 @@ def main(config):
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
 
-    # count number of lenses and build indices of uids
+    # build indices of uids
     lens_pickles = sorted(glob(config.machine.dir_02 + '/lens_with_subhalos_*.pkl'))
     lens_uids = [int(os.path.basename(i).split('_')[3].split('.')[0]) for i in lens_pickles]
 
@@ -95,21 +95,38 @@ def get_image(input):
     # load the appropriate arrays
     arrays = [np.load(f'{input_dir}/array_{lens.uid}_{band}.npy') for band in bands]
     if pieces:
-        lens_sbs = [np.load(f'{input_dir}/array_{lens.uid}_lens_{band}.npy') for band in bands]
-        source_sbs = [np.load(f'{input_dir}/array_{lens.uid}_source_{band}.npy') for band in bands]
-        arrays.append(lens_sbs)
-        arrays.append(source_sbs)
-        bands = bands * 3
+        lens_surface_brightness = [np.load(f'{input_dir}/array_{lens.uid}_lens_{band}.npy') for band in bands]
+        source_surface_brightness = [np.load(f'{input_dir}/array_{lens.uid}_source_{band}.npy') for band in bands]
+        pieces_args = {'lens_surface_brightness': lens_surface_brightness, 'source_surface_brightness': source_surface_brightness}
+    else:
+        pieces_args = {}
 
     # determine detector and position
     detector = gs.get_random_detector(suppress_output)
     detector_pos = gs.get_random_detector_pos(input_size=num_pix, suppress_output=suppress_output)
 
-    results, execution_time = gs.get_images(lens, arrays, bands, input_size=num_pix, output_size=final_pixel_side,
+    gs_results = gs.get_images(lens, 
+                                            arrays, 
+                                            bands, 
+                                            input_size=num_pix, 
+                                            output_size=final_pixel_side,
                                             grid_oversample=grid_oversample, psf_oversample=grid_oversample,
+                                            *pieces_args,
                                             detector=detector,
-                                            detector_pos=detector_pos, exposure_time=exposure_time, ra=None, dec=None,
-                                            seed=random.randint(0, 2 ** 16 - 1), validate=False, suppress_output=suppress_output)
+                                            detector_pos=detector_pos, 
+                                            exposure_time=exposure_time, 
+                                            ra=None, 
+                                            dec=None,
+                                            seed=random.randint(0, 2 ** 16 - 1), 
+                                            validate=False, 
+                                            suppress_output=suppress_output)
+
+    if pieces:
+        results, lenses, sources, execution_time = gs_results
+        results += lenses
+        results += sources
+    else:
+        results, execution_time = gs_results
 
     j = 0
     for i, (band, result) in enumerate(zip(bands, results)):

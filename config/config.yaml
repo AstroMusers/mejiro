@@ -26,10 +26,10 @@ pipeline:
   - bands: [ F087, F106, F129, F158 ]  # [F087, F106, F129, F158]
   - rgb_bands: [ F158, F129, F087 ]  # in RGB order
   - exposure_time: 146
-  - suppress_output: True
+  - suppress_output: False
   - seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
   - pieces: True
-  - limit: 10
+  - limit: 10  # None
 
 hydra:
   output_subdir: null
