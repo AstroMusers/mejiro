@@ -20,7 +20,7 @@ def main(config):
     start = time.time()
 
     # set number of runs
-    runs = 120
+    runs = 60
 
     # debugging mode will print statements to console
     debugging = True

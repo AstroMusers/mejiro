@@ -33,7 +33,7 @@ class StrongLens:
 
         # calculate lens total mass and main halo mass
         if lens_stellar_mass is not None:
-            # see Table 2, doi:10.1088/0004-637X/724/1/511
+            # see Table 3, doi:10.1088/0004-637X/724/1/511
             # a = 0.81
             # b = 0.35
             # log_m_total_10 = (1 / a) * (np.log10(self.lens_stellar_mass / 1e10) - b)
@@ -89,7 +89,6 @@ class StrongLens:
 
         # additional fields to initialize
         self.lens_model_class = None
-        self.lenstronomy_roman_config = None
         self.oversample_factor = None
         self.side = None
         self.num_pix = None
@@ -264,7 +263,7 @@ class StrongLens:
 
         # define numerics
         kwargs_numerics = {
-            'supersampling_factor': 5,  # TODO should figure out how to set this optimally
+            'supersampling_factor': 1,  # TODO should figure out how to set this optimally
             'supersampling_convolution': True
         }
 
@@ -283,10 +282,14 @@ class StrongLens:
                                  kwargs_numerics=kwargs_numerics)
 
         # convert brightnesses to lenstronomy amp from magnitudes
-        self.lenstronomy_roman_config = Roman(band=band.upper(),
+        if band in ['F087', 'F146']:
+            survey_mode = 'microlensing'
+        else:
+            survey_mode = 'wide_area'
+        lenstronomy_roman_config = Roman(band=band.upper(),
                                               psf_type='PIXEL',
-                                              survey_mode='wide_area').kwargs_single_band()
-        magnitude_zero_point = self.lenstronomy_roman_config.get('magnitude_zero_point')
+                                              survey_mode=survey_mode).kwargs_single_band()
+        magnitude_zero_point = lenstronomy_roman_config.get('magnitude_zero_point')
 
         kwargs_lens_light_amp = self._get_amp_light_kwargs(magnitude_zero_point, self.lens_light_model_class,
                                                            self.kwargs_lens_light_dict[band])
@@ -361,7 +364,7 @@ class StrongLens:
         return coords.map_coord2pix(ra=lens_ra, dec=lens_dec)
 
     def _mass_physical_to_lensing_units(self):
-        sim_g = SimAPI(numpix=self.num_pix, kwargs_single_band=self.lenstronomy_roman_config,
+        sim_g = SimAPI(numpix=self.num_pix, kwargs_single_band=Roman().kwargs_single_band(),
                        kwargs_model=self.kwargs_model)
         self.kwargs_lens_lensing_units = sim_g.physical2lensing_conversion(kwargs_mass=self.kwargs_lens)
 

@@ -30,28 +30,29 @@ def main(config):
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
 
-    # list uids
-    # TODO LIMIT IS TEMP
-    # limit = 9
-    # uid_list = list(range(limit))
     # count number of lenses and build indices of uids
-    lens_pickles = glob(config.machine.dir_02 + '/lens_with_subhalos_*.pkl')
-    count = len(lens_pickles)
-    uid_list = [int(os.path.basename(i).split('_')[3].split('.')[0]) for i in lens_pickles]
+    lens_pickles = sorted(glob(config.machine.dir_02 + '/lens_with_subhalos_*.pkl'))
+    lens_uids = [int(os.path.basename(i).split('_')[3].split('.')[0]) for i in lens_pickles]
+
+    # implement limit, if applicable
+    pipeline_params = util.hydra_to_dict(config.pipeline)
+    limit = pipeline_params['limit']
+    if limit is not None:
+        lens_uids = lens_uids[:limit]
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - config.machine.headroom_cores
     # TODO for some reason, this particular script needs more headroom cores. maybe it's a memory thing?
     process_count -= 36
+    count = len(lens_uids)
     if count < process_count:
         process_count = count
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     # tuple the parameters
-    pipeline_params = util.hydra_to_dict(config.pipeline)
     tuple_list = []
-    for uid in uid_list:
+    for uid in lens_uids:
         tuple_list.append((uid, pipeline_params, input_dir, output_dir))
 
     # batch
@@ -86,12 +87,19 @@ def get_image(input):
     final_pixel_side = pipeline_params['final_pixel_side']
     num_pix = pipeline_params['num_pix']
     # seed = pipeline_params['seed']  # TODO think about what this is doing
+    pieces = pipeline_params['pieces']
 
     # load lens
     lens = util.unpickle(os.path.join(input_dir, f'lens_{str(uid).zfill(8)}.pkl'))
 
     # load the appropriate arrays
     arrays = [np.load(f'{input_dir}/array_{lens.uid}_{band}.npy') for band in bands]
+    if pieces:
+        lens_sbs = [np.load(f'{input_dir}/array_{lens.uid}_lens_{band}.npy') for band in bands]
+        source_sbs = [np.load(f'{input_dir}/array_{lens.uid}_source_{band}.npy') for band in bands]
+        arrays.append(lens_sbs)
+        arrays.append(source_sbs)
+        bands = bands * 3
 
     # determine detector and position
     detector = gs.get_random_detector(suppress_output)
@@ -103,8 +111,16 @@ def get_image(input):
                                             detector_pos=detector_pos, exposure_time=exposure_time, ra=None, dec=None,
                                             seed=random.randint(0, 2 ** 16 - 1), validate=False, suppress_output=suppress_output)
 
-    for band, result in zip(bands, results):
-        np.save(os.path.join(output_dir, f'galsim_{lens.uid}_{band}.npy'), result)
+    j = 0
+    for i, (band, result) in enumerate(zip(bands, results)):
+        if j == 0:
+            np.save(os.path.join(output_dir, f'galsim_{lens.uid}_{band}.npy'), result)
+        elif j == 1:
+            np.save(os.path.join(output_dir, f'galsim_{lens.uid}_lens_{band}.npy'), result)
+        elif j == 2:
+            np.save(os.path.join(output_dir, f'galsim_{lens.uid}_source_{band}.npy'), result)
+        if i % len(set(bands)) == len(set(bands)) - 1:
+            j += 1
 
     return execution_time
 
