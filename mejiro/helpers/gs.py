@@ -45,6 +45,10 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
     if detector_pos is None:
         detector_pos = get_random_detector_pos(input_size, suppress_output)
 
+    # TODO set attributes on StrongLens
+    # lens.detector = detector
+    # lens.detector_pos = detector_pos
+
     # create galsim rng
     rng = galsim.UniformDeviate(seed)
 
@@ -71,8 +75,8 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
             lens_flux_cps = lens.get_lens_flux_cps(band)
             source_flux_cps = lens.get_source_flux_cps(band)
 
-            lens_image = _calculate_image(lens_array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size, lens_flux_cps, exposure_time, rng)
-            source_image = _calculate_image(source_array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size, source_flux_cps, exposure_time, rng)
+            lens_image = _calculate_image(lens_array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size, lens_flux_cps, exposure_time, rng, detector_effects=False, sky_background=False)
+            source_image = _calculate_image(source_array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size, source_flux_cps, exposure_time, rng, detector_effects=False, sky_background=False)
 
             lenses.append(lens_image)
             sources.append(source_image)
@@ -86,28 +90,25 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
         return results, execution_time
 
 
-def _calculate_image(array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size, flux_cps, exposure_time, rng):
+def _calculate_image(array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size, flux_cps, exposure_time, rng, detector_effects=True, sky_background=True):
     # get interpolated image
     interp = InterpolatedImage(Image(array, xmin=0, ymin=0), scale=0.11 / grid_oversample,
                                 flux=flux_cps * exposure_time)
 
-    # get PSF
-    psf_kernel = psf_kernels[band]
-
     # convolve image with PSF
-    convolved = convolve(interp, psf_kernel, input_size)
+    psf_kernel = psf_kernels[band]
+    image = convolve(interp, psf_kernel, input_size)
 
-    # add sky background to convolved image
-    final_image = convolved + bkgs[band]
+    if sky_background:
+        image += bkgs[band]  # add sky background to convolved image
+        image.quantize()  # integer number of photons are being detected, so quantize
 
-    # integer number of photons are being detected, so quantize
-    final_image.quantize()
-
-    # add all detector effects
-    galsim.roman.allDetectorEffects(final_image, prev_exposures=(), rng=rng, exptime=exposure_time)
+    if detector_effects:
+        # add all detector effects
+        galsim.roman.allDetectorEffects(image, prev_exposures=(), rng=rng, exptime=exposure_time)
 
     # get the array
-    final_array = final_image.array
+    final_array = image.array
 
     # center crop to get rid of edge effects (e.g., IPC)
     final_array = util.center_crop_image(final_array, (output_size, output_size))

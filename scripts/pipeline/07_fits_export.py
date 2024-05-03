@@ -48,7 +48,7 @@ def main(config):
         lens = util.unpickle(os.path.join(config.machine.dir_03, f'lens_{str(uid).zfill(8)}.pkl'))
         images = [np.load(f'{config.machine.dir_04}/galsim_{lens.uid}_{band}.npy') for band in bands]
         if pieces:
-            lens_surface_brightness = [np.load(f'{config.machine.dir_04}/galsim_{lens.uid}_lens_{band}.npy') for band in bands]
+            # lens_surface_brightness = [np.load(f'{config.machine.dir_03}/array_{lens.uid}_lens_{band}.npy') for band in bands]
             source_surface_brightness = [np.load(f'{config.machine.dir_04}/galsim_{lens.uid}_source_{band}.npy') for band in bands]
         color_image = np.load(os.path.join(config.machine.dir_05, f'galsim_color_{lens.uid}.npy'))
 
@@ -79,6 +79,7 @@ def main(config):
 
         for band, array in zip(bands, images):
             header = get_image_header(pipeline_params, band)
+            header['EXPOSURE'] = (pipeline_params['exposure_time'], 'Exposure time [seconds]')
             image_hdu = fits.ImageHDU(array, header, name=band)
             hdul.append(image_hdu)
 
@@ -87,10 +88,10 @@ def main(config):
             image_hdu = fits.ImageHDU(array, header, name=f'{band} SOURCE')
             hdul.append(image_hdu)
 
-        for band, array in zip(bands, lens_surface_brightness):
-            header = get_image_header(pipeline_params, band)
-            image_hdu = fits.ImageHDU(array, header, name=f'{band} LENS')
-            hdul.append(image_hdu)
+        # for band, array in zip(bands, lens_surface_brightness):
+        #     header = get_image_header(pipeline_params, band)
+        #     image_hdu = fits.ImageHDU(array, header, name=f'{band} LENS')
+        #     hdul.append(image_hdu)
 
         hdul.writeto(fits_path, overwrite=True)
 
@@ -139,10 +140,16 @@ def main(config):
 
 
 def get_image_header(pipeline_params, band):
+    import mejiro
+    import getpass
+    import platform
+
     header = fits.Header()
+    header['VERSION'] = (mejiro.__version__, 'mejiro version')
+    header['AUTHOR'] = (f'{getpass.getuser()}@{platform.node()}', 'username@host for calculation')
     header['INSTRUME'] = ('WFI', 'Instrument')
     header['FILTER'] = (band, 'Filter')
-    header['EXPOSURE'] = (pipeline_params['exposure_time'], 'Exposure time [seconds]')
+    # header['EXPOSURE'] = (pipeline_params['exposure_time'], 'Exposure time [seconds]')
     header['OVERSAMP'] = (pipeline_params['grid_oversample'], 'Oversampling used in calculation')
     header['PIXELSCL'] = (0.11, 'Pixel scale [arcsec/pixel]')
     header['FOV'] = (0.11 * pipeline_params['final_pixel_side'], 'Field of view [arcsec]')
