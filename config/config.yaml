@@ -29,7 +29,7 @@ pipeline:
   - suppress_output: False
   - seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
   - pieces: True
-  - limit: 10  # None
+  - limit:   # None
 
 hydra:
   output_subdir: null

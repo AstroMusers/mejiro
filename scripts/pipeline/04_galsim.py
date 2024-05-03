@@ -106,36 +106,44 @@ def get_image(input):
     detector_pos = gs.get_random_detector_pos(input_size=num_pix, suppress_output=suppress_output)
 
     gs_results = gs.get_images(lens, 
-                                            arrays, 
-                                            bands, 
-                                            input_size=num_pix, 
-                                            output_size=final_pixel_side,
-                                            grid_oversample=grid_oversample, psf_oversample=grid_oversample,
-                                            *pieces_args,
-                                            detector=detector,
-                                            detector_pos=detector_pos, 
-                                            exposure_time=exposure_time, 
-                                            ra=None, 
-                                            dec=None,
-                                            seed=random.randint(0, 2 ** 16 - 1), 
-                                            validate=False, 
-                                            suppress_output=suppress_output)
+                                arrays, 
+                                bands, 
+                                input_size=num_pix, 
+                                output_size=final_pixel_side,
+                                grid_oversample=grid_oversample, 
+                                psf_oversample=grid_oversample,
+                                **pieces_args,
+                                detector=detector,
+                                detector_pos=detector_pos, 
+                                exposure_time=exposure_time, 
+                                ra=None, 
+                                dec=None,
+                                seed=random.randint(0, 2 ** 16 - 1), 
+                                validate=False, 
+                                suppress_output=suppress_output)
 
     if pieces:
         results, lenses, sources, execution_time = gs_results
         results += lenses
         results += sources
+        bands *= 3  # repeat bands 3 times so next block will write all 3 arrays
     else:
         results, execution_time = gs_results
 
     j = 0
     for i, (band, result) in enumerate(zip(bands, results)):
         if j == 0:
-            np.save(os.path.join(output_dir, f'galsim_{lens.uid}_{band}.npy'), result)
+            out_path = os.path.join(output_dir, f'galsim_{lens.uid}_{band}.npy')
+            if not suppress_output: print(f'Writing {out_path}...')
+            np.save(out_path, result)
         elif j == 1:
-            np.save(os.path.join(output_dir, f'galsim_{lens.uid}_lens_{band}.npy'), result)
+            out_path = os.path.join(output_dir, f'galsim_{lens.uid}_lens_{band}.npy')
+            if not suppress_output: print(f'Writing {out_path}...')
+            np.save(out_path, result)
         elif j == 2:
-            np.save(os.path.join(output_dir, f'galsim_{lens.uid}_source_{band}.npy'), result)
+            out_path = os.path.join(output_dir, f'galsim_{lens.uid}_source_{band}.npy')
+            if not suppress_output: print(f'Writing {out_path}...')
+            np.save(out_path, result)
         if i % len(set(bands)) == len(set(bands)) - 1:
             j += 1
 
