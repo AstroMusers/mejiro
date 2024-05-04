@@ -45,12 +45,13 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
     if detector_pos is None:
         detector_pos = get_random_detector_pos(input_size, suppress_output)
 
-    # TODO set attributes on StrongLens
-    # lens.detector = detector
-    # lens.detector_pos = detector_pos
-
     # create galsim rng
     rng = galsim.UniformDeviate(seed)
+
+    # set attributes on StrongLens
+    lens.ra, lens.dec = ra, dec
+    lens.detector, lens.detector_position = detector, detector_pos
+    lens.galsim_rng = rng
 
     # calculate sky backgrounds for each band
     bkgs = get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix=input_size)

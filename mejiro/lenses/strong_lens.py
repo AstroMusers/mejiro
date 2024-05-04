@@ -94,6 +94,9 @@ class StrongLens:
         self.num_pix = None
         self.num_subhalos = None
         self.realization = None
+        self.detector, self.detector_position = None, None
+        self.galsim_rng = None
+        self.ra, self.dec = None, None
 
     def get_lenstronomy_kwargs(self, band):
         # TODO finish
