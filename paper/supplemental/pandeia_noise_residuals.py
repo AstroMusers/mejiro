@@ -1,14 +1,10 @@
 import os
 import sys
-from glob import glob
 
 import matplotlib
-import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
 from hydra import initialize, compose
-from pandeia.engine.perform_calculation import perform_calculation
-from tqdm import tqdm
 
 # set paths to various directories based on the machine this code is being executed on
 with initialize(version_base=None, config_path='../../config'):
@@ -23,9 +19,7 @@ if repo_dir not in sys.path:
 # set matplotlib style
 plt.style.use(f'{repo_dir}/mejiro/mplstyle/science.mplstyle')
 
-from mejiro.helpers import pandeia_input, pyhalo
-from mejiro.lenses.test import SampleStrongLens
-from mejiro.plots import diagnostic_plot, plot, plot_util, overplot
+from mejiro.plots import plot_util
 from mejiro.utils import util
 from mejiro.analysis import stats
 

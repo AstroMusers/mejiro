@@ -82,7 +82,7 @@ def get_image(input):
     (uid, pipeline_params, input_dir, output_dir) = input
     rgb_bands = pipeline_params['rgb_bands']
     pieces = pipeline_params['pieces']
-    
+
     # assign bands to colors
     red = np.load(input_dir + f'/galsim_{str(uid).zfill(8)}_{rgb_bands[0]}.npy')
     green = np.load(input_dir + f'/galsim_{str(uid).zfill(8)}_{rgb_bands[1]}.npy')

@@ -1,29 +1,29 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import os, sys
 import datetime
-import time
+import os
 import random
+import sys
+import time
+
 import matplotlib
-from matplotlib import style
+
 matplotlib.rcParams['axes.grid'] = False
 matplotlib.rcParams['image.origin'] = 'lower'
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
-from astropy.visualization import make_lupton_rgb
-from astropy.table import Table, vstack
+from astropy.table import Table
 from skypy.pipeline import Pipeline
 from slsim.Observations.roman_speclite import configure_roman_filters, filter_names
 from pprint import pprint
 from glob import glob
-import pickle
 from tqdm import tqdm
 from stips.scene_module import SceneModule
 from stips.observation_module import ObservationModule
 import speclite
-from lenstronomy.Util import data_util,constants
+from lenstronomy.Util import data_util
 import pandas as pd
 import stips
 from multiprocessing import Pool
@@ -40,7 +40,7 @@ def roman_mag_to_cps(mag, band):
         mag_zero_point = 25.95
     else:
         raise ValueError('Unknown band')
-    
+
     return data_util.magnitude2cps(mag, mag_zero_point)
 
 
@@ -71,7 +71,8 @@ def main(config):
     obs_ra = 30.
     obs_dec = -30.
 
-    skypy_config_path = os.path.join(config.machine.repo_dir, 'paper', 'supplemental', 'roman_hlwas_single_detector.yml')
+    skypy_config_path = os.path.join(config.machine.repo_dir, 'paper', 'supplemental',
+                                     'roman_hlwas_single_detector.yml')
 
     # set output directory
     output_dir = os.path.join(config.machine.data_dir, 'STIPS')
@@ -90,7 +91,8 @@ def main(config):
     _ = speclite.filters.load_filters(*roman_filters[:8])
 
     # tuple the parameters
-    tuple_list = [(j, num_detectors, detector_list, bands, exposure_time, obs_prefix, obs_ra, obs_dec, output_dir, coord_offset, skypy_config_path) for j in range(num_images)]
+    tuple_list = [(j, num_detectors, detector_list, bands, exposure_time, obs_prefix, obs_ra, obs_dec, output_dir,
+                   coord_offset, skypy_config_path) for j in range(num_images)]
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -184,63 +186,64 @@ def run_stips(tuple):
     scm = SceneModule(out_prefix=f'{obs_prefix}_{j}', ra=obs_ra, dec=obs_dec, out_path=output_dir)
 
     stellar_parameters = {
-                        'n_stars': 1000,  # 1000
-                        'age_low': 11e12,  # 7.5e12
-                        'age_high': 2e12,  # 7.5e12
-                        'z_low': -2.,
-                        'z_high': -2.,
-                        'imf': 'salpeter',
-                        'alpha': -2.35,
-                        'binary_fraction': 0.1,
-                        'clustered': False,
-                        'distribution': 'uniform',
-                        'radius': 275.,  # 100.
-                        'radius_units': 'arcsec',
-                        'distance_low': 0.5,  # 10.0
-                        'distance_high': 10.0,  # 10.0
-                        'offset_ra': 0.0,
-                        'offset_dec': 0.0
-                        }
+        'n_stars': 1000,  # 1000
+        'age_low': 11e12,  # 7.5e12
+        'age_high': 2e12,  # 7.5e12
+        'z_low': -2.,
+        'z_high': -2.,
+        'imf': 'salpeter',
+        'alpha': -2.35,
+        'binary_fraction': 0.1,
+        'clustered': False,
+        'distribution': 'uniform',
+        'radius': 275.,  # 100.
+        'radius_units': 'arcsec',
+        'distance_low': 0.5,  # 10.0
+        'distance_high': 10.0,  # 10.0
+        'offset_ra': 0.0,
+        'offset_dec': 0.0
+    }
     stellar_cat_file = scm.CreatePopulation(stellar_parameters)
 
     print("Stellar population saved to file {}".format(stellar_cat_file))
     print("Galaxy population saved to file {}".format(galaxy_cat_file))
 
     offset = {
-            'offset_id': 1,
-            'offset_centre': False,
-            'offset_ra': 0,
-            'offset_dec': 0,
-            'offset_pa': 0.0
-            }
+        'offset_id': 1,
+        'offset_centre': False,
+        'offset_ra': 0,
+        'offset_dec': 0,
+        'offset_pa': 0.0
+    }
 
     residuals = {
-                'residual_flat': True,
-                'residual_dark': True,
-                'residual_cosmic': True,
-                'residual_poisson': True,
-                'residual_readnoise': True
-                }
+        'residual_flat': True,
+        'residual_dark': True,
+        'residual_cosmic': True,
+        'residual_poisson': True,
+        'residual_readnoise': True
+    }
 
     observation_parameters = {
-                            'instrument': 'WFI',
-                            'filters': bands,
-                            'detectors': num_detectors,
-                            'distortion': True,
-                            'background': 0.15,
-                            'observations_id': j,
-                            'exptime': exposure_time,
-                            'offsets': [offset]
-                            }
+        'instrument': 'WFI',
+        'filters': bands,
+        'detectors': num_detectors,
+        'distortion': True,
+        'background': 0.15,
+        'observations_id': j,
+        'exptime': exposure_time,
+        'offsets': [offset]
+    }
 
-    obm = ObservationModule(observation_parameters, out_prefix=f'{obs_prefix}', ra=obs_ra, dec=obs_dec, residual=residuals, out_path=output_dir, fast_galaxies=True)
+    obm = ObservationModule(observation_parameters, out_prefix=f'{obs_prefix}', ra=obs_ra, dec=obs_dec,
+                            residual=residuals, out_path=output_dir, fast_galaxies=True)
 
     # determine number of observations
     num_obs = len(observation_parameters['filters'])
 
     for _ in tqdm(range(num_obs)):
         obm.nextObservation()
-        
+
         output_stellar_catalogues = obm.addCatalogue(stellar_cat_file)
         output_galaxy_catalogues = obm.addCatalogue(galaxy_cat_file, fast_galaxies=True)
 
@@ -253,7 +256,6 @@ def run_stips(tuple):
         print("Output FITS file is {}".format(fits_file))
         print("Output Mosaic file is {}".format(mosaic_file))
         print("Observation Parameters are {}".format(params))
-
 
     # import all FITS files
     fits_files = glob(os.path.join(output_dir, f'{obs_prefix}_{j}_*.fits'))
@@ -269,4 +271,4 @@ def run_stips(tuple):
 
 
 if __name__ == '__main__':
-    main()       
+    main()

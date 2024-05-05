@@ -14,7 +14,7 @@ def main(config):
     # enable use of local packages
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
-    from mejiro.helpers import pyhalo, pandeia_input, bkg
+    from mejiro.helpers import pandeia_input
     from mejiro.lenses.test import SampleStrongLens
     from mejiro.utils import util
 

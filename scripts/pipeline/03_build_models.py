@@ -87,7 +87,8 @@ def get_model(input):
     # generate lenstronomy model and save
     for band in bands:
         if pieces:
-            model, lens_surface_brightness, source_surface_brightness = lens.get_array(num_pix=num_pix * grid_oversample, side=side, band=band, return_pieces=True)
+            model, lens_surface_brightness, source_surface_brightness = lens.get_array(
+                num_pix=num_pix * grid_oversample, side=side, band=band, return_pieces=True)
             np.save(os.path.join(output_dir, f'array_{lens.uid}_lens_{band}'), lens_surface_brightness)
             np.save(os.path.join(output_dir, f'array_{lens.uid}_source_{band}'), source_surface_brightness)
         else:

@@ -28,7 +28,8 @@ def build_pandeia_calc(array, lens, background=None, band='F106', max_scene_size
 
     # set detector
     calc['configuration']['detector']['ma_table_name'] = 'hlwas_imaging'
-    calc['configuration']['detector']['nresultants'] = 8  # resultant number 8 to achieve HLWAS total integration duration of 145.96 s; see https://roman-docs.stsci.edu/raug/astronomers-proposal-tool-apt/appendix/appendix-wfi-multiaccum-tables
+    calc['configuration']['detector'][
+        'nresultants'] = 8  # resultant number 8 to achieve HLWAS total integration duration of 145.96 s; see https://roman-docs.stsci.edu/raug/astronomers-proposal-tool-apt/appendix/appendix-wfi-multiaccum-tables
 
     # seems to be a bug with v3.0 where it wants ngroup, nint, and readout_pattern, but these are JWST params and shouldn't be required for Roman
     # calc['configuration']['detector']['ngroup'] = 1

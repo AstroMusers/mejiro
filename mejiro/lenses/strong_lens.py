@@ -22,7 +22,8 @@ from mejiro.utils import util
 
 
 class StrongLens:
-    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, lens_stellar_mass=None, lens_vel_disp=None, snr=None, uid=None):
+    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, lens_stellar_mass=None, lens_vel_disp=None,
+                 snr=None, uid=None):
         # set z_source convention default
         self.z_source_convention = 5
 
@@ -146,20 +147,21 @@ class StrongLens:
 
     def get_main_halo_mass(self):
         return einstein_radius_to_mass(self.get_einstein_radius(), self.z_lens, self.z_source, self.cosmo)
-    
+
     def mass_in_einstein_radius(self):
         return self.lens_cosmo.mass_in_theta_E(self.get_einstein_radius())
-    
-    def generate_cdm_subhalos(self, log_mlow=6, log_mhigh=10, subhalo_cone=10, los_normalization=0, r_tidal=0.5, sigma_sub=0.055):
+
+    def generate_cdm_subhalos(self, log_mlow=6, log_mhigh=10, subhalo_cone=10, los_normalization=0, r_tidal=0.5,
+                              sigma_sub=0.055):
         return CDM(self.z_lens,
-                self.z_source,
-                sigma_sub=sigma_sub,
-                log_mlow=log_mlow,
-                log_mhigh=log_mhigh,
-                log_m_host=np.log10(self.main_halo_mass),
-                r_tidal=r_tidal,
-                cone_opening_angle_arcsec=subhalo_cone,
-                LOS_normalization=los_normalization)
+                   self.z_source,
+                   sigma_sub=sigma_sub,
+                   log_mlow=log_mlow,
+                   log_mhigh=log_mhigh,
+                   log_m_host=np.log10(self.main_halo_mass),
+                   r_tidal=r_tidal,
+                   cone_opening_angle_arcsec=subhalo_cone,
+                   LOS_normalization=los_normalization)
 
     def add_subhalos(self, realization, return_stats=False, suppress_output=True):
         # set cosmology by initializing pyHalo's Cosmology object, otherwise Colossus throws an error down the line
@@ -206,7 +208,8 @@ class StrongLens:
         if not suppress_output or return_stats:
             # total subhalo mass can be zero and throw division by zero error
             try:
-                percent_subhalo_mass_within_einstein_radius = (total_mass_subhalos_within_einstein_radius / total_subhalo_mass) * 100
+                percent_subhalo_mass_within_einstein_radius = (
+                                                                          total_mass_subhalos_within_einstein_radius / total_subhalo_mass) * 100
             except:
                 percent_subhalo_mass_within_einstein_radius = 0
             percent_change_lensing_mass = util.percent_change(effective_lensing_mass, adjusted_lensing_mass)
@@ -221,9 +224,11 @@ class StrongLens:
             print(f'Adjusted lensing mass: {adjusted_lensing_mass:.4e} M_Sun')
             print(f'Percent change of lensing mass: {percent_change_lensing_mass:.2f}%')
             print('------------------------------------')
-            print(f'Total mass of CDM halos within Einstein radius: {total_mass_subhalos_within_einstein_radius:.4e} M_Sun')
+            print(
+                f'Total mass of CDM halos within Einstein radius: {total_mass_subhalos_within_einstein_radius:.4e} M_Sun')
             print(f'Total mass of CDM halos: {total_subhalo_mass:.4e} M_Sun')
-            print(f'Percentage of total subhalo mass within Einstein radius: {percent_subhalo_mass_within_einstein_radius:.2f}%')
+            print(
+                f'Percentage of total subhalo mass within Einstein radius: {percent_subhalo_mass_within_einstein_radius:.2f}%')
             print('\n')
 
         if return_stats:
@@ -238,7 +243,6 @@ class StrongLens:
                 'total_subhalo_mass': total_subhalo_mass,
                 'percent_subhalo_mass_within_einstein_radius': percent_subhalo_mass_within_einstein_radius
             }
-            
 
     # TODO method to calculate snr and update snr attribute based on the full image
 
@@ -290,8 +294,8 @@ class StrongLens:
         else:
             survey_mode = 'wide_area'
         lenstronomy_roman_config = Roman(band=band.upper(),
-                                              psf_type='PIXEL',
-                                              survey_mode=survey_mode).kwargs_single_band()
+                                         psf_type='PIXEL',
+                                         survey_mode=survey_mode).kwargs_single_band()
         magnitude_zero_point = lenstronomy_roman_config.get('magnitude_zero_point')
 
         kwargs_lens_light_amp = self._get_amp_light_kwargs(magnitude_zero_point, self.lens_light_model_class,
@@ -303,8 +307,8 @@ class StrongLens:
         self.kwargs_source_amp_dict[band] = kwargs_source_amp[0]
 
         total_image = image_model.image(kwargs_lens=self.kwargs_lens,
-                                    kwargs_source=kwargs_source_amp,
-                                    kwargs_lens_light=kwargs_lens_light_amp)
+                                        kwargs_source=kwargs_source_amp,
+                                        kwargs_lens_light=kwargs_lens_light_amp)
 
         if return_pieces:
             lens_surface_brightness = image_model.lens_surface_brightness(kwargs_lens_light_amp)
@@ -424,12 +428,12 @@ class StrongLens:
 
     def __str__(self):
         return f'StrongLens {self.uid}'
-    
+
     # TODO overload __iter__()?
     # https://www.geeksforgeeks.org/python-__iter__-__next__-converting-object-iterator/
     def csv_row(self):
         return [self.uid, self.z_lens, self.z_source, self.lens_mass, self.lens_vel_disp]
-    
+
     @staticmethod
     def get_csv_headers():
         # TODO this is a helper method for exporting to CSV using the __iter__() method
@@ -466,6 +470,7 @@ def velocity_dispersion_to_einstein_radius(velocity_dispersion, z_lens, z_source
 
 def get_lens_cosmo(z_lens, z_source, cosmo):
     return LensCosmo(z_lens=z_lens, z_source=z_source, cosmo=cosmo)
+
 
 # G = 4.3009e-12  # in Gpc * (km/s)^2 / M_sun
 # C_SQUARED = 299792.458 ** 2  # in (km/s)^2

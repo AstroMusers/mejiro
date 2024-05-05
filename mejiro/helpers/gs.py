@@ -11,7 +11,9 @@ from mejiro.helpers import psf
 from mejiro.utils import util
 
 
-def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, psf_oversample, lens_surface_brightness=None, source_surface_brightness=None, detector=None, detector_pos=None, exposure_time=146, ra=30, dec=-30, seed=42, validate=True, suppress_output=True):
+def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, psf_oversample,
+               lens_surface_brightness=None, source_surface_brightness=None, detector=None, detector_pos=None,
+               exposure_time=146, ra=30, dec=-30, seed=42, validate=True, suppress_output=True):
     """
     Apply Roman detector effects to image(s) of a strong lens using Galsim and WebbPSF.
     """
@@ -61,23 +63,29 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
     for band in bands:
         psf_kernels[band] = psf.get_webbpsf_psf(band, detector, detector_pos, psf_oversample)
 
-    results = []       
+    results = []
     for _, (band, array) in enumerate(zip(bands, arrays)):
         # get flux
         total_flux_cps = lens.get_total_flux_cps(band)
 
-        final_array = _calculate_image(array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size, total_flux_cps, exposure_time, rng)
+        final_array = _calculate_image(array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size,
+                                       total_flux_cps, exposure_time, rng)
 
         results.append(final_array)
 
     if pieces:
         lenses, sources = [], []
-        for _, (band, lens_array, source_array) in enumerate(zip(bands, lens_surface_brightness, source_surface_brightness)):
+        for _, (band, lens_array, source_array) in enumerate(
+                zip(bands, lens_surface_brightness, source_surface_brightness)):
             lens_flux_cps = lens.get_lens_flux_cps(band)
             source_flux_cps = lens.get_source_flux_cps(band)
 
-            lens_image = _calculate_image(lens_array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size, lens_flux_cps, exposure_time, rng, detector_effects=False, sky_background=False)
-            source_image = _calculate_image(source_array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size, source_flux_cps, exposure_time, rng, detector_effects=False, sky_background=False)
+            lens_image = _calculate_image(lens_array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size,
+                                          lens_flux_cps, exposure_time, rng, detector_effects=False,
+                                          sky_background=False)
+            source_image = _calculate_image(source_array, band, grid_oversample, psf_kernels, bkgs, input_size,
+                                            output_size, source_flux_cps, exposure_time, rng, detector_effects=False,
+                                            sky_background=False)
 
             lenses.append(lens_image)
             sources.append(source_image)
@@ -91,10 +99,11 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
         return results, execution_time
 
 
-def _calculate_image(array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size, flux_cps, exposure_time, rng, detector_effects=True, sky_background=True):
+def _calculate_image(array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size, flux_cps, exposure_time,
+                     rng, detector_effects=True, sky_background=True):
     # get interpolated image
     interp = InterpolatedImage(Image(array, xmin=0, ymin=0), scale=0.11 / grid_oversample,
-                                flux=flux_cps * exposure_time)
+                               flux=flux_cps * exposure_time)
 
     # convolve image with PSF
     psf_kernel = psf_kernels[band]
@@ -118,6 +127,7 @@ def _calculate_image(array, band, grid_oversample, psf_kernels, bkgs, input_size
     final_array /= exposure_time
 
     return final_array
+
 
 def _validate_input(arrays, bands):
     # was only one band provided as a string? or a list of bands?

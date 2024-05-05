@@ -23,7 +23,8 @@ def main(config):
     util.clear_directory(config.machine.dir_01)
 
     output_files = glob(config.machine.dir_00 + '/detectable_pop_*.csv')
-    assert len(output_files) != 0, f'No output files found. Check HLWAS simulation output directory ({config.machine.dir_00}).'
+    assert len(
+        output_files) != 0, f'No output files found. Check HLWAS simulation output directory ({config.machine.dir_00}).'
     num_runs = len(output_files)
 
     uid = 0

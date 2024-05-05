@@ -65,7 +65,7 @@ def main(config):
 
 def add(tuple):
     np.random.seed()
-    
+
     from mejiro.utils import util
 
     # unpack tuple
@@ -85,14 +85,14 @@ def add(tuple):
 
     try:
         cdm_realization = CDM(z_lens,
-                            z_source,
-                            sigma_sub=sigma_sub,
-                            log_mlow=6.,
-                            log_mhigh=10.,
-                            log_m_host=log_m_host,
-                            r_tidal=r_tidal,
-                            cone_opening_angle_arcsec=subhalo_cone,
-                            LOS_normalization=los_normalization)
+                              z_source,
+                              sigma_sub=sigma_sub,
+                              log_mlow=6.,
+                              log_mhigh=10.,
+                              log_m_host=log_m_host,
+                              r_tidal=r_tidal,
+                              cone_opening_angle_arcsec=subhalo_cone,
+                              LOS_normalization=los_normalization)
     except:
         print(f'Failed to generate subhalos for lens {lens.uid}')
         return

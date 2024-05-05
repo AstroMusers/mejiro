@@ -2,19 +2,19 @@ import datetime
 import os
 import pickle as _pickle
 import shutil
-import pandas as pd
-import yaml
 from collections import ChainMap
 from glob import glob
 
 import numpy as np
+import pandas as pd
+import yaml
 from omegaconf import OmegaConf
 
 
 def load_skypy_config(path):
     class SafeLoaderIgnoreUnknown(yaml.SafeLoader):
         def ignore_unknown(self, node):
-            return None 
+            return None
 
     SafeLoaderIgnoreUnknown.add_constructor(None, SafeLoaderIgnoreUnknown.ignore_unknown)
 

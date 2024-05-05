@@ -1,18 +1,18 @@
-import numpy as np
+import datetime
+import multiprocessing
 import os
 import sys
+import time
+from multiprocessing import Pool
+
+import hydra
+import numpy as np
 import speclite
 from astropy.cosmology import default_cosmology
 from astropy.units import Quantity
-from slsim.lens_pop import LensPop
 from slsim.Observations.roman_speclite import configure_roman_filters, filter_names
+from slsim.lens_pop import LensPop
 from tqdm import tqdm
-from pprint import pprint
-import time
-import datetime
-import hydra
-from multiprocessing import Pool
-import multiprocessing
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -100,28 +100,28 @@ def run_slsim(tuple):
 
     # define cuts on the intrinsic deflector and source populations (in addition to the skypy config file)
     kwargs_deflector_cut = {
-        'band': 'F106', 
-        'band_max': survey_params['deflector_cut_band_max'], 
-        'z_min': 0.01, 
+        'band': 'F106',
+        'band_max': survey_params['deflector_cut_band_max'],
+        'z_min': 0.01,
         'z_max': 2.
-        }
+    }
     kwargs_source_cut = {
-        'band': 'F106', 
-        'band_max': survey_params['source_cut_band_max'], 
-        'z_min': 0.01, 
+        'band': 'F106',
+        'band_max': survey_params['source_cut_band_max'],
+        'z_min': 0.01,
         'z_max': 5.
-        }
+    }
 
     # create the lens population
     if debugging: print('Defining galaxy population...')
     lens_pop = LensPop(deflector_type="all-galaxies",
-        source_type="galaxies",
-        kwargs_deflector_cut=kwargs_deflector_cut,
-        kwargs_source_cut=kwargs_source_cut,
-        kwargs_mass2light=None,
-        skypy_config=skypy_config,
-        sky_area=sky_area,
-        cosmo=cosmo)
+                       source_type="galaxies",
+                       kwargs_deflector_cut=kwargs_deflector_cut,
+                       kwargs_source_cut=kwargs_source_cut,
+                       kwargs_mass2light=None,
+                       skypy_config=skypy_config,
+                       sky_area=sky_area,
+                       cosmo=cosmo)
     if debugging: print('Defined galaxy population')
 
     # num_lenses = lens_pop.deflector_number()
@@ -178,7 +178,8 @@ def run_slsim(tuple):
         _, kwargs_params = candidate.lenstronomy_kwargs(band='F106')
         lens_mag = candidate.deflector_magnitude(band='F106')
 
-        if kwargs_params['kwargs_lens'][0]['theta_E'] < kwargs_params['kwargs_lens_light'][0]['R_sersic'] and lens_mag < 15:
+        if kwargs_params['kwargs_lens'][0]['theta_E'] < kwargs_params['kwargs_lens_light'][0][
+            'R_sersic'] and lens_mag < 15:
             filter_1 += 1
             if filter_1 <= num_samples:
                 filtered_sample['filter_1'].append(candidate)

@@ -1,11 +1,11 @@
 import csv
-import h5py
 import os
 import sys
 import time
 from datetime import datetime
 from glob import glob
 
+import h5py
 import hydra
 import numpy as np
 from tqdm import tqdm

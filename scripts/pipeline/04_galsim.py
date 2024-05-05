@@ -1,6 +1,6 @@
 import multiprocessing
-import random
 import os
+import random
 import sys
 import time
 from glob import glob
@@ -97,7 +97,8 @@ def get_image(input):
     if pieces:
         lens_surface_brightness = [np.load(f'{input_dir}/array_{lens.uid}_lens_{band}.npy') for band in bands]
         source_surface_brightness = [np.load(f'{input_dir}/array_{lens.uid}_source_{band}.npy') for band in bands]
-        pieces_args = {'lens_surface_brightness': lens_surface_brightness, 'source_surface_brightness': source_surface_brightness}
+        pieces_args = {'lens_surface_brightness': lens_surface_brightness,
+                       'source_surface_brightness': source_surface_brightness}
     else:
         pieces_args = {}
 
@@ -105,22 +106,22 @@ def get_image(input):
     detector = gs.get_random_detector(suppress_output)
     detector_pos = gs.get_random_detector_pos(input_size=num_pix, suppress_output=suppress_output)
 
-    gs_results = gs.get_images(lens, 
-                                arrays, 
-                                bands, 
-                                input_size=num_pix, 
-                                output_size=final_pixel_side,
-                                grid_oversample=grid_oversample, 
-                                psf_oversample=grid_oversample,
-                                **pieces_args,
-                                detector=detector,
-                                detector_pos=detector_pos, 
-                                exposure_time=exposure_time, 
-                                ra=None, 
-                                dec=None,
-                                seed=random.randint(0, 2 ** 16 - 1), 
-                                validate=False, 
-                                suppress_output=suppress_output)
+    gs_results = gs.get_images(lens,
+                               arrays,
+                               bands,
+                               input_size=num_pix,
+                               output_size=final_pixel_side,
+                               grid_oversample=grid_oversample,
+                               psf_oversample=grid_oversample,
+                               **pieces_args,
+                               detector=detector,
+                               detector_pos=detector_pos,
+                               exposure_time=exposure_time,
+                               ra=None,
+                               dec=None,
+                               seed=random.randint(0, 2 ** 16 - 1),
+                               validate=False,
+                               suppress_output=suppress_output)
 
     if pieces:
         results, lenses, sources, execution_time = gs_results

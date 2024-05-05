@@ -2,13 +2,14 @@ import multiprocessing
 import os
 import sys
 from copy import deepcopy
-from lenstronomy.Util.correlation import power_spectrum_1d
+from multiprocessing import Pool
+
 import galsim
 import hydra
 import numpy as np
+from lenstronomy.Util.correlation import power_spectrum_1d
 from pyHalo.preset_models import CDM
 from tqdm import tqdm
-from multiprocessing import Pool
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -16,7 +17,6 @@ def main(config):
     # enable use of local packages
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
-    from mejiro.analysis import ft
     from mejiro.utils import util
 
     # set directory for all output of this script
@@ -94,14 +94,13 @@ def main(config):
     # process the batches
     for batch in tqdm(batches):
         pool = Pool(processes=process_count)
-        pool.map(generate_power_spectra, batch)     
+        pool.map(generate_power_spectra, batch)
 
     print('Done.')
 
 
 def generate_power_spectra(tuple):
-    from mejiro.analysis import ft
-    from mejiro.helpers import gs, psf
+    from mejiro.helpers import gs
 
     # unpack tuple
     (lens, lens_dir, subhalo_params, imaging_params) = tuple
@@ -169,8 +168,8 @@ def generate_power_spectra(tuple):
     for sl, model, title in zip(lenses, models, titles):
         print(f'    Processing model {title}...')
         gs_images, _ = gs.get_images(sl, model, 'F106', input_size=num_pix, output_size=num_pix,
-                                    grid_oversample=oversample, psf_oversample=oversample,
-                                    detector=1, detector_pos=(2048, 2048), suppress_output=True)
+                                     grid_oversample=oversample, psf_oversample=oversample,
+                                     detector=1, detector_pos=(2048, 2048), suppress_output=True)
         ps, r = power_spectrum_1d(gs_images[0])
         np.save(os.path.join(lens_dir, f'im_subs_{title}.npy'), gs_images[0])
         np.save(os.path.join(lens_dir, f'ps_subs_{title}.npy'), ps)
@@ -178,7 +177,7 @@ def generate_power_spectra(tuple):
 
     for sl, model, title in zip(lenses, models, titles):
         print(f'    Processing model {title} kappa...')
-    # generate convergence maps
+        # generate convergence maps
         if sl.realization is None:
             kappa = sl.get_macrolens_kappa(num_pix, subhalo_cone)
         else:
@@ -195,8 +194,8 @@ def generate_power_spectra(tuple):
     for detector, detector_pos in zip(detectors, detector_positions):
         print(f'    Processing detector {detector}, {detector_pos}...')
         gs_images, _ = gs.get_images(lenses[1], models[1], 'F106', input_size=num_pix, output_size=num_pix,
-                                    grid_oversample=oversample, psf_oversample=oversample,
-                                    detector=detector, detector_pos=detector_pos, suppress_output=True)
+                                     grid_oversample=oversample, psf_oversample=oversample,
+                                     detector=detector, detector_pos=detector_pos, suppress_output=True)
         ps, r = power_spectrum_1d(gs_images[0])
         np.save(os.path.join(lens_dir, f'im_det_{detector}_{lens.uid}.npy'), gs_images[0])
         np.save(os.path.join(lens_dir, f'ps_det_{detector}_{lens.uid}.npy'), ps)

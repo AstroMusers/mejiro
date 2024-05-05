@@ -40,7 +40,7 @@ def unpickle_lens(pickle_path, uid):
                       source_mags=source_mags,
                       lens_stellar_mass=lens_stellar_mass,
                       lens_vel_disp=lens_vel_disp,
-                    #   snr=snr,
+                      #   snr=snr,
                       uid=uid)
 
 

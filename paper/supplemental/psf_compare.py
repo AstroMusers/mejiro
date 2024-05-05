@@ -1,13 +1,9 @@
-import multiprocessing
 import os
 import sys
 from copy import deepcopy
 
-import galsim
 import hydra
 import numpy as np
-from pyHalo.preset_models import CDM
-from tqdm import tqdm
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -15,7 +11,6 @@ def main(config):
     # enable use of local packages
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
-    from mejiro.analysis import ft
     from mejiro.utils import util
 
     # set directory for all output of this script
@@ -30,12 +25,9 @@ def main(config):
     side = 4.95
 
 
-
 def generate_power_spectra(tuple):
     from mejiro.analysis import ft
-    from mejiro.helpers import gs, psf
-
-    
+    from mejiro.helpers import psf
 
     # generate PSF power spectra
     # no PSF

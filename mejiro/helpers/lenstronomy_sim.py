@@ -87,7 +87,7 @@ def simulate_rgb(lens, kwargs_lens_list, kwargs_source_list, config_list, side):
         kwargs_r_band = band_g.kwargs_single_band()
     else:
         raise Exception('Unknown telescope configuration')
-    
+
     # set number of pixels from pixel scale
     pixel_scale = kwargs_g_band['pixel_scale']
     num_pix = int(round(side / pixel_scale))

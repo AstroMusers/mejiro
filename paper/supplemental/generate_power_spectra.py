@@ -1,14 +1,13 @@
-import multiprocessing
 import os
 import sys
 from copy import deepcopy
-from lenstronomy.Util.correlation import power_spectrum_1d
+
 import galsim
 import hydra
 import numpy as np
+from lenstronomy.Util.correlation import power_spectrum_1d
 from pyHalo.preset_models import CDM
 from tqdm import tqdm
-from multiprocessing import Pool
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -31,7 +30,7 @@ def main(config):
 
     if not only_ps:
         num_sample_images = 100
-        
+
         print('Generating flat images...')
         flat_image_dir = os.path.join(output_dir, 'flat_images')
         util.create_directory_if_not_exists(flat_image_dir)
@@ -71,7 +70,8 @@ def main(config):
     # num_lenses = 10
     # print(f'Collecting {num_lenses} lenses...')
     # pickled_lens_list = os.path.join(config.machine.dir_01, '01_hlwas_sim_detectable_lens_list.pkl')
-    pickled_lens_list = os.path.join(config.machine.data_dir, 'archive', '2024-04-28 pipeline 822', '01', '01_hlwas_sim_detectable_lens_list.pkl')
+    pickled_lens_list = os.path.join(config.machine.data_dir, 'archive', '2024-04-28 pipeline 822', '01',
+                                     '01_hlwas_sim_detectable_lens_list.pkl')
     lens_list = util.unpickle(pickled_lens_list)  # [:num_lenses]
     print(f'Collected {len(lens_list)} lens(es).')
 
@@ -132,8 +132,8 @@ def main(config):
         for sl, model, title in zip(lenses, models, titles):
             if debugging: print(f'    Processing model {title}...')
             gs_images, _ = gs.get_images(sl, model, 'F106', input_size=num_pix, output_size=num_pix,
-                                        grid_oversample=oversample, psf_oversample=oversample,
-                                        detector=1, detector_pos=(2048, 2048), suppress_output=True)
+                                         grid_oversample=oversample, psf_oversample=oversample,
+                                         detector=1, detector_pos=(2048, 2048), suppress_output=True)
             ps, r = power_spectrum_1d(gs_images[0])
             np.save(os.path.join(output_dir, f'im_subs_{title}_{lens.uid}.npy'), gs_images[0])
             np.save(os.path.join(output_dir, f'ps_subs_{title}_{lens.uid}.npy'), ps)
@@ -142,7 +142,7 @@ def main(config):
         if kappa:
             for sl, model, title in zip(lenses, models, titles):
                 if debugging: print(f'    Processing model {title} kappa...')
-            # generate convergence maps
+                # generate convergence maps
                 if sl.realization is None:
                     kappa = sl.get_macrolens_kappa(num_pix, subhalo_cone)
                 else:
@@ -160,13 +160,13 @@ def main(config):
             for detector, detector_pos in zip(detectors, detector_positions):
                 if debugging: print(f'    Processing detector {detector}, {detector_pos}...')
                 gs_images, _ = gs.get_images(lenses[1], models[1], 'F106', input_size=num_pix, output_size=num_pix,
-                                            grid_oversample=oversample, psf_oversample=oversample,
-                                            detector=detector, detector_pos=detector_pos, suppress_output=True)
+                                             grid_oversample=oversample, psf_oversample=oversample,
+                                             detector=detector, detector_pos=detector_pos, suppress_output=True)
                 ps, r = power_spectrum_1d(gs_images[0])
                 np.save(os.path.join(output_dir, f'im_det_{detector}_{lens.uid}.npy'), gs_images[0])
                 np.save(os.path.join(output_dir, f'ps_det_{detector}_{lens.uid}.npy'), ps)
 
-        if debugging: print(f'Finished lens {lens.uid}.')   
+        if debugging: print(f'Finished lens {lens.uid}.')
 
     print('Done.')
 

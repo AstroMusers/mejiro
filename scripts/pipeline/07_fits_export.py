@@ -1,14 +1,12 @@
-import csv
-import h5py
 import os
 import sys
 import time
-from astropy.io import fits
 from datetime import datetime
 from glob import glob
 
 import hydra
 import numpy as np
+from astropy.io import fits
 from tqdm import tqdm
 
 
@@ -23,7 +21,6 @@ def main(config):
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
     from mejiro.utils import util
-    from mejiro.lenses.strong_lens import StrongLens
 
     # set output path
     output_dir = os.path.join(data_dir, 'fits_export')
@@ -49,7 +46,8 @@ def main(config):
         images = [np.load(f'{config.machine.dir_04}/galsim_{lens.uid}_{band}.npy') for band in bands]
         if pieces:
             # lens_surface_brightness = [np.load(f'{config.machine.dir_03}/array_{lens.uid}_lens_{band}.npy') for band in bands]
-            source_surface_brightness = [np.load(f'{config.machine.dir_04}/galsim_{lens.uid}_source_{band}.npy') for band in bands]
+            source_surface_brightness = [np.load(f'{config.machine.dir_04}/galsim_{lens.uid}_source_{band}.npy') for
+                                         band in bands]
         color_image = np.load(os.path.join(config.machine.dir_05, f'galsim_color_{lens.uid}.npy'))
 
         fits_path = os.path.join(output_dir, f'strong_lens_{str(uid).zfill(8)}.fits')

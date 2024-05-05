@@ -6,21 +6,12 @@
 
 import os
 import sys
-
-import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib import colors
-from hydra import initialize, compose
-import pickle
-from glob import glob
 from pprint import pprint
-from tqdm import tqdm
-from pyHalo.preset_models import CDM
-from pyHalo import plotting_routines
-from copy import deepcopy
-from lenstronomy.Util.correlation import power_spectrum_1d
+
 import hydra
+import numpy as np
+from lenstronomy.Util.correlation import power_spectrum_1d
+from pyHalo.preset_models import CDM
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -31,19 +22,15 @@ def main(config):
     from mejiro.helpers import gs
     from mejiro.utils import util
 
+    # Choose where to save
 
-# Choose where to save
-
-# In[ ]:
-
+    # In[ ]:
 
     save_dir = os.path.join(config.machine.array_dir, 'power_spectra')
     util.create_directory_if_not_exists(save_dir)
     # util.clear_directory(save_dir)
 
-
     # In[ ]:
-
 
     # collect lenses
     num_lenses = 32
@@ -54,9 +41,7 @@ def main(config):
     pprint(lens_list)
     print('Collected lenses.')
 
-
     # In[ ]:
-
 
     # set imaging params
     bands = ['F106']  # , 'F129', 'F184'
@@ -70,9 +55,7 @@ def main(config):
     subhalo_cone = 5
     los_normalization = 0
 
-
     # In[ ]:
-
 
     # for lens in lens_list:
     #     print(f'Processing lens {lens.uid}...')
@@ -123,31 +106,29 @@ def main(config):
     #                 f'lens_{lens.uid}_cut_8']
     #     models = [i.get_array(num_pix=num_pix * oversample, side=side, band='F106') for i in lenses]
 
-        # for sl, model, title in zip(lenses, models, titles):
-        #     print(f'Processing model {title}...')
-        #     gs_images, _ = gs.get_images(sl, model, 'F106', input_size=num_pix, output_size=num_pix,
-        #                                 grid_oversample=oversample, psf_oversample=oversample,
-        #                                 detector=1, detector_pos=(2048, 2048), suppress_output=True)
-        #     ps, r = power_spectrum_1d(gs_images[0])
-        #     np.save(os.path.join(save_dir, f'im_subs_{title}.npy'), gs_images[0])
-        #     np.save(os.path.join(save_dir, f'ps_subs_{title}.npy'), ps)
-        # np.save(os.path.join(save_dir, 'r.npy'), r)
+    # for sl, model, title in zip(lenses, models, titles):
+    #     print(f'Processing model {title}...')
+    #     gs_images, _ = gs.get_images(sl, model, 'F106', input_size=num_pix, output_size=num_pix,
+    #                                 grid_oversample=oversample, psf_oversample=oversample,
+    #                                 detector=1, detector_pos=(2048, 2048), suppress_output=True)
+    #     ps, r = power_spectrum_1d(gs_images[0])
+    #     np.save(os.path.join(save_dir, f'im_subs_{title}.npy'), gs_images[0])
+    #     np.save(os.path.join(save_dir, f'ps_subs_{title}.npy'), ps)
+    # np.save(os.path.join(save_dir, 'r.npy'), r)
 
-        # for sl, model, title in zip(lenses, models, titles):
-        #     print(f'    Processing model {title} kappa...')
-        # # generate convergence maps
-        #     if sl.realization is None:
-        #         kappa = sl.get_macrolens_kappa(num_pix, subhalo_cone)
-        #     else:
-        #         kappa = sl.get_kappa(num_pix, subhalo_cone)
-        #     kappa_power_spectrum, kappa_r = power_spectrum_1d(kappa)
-        #     np.save(os.path.join(save_dir, f'kappa_ps_{title}.npy'), kappa_power_spectrum)
-        #     np.save(os.path.join(save_dir, f'kappa_im_{title}.npy'), kappa)
-        # np.save(os.path.join(save_dir, 'kappa_r.npy'), kappa_r)
-
+    # for sl, model, title in zip(lenses, models, titles):
+    #     print(f'    Processing model {title} kappa...')
+    # # generate convergence maps
+    #     if sl.realization is None:
+    #         kappa = sl.get_macrolens_kappa(num_pix, subhalo_cone)
+    #     else:
+    #         kappa = sl.get_kappa(num_pix, subhalo_cone)
+    #     kappa_power_spectrum, kappa_r = power_spectrum_1d(kappa)
+    #     np.save(os.path.join(save_dir, f'kappa_ps_{title}.npy'), kappa_power_spectrum)
+    #     np.save(os.path.join(save_dir, f'kappa_im_{title}.npy'), kappa)
+    # np.save(os.path.join(save_dir, 'kappa_r.npy'), kappa_r)
 
     # In[ ]:
-
 
     for lens in lens_list:
         print(f'Processing lens {lens.uid}...')
@@ -167,19 +148,19 @@ def main(config):
                         LOS_normalization=los_normalization)
         except:
             continue
-        
+
         lens.add_subhalos(cut_6, suppress_output=True)
 
         model = lens.get_array(num_pix=num_pix * oversample, side=side, band='F106')
-        
+
         detectors = [4, 1, 9, 17]
         detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
 
         for detector, detector_pos in zip(detectors, detector_positions):
             print(f'Processing detector {detector}, {detector_pos}...')
             gs_images, _ = gs.get_images(lens, model, 'F106', input_size=num_pix, output_size=num_pix,
-                                        grid_oversample=oversample, psf_oversample=oversample,
-                                        detector=detector, detector_pos=detector_pos, suppress_output=True)
+                                         grid_oversample=oversample, psf_oversample=oversample,
+                                         detector=detector, detector_pos=detector_pos, suppress_output=True)
             ps, r = power_spectrum_1d(gs_images[0])
             np.save(os.path.join(save_dir, f'im_det_{detector}_{lens.uid}.npy'), gs_images[0])
             np.save(os.path.join(save_dir, f'ps_det_{detector}_{lens.uid}.npy'), ps)
