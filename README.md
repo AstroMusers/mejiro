@@ -2,7 +2,7 @@
 
 # Overview
 
-`mejiro` ("MEH-ji-roe")[^1] is a pipeline to simulate Roman Space Telescope WFI images of galaxy-galaxy strong
+`mejiro` ("MEH-ji-roe")[^1] is a pipeline to simulate Roman Space Telescope Wide Field Instrument images of galaxy-galaxy strong
 gravitational lenses
 built
 on [`lenstronomy`](https://github.com/lenstronomy/lenstronomy), [`pyHalo`](https://github.com/dangilman/pyHalo), [GalSim](https://github.com/GalSim-developers/GalSim),
@@ -26,9 +26,8 @@ pip install -e .
 
 ## Optional setup: Pandeia
 
-Install Pandeia by following the
-instructions [here](https://outerspace.stsci.edu/display/PEN/Pandeia+Engine+Installation). Version 3.1 is current (as of
-2023-12-16) but `mejiro` uses v3.0. Make sure to download the Roman dataset for v3.0.
+Install Pandeia (v3.1) by following the
+instructions [here](https://outerspace.stsci.edu/display/PEN/Pandeia+Engine+Installation).
 
 # Getting Started
 
