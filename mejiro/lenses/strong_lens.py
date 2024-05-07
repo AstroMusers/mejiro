@@ -168,7 +168,7 @@ class StrongLens:
         Cosmology(astropy_instance=self.cosmo)
 
         # set some params on the StrongLens object
-        self.v = realization
+        self.realization = realization
         self.num_subhalos = len(realization.halos)
 
         # generate lenstronomy objects
