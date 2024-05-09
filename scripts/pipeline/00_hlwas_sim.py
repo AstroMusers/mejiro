@@ -19,9 +19,6 @@ from tqdm import tqdm
 def main(config):
     start = time.time()
 
-    # set number of runs
-    runs = 20
-
     # debugging mode will print statements to console
     debugging = True
 
@@ -47,6 +44,7 @@ def main(config):
     # tuple the parameters
     survey_params = util.hydra_to_dict(config.survey)
     pipeline_params = util.hydra_to_dict(config.pipeline)
+    runs = pipeline_params['survey_sim_runs']
     tuple_list = [(run, survey_params, pipeline_params, output_dir, debugging) for run in range(runs)]
 
     # split up the lenses into batches based on core count
