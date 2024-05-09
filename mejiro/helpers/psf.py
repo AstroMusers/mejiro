@@ -8,9 +8,10 @@ from tqdm import tqdm
 from webbpsf.roman import WFI
 
 from mejiro.helpers import gs
+from mejiro.utils import util
 
 
-def get_webbpsf_psf(band, detector, detector_position, oversample):
+def get_webbpsf_psf(band, detector, detector_position, oversample, check_cache=False, suppress_output=True):
     """
     Generate a Point Spread Function (PSF) using WebbPSF and return it as an InterpolatedImage.
 
@@ -24,6 +25,10 @@ def get_webbpsf_psf(band, detector, detector_position, oversample):
         The detector position to use for generating the PSF.
     oversample : int
         The oversampling factor to use for generating the PSF.
+    check_cache : bool, optional
+        If True, check the cached PSF directory. Default is False.
+    suppress_output : bool, optional
+        Suppress debugging output to console. Default is True.
 
     Returns
     -------
@@ -31,6 +36,16 @@ def get_webbpsf_psf(band, detector, detector_position, oversample):
         The PSF as an InterpolatedImage object.
 
     """
+    # first, check if it exists in the cache
+    if check_cache:
+        import mejiro
+        module_path = os.path.dirname(mejiro.__file__)
+        psf_cache_dir = os.path.join(module_path, 'data', 'cached_psfs')
+        psf_path = glob(os.path.join(psf_cache_dir, f'{band}_{detector}_{detector_position[0]}_{detector_position[1]}_{oversample}.pkl'))
+        if len(psf_path) == 1:
+            if not suppress_output: print(f'Loading cached PSF: {psf_path[0]}')
+            return util.unpickle(psf_path[0])
+
     # set PSF parameters
     wfi = WFI()
     wfi.filter = band.upper()

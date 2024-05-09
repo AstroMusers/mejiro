@@ -2,6 +2,7 @@
 /pandeia_docs
 .nfs*
 config/config.yaml
+/mejiro/data/cached_psfs
 
 # old stuff that I'll keep locally
 /figures/old
