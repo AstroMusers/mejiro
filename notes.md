@@ -2,6 +2,7 @@
 
 * `ps u --sort -pcpu $(pgrep -vu root) | head -5`
 * `pkill -9 -f script.py`
+* `jupyter nbconvert --to python pipeline.ipynb --TemplateExporter.exclude_markdown=True --TemplateExporter.exclude_output_prompt=True --TemplateExporter.exclude_input_prompt=True`
 
 # Environment management
 
