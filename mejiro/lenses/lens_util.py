@@ -6,21 +6,46 @@ import matplotlib.pyplot as plt
 import numpy as np
 from lenstronomy.Data.coord_transforms import Coordinates
 from lenstronomy.Util import util as lenstronomy_util
+from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
 
 from mejiro.helpers import color
 from mejiro.lenses.strong_lens import StrongLens
 from mejiro.utils import util
 
 
-def get_coords(num_pix):
+def get_coords(num_pix, delta_pix=0.11, subgrid_res=1):
     _, _, ra_at_xy_0, dec_at_xy_0, _, _, Mpix2coord, Mcoord2pix = lenstronomy_util.make_grid_with_coordtransform(
         numPix=num_pix,
-        deltapix=0.11,
-        subgrid_res=1,
+        deltapix=delta_pix,
+        subgrid_res=subgrid_res,
         left_lower=False,
         inverse=False)
 
     return Coordinates(Mpix2coord, ra_at_xy_0, dec_at_xy_0)
+
+
+def check_halo_image_alignment(lens, realization):
+    sorted_halos = sorted(realization.halos, key=lambda x: x.mass, reverse=True)
+
+    # get image position
+    source_x = lens.kwargs_source_dict['F106']['center_x']
+    source_y = lens.kwargs_source_dict['F106']['center_y']
+    solver = LensEquationSolver(lens.lens_model_class)
+    image_x, image_y = solver.image_position_from_source(sourcePos_x=source_x, sourcePos_y=source_y, kwargs_lens=lens.kwargs_lens)
+
+    for halo in sorted_halos:
+        if halo.mass < 1e8:
+            break
+        
+        # calculate distances
+        for x, y in zip(image_x, image_y):
+            dist = np.sqrt(np.power(halo.x - x, 2) + np.power(halo.y - y, 2))
+
+            # check if halo is within 0.1 arcsec of the image
+            if dist < 0.1:
+                return True
+    
+    return False
 
 
 def unpickle_lens(pickle_path, uid):
