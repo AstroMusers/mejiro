@@ -31,12 +31,15 @@ instructions [here](https://outerspace.stsci.edu/display/PEN/Pandeia+Engine+Inst
 
 # Getting Started
 
-First, duplicate any yaml file in the `config/machine` directory and rename it, then update `repo_dir` and `data_dir`
+1. Duplicate any yaml file in the `config/machine` directory and rename it, then update `repo_dir` and `data_dir`
 attributes to point to the directories where the local repository resides and output data should be written,
-respectively. Then modify the `defaults.machine` attribute in `config/config.yaml` to the name (without extension) of
-the yaml file created earlier.
+respectively. 
+2. Copy `setup/config.yaml` to `config/config.yaml`
+3. Modify the `defaults.machine` attribute in the file you just copied (`config/config.yaml`) to the name (without extension) of the yaml file created in step 1.
 
 Then, execute the Jupyter notebooks in the `examples` directory in order.
+
+Note that this `hydra`-based configuration will be changed soon.
 
 # Pipeline Execution
 
