@@ -354,7 +354,7 @@ def unpickle(path):
     return result
 
 
-def unpickle_all(dir_path, prefix='', limit=None):
+def unpickle_all(dir_path, prefix='', suffix='', limit=None):
     """
     Load and unpickle all files in a directory.
 
@@ -364,6 +364,8 @@ def unpickle_all(dir_path, prefix='', limit=None):
         The path to the directory containing the files.
     prefix : str, optional
         The prefix of the files to be loaded. Default is an empty string.
+    suffix : str, optional
+        The suffix of the files to be loaded. Default is an empty string.
     limit : int, optional
         The maximum number of files to be loaded. Default is None.
 
@@ -373,7 +375,7 @@ def unpickle_all(dir_path, prefix='', limit=None):
         A list of unpickled objects.
 
     """
-    file_list = glob(dir_path + f'/{prefix}*')
+    file_list = glob(dir_path + f'/{prefix}*{suffix}')
     sorted_list = sorted(file_list)
     if limit is not None:
         return [unpickle(i) for i in sorted_list[:limit] if os.path.isfile(i)]
