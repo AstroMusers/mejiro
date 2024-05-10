@@ -37,7 +37,8 @@ def main(config):
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
 
-
+    os.environ['WEBBPSF_PATH'] = "/data/bwedig/STScI/webbpsf-data"
+    
     # collect lenses
     num_lenses = 100
     print(f'Collecting {num_lenses} lenses...')
