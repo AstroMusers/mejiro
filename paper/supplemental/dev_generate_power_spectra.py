@@ -19,6 +19,10 @@ from pyHalo import plotting_routines
 from copy import deepcopy
 from lenstronomy.Util.correlation import power_spectrum_1d
 from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
+from galsim import InterpolatedImage, Image
+from copy import deepcopy
+import galsim
+
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
 def main(config):
@@ -30,12 +34,16 @@ def main(config):
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
     from mejiro.utils import util
-    from mejiro.helpers import gs
-
+    from mejiro.helpers import gs, psf
+    from mejiro.lenses import lens_util
+    from mejiro.plots import plot_util
 
     save_dir = os.path.join(array_dir, 'power_spectra')
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
+
+    image_save_dir = os.path.join(save_dir, 'images')
+    util.create_directory_if_not_exists(image_save_dir)
 
     os.environ['WEBBPSF_PATH'] = "/data/bwedig/STScI/webbpsf-data"
     
@@ -84,6 +92,40 @@ def main(config):
                     return True
         
         return False
+
+    
+    def plot(array_list, titles, save_path):
+        if type(array_list[0]) is not np.ndarray:
+            array_list = [i.array for i in array_list]
+
+        f, ax = plt.subplots(2, 4, figsize=(12, 6))
+        for i, array in enumerate(array_list):
+            axis = ax[0][i].imshow(np.log10(array))
+            ax[0][i].set_title(titles[i])
+            ax[0][i].axis('off')
+
+        cbar = f.colorbar(axis, ax=ax[0])
+        cbar.set_label(r'$\log($Counts/sec$)$', rotation=90)
+
+        res_array = [array_list[3] - array_list[i] for i in range(4)]
+        v = plot_util.get_v(res_array)
+        for i in range(4):
+            axis = ax[1][i].imshow(array_list[3] - array_list[i], cmap='bwr', vmin=-v, vmax=v)
+            ax[1][i].set_axis_off()
+
+        cbar = f.colorbar(axis, ax=ax[1])
+        cbar.set_label('Counts/sec', rotation=90)
+
+        for i, lens in enumerate(lenses):
+            realization = lens.realization
+            if realization is not None:
+                for halo in realization.halos:
+                    if halo.mass > 1e8:
+                        coords = lens_util.get_coords(45 * 5, delta_pix=0.11 / 5)
+                        ax[1][i].scatter(*coords.map_coord2pix(halo.x, halo.y), s=100, facecolors='none', edgecolors='black')
+
+        plt.savefig(save_path)
+        plt.close()
 
 
     for lens in tqdm(lens_list):
@@ -135,6 +177,7 @@ def main(config):
         cut_7 = cut_8.join(med)
         cut_6 = cut_7.join(smol)
 
+        # TODO do I need these?
         util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_8.pkl'), cut_8)
         util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_7.pkl'), cut_7)
         util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_6.pkl'), cut_6)
@@ -152,27 +195,107 @@ def main(config):
                     f'cut_8_{lens.uid}']
         models = [i.get_array(num_pix=num_pix * oversample, side=side, band='F106') for i in lenses]
 
-        for sl, model, title in zip(lenses, models, titles):
-            print(f'Processing model {title}...')
-            gs_images, _ = gs.get_images(sl, [model], ['F106'], input_size=num_pix, output_size=num_pix,
-                                        grid_oversample=oversample, psf_oversample=oversample,
-                                        detector=1, detector_pos=(2048, 2048), suppress_output=False, validate=False, check_cache=True)
-            ps, r = power_spectrum_1d(gs_images[0])
-            np.save(os.path.join(save_dir, f'im_subs_{title}.npy'), gs_images[0])
+        plot(models, titles, os.path.join(image_save_dir, f'{lens.uid}_00_models.png'))
+
+        # create galsim rng
+        rng = galsim.UniformDeviate()
+
+        # calculate sky backgrounds for each band
+        wcs_dict = gs.get_wcs(30, -30, date=None)
+        bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector=1, exposure_time=146, num_pix=45)
+
+        # generate the PSFs I'll need for each unique band
+        psf_kernels = {}
+        for band in bands:
+            psf_kernels[band] = psf.get_webbpsf_psf(band, detector=1, detector_position=(2048, 2048), oversample=5, check_cache=True, suppress_output=False)
+
+        convolved = []
+        for model, lens in zip(models, lenses):
+            # get interpolated image
+            total_flux_cps = lens.get_total_flux_cps(band)
+            interp = InterpolatedImage(Image(model, xmin=0, ymin=0), scale=0.11 / 5, flux=total_flux_cps * 146)
+
+            # convolve image with PSF
+            psf_kernel = psf_kernels[band]
+            image = gs.convolve(interp, psf_kernel, 45)
+
+            convolved.append(image)
+
+        plot(convolved, titles, os.path.join(image_save_dir, f'{lens.uid}_01_convolved.png'))
+
+        added_bkg = []
+        for image, lens in zip(convolved, lenses):
+            image += bkgs[band]  # add sky background to convolved image
+            image.quantize()  # integer number of photons are being detected, so quantize
+
+            added_bkg.append(image)
+
+        plot(added_bkg, titles, os.path.join(image_save_dir, f'{lens.uid}_02_added_bkg.png'))
+
+        det_fx = []
+        for image, lens, title in zip(added_bkg, lenses, titles):
+            # add all detector effects
+            # galsim.roman.allDetectorEffects(image, prev_exposures=(), rng=rng, exptime=146)
+
+            # get the array
+            final_array = image.array
+
+            # divide through by exposure time to get in units of counts/sec/pixel
+            final_array /= 146
+
+            det_fx.append(final_array)
+
+            ps, r = power_spectrum_1d(final_array)
+            np.save(os.path.join(save_dir, f'im_subs_{title}.npy'), final_array)
             np.save(os.path.join(save_dir, f'ps_subs_{title}.npy'), ps)
-        np.save(os.path.join(save_dir, 'r.npy'), r)
+
+        plot(det_fx, titles, os.path.join(image_save_dir, f'{lens.uid}_03_counts_sec.png'))
+
+        # for sl, model, title in zip(lenses, models, titles):
+        #     print(f'Processing model {title}...')
+        #     gs_images, _ = gs.get_images(sl, [model], ['F106'], input_size=num_pix, output_size=num_pix,
+        #                                 grid_oversample=oversample, psf_oversample=oversample,
+        #                                 detector=1, detector_pos=(2048, 2048), suppress_output=False, validate=False, check_cache=True)
+        #     ps, r = power_spectrum_1d(gs_images[0])
+        #     np.save(os.path.join(save_dir, f'im_subs_{title}.npy'), gs_images[0])
+        #     np.save(os.path.join(save_dir, f'ps_subs_{title}.npy'), ps)
+        # np.save(os.path.join(save_dir, 'r.npy'), r)
 
         detectors = [4, 1, 9, 17]
         detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
 
         for detector, detector_pos in zip(detectors, detector_positions):
-            print(f'Processing detector {detector}, {detector_pos}...')
-            gs_images, _ = gs.get_images(lens_cut_6, [model], ['F106'], input_size=num_pix, output_size=num_pix,
-                                        grid_oversample=oversample, psf_oversample=oversample,
-                                        detector=detector, detector_pos=detector_pos, suppress_output=False, validate=False, check_cache=True)
-            ps, r = power_spectrum_1d(gs_images[0])
-            np.save(os.path.join(save_dir, f'im_det_{detector}_{lens.uid}.npy'), gs_images[0])
+        #     print(f'Processing detector {detector}, {detector_pos}...')
+        #     gs_images, _ = gs.get_images(lens_cut_6, [model], ['F106'], input_size=num_pix, output_size=num_pix,
+        #                                 grid_oversample=oversample, psf_oversample=oversample,
+        #                                 detector=detector, detector_pos=detector_pos, suppress_output=False, validate=False, check_cache=True)
+
+            # get interpolated image
+            total_flux_cps = lens.get_total_flux_cps(band)
+            interp = InterpolatedImage(Image(model, xmin=0, ymin=0), scale=0.11 / 5, flux=total_flux_cps * 146)
+
+            # convolve image with PSF
+            psf_kernel = psf.get_webbpsf_psf(band, detector=detector, detector_position=detector_pos, oversample=5, check_cache=True, suppress_output=False)
+            image = gs.convolve(interp, psf_kernel, 45)
+
+            bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector=detector, exposure_time=146, num_pix=45)
+            image += bkgs[band]  # add sky background to convolved image
+            image.quantize()  # integer number of photons are being detected, so quantize
+
+            # add all detector effects
+            # galsim.roman.allDetectorEffects(image, prev_exposures=(), rng=rng, exptime=146)
+
+            # get the array
+            final_array = image.array
+
+            # divide through by exposure time to get in units of counts/sec/pixel
+            final_array /= 146
+
+            ps, r = power_spectrum_1d(final_array)
+            np.save(os.path.join(save_dir, f'im_det_{detector}_{lens.uid}.npy'), final_array)
             np.save(os.path.join(save_dir, f'ps_det_{detector}_{lens.uid}.npy'), ps)
+
+        np.save(os.path.join(save_dir, 'r.npy'), r)
 
 
 if __name__ == '__main__':
