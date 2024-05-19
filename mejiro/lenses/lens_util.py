@@ -24,8 +24,8 @@ def get_coords(num_pix, delta_pix=0.11, subgrid_res=1):
     return Coordinates(Mpix2coord, ra_at_xy_0, dec_at_xy_0)
 
 
-def check_halo_image_alignment(lens, realization):
-    sorted_halos = sorted(realization.halos, key=lambda x: x.mass, reverse=True)
+def check_halo_image_alignment(lens, realization, halo_mass=1e8, halo_sort_massive_first=True, return_halo=False):
+    sorted_halos = sorted(realization.halos, key=lambda x: x.mass, reverse=halo_sort_massive_first)
 
     # get image position
     source_x = lens.kwargs_source_dict['F106']['center_x']
@@ -34,7 +34,7 @@ def check_halo_image_alignment(lens, realization):
     image_x, image_y = solver.image_position_from_source(sourcePos_x=source_x, sourcePos_y=source_y, kwargs_lens=lens.kwargs_lens)
 
     for halo in sorted_halos:
-        if halo.mass < 1e8:
+        if halo.mass < halo_mass:
             break
         
         # calculate distances
@@ -43,9 +43,12 @@ def check_halo_image_alignment(lens, realization):
 
             # check if halo is within 0.1 arcsec of the image
             if dist < 0.1:
-                return True
+                if return_halo:
+                    return True, halo
+                else:
+                    return True, None
     
-    return False
+    return False, None
 
 
 def unpickle_lens(pickle_path, uid):
