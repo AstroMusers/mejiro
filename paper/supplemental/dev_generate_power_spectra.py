@@ -94,7 +94,7 @@ def main(config):
         return False
 
     
-    def plot(array_list, titles, save_path):
+    def plot(array_list, titles, save_path, oversampled):
         if type(array_list[0]) is not np.ndarray:
             array_list = [i.array for i in array_list]
 
@@ -121,7 +121,10 @@ def main(config):
             if realization is not None:
                 for halo in realization.halos:
                     if halo.mass > 1e8:
-                        coords = lens_util.get_coords(45 * 5, delta_pix=0.11 / 5)
+                        if oversampled:
+                            coords = lens_util.get_coords(45 * 5, delta_pix=0.11 / 5)
+                        else:
+                            coords = lens_util.get_coords(45, delta_pix=0.11)
                         ax[1][i].scatter(*coords.map_coord2pix(halo.x, halo.y), s=100, facecolors='none', edgecolors='black')
 
         plt.savefig(save_path)
@@ -140,19 +143,29 @@ def main(config):
         cut_8_good = False
         i = 0
 
-        while not cut_8_good:
-            cut_8 = CDM(z_lens,
-                        z_source,
-                        sigma_sub=sigma_sub,
-                        log_mlow=8.,
-                        log_mhigh=10.,
-                        log_m_host=log_m_host,
-                        r_tidal=r_tidal,
-                        cone_opening_angle_arcsec=subhalo_cone,
-                        LOS_normalization=los_normalization)
-            cut_8_good = check_halo_image_alignment(lens, cut_8)
-            i += 1
-        print(f'Generated cut_8 population after {i} iterations.')
+        # while not cut_8_good:
+        #     cut_8 = CDM(z_lens,
+        #                 z_source,
+        #                 sigma_sub=sigma_sub,
+        #                 log_mlow=8.,
+        #                 log_mhigh=10.,
+        #                 log_m_host=log_m_host,
+        #                 r_tidal=r_tidal,
+        #                 cone_opening_angle_arcsec=subhalo_cone,
+        #                 LOS_normalization=los_normalization)
+        #     cut_8_good = check_halo_image_alignment(lens, cut_8)
+        #     i += 1
+        # print(f'Generated cut_8 population after {i} iterations.')
+
+        cut_8 = CDM(z_lens,
+                    z_source,
+                    sigma_sub=sigma_sub,
+                    log_mlow=8.,
+                    log_mhigh=10.,
+                    log_m_host=log_m_host,
+                    r_tidal=r_tidal,
+                    cone_opening_angle_arcsec=subhalo_cone,
+                    LOS_normalization=los_normalization)
 
         med = CDM(z_lens,
                 z_source,
@@ -190,12 +203,12 @@ def main(config):
         lens_cut_7.add_subhalos(cut_7, suppress_output=True)
         lens_cut_8.add_subhalos(cut_8, suppress_output=True)
 
-        lenses = [lens, lens_cut_6, lens_cut_7, lens_cut_8]
-        titles = [f'no_subhalos_{lens.uid}', f'cut_6_{lens.uid}', f'cut_7_{lens.uid}',
-                    f'cut_8_{lens.uid}']
+        lenses = [lens_cut_6, lens_cut_7, lens_cut_8, lens]
+        titles = [f'cut_6_{lens.uid}', f'cut_7_{lens.uid}',
+                    f'cut_8_{lens.uid}', f'no_subhalos_{lens.uid}']
         models = [i.get_array(num_pix=num_pix * oversample, side=side, band='F106') for i in lenses]
 
-        plot(models, titles, os.path.join(image_save_dir, f'{lens.uid}_00_models.png'))
+        plot(models, titles, os.path.join(image_save_dir, f'{lens.uid}_00_models.png'), oversampled=True)
 
         # create galsim rng
         rng = galsim.UniformDeviate()
@@ -221,7 +234,7 @@ def main(config):
 
             convolved.append(image)
 
-        plot(convolved, titles, os.path.join(image_save_dir, f'{lens.uid}_01_convolved.png'))
+        plot(convolved, titles, os.path.join(image_save_dir, f'{lens.uid}_01_convolved.png'), oversampled=False)
 
         added_bkg = []
         for image, lens in zip(convolved, lenses):
@@ -230,7 +243,7 @@ def main(config):
 
             added_bkg.append(image)
 
-        plot(added_bkg, titles, os.path.join(image_save_dir, f'{lens.uid}_02_added_bkg.png'))
+        plot(added_bkg, titles, os.path.join(image_save_dir, f'{lens.uid}_02_added_bkg.png'), oversampled=False)
 
         det_fx = []
         for image, lens, title in zip(added_bkg, lenses, titles):
@@ -249,7 +262,7 @@ def main(config):
             np.save(os.path.join(save_dir, f'im_subs_{title}.npy'), final_array)
             np.save(os.path.join(save_dir, f'ps_subs_{title}.npy'), ps)
 
-        plot(det_fx, titles, os.path.join(image_save_dir, f'{lens.uid}_03_counts_sec.png'))
+        plot(det_fx, titles, os.path.join(image_save_dir, f'{lens.uid}_03_counts_sec.png'), oversampled=False)
 
         # for sl, model, title in zip(lenses, models, titles):
         #     print(f'Processing model {title}...')
