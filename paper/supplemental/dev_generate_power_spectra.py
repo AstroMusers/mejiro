@@ -38,6 +38,7 @@ def main(config):
     from mejiro.lenses import lens_util
     from mejiro.plots import plot_util
 
+    # save_dir = os.path.join(array_dir, 'power_spectra_dev')
     save_dir = os.path.join(array_dir, 'power_spectra')
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
@@ -56,6 +57,8 @@ def main(config):
     # pprint(lens_list)
     print('Collected lenses.')
 
+    # require >10^8 M_\odot subhalo alignment with image?
+    require_alignment = True
 
     # set imaging params
     bands = ['F106']  # , 'F129', 'F184'
@@ -140,32 +143,33 @@ def main(config):
         z_source = round(lens.z_source, 2)
         log_m_host = np.log10(lens.main_halo_mass)
 
-        cut_8_good = False
-        i = 0
+        if require_alignment:
+            cut_8_good = False
+            i = 0
 
-        # while not cut_8_good:
-        #     cut_8 = CDM(z_lens,
-        #                 z_source,
-        #                 sigma_sub=sigma_sub,
-        #                 log_mlow=8.,
-        #                 log_mhigh=10.,
-        #                 log_m_host=log_m_host,
-        #                 r_tidal=r_tidal,
-        #                 cone_opening_angle_arcsec=subhalo_cone,
-        #                 LOS_normalization=los_normalization)
-        #     cut_8_good = check_halo_image_alignment(lens, cut_8)
-        #     i += 1
-        # print(f'Generated cut_8 population after {i} iterations.')
-
-        cut_8 = CDM(z_lens,
-                    z_source,
-                    sigma_sub=sigma_sub,
-                    log_mlow=8.,
-                    log_mhigh=10.,
-                    log_m_host=log_m_host,
-                    r_tidal=r_tidal,
-                    cone_opening_angle_arcsec=subhalo_cone,
-                    LOS_normalization=los_normalization)
+            while not cut_8_good:
+                cut_8 = CDM(z_lens,
+                            z_source,
+                            sigma_sub=sigma_sub,
+                            log_mlow=8.,
+                            log_mhigh=10.,
+                            log_m_host=log_m_host,
+                            r_tidal=r_tidal,
+                            cone_opening_angle_arcsec=subhalo_cone,
+                            LOS_normalization=los_normalization)
+                cut_8_good = check_halo_image_alignment(lens, cut_8)
+                i += 1
+            print(f'Generated cut_8 population after {i} iterations.')
+        else:
+            cut_8 = CDM(z_lens,
+                        z_source,
+                        sigma_sub=sigma_sub,
+                        log_mlow=8.,
+                        log_mhigh=10.,
+                        log_m_host=log_m_host,
+                        r_tidal=r_tidal,
+                        cone_opening_angle_arcsec=subhalo_cone,
+                        LOS_normalization=los_normalization)
 
         med = CDM(z_lens,
                 z_source,
