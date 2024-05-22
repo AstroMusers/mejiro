@@ -15,6 +15,8 @@ from tqdm import tqdm
 def main(config):
     start = time.time()
 
+    os.environ['WEBBPSF_PATH'] = "/data/bwedig/STScI/webbpsf-data"
+
     array_dir, repo_dir = config.machine.array_dir, config.machine.repo_dir
 
     # enable use of local packages
