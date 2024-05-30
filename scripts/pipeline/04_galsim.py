@@ -7,6 +7,7 @@ from glob import glob
 from multiprocessing import Pool
 
 import hydra
+from hydra.core.hydra_config import HydraConfig
 import numpy as np
 from tqdm import tqdm
 
@@ -15,7 +16,11 @@ from tqdm import tqdm
 def main(config):
     start = time.time()
 
-    os.environ['WEBBPSF_PATH'] = "/data/bwedig/STScI/webbpsf-data"
+    machine = HydraConfig.get().runtime.choices.machine
+    if machine == 'hpc':
+        os.environ['WEBBPSF_PATH'] = '/data/bwedig/STScI/webbpsf-data'
+    elif machine == 'uzay':
+        os.environ['WEBBPSF_PATH'] = '/data/scratch/btwedig/STScI/ref_data/webbpsf-data'
 
     array_dir, repo_dir = config.machine.array_dir, config.machine.repo_dir
 
