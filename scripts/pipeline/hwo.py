@@ -170,8 +170,8 @@ def run_slsim(tuple):
     detectable_gglenses = []
     for candidate in tqdm(lens_population, disable=not debugging):
         # 1. Einstein radius and Sersic radius
-        _, kwargs_params = candidate.lenstronomy_kwargs(band='F106')
-        lens_mag = candidate.deflector_magnitude(band='F106')
+        _, kwargs_params = candidate.lenstronomy_kwargs(band='hdi')
+        lens_mag = candidate.deflector_magnitude(band='hdi')
 
         if kwargs_params['kwargs_lens'][0]['theta_E'] < kwargs_params['kwargs_lens_light'][0][
             'R_sersic'] and lens_mag < 15:
@@ -181,7 +181,7 @@ def run_slsim(tuple):
             continue
 
         # 2. SNR
-        snr, _ = survey_sim.get_snr(candidate, 'F106')
+        snr, _ = survey_sim.get_snr(candidate, 'hdi')
 
         if snr < 10:
             filter_2 += 1
@@ -212,7 +212,7 @@ def run_slsim(tuple):
     for gglens in tqdm(detectable_gglenses, disable=not debugging):
 
         # get lens params from gglens object
-        kwargs_model, kwargs_params = gglens.lenstronomy_kwargs(band='F106')
+        kwargs_model, kwargs_params = gglens.lenstronomy_kwargs(band='hdi')
 
         # build dicts for lens and source magnitudes
         lens_mags, source_mags = {}, {}
