@@ -50,8 +50,8 @@ def main(config):
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - config.machine.headroom_cores
+    process_count -= int(cpu_count / 2)
     # TODO for some reason, this particular script needs more headroom cores. maybe it's a memory thing?
-    process_count -= 36
     count = len(lens_uids)
     if count < process_count:
         process_count = count
