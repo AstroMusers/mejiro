@@ -55,7 +55,7 @@ def get_snr_hwo(gglens, band):
 def get_image_hwo(gglens, band):
     kwargs_model, kwargs_params = gglens.lenstronomy_kwargs(band=band)
 
-    magnitude_zero_point = 30
+    magnitude_zero_point = Roman.F106_band_obs['magnitude_zero_point']
     lens_model = LensModel(kwargs_model['lens_model_list'])
     source_light_model = LightModel(kwargs_model['source_light_model_list'])
     lens_light_model = LightModel(kwargs_model['lens_light_model_list'])
@@ -66,7 +66,7 @@ def get_image_hwo(gglens, band):
     kwargs_lens_light_amp = data_util.magnitude2amplitude(lens_light_model, kwargs_lens_light, magnitude_zero_point)
 
     # set up image
-    num_pix = 610  # at 8.2 mas/pixel, 5"
+    num_pix = 720
     psf_class = PSF(**{'psf_type': 'GAUSSIAN', 'fwhm': 0.0021})
     kwargs_numerics = {
         'supersampling_factor': 1,
@@ -74,7 +74,7 @@ def get_image_hwo(gglens, band):
     }
     _, _, ra_at_xy_0, dec_at_xy_0, _, _, Mpix2coord, Mcoord2pix = util.make_grid_with_coordtransform(
         numPix=num_pix,
-        deltapix=0.0082,
+        deltapix=0.00687549354156988,
         subgrid_res=1,
         left_lower=False,
         inverse=False)
