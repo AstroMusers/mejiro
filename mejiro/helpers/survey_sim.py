@@ -55,7 +55,7 @@ def get_snr_hwo(gglens, band):
 def get_image_hwo(gglens, band):
     kwargs_model, kwargs_params = gglens.lenstronomy_kwargs(band=band)
 
-    magnitude_zero_point = Roman.F106_band_obs['magnitude_zero_point']
+    magnitude_zero_point = 28.7339
     lens_model = LensModel(kwargs_model['lens_model_list'])
     source_light_model = LightModel(kwargs_model['source_light_model_list'])
     lens_light_model = LightModel(kwargs_model['lens_light_model_list'])

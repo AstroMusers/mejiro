@@ -30,7 +30,7 @@ pipeline:
   - seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
   - pieces: False
   - limit:   # None
-  - survey_sim_runs: 1000
+  - survey_sim_runs: 100
 
 hydra:
   output_subdir: null
