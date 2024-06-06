@@ -57,7 +57,7 @@ def configure_roman_filters():
     import mejiro
     module_path = os.path.dirname(mejiro.__file__)
     effarea_dir = os.path.join(module_path, 'data', 'effarea')
-    save_path = os.path.join(module_path, 'data', 'filter_response')
+    save_path = os.path.join(module_path, 'data', 'filter_responses')
 
     from mejiro.utils import util
     util.create_directory_if_not_exists(save_path)
