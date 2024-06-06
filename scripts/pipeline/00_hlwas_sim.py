@@ -20,7 +20,7 @@ def main(config):
     start = time.time()
 
     # debugging mode will print statements to console
-    debugging = True
+    debugging = False
 
     # enable use of local packages
     repo_dir = config.machine.repo_dir
@@ -184,13 +184,13 @@ def run_slsim(tuple):
             continue
 
         # 2. SNR
-        # snr, _ = survey_sim.get_snr(candidate, 'F106')
+        snr, _ = survey_sim.get_snr(candidate, 'F106')
 
-        # if snr < 10:
-        #     filter_2 += 1
-        #     if filter_2 <= num_samples:
-        #         filtered_sample['filter_2'].append(candidate)
-        #     continue
+        if snr < 10:
+            filter_2 += 1
+            if filter_2 <= num_samples:
+                filtered_sample['filter_2'].append(candidate)
+            continue
 
         # if both criteria satisfied, consider detectable
         detectable_gglenses.append(candidate)
