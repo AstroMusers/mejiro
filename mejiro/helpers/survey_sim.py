@@ -179,7 +179,7 @@ def get_image(gglens, band):
     return total_image, lens_surface_brightness, source_surface_brightness
 
 
-def write_lens_pop_to_csv(output_path, gg_lenses, bands):
+def write_lens_pop_to_csv(output_path, gg_lenses, bands, suppress_output=True):
     dictparaggln = {}
     dictparaggln['Candidate'] = {}
     listnamepara = ['velodisp', 'massstel', 'angleins', 'redssour', 'redslens', 'magnsour', 'numbimag',
@@ -194,7 +194,7 @@ def write_lens_pop_to_csv(output_path, gg_lenses, bands):
 
     df = pd.DataFrame(columns=listnamepara)
 
-    for i, gg_lens in tqdm(enumerate(gg_lenses), total=len(gg_lenses)):
+    for i, gg_lens in tqdm(enumerate(gg_lenses), total=len(gg_lenses), disable=suppress_output):
         dict = {
             'velodisp': gg_lens.deflector_velocity_dispersion(),
             'massstel': gg_lens.deflector_stellar_mass() * 1e-12,
@@ -226,7 +226,7 @@ def write_lens_pop_to_csv(output_path, gg_lenses, bands):
 
         df.loc[i] = pd.Series(dict)
 
-    print('Writing to %s..' % output_path)
+    if not suppress_output: print('Writing to %s..' % output_path)
     if os.path.exists(output_path):
         os.remove(output_path)
     df.to_csv(output_path, index=False)

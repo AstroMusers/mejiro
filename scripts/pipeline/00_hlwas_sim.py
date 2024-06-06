@@ -148,7 +148,7 @@ def run_slsim(tuple):
     # save other params to CSV
     total_pop_csv = os.path.join(output_dir, f'total_pop_{str(run).zfill(2)}.csv')
     if debugging: print(f'Writing total population to {total_pop_csv}')
-    survey_sim.write_lens_pop_to_csv(total_pop_csv, total_lens_population, bands)
+    survey_sim.write_lens_pop_to_csv(total_pop_csv, total_lens_population, bands, suppress_output=not debugging)
 
     # draw initial detectable lens population
     if debugging: print('Identifying detectable lenses...')
