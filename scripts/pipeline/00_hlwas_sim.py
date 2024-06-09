@@ -32,7 +32,7 @@ def main(config):
     output_dir = config.machine.dir_00
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
-    print(f'Set up output directory {output_dir}')
+    if debugging: print(f'Set up output directory {output_dir}')
 
     # load Roman WFI filters
     configure_roman_filters()
