@@ -6,6 +6,7 @@ import speclite.filters
 from tqdm import tqdm
 from astropy.table import Table
 from astropy.io import ascii
+import pandas as pd
 
 import slsim
 
@@ -51,6 +52,12 @@ def ecsv_to_csv(ecsv_path):
     csv_path = ecsv_path.replace(".ecsv", ".csv")
     table.write(csv_path, format="ascii.csv", overwrite=True)
     return csv_path
+
+def ecsv_to_pd(ecsv_path):
+    csv_path = ecsv_to_csv(ecsv_path)
+    df = pd.read_csv(csv_path)
+    os.remove(csv_path)
+    return df
 
 
 def configure_roman_filters():
