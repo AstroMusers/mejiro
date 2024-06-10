@@ -100,13 +100,13 @@ def get_image_hwo(gglens, band):
     return total_image, lens_surface_brightness, source_surface_brightness
 
 
-def get_snr(gglens, band):
+def get_snr(gglens, band, mask_mult=1):
     total_image, lens_surface_brightness, source_surface_brightness = get_image(gglens, band)
 
     # calculate region for source surface brightness array and count signal
     stdev = np.std(source_surface_brightness)
     mean = np.mean(source_surface_brightness)
-    mask = source_surface_brightness < mean + (1 * stdev)
+    mask = source_surface_brightness < mean + (mask_mult * stdev)
     masked_source = np.ma.masked_array(source_surface_brightness, mask=mask)
     sum_source_counts = np.sum(masked_source)
 

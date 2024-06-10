@@ -146,7 +146,7 @@ def run_slsim(tuple):
     if debugging: print(f'Computing SNRs for {len(total_lens_population)} lenses')
     snr_list = []
     for candidate in tqdm(total_lens_population, disable=not debugging):
-        snr, _ = survey_sim.get_snr(candidate, 'F106')
+        snr, _ = survey_sim.get_snr(candidate, 'F106', mask_mult=0.5)
         snr_list.append(snr)
     np.save(os.path.join(output_dir, f'snr_list_{str(run).zfill(2)}.npy'), snr_list)
 
@@ -189,7 +189,7 @@ def run_slsim(tuple):
             continue
 
         # 2. SNR
-        snr, _ = survey_sim.get_snr(candidate, 'F106')
+        snr, _ = survey_sim.get_snr(candidate, 'F106', mask_mult=0.5)
 
         if snr < 10:
             filter_2 += 1
