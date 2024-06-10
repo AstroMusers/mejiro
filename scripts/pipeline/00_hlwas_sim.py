@@ -3,7 +3,9 @@ import multiprocessing
 import os
 import sys
 import time
+from glob import glob
 from multiprocessing import Pool
+from pprint import pprint
 
 import hydra
 import numpy as np
@@ -35,11 +37,14 @@ def main(config):
     if debugging: print(f'Set up output directory {output_dir}')
 
     # load Roman WFI filters
-    configure_roman_filters()
-    roman_filters = filter_names()
-    roman_filters.sort()
+    # configure_roman_filters()
+    # roman_filters = filter_names()
+    # roman_filters.sort()
+    roman_filters = sorted(glob(os.path.join(repo_dir, 'mejiro', 'data', 'avg_filter_responses', 'Roman-*.ecsv')))
     _ = speclite.filters.load_filters(*roman_filters[:8])
-    if debugging: print('Configured Roman filters')
+    if debugging: 
+        print('Configured Roman filters. Loaded:')
+        pprint(roman_filters)
 
     # tuple the parameters
     survey_params = util.hydra_to_dict(config.survey)
@@ -90,8 +95,8 @@ def run_slsim(tuple):
     util.create_directory_if_not_exists(lens_output_dir)
 
     # set HLWAS parameters
-    config = util.load_skypy_config(skypy_config)  # read skypy config file to get survey area
-    survey_area = float(config['fsky'][:-5])
+    config_file = util.load_skypy_config(skypy_config)  # read skypy config file to get survey area
+    survey_area = float(config_file['fsky'][:-5])
     sky_area = Quantity(value=survey_area, unit='deg2')
     cosmo = default_cosmology.get()
     bands = pipeline_params['bands']
