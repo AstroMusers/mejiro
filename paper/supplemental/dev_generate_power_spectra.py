@@ -49,13 +49,12 @@ def main(config):
     os.environ['WEBBPSF_PATH'] = "/data/bwedig/STScI/webbpsf-data"
     
     # collect lenses
-    num_lenses = 100
-    print(f'Collecting {num_lenses} lenses...')
+    print(f'Collecting lenses...')
     pickled_lens_list = os.path.join(config.machine.dir_01, '01_hlwas_sim_detectable_lens_list.pkl')
     # pickled_lens_list = '/data/bwedig/mejiro/archive/2024-04-22 pipeline/01/01_hlwas_sim_detectable_lens_list.pkl'
-    lens_list = util.unpickle(pickled_lens_list)[:num_lenses]
+    lens_list = util.unpickle(pickled_lens_list)
     # pprint(lens_list)
-    print('Collected lenses.')
+    print(f'Collected {len(lens_list)} lenses.')
 
     # require >10^8 M_\odot subhalo alignment with image?
     require_alignment = True
