@@ -65,6 +65,9 @@ class StrongLens:
         # set light kwargs dicts and set kwargs_lens
         self._unpack_kwargs_params(kwargs_params)
 
+        # this is only used as a record on the object, since the unpack method above actual sets the params that are used
+        self.kwargs_params = kwargs_params
+
         # set lens_model_list, lens_light_model_list, source_light_model_list
         self._unpack_kwargs_model(kwargs_model)
 
