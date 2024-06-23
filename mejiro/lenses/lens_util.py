@@ -5,8 +5,8 @@ from glob import glob
 import matplotlib.pyplot as plt
 import numpy as np
 from lenstronomy.Data.coord_transforms import Coordinates
-from lenstronomy.Util import util as lenstronomy_util
 from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
+from lenstronomy.Util import util as lenstronomy_util
 
 from mejiro.helpers import color
 from mejiro.lenses.strong_lens import StrongLens
@@ -31,12 +31,13 @@ def check_halo_image_alignment(lens, realization, halo_mass=1e8, halo_sort_massi
     source_x = lens.kwargs_source_dict['F106']['center_x']
     source_y = lens.kwargs_source_dict['F106']['center_y']
     solver = LensEquationSolver(lens.lens_model_class)
-    image_x, image_y = solver.image_position_from_source(sourcePos_x=source_x, sourcePos_y=source_y, kwargs_lens=lens.kwargs_lens)
+    image_x, image_y = solver.image_position_from_source(sourcePos_x=source_x, sourcePos_y=source_y,
+                                                         kwargs_lens=lens.kwargs_lens)
 
     for halo in sorted_halos:
         if halo.mass < halo_mass:
             break
-        
+
         # calculate distances
         for x, y in zip(image_x, image_y):
             dist = np.sqrt(np.power(halo.x - x, 2) + np.power(halo.y - y, 2))
@@ -47,7 +48,7 @@ def check_halo_image_alignment(lens, realization, halo_mass=1e8, halo_sort_massi
                     return True, halo
                 else:
                     return True, None
-    
+
     return False, None
 
 

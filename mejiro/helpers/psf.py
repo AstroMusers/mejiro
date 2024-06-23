@@ -41,7 +41,8 @@ def get_webbpsf_psf(band, detector, detector_position, oversample, check_cache=F
         import mejiro
         module_path = os.path.dirname(mejiro.__file__)
         psf_cache_dir = os.path.join(module_path, 'data', 'cached_psfs')
-        psf_path = glob(os.path.join(psf_cache_dir, f'{band}_{detector}_{detector_position[0]}_{detector_position[1]}_{oversample}.pkl'))
+        psf_path = glob(os.path.join(psf_cache_dir,
+                                     f'{band}_{detector}_{detector_position[0]}_{detector_position[1]}_{oversample}.pkl'))
         if len(psf_path) == 1:
             if not suppress_output: print(f'Loading cached PSF: {psf_path[0]}')
             return util.unpickle(psf_path[0])

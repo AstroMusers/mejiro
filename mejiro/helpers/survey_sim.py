@@ -12,15 +12,6 @@ from lenstronomy.Util import data_util, util
 from tqdm import tqdm
 
 
-from lenstronomy.Data.pixel_grid import PixelGrid
-from lenstronomy.Data.psf import PSF
-from lenstronomy.ImSim.image_model import ImageModel
-from lenstronomy.LensModel.lens_model import LensModel
-from lenstronomy.LightModel.light_model import LightModel
-from lenstronomy.SimulationAPI.ObservationConfig import Roman
-from lenstronomy.Util import data_util, util
-
-
 def get_snr_hwo(gglens, band):
     total_image, lens_surface_brightness, source_surface_brightness = get_image_hwo(gglens, band)
 

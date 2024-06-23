@@ -12,7 +12,6 @@ import numpy as np
 import speclite
 from astropy.cosmology import default_cosmology
 from astropy.units import Quantity
-from slsim.Observations.roman_speclite import configure_roman_filters, filter_names
 from slsim.lens_pop import LensPop
 from tqdm import tqdm
 
@@ -42,7 +41,7 @@ def main(config):
     # roman_filters.sort()
     roman_filters = sorted(glob(os.path.join(repo_dir, 'mejiro', 'data', 'avg_filter_responses', 'Roman-*.ecsv')))
     _ = speclite.filters.load_filters(*roman_filters[:8])
-    if debugging: 
+    if debugging:
         print('Configured Roman filters. Loaded:')
         pprint(roman_filters)
 

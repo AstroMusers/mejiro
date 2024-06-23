@@ -1,14 +1,12 @@
-import numpy as np
 import csv
 import os
-from astropy import units as u
-import speclite.filters
-from tqdm import tqdm
-from astropy.table import Table
-from astropy.io import ascii
-import pandas as pd
 
-import slsim
+import numpy as np
+import pandas as pd
+import speclite.filters
+from astropy import units as u
+from astropy.io import ascii
+from tqdm import tqdm
 
 _filter_name_list = [
     "F062",
@@ -52,6 +50,7 @@ def ecsv_to_csv(ecsv_path):
     csv_path = ecsv_path.replace(".ecsv", ".csv")
     table.write(csv_path, format="ascii.csv", overwrite=True)
     return csv_path
+
 
 def ecsv_to_pd(ecsv_path):
     csv_path = ecsv_to_csv(ecsv_path)

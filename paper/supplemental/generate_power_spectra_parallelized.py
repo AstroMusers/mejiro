@@ -6,10 +6,10 @@ from multiprocessing import Pool
 
 import hydra
 import numpy as np
+from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
 from lenstronomy.Util.correlation import power_spectrum_1d
 from pyHalo.preset_models import CDM
 from tqdm import tqdm
-from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -86,7 +86,7 @@ def generate_power_spectra(tuple):
     print(f'Processing lens {lens.uid}...')
 
     lens._set_classes()
-    
+
     z_lens = round(lens.z_lens, 2)
     z_source = round(lens.z_source, 2)
     log_m_host = np.log10(lens.main_halo_mass)
@@ -109,24 +109,24 @@ def generate_power_spectra(tuple):
     print(f'Generated cut_8 population after {i} iterations.')
 
     med = CDM(z_lens,
-            z_source,
-            sigma_sub=sigma_sub,
-            log_mlow=7.,
-            log_mhigh=8.,
-            log_m_host=log_m_host,
-            r_tidal=r_tidal,
-            cone_opening_angle_arcsec=subhalo_cone,
-            LOS_normalization=los_normalization)
-    
+              z_source,
+              sigma_sub=sigma_sub,
+              log_mlow=7.,
+              log_mhigh=8.,
+              log_m_host=log_m_host,
+              r_tidal=r_tidal,
+              cone_opening_angle_arcsec=subhalo_cone,
+              LOS_normalization=los_normalization)
+
     smol = CDM(z_lens,
-            z_source,
-            sigma_sub=sigma_sub,
-            log_mlow=6.,
-            log_mhigh=7.,
-            log_m_host=log_m_host,
-            r_tidal=r_tidal,
-            cone_opening_angle_arcsec=subhalo_cone,
-            LOS_normalization=los_normalization)
+               z_source,
+               sigma_sub=sigma_sub,
+               log_mlow=6.,
+               log_mhigh=7.,
+               log_m_host=log_m_host,
+               r_tidal=r_tidal,
+               cone_opening_angle_arcsec=subhalo_cone,
+               LOS_normalization=los_normalization)
 
     cut_7 = cut_8.join(med)
     cut_6 = cut_7.join(smol)
@@ -145,14 +145,15 @@ def generate_power_spectra(tuple):
 
     lenses = [lens, lens_cut_6, lens_cut_7, lens_cut_8]
     titles = [f'no_subhalos_{lens.uid}', f'cut_6_{lens.uid}', f'cut_7_{lens.uid}',
-                f'cut_8_{lens.uid}']
+              f'cut_8_{lens.uid}']
     models = [i.get_array(num_pix=num_pix * oversample, side=side, band='F106') for i in lenses]
 
     for sl, model, title in zip(lenses, models, titles):
         print(f'Processing model {title}...')
         gs_images, _ = gs.get_images(sl, [model], ['F106'], input_size=num_pix, output_size=num_pix,
-                                    grid_oversample=oversample, psf_oversample=oversample,
-                                    detector=1, detector_pos=(2048, 2048), suppress_output=False, validate=False, check_cache=True)
+                                     grid_oversample=oversample, psf_oversample=oversample,
+                                     detector=1, detector_pos=(2048, 2048), suppress_output=False, validate=False,
+                                     check_cache=True)
         ps, r = power_spectrum_1d(gs_images[0])
         np.save(os.path.join(save_dir, f'im_subs_{title}.npy'), gs_images[0])
         np.save(os.path.join(save_dir, f'ps_subs_{title}.npy'), ps)
@@ -164,8 +165,9 @@ def generate_power_spectra(tuple):
     for detector, detector_pos in zip(detectors, detector_positions):
         print(f'Processing detector {detector}, {detector_pos}...')
         gs_images, _ = gs.get_images(lens_cut_6, [model], ['F106'], input_size=num_pix, output_size=num_pix,
-                                    grid_oversample=oversample, psf_oversample=oversample,
-                                    detector=detector, detector_pos=detector_pos, suppress_output=False, validate=False, check_cache=True)
+                                     grid_oversample=oversample, psf_oversample=oversample,
+                                     detector=detector, detector_pos=detector_pos, suppress_output=False,
+                                     validate=False, check_cache=True)
         ps, r = power_spectrum_1d(gs_images[0])
         np.save(os.path.join(save_dir, f'im_det_{detector}_{lens.uid}.npy'), gs_images[0])
         np.save(os.path.join(save_dir, f'ps_det_{detector}_{lens.uid}.npy'), ps)
@@ -180,12 +182,13 @@ def check_halo_image_alignment(lens, realization):
     source_x = lens.kwargs_source_dict['F106']['center_x']
     source_y = lens.kwargs_source_dict['F106']['center_y']
     solver = LensEquationSolver(lens.lens_model_class)
-    image_x, image_y = solver.image_position_from_source(sourcePos_x=source_x, sourcePos_y=source_y, kwargs_lens=lens.kwargs_lens)
+    image_x, image_y = solver.image_position_from_source(sourcePos_x=source_x, sourcePos_y=source_y,
+                                                         kwargs_lens=lens.kwargs_lens)
 
     for halo in sorted_halos:
         if halo.mass < 1e8:
             break
-        
+
         # calculate distances
         for x, y in zip(image_x, image_y):
             dist = np.sqrt(np.power(halo.x - x, 2) + np.power(halo.y - y, 2))
@@ -193,7 +196,7 @@ def check_halo_image_alignment(lens, realization):
             # check if halo is within 0.1 arcsec of the image
             if dist < 0.1:
                 return True
-    
+
     return False
 
 

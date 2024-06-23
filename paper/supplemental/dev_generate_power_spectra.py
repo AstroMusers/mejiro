@@ -5,18 +5,11 @@ import os
 import sys
 
 import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
 import hydra
-from matplotlib import colors
-from hydra import initialize, compose
-import pickle
 from glob import glob
-from pprint import pprint
 from tqdm import tqdm
 from pyHalo.preset_models import CDM
-from pyHalo import plotting_routines
-from copy import deepcopy
 from lenstronomy.Util.correlation import power_spectrum_1d
 from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
 from galsim import InterpolatedImage, Image
@@ -47,7 +40,7 @@ def main(config):
     util.create_directory_if_not_exists(image_save_dir)
 
     os.environ['WEBBPSF_PATH'] = "/data/bwedig/STScI/webbpsf-data"
-    
+
     # collect lenses
     print(f'Collecting lenses...')
     pickled_lens_list = os.path.join(config.machine.dir_01, '01_hlwas_sim_detectable_lens_list.pkl')
@@ -69,7 +62,6 @@ def main(config):
     subhalo_cone = 5
     los_normalization = 0
 
-
     def check_halo_image_alignment(lens, realization):
         sorted_halos = sorted(realization.halos, key=lambda x: x.mass, reverse=True)
 
@@ -77,12 +69,13 @@ def main(config):
         source_x = lens.kwargs_source_dict['F106']['center_x']
         source_y = lens.kwargs_source_dict['F106']['center_y']
         solver = LensEquationSolver(lens.lens_model_class)
-        image_x, image_y = solver.image_position_from_source(sourcePos_x=source_x, sourcePos_y=source_y, kwargs_lens=lens.kwargs_lens)
+        image_x, image_y = solver.image_position_from_source(sourcePos_x=source_x, sourcePos_y=source_y,
+                                                             kwargs_lens=lens.kwargs_lens)
 
         for halo in sorted_halos:
             if halo.mass < 1e8:
                 break
-            
+
             # calculate distances
             for x, y in zip(image_x, image_y):
                 dist = np.sqrt(np.power(halo.x - x, 2) + np.power(halo.y - y, 2))
@@ -90,10 +83,9 @@ def main(config):
                 # check if halo is within 0.1 arcsec of the image
                 if dist < 0.1:
                     return True
-        
+
         return False
 
-    
     def plot(array_list, titles, save_path, oversampled):
         if type(array_list[0]) is not np.ndarray:
             array_list = [i.array for i in array_list]
@@ -125,17 +117,17 @@ def main(config):
                             coords = lens_util.get_coords(45 * 5, delta_pix=0.11 / 5)
                         else:
                             coords = lens_util.get_coords(45, delta_pix=0.11)
-                        ax[1][i].scatter(*coords.map_coord2pix(halo.x, halo.y), s=100, facecolors='none', edgecolors='black')
+                        ax[1][i].scatter(*coords.map_coord2pix(halo.x, halo.y), s=100, facecolors='none',
+                                         edgecolors='black')
 
         plt.savefig(save_path)
         plt.close()
-
 
     for lens in tqdm(lens_list):
         print(f'Processing lens {lens.uid}...')
 
         lens._set_classes()
-        
+
         z_lens = round(lens.z_lens, 2)
         z_source = round(lens.z_source, 2)
         log_m_host = np.log10(lens.main_halo_mass)
@@ -169,24 +161,24 @@ def main(config):
                         LOS_normalization=los_normalization)
 
         med = CDM(z_lens,
-                z_source,
-                sigma_sub=sigma_sub,
-                log_mlow=7.,
-                log_mhigh=8.,
-                log_m_host=log_m_host,
-                r_tidal=r_tidal,
-                cone_opening_angle_arcsec=subhalo_cone,
-                LOS_normalization=los_normalization)
-        
+                  z_source,
+                  sigma_sub=sigma_sub,
+                  log_mlow=7.,
+                  log_mhigh=8.,
+                  log_m_host=log_m_host,
+                  r_tidal=r_tidal,
+                  cone_opening_angle_arcsec=subhalo_cone,
+                  LOS_normalization=los_normalization)
+
         smol = CDM(z_lens,
-                z_source,
-                sigma_sub=sigma_sub,
-                log_mlow=6.,
-                log_mhigh=7.,
-                log_m_host=log_m_host,
-                r_tidal=r_tidal,
-                cone_opening_angle_arcsec=subhalo_cone,
-                LOS_normalization=los_normalization)
+                   z_source,
+                   sigma_sub=sigma_sub,
+                   log_mlow=6.,
+                   log_mhigh=7.,
+                   log_m_host=log_m_host,
+                   r_tidal=r_tidal,
+                   cone_opening_angle_arcsec=subhalo_cone,
+                   LOS_normalization=los_normalization)
 
         cut_7 = cut_8.join(med)
         cut_6 = cut_7.join(smol)
@@ -206,7 +198,7 @@ def main(config):
 
         lenses = [lens_cut_6, lens_cut_7, lens_cut_8, lens]
         titles = [f'cut_6_{lens.uid}', f'cut_7_{lens.uid}',
-                    f'cut_8_{lens.uid}', f'no_subhalos_{lens.uid}']
+                  f'cut_8_{lens.uid}', f'no_subhalos_{lens.uid}']
         models = [i.get_array(num_pix=num_pix * oversample, side=side, band='F106') for i in lenses]
 
         plot(models, titles, os.path.join(image_save_dir, f'{lens.uid}_00_models.png'), oversampled=True)
@@ -221,7 +213,8 @@ def main(config):
         # generate the PSFs I'll need for each unique band
         psf_kernels = {}
         for band in bands:
-            psf_kernels[band] = psf.get_webbpsf_psf(band, detector=1, detector_position=(2048, 2048), oversample=5, check_cache=True, suppress_output=False)
+            psf_kernels[band] = psf.get_webbpsf_psf(band, detector=1, detector_position=(2048, 2048), oversample=5,
+                                                    check_cache=True, suppress_output=False)
 
         convolved = []
         for model, lens in zip(models, lenses):
@@ -279,17 +272,18 @@ def main(config):
         detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
 
         for detector, detector_pos in zip(detectors, detector_positions):
-        #     print(f'Processing detector {detector}, {detector_pos}...')
-        #     gs_images, _ = gs.get_images(lens_cut_6, [model], ['F106'], input_size=num_pix, output_size=num_pix,
-        #                                 grid_oversample=oversample, psf_oversample=oversample,
-        #                                 detector=detector, detector_pos=detector_pos, suppress_output=False, validate=False, check_cache=True)
+            #     print(f'Processing detector {detector}, {detector_pos}...')
+            #     gs_images, _ = gs.get_images(lens_cut_6, [model], ['F106'], input_size=num_pix, output_size=num_pix,
+            #                                 grid_oversample=oversample, psf_oversample=oversample,
+            #                                 detector=detector, detector_pos=detector_pos, suppress_output=False, validate=False, check_cache=True)
 
             # get interpolated image
             total_flux_cps = lens.get_total_flux_cps(band)
             interp = InterpolatedImage(Image(model, xmin=0, ymin=0), scale=0.11 / 5, flux=total_flux_cps * 146)
 
             # convolve image with PSF
-            psf_kernel = psf.get_webbpsf_psf(band, detector=detector, detector_position=detector_pos, oversample=5, check_cache=True, suppress_output=False)
+            psf_kernel = psf.get_webbpsf_psf(band, detector=detector, detector_position=detector_pos, oversample=5,
+                                             check_cache=True, suppress_output=False)
             image = gs.convolve(interp, psf_kernel, 45)
 
             bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector=detector, exposure_time=146, num_pix=45)

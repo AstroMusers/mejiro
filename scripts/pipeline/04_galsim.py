@@ -7,8 +7,8 @@ from glob import glob
 from multiprocessing import Pool
 
 import hydra
-from hydra.core.hydra_config import HydraConfig
 import numpy as np
+from hydra.core.hydra_config import HydraConfig
 from tqdm import tqdm
 
 

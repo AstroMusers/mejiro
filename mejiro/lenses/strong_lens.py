@@ -209,7 +209,7 @@ class StrongLens:
             # total subhalo mass can be zero and throw division by zero error
             try:
                 percent_subhalo_mass_within_einstein_radius = (
-                                                                          total_mass_subhalos_within_einstein_radius / total_subhalo_mass) * 100
+                                                                      total_mass_subhalos_within_einstein_radius / total_subhalo_mass) * 100
             except:
                 percent_subhalo_mass_within_einstein_radius = 0
             percent_change_lensing_mass = util.percent_change(effective_lensing_mass, adjusted_lensing_mass)

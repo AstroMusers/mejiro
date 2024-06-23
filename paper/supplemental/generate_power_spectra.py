@@ -160,7 +160,8 @@ def main(config):
                 if debugging: print(f'    Processing detector {detector}, {detector_pos}...')
                 gs_images, _ = gs.get_images(lenses[1], [models[1]], ['F106'], input_size=num_pix, output_size=num_pix,
                                              grid_oversample=oversample, psf_oversample=oversample,
-                                             detector=detector, detector_pos=detector_pos, suppress_output=True, validate=False)
+                                             detector=detector, detector_pos=detector_pos, suppress_output=True,
+                                             validate=False)
                 ps, r = power_spectrum_1d(gs_images[0])
                 np.save(os.path.join(output_dir, f'im_det_{detector}_{lens.uid}.npy'), gs_images[0])
                 np.save(os.path.join(output_dir, f'ps_det_{detector}_{lens.uid}.npy'), ps)

@@ -2,18 +2,14 @@ import os
 import sys
 
 import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import colors
-from hydra import initialize, compose
 import pickle
 from glob import glob
 from pprint import pprint
 from tqdm import tqdm
 import pandas as pd
 from scipy.interpolate import griddata, RegularGridInterpolator
-from webbpsf.roman import FieldDependentAberration, RomanInstrument
-from phrosty import plotting
 import hydra
 
 
@@ -39,7 +35,7 @@ def main(config):
     wavelength = 1.06
 
     x = np.linspace(-20, 20, 100)
-    y =  np.linspace(-20, 20, 100)
+    y = np.linspace(-20, 20, 100)
     X, Y = np.meshgrid(x, y)
 
     # loop through Zernicke coefficients
@@ -51,7 +47,7 @@ def main(config):
         for sca in range(1, 19):
             sca_df = df[df['sca'] == sca]
             sca_df = sca_df[sca_df['wavelength'] == wavelength]
-            
+
             points, values = [], []
             for _, row in sca_df.iterrows():
                 points.append([row['local_x'], row['local_y']])
@@ -61,9 +57,9 @@ def main(config):
             grid_z = np.flipud(grid_z)
 
             scas.append(grid_z)
-        
+
         zernikes.append(scas)
-    
+
     np.save(os.path.join(save_dir, 'zernikes.npy'), zernikes)
 
 
