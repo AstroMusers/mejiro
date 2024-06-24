@@ -12,6 +12,40 @@ from mejiro.helpers import color
 from mejiro.lenses.strong_lens import StrongLens
 from mejiro.utils import util
 
+# use mejiro plotting style
+import mejiro
+module_path = os.path.dirname(mejiro.__file__)
+plt.style.use(f'{module_path}/mplstyle/science.mplstyle')
+
+
+def overplot_subhalos(lens, num_pix=91, side=10.01, band='F106', figsize=7):
+    # make sure there are subhalos on this StrongLens
+    if lens.realization is None:
+        raise ValueError('No subhalos have been added to this StrongLens object.')
+    
+    # get array
+    array = lens.get_array(num_pix, side, band=band)
+
+    # plot
+    f = plt.figure(figsize=(figsize, figsize))
+    ax = plt.subplot(111)
+    ax.imshow(np.log10(array))
+
+    # TODO make sure this method can handle different oversampling factors
+
+    # overplot subhalos
+    coords = get_coords(num_pix, delta_pix=0.11)
+
+    for halo in lens.realization.halos:
+        if halo.mass > 1e8:
+            ax.plot(*coords.map_coord2pix(halo.x, halo.y), marker='.', color='#FF9500')
+        elif halo.mass > 1e7:
+            ax.plot(*coords.map_coord2pix(halo.x, halo.y), marker='.', color='#00B945')
+        else:
+            ax.plot(*coords.map_coord2pix(halo.x, halo.y), marker='.', color='#0C5DA5')
+
+    plt.show()
+
 
 def get_coords(num_pix, delta_pix=0.11, subgrid_res=1):
     _, _, ra_at_xy_0, dec_at_xy_0, _, _, Mpix2coord, Mcoord2pix = lenstronomy_util.make_grid_with_coordtransform(
