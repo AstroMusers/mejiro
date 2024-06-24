@@ -313,7 +313,7 @@ def print_execution_time(start, stop):
 
 def pickle(path, thing):
     """
-    Use the `pickle` module to serialize an object and save it to a file.
+    Use the `pickle` module to serialize an object and save it to a file. Note that the file will be overwritten if it already exists.
 
     Parameters
     ----------
@@ -330,7 +330,7 @@ def pickle(path, thing):
     --------
     >>> pickle('/path/to/file.pkl', {'key': 'value'})
     """
-    with open(path, 'ab') as results_file:
+    with open(path, 'wb') as results_file:
         _pickle.dump(thing, results_file)
 
 
