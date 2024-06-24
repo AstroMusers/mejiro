@@ -79,11 +79,11 @@ def add(tuple):
     log_mlow = pipeline_params['log_mlow']
     log_mhigh = pipeline_params['log_mhigh']
 
+    log_m_host = np.log10(lens.main_halo_mass)
+    kwargs_cosmo = util.get_kwargs_cosmo(lens.cosmo)
     # circumvent bug with pyhalo, sometimes fails when redshifts have more than 2 decimal places
     z_lens = round(lens.z_lens, 2)
     z_source = round(lens.z_source, 2)
-
-    log_m_host = np.log10(lens.main_halo_mass)
 
     try:
         cdm_realization = CDM(z_lens,
@@ -94,7 +94,8 @@ def add(tuple):
                               log_m_host=log_m_host,
                               r_tidal=r_tidal,
                               cone_opening_angle_arcsec=subhalo_cone,
-                              LOS_normalization=los_normalization)
+                              LOS_normalization=los_normalization,
+                              kwargs_cosmo=kwargs_cosmo)
     except:
         print(f'Failed to generate subhalos for lens {lens.uid}')
         return
