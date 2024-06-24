@@ -74,21 +74,23 @@ def add(tuple):
     # unpack pipeline_params
     subhalo_cone = pipeline_params['subhalo_cone']
     los_normalization = pipeline_params['los_normalization']
+    r_tidal = pipeline_params['r_tidal']
+    sigma_sub = pipeline_params['sigma_sub']
+    log_mlow = pipeline_params['log_mlow']
+    log_mhigh = pipeline_params['log_mhigh']
 
     # circumvent bug with pyhalo, sometimes fails when redshifts have more than 2 decimal places
     z_lens = round(lens.z_lens, 2)
     z_source = round(lens.z_source, 2)
 
     log_m_host = np.log10(lens.main_halo_mass)
-    r_tidal = 0.5  # see Section 3.1 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract 
-    sigma_sub = 0.055  # see Section 6.3 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract 
 
     try:
         cdm_realization = CDM(z_lens,
                               z_source,
                               sigma_sub=sigma_sub,
-                              log_mlow=6.,
-                              log_mhigh=10.,
+                              log_mlow=log_mlow,
+                              log_mhigh=log_mhigh,
                               log_m_host=log_m_host,
                               r_tidal=r_tidal,
                               cone_opening_angle_arcsec=subhalo_cone,
