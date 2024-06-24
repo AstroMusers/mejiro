@@ -245,7 +245,7 @@ def run_slsim(tuple):
             'source_mags': source_mags,
             'deflector_stellar_mass': gglens.deflector_stellar_mass(),
             'deflector_velocity_dispersion': gglens.deflector_velocity_dispersion(),
-            # 'snr': gglens.snr
+            'snr': gglens.snr
         }
 
         dict_list.append(gglens_dict)
