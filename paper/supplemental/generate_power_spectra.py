@@ -237,7 +237,7 @@ def main(config):
 
             added_bkg.append(image)
 
-        plot(added_bkg, titles, os.path.join(image_save_dir, f'{lens.uid}_02_added_bkg.png'), oversampled=False)
+        # plot(added_bkg, titles, os.path.join(image_save_dir, f'{lens.uid}_02_added_bkg.png'), oversampled=False)
 
         det_fx = []
         for image, lens, title in zip(added_bkg, lenses, titles):
@@ -256,7 +256,7 @@ def main(config):
             np.save(os.path.join(save_dir, f'im_subs_{title}.npy'), final_array)
             np.save(os.path.join(save_dir, f'ps_subs_{title}.npy'), ps)
 
-        plot(det_fx, titles, os.path.join(image_save_dir, f'{lens.uid}_03_counts_sec.png'), oversampled=False)
+        plot(det_fx, titles, os.path.join(image_save_dir, f'{lens.uid}_02_bkg_counts_sec.png'), oversampled=False)
 
         # for sl, model, title in zip(lenses, models, titles):
         #     print(f'Processing model {title}...')
@@ -320,12 +320,15 @@ def main(config):
         np.save(os.path.join(save_dir, f'ps_gaussian_psf_{lens.uid}.npy'), ps)
 
         # plot final images with different PSFs
-        f, ax = plt.subplots(1, 2, figsize=(12, 6))
+        _, ax = plt.subplots(1, 3, figsize=(12, 4))
         ax[0].imshow(np.log10(final_array))
         ax[0].set_title('WebbPSF')
         ax[1].imshow(np.log10(gaussian_final_array))
         ax[1].set_title('Gaussian PSF')
-        plt.savefig(os.path.join(image_save_dir, f'{lens.uid}_04_psf_compare.png'))
+        v = plot_util.get_v([final_array, gaussian_final_array])
+        ax[2].imshow(final_array - gaussian_final_array, cmap='bwr', vmin=-v, vmax=v)
+        ax[2].set_title('Residual (WebbPSF - Gaussian PSF)')
+        plt.savefig(os.path.join(image_save_dir, f'{lens.uid}_03_psf_compare.png'))
         plt.close()
 
 
