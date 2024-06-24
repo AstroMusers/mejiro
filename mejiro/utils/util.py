@@ -11,14 +11,27 @@ import yaml
 from omegaconf import OmegaConf
 
 
+def get_kwargs_cosmo(astropy_cosmo):
+    """
+    Get `kwargs_cosmo` for pyhalo from an Astropy cosmology object.
+    """
+    return {
+        "H0": astropy_cosmo.H0.value,
+        "Ob0": astropy_cosmo.Ob0,
+        "Om0": astropy_cosmo.Om0,
+    }
+
+
 def load_skypy_config(path):
     class SafeLoaderIgnoreUnknown(yaml.SafeLoader):
         def ignore_unknown(self, node):
             return None
 
-    SafeLoaderIgnoreUnknown.add_constructor(None, SafeLoaderIgnoreUnknown.ignore_unknown)
+    SafeLoaderIgnoreUnknown.add_constructor(
+        None, SafeLoaderIgnoreUnknown.ignore_unknown
+    )
 
-    with open(path, 'r') as file:
+    with open(path, "r") as file:
         skypy_config = yaml.load(file, Loader=SafeLoaderIgnoreUnknown)
 
     return skypy_config
@@ -78,7 +91,7 @@ def percent_difference(a, b):
     return np.abs(a - b) / ((a + b) / 2) * 100
 
 
-def combine_all_csvs(path, prefix='', filename=None):
+def combine_all_csvs(path, prefix="", filename=None):
     """
     Combine all CSV files in a directory into a single DataFrame.
 
@@ -103,7 +116,7 @@ def combine_all_csvs(path, prefix='', filename=None):
     <DataFrame object>
     """
     # list all files in directory
-    csv_files = glob(os.path.join(path, f'{prefix}*.csv'))
+    csv_files = glob(os.path.join(path, f"{prefix}*.csv"))
 
     # concatenate CSVs
     pd_list = [pd.read_csv(f) for f in csv_files]
@@ -112,7 +125,7 @@ def combine_all_csvs(path, prefix='', filename=None):
     # save as combined CSV
     if filename is not None:
         df_res.to_csv(filename)
-        print(f'Wrote combined CSV to {filename}')
+        print(f"Wrote combined CSV to {filename}")
 
     # return as DataFrame
     return df_res
@@ -197,11 +210,11 @@ def resize_with_pixels_centered(array, oversample_factor):
 
     """
     if oversample_factor % 2 == 0:
-        raise Exception('Oversampling factor must be odd')
+        raise Exception("Oversampling factor must be odd")
 
     x, y = array.shape
     if x != y:
-        raise Exception('Array must be square')
+        raise Exception("Array must be square")
 
     flattened_array = array.flatten()
     oversample_grid = np.zeros((x * oversample_factor, x * oversample_factor))
@@ -261,7 +274,7 @@ def center_crop_image(array, shape):
     y, x = tuple[0], tuple[1]
     x_start = (x // 2) - (x_out // 2)
     y_start = (y // 2) - (y_out // 2)
-    return array[y_start:y_start + y_out, x_start:x_start + x_out]
+    return array[y_start : y_start + y_out, x_start : x_start + x_out]
 
 
 def hydra_to_dict(config):
@@ -308,7 +321,7 @@ def print_execution_time(start, stop):
 
     """
     execution_time = str(datetime.timedelta(seconds=round(stop - start)))
-    print(f'Execution time: {execution_time}')
+    print(f"Execution time: {execution_time}")
 
 
 def pickle(path, thing):
@@ -330,7 +343,7 @@ def pickle(path, thing):
     --------
     >>> pickle('/path/to/file.pkl', {'key': 'value'})
     """
-    with open(path, 'wb') as results_file:
+    with open(path, "wb") as results_file:
         _pickle.dump(thing, results_file)
 
 
@@ -349,12 +362,12 @@ def unpickle(path):
         The unpickled object.
 
     """
-    with open(path, 'rb') as results_file:
+    with open(path, "rb") as results_file:
         result = _pickle.load(results_file)
     return result
 
 
-def unpickle_all(dir_path, prefix='', suffix='', limit=None):
+def unpickle_all(dir_path, prefix="", suffix="", limit=None):
     """
     Load and unpickle all files in a directory.
 
@@ -375,7 +388,7 @@ def unpickle_all(dir_path, prefix='', suffix='', limit=None):
         A list of unpickled objects.
 
     """
-    file_list = glob(dir_path + f'/{prefix}*{suffix}')
+    file_list = glob(dir_path + f"/{prefix}*{suffix}")
     sorted_list = sorted(file_list)
     if limit is not None:
         return [unpickle(i) for i in sorted_list[:limit] if os.path.isfile(i)]
@@ -414,7 +427,7 @@ def clear_directory(path):
     None
 
     """
-    for i in glob(path + '/*'):
+    for i in glob(path + "/*"):
         if os.path.isfile(i):
             os.remove(i)
         else:
@@ -448,7 +461,7 @@ def batch_list(list, n):
     [10]
     """
     for i in range(0, len(list), n):
-        yield list[i:i + n]
+        yield list[i : i + n]
 
 
 def scientific_notation_string(input):
@@ -473,7 +486,7 @@ def scientific_notation_string(input):
     >>> scientific_notation_string(0.000001)
     '1.00e-06'
     """
-    return '{:.2e}'.format(input)
+    return "{:.2e}".format(input)
 
 
 def delete_if_exists(path):

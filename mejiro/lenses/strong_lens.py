@@ -1,9 +1,9 @@
 from copy import deepcopy
 
-import astropy.cosmology
 import astropy.cosmology.units as cu
 import astropy.units as u
 import numpy as np
+from astropy.cosmology import default_cosmology
 from lenstronomy.Cosmo.lens_cosmo import LensCosmo
 from lenstronomy.Data.coord_transforms import Coordinates
 from lenstronomy.Data.pixel_grid import PixelGrid
@@ -248,7 +248,6 @@ class StrongLens:
             }
 
     # TODO method to calculate snr and update snr attribute based on the full image
-
     # TODO put final image as an attribute on this class?
 
     def get_lens_flux_cps(self, band):
@@ -423,7 +422,7 @@ class StrongLens:
         if 'cosmo' in kwargs_model:
             self.cosmo = kwargs_model['cosmo']
         else:
-            self.cosmo = astropy.cosmology.default_cosmology.get()
+            self.cosmo = default_cosmology.get()
         if 'z_source' in kwargs_model:
             self.z_source = kwargs_model['z_source']
         if 'z_source_convention' in kwargs_model:
