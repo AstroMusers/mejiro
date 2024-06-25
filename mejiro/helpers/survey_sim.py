@@ -21,7 +21,7 @@ csv_path = os.path.join(module_path, 'data', 'roman_spacecraft_and_instrument_pa
 roman_params = RomanParameters(csv_path)
 
 
-def get_snr(gglens, band, mask_mult=1):
+def get_snr(gglens, band, mask_mult=1, zodi_mult=1.4):
     total_image, _, source_surface_brightness = get_image(gglens, band)
 
     # calculate region for source surface brightness array and count signal
@@ -36,7 +36,7 @@ def get_snr(gglens, band, mask_mult=1):
     thermal_background = roman_params.get_thermal_bkg(band)
 
     # estimate and add background
-    estimated_background = (min_zodiacal_light * 1.5) + thermal_background  # in counts/pixel
+    estimated_background = (min_zodiacal_light * zodi_mult) + thermal_background  # in counts/pixel
     estimated_background *= np.ones(total_image.shape)
     total_image += estimated_background
 
