@@ -174,7 +174,7 @@ def run_slsim(tuple):
 
     # apply additional detectability criteria
     limit = None
-    detectable_gglenses = []
+    detectable_gglenses, snr_list = [], []
     for candidate in tqdm(lens_population, disable=not debugging):
         # 1. Einstein radius and Sersic radius
         _, kwargs_params = candidate.lenstronomy_kwargs(band='F106')
@@ -191,6 +191,7 @@ def run_slsim(tuple):
         snr, _ = survey_sim.get_snr(candidate, 'F106', mask_mult=0.5)
 
         if snr < 10:
+            snr_list.append(snr)
             filter_2 += 1
             if filter_2 <= num_samples:
                 filtered_sample['filter_2'].append(candidate)
@@ -216,7 +217,7 @@ def run_slsim(tuple):
 
     if debugging: print('Retrieving lenstronomy parameters...')
     dict_list = []
-    for gglens in tqdm(detectable_gglenses, disable=not debugging):
+    for gglens, snr in tqdm(zip(detectable_gglenses, snr_list), disable=not debugging, total=len(detectable_gglenses)):
 
         # get lens params from gglens object
         kwargs_model, kwargs_params = gglens.lenstronomy_kwargs(band='F106')
@@ -245,7 +246,7 @@ def run_slsim(tuple):
             'source_mags': source_mags,
             'deflector_stellar_mass': gglens.deflector_stellar_mass(),
             'deflector_velocity_dispersion': gglens.deflector_velocity_dispersion(),
-            'snr': gglens.snr
+            'snr': snr
         }
 
         dict_list.append(gglens_dict)
