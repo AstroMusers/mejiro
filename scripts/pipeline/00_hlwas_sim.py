@@ -102,16 +102,16 @@ def run_slsim(tuple):
 
     # define cuts on the intrinsic deflector and source populations (in addition to the skypy config file)
     kwargs_deflector_cut = {
-        'band': 'F106',
+        'band': survey_params['deflector_cut_band'],
         'band_max': survey_params['deflector_cut_band_max'],
-        'z_min': 0.01,
-        'z_max': 2.
+        'z_min': survey_params['deflector_z_min'],
+        'z_max': survey_params['deflector_z_max']
     }
     kwargs_source_cut = {
-        'band': 'F106',
+        'band': survey_params['source_cut_band'],
         'band_max': survey_params['source_cut_band_max'],
-        'z_min': 0.01,
-        'z_max': 5.
+        'z_min': survey_params['source_z_min'],
+        'z_max': survey_params['source_z_max']
     }
 
     # create the lens population
@@ -145,7 +145,7 @@ def run_slsim(tuple):
     if debugging: print(f'Computing SNRs for {len(total_lens_population)} lenses')
     snr_list = []
     for candidate in tqdm(total_lens_population, disable=not debugging):
-        snr, _ = survey_sim.get_snr(candidate, 'F106', mask_mult=0.5)
+        snr, _ = survey_sim.get_snr(candidate, survey_params['snr_band'], mask_mult=survey_params['snr_mask_multiplier'])
         snr_list.append(snr)
     np.save(os.path.join(output_dir, f'snr_list_{str(run).zfill(2)}.npy'), snr_list)
 
@@ -157,9 +157,9 @@ def run_slsim(tuple):
     # draw initial detectable lens population
     if debugging: print('Identifying detectable lenses...')
     kwargs_lens_detectable_cut = {
-        'min_image_separation': 0.2,
-        'max_image_separation': 10,
-        'mag_arc_limit': {'F106': 25}
+        'min_image_separation': survey_params['min_image_separation'],
+        'max_image_separation': survey_params['max_image_separation'],
+        'mag_arc_limit': {survey_params['mag_arc_limit_band']: survey_params['mag_arc_limit']}
     }
     lens_population = lens_pop.draw_population(kwargs_lens_cuts=kwargs_lens_detectable_cut)
     if debugging: print(f'Number of detectable lenses from first set of criteria: {len(lens_population)}')
@@ -177,20 +177,20 @@ def run_slsim(tuple):
     detectable_gglenses, snr_list = [], []
     for candidate in tqdm(lens_population, disable=not debugging):
         # 1. Einstein radius and Sersic radius
-        _, kwargs_params = candidate.lenstronomy_kwargs(band='F106')
-        lens_mag = candidate.deflector_magnitude(band='F106')
+        _, kwargs_params = candidate.lenstronomy_kwargs(band=survey_params['large_lens_band'])
+        lens_mag = candidate.deflector_magnitude(band=survey_params['large_lens_band'])
 
         if kwargs_params['kwargs_lens'][0]['theta_E'] < kwargs_params['kwargs_lens_light'][0][
-            'R_sersic'] and lens_mag < 15:
+            'R_sersic'] and lens_mag < survey_params['large_lens_mag_max']:
             filter_1 += 1
             if filter_1 <= num_samples:
                 filtered_sample['filter_1'].append(candidate)
             continue
 
         # 2. SNR
-        snr, _ = survey_sim.get_snr(candidate, 'F106', mask_mult=0.5)
+        snr, _ = survey_sim.get_snr(candidate, survey_params['snr_band'], mask_mult=survey_params['snr_mask_multiplier'])
 
-        if snr < 10:
+        if snr < survey_params['snr_threshold']:
             snr_list.append(snr)
             filter_2 += 1
             if filter_2 <= num_samples:
