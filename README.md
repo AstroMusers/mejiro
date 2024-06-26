@@ -41,7 +41,7 @@ instructions [here](https://outerspace.stsci.edu/display/PEN/Pandeia+Engine+Inst
 
 Then, execute the Jupyter notebooks in the `examples` directory in order.
 
-Note that this `hydra`-based configuration will be changed soon.
+> :warning: Note that this `hydra`-based configuration will be changed soon.
 
 # Pipeline Execution
 
