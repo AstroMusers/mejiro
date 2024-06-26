@@ -18,7 +18,6 @@ from lenstronomy.Util import util as len_util
 from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.preset_models import CDM
 
-from mejiro.lenses import lens_util
 from mejiro.utils import util
 
 
@@ -166,7 +165,7 @@ class StrongLens:
                    r_tidal=r_tidal,
                    cone_opening_angle_arcsec=subhalo_cone,
                    LOS_normalization=los_normalization,
-                   kwargs_cosmo=lens_util.get_kwargs_cosmo(self.cosmo))
+                   kwargs_cosmo=util.get_kwargs_cosmo(self.cosmo))
 
     def add_subhalos(self, realization, return_stats=False, suppress_output=True):
         # set cosmology by initializing pyHalo's Cosmology object, otherwise Colossus throws an error down the line
