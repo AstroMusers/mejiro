@@ -8,7 +8,8 @@ from lenstronomy.ImSim.image_model import ImageModel
 from lenstronomy.LensModel.lens_model import LensModel
 from lenstronomy.LightModel.light_model import LightModel
 from lenstronomy.SimulationAPI.ObservationConfig import Roman
-from lenstronomy.Util import data_util, util
+from lenstronomy.Util import data_util
+from lenstronomy.Util import util as len_util
 from tqdm import tqdm
 
 import mejiro
@@ -75,7 +76,7 @@ def get_image(gglens, band):
         'supersampling_factor': 1,
         'supersampling_convolution': False
     }
-    _, _, ra_at_xy_0, dec_at_xy_0, _, _, Mpix2coord, _ = util.make_grid_with_coordtransform(
+    _, _, ra_at_xy_0, dec_at_xy_0, _, _, Mpix2coord, _ = len_util.make_grid_with_coordtransform(
         numPix=num_pix,
         deltapix=0.11,
         subgrid_res=1,
