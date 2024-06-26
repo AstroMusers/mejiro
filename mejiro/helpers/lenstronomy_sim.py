@@ -49,31 +49,6 @@ def set_up_magnitudes(lens):
         kwargs_source_mag_g, kwargs_source_mag_r, kwargs_source_mag_i)
 
 
-# TODO this might be useful if magnitudes aren't defined in each band, to get a rough rgb image anyways
-# def set_up_magnitudes(lens):
-#     # r-band
-#     kwargs_lens_light_mag_r = lens.kwargs_lens_light
-#     kwargs_source_mag_r = lens.kwargs_source
-
-#     # g-band
-#     kwargs_lens_light_mag_g = deepcopy(kwargs_lens_light_mag_r)
-#     kwargs_lens_light_mag_g[0]['magnitude'] -= 1
-
-#     kwargs_source_mag_g = deepcopy(kwargs_source_mag_r)
-#     kwargs_source_mag_g[0]['magnitude'] -= 1
-
-#     # i-band
-#     kwargs_lens_light_mag_i = deepcopy(kwargs_lens_light_mag_r)
-#     kwargs_lens_light_mag_i[0]['magnitude'] += 1
-
-#     kwargs_source_mag_i = deepcopy(kwargs_source_mag_r)
-#     kwargs_source_mag_i[0]['magnitude'] += 1
-
-#     return [kwargs_lens_light_mag_g, kwargs_lens_light_mag_r, kwargs_lens_light_mag_i], [kwargs_source_mag_g,
-#                                                                                          kwargs_source_mag_r,
-#                                                                                          kwargs_source_mag_i]
-
-
 def simulate_rgb(lens, kwargs_lens_list, kwargs_source_list, config_list, side):
     if len(config_list) == 3:
         band_b, band_g, band_r = config_list
@@ -176,3 +151,24 @@ def hst_config_list():
 
 def euclid_config_list():
     return [Euclid.Euclid(band='VIS', psf_type='GAUSSIAN', coadd_years=2)]
+
+
+def get_roman_f106_image(lens, side=4.95):
+    Roman_r = Roman.Roman(band='F106', psf_type='PIXEL', survey_mode='wide_area')
+    kwargs_r_band = Roman_r.kwargs_single_band()
+
+    sim_r = SimAPI(numpix=int(side / 0.11), kwargs_single_band=kwargs_r_band, kwargs_model=lens.kwargs_model)
+
+    kwargs_numerics = {'point_source_supersampling_factor': 1, 'supersampling_factor': 3}
+    imSim_r = sim_r.image_model_class(kwargs_numerics)
+
+    kwargs_lens_light = [lens.kwargs_lens_light_dict['F106']]
+    kwargs_source = [lens.kwargs_source_dict['F106']]
+
+    kwargs_lens_light_r, kwargs_source_r, kwargs_ps_r = sim_r.magnitude2amplitude(kwargs_lens_light, kwargs_source)
+
+    image_r = imSim_r.image(lens.kwargs_lens, kwargs_source_r, kwargs_lens_light_r, kwargs_ps_r)
+
+    image_r += sim_r.noise_for_model(model=image_r)
+
+    return image_r
