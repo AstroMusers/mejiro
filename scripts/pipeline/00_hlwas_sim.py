@@ -188,7 +188,7 @@ def run_slsim(tuple):
             continue
 
         # 2. SNR
-        snr, _ = survey_sim.get_snr(candidate, survey_params['snr_band'], mask_mult=survey_params['snr_mask_multiplier'], zodi_mult=survey_params['zodi_multiplier'])
+        snr, _ = survey_sim.get_snr(candidate, survey_params['snr_band'], mask_mult=survey_params['snr_mask_multiplier'])
 
         if snr < survey_params['snr_threshold']:
             snr_list.append(snr)

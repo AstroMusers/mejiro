@@ -77,8 +77,8 @@ class StrongLens:
         # set lens_cosmo
         self._set_lens_cosmo()
 
-        # set place to store amp versions of kwargs_light dicts TODO can initialize as none?
-        self.kwargs_lens_light_amp_dict, self.kwargs_source_amp_dict = {}, {}
+        # set classes self.lens_light_model_class, self.source_model_class, self.lens_model_class
+        self._set_classes()
 
         # calculate comoving distances (in Gpc)
         self.d_l = redshift_to_comoving_distance(self.z_lens, self.cosmo)
@@ -92,7 +92,7 @@ class StrongLens:
         self.redshift_list_macro = deepcopy(self.lens_redshift_list)
 
         # additional fields to initialize
-        self.lens_model_class = None
+        self.kwargs_lens_light_amp_dict, self.kwargs_source_amp_dict = None, None
         self.oversample_factor = None
         self.side = None
         self.num_pix = None
@@ -252,12 +252,17 @@ class StrongLens:
     # TODO put final image as an attribute on this class?
 
     def get_lens_flux_cps(self, band):
+        if self.kwargs_lens_light_amp_dict is None:
+            self._convert_magnitudes_to_lenstronomy_amps(band)
         return self.lens_light_model_class.total_flux([self.kwargs_lens_light_amp_dict[band]])[0]
 
     def get_source_flux_cps(self, band):
+        if self.kwargs_source_amp_dict is None:
+            self._convert_magnitudes_to_lenstronomy_amps(band)
         return self.source_model_class.total_flux([self.kwargs_source_amp_dict[band]])[0]
 
     def get_total_flux_cps(self, band):
+        # TODO inefficient for this to call both methods if neither is initialized
         return self.get_lens_flux_cps(band) + self.get_source_flux_cps(band)
 
     def get_array(self, num_pix, side, band, kwargs_psf=None, return_pieces=False):
@@ -291,23 +296,9 @@ class StrongLens:
                                  lens_light_model_class=self.lens_light_model_class,
                                  kwargs_numerics=kwargs_numerics)
 
-        # convert brightnesses to lenstronomy amp from magnitudes
-        if band in ['F087', 'F146']:
-            survey_mode = 'microlensing'
-        else:
-            survey_mode = 'wide_area'
-        lenstronomy_roman_config = Roman(band=band.upper(),
-                                         psf_type='PIXEL',
-                                         survey_mode=survey_mode).kwargs_single_band()
-        magnitude_zero_point = lenstronomy_roman_config.get('magnitude_zero_point')
-
-        kwargs_lens_light_amp = self._get_amp_light_kwargs(magnitude_zero_point, self.lens_light_model_class,
-                                                           self.kwargs_lens_light_dict[band])
-        kwargs_source_amp = self._get_amp_light_kwargs(magnitude_zero_point, self.source_model_class,
-                                                       self.kwargs_source_dict[band])
-
-        self.kwargs_lens_light_amp_dict[band] = kwargs_lens_light_amp[0]
-        self.kwargs_source_amp_dict[band] = kwargs_source_amp[0]
+        self._convert_magnitudes_to_lenstronomy_amps(band)
+        kwargs_lens_light_amp = [self.kwargs_lens_light_amp_dict[band]]
+        kwargs_source_amp = [self.kwargs_source_amp_dict[band]]
 
         total_image = image_model.image(kwargs_lens=self.kwargs_lens,
                                         kwargs_source=kwargs_source_amp,
@@ -338,6 +329,24 @@ class StrongLens:
         lens_bands = list(lens_mags.keys())
         source_bands = list(source_mags.keys())
         assert lens_bands == source_bands, 'Pair of lens and source magnitudes not available for all filters.'
+
+    def _convert_magnitudes_to_lenstronomy_amps(self, band):
+        if band in ['F087', 'F146']:
+            survey_mode = 'microlensing'
+        else:
+            survey_mode = 'wide_area'
+        lenstronomy_roman_config = Roman(band=band.upper(),
+                                         psf_type='PIXEL',
+                                         survey_mode=survey_mode).kwargs_single_band()
+        magnitude_zero_point = lenstronomy_roman_config.get('magnitude_zero_point')
+
+        kwargs_lens_light_amp = self._get_amp_light_kwargs(magnitude_zero_point, self.lens_light_model_class,
+                                                           self.kwargs_lens_light_dict[band])
+        kwargs_source_amp = self._get_amp_light_kwargs(magnitude_zero_point, self.source_model_class,
+                                                       self.kwargs_source_dict[band])
+
+        self.kwargs_lens_light_amp_dict[band] = kwargs_lens_light_amp[0]
+        self.kwargs_source_amp_dict[band] = kwargs_source_amp[0]
 
     def _set_classes(self):
         self.lens_model_class = LensModel(self.lens_model_list)
