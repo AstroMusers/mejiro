@@ -274,7 +274,7 @@ def center_crop_image(array, shape):
     y, x = tuple[0], tuple[1]
     x_start = (x // 2) - (x_out // 2)
     y_start = (y // 2) - (y_out // 2)
-    return array[y_start : y_start + y_out, x_start : x_start + x_out]
+    return array[y_start: y_start + y_out, x_start: x_start + x_out]
 
 
 def hydra_to_dict(config):
@@ -461,7 +461,7 @@ def batch_list(list, n):
     [10]
     """
     for i in range(0, len(list), n):
-        yield list[i : i + n]
+        yield list[i: i + n]
 
 
 def scientific_notation_string(input):

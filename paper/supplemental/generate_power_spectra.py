@@ -3,18 +3,18 @@
 
 import os
 import sys
-
-import numpy as np
-import matplotlib.pyplot as plt
-import hydra
-from glob import glob
-from tqdm import tqdm
-from pyHalo.preset_models import CDM
-from lenstronomy.Util.correlation import power_spectrum_1d
-from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
-from galsim import InterpolatedImage, Image
 from copy import deepcopy
+from glob import glob
+
 import galsim
+import hydra
+import matplotlib.pyplot as plt
+import numpy as np
+from galsim import InterpolatedImage, Image
+from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
+from lenstronomy.Util.correlation import power_spectrum_1d
+from pyHalo.preset_models import CDM
+from tqdm import tqdm
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -283,7 +283,7 @@ def main(config):
 
             # convolve image with PSF
             webbpsf_interp = psf.get_webbpsf_psf(band, detector=detector, detector_position=detector_pos, oversample=5,
-                                             check_cache=True, suppress_output=False)
+                                                 check_cache=True, suppress_output=False)
             image = gs.convolve(interp, webbpsf_interp, 45)
 
             bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector=detector, exposure_time=146, num_pix=45)
@@ -302,7 +302,7 @@ def main(config):
             ps, r = power_spectrum_1d(final_array)
             np.save(os.path.join(save_dir, f'im_det_{detector}_{lens.uid}.npy'), final_array)
             np.save(os.path.join(save_dir, f'ps_det_{detector}_{lens.uid}.npy'), ps)
-        
+
         np.save(os.path.join(save_dir, 'r.npy'), r)
 
         # use Gaussian PSF

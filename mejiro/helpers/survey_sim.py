@@ -9,15 +9,14 @@ from lenstronomy.ImSim.image_model import ImageModel
 from lenstronomy.LensModel.lens_model import LensModel
 from lenstronomy.LightModel.light_model import LightModel
 from lenstronomy.SimulationAPI.ObservationConfig import Roman
-from lenstronomy.Util import data_util
-from lenstronomy.Util import util as len_util
 from lenstronomy.SimulationAPI.ObservationConfig import Roman
 from lenstronomy.SimulationAPI.sim_api import SimAPI
+from lenstronomy.Util import data_util
+from lenstronomy.Util import util as len_util
 from tqdm import tqdm
 
 import mejiro
 from mejiro.helpers.roman_params import RomanParameters
-
 
 # get Roman params
 module_path = os.path.dirname(mejiro.__file__)

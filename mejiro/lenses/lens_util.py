@@ -8,12 +8,12 @@ from lenstronomy.Data.coord_transforms import Coordinates
 from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
 from lenstronomy.Util import util as lenstronomy_util
 
+# use mejiro plotting style
+import mejiro
 from mejiro.helpers import color
 from mejiro.lenses.strong_lens import StrongLens
 from mejiro.utils import util
 
-# use mejiro plotting style
-import mejiro
 module_path = os.path.dirname(mejiro.__file__)
 plt.style.use(f'{module_path}/mplstyle/science.mplstyle')
 
@@ -22,7 +22,7 @@ def overplot_subhalos(lens, num_pix=91, side=10.01, band='F106', figsize=7):
     # make sure there are subhalos on this StrongLens
     if lens.realization is None:
         raise ValueError('No subhalos have been added to this StrongLens object.')
-    
+
     # get array
     array = lens.get_array(num_pix, side, band=band)
 

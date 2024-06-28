@@ -32,7 +32,7 @@ class RomanParameters:
         count_rate = self.df.loc[self.df['Name'] == f'WFI_Count_Rate_Zody_Minimum_{band.upper()}']['Value'].to_string(
             index=False)
         return float(count_rate)
-    
+
     # retrieved 25 June 2024 from https://outerspace.stsci.edu/pages/viewpage.action?spaceKey=ISWG&title=Roman+WFI+and+Observatory+Performance
     psf_fwhm = {
         'F062': 0.058,
@@ -50,7 +50,7 @@ class RomanParameters:
         Return PSF FWHM in given band in arcsec. Note from STScI: "PSF FWHM in arcseconds simulated for a detector near the center of the WFI FOV using an input spectrum for a K0V type star."
         """
         return self.psf_fwhm[band.upper()]
-    
+
     # retrieved 25 June 2024 from https://roman.gsfc.nasa.gov/science/WFI_technical.html
     thermal_backgrounds = {
         'F062': 0.,
@@ -68,7 +68,7 @@ class RomanParameters:
         Return internal thermal background in given band in counts/sec/pixel
         """
         return self.thermal_backgrounds[band.upper()]
-    
+
     # retrieved 25 June 2024 from https://iopscience.iop.org/article/10.3847/1538-4357/aac08b/pdf
     # TODO these numbers are likely outdated, so recalculate based on latest effective area curves
     ab_zeropoints = {

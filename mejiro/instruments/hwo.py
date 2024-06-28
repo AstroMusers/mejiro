@@ -13,7 +13,7 @@ class HWO:
         self.dark_current = [0.0005, 0.0005, 0.001, 0.001, 0.001, 0.001, 0.001, 0.002, 0.002, 0.002]
         self.read_noise = [3., 3., 3., 3., 3., 3., 3., 4., 4., 4.]
         self.pivotwave = [155., 228., 360., 440., 550., 640., 790., 1260., 1600., 2220.]
-        self.bandnames = ['FUV', 'NUV', 'U','B','V','R','I', 'J', 'H', 'K'] 
+        self.bandnames = ['FUV', 'NUV', 'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K']
         self.ab_zeropoint = [35548., 24166., 15305., 12523., 10018., 8609., 6975., 4373., 3444., 2482.]
         self.aperture_correction = [1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]
         self.bandpass_r = [5., 5., 5., 5., 5., 5., 5., 5., 5., 5.]
@@ -36,9 +36,9 @@ class HWO:
 
         # calculate zeropoint magnitude
         zp_mag = (-1 / 0.4) * np.log10(4 / (np.pi * flux_zp * (aperture ** 2) * bandwidth))
-        
+
         return zp_mag
-    
+
     def get_noise(self, band):
         """
         Estimate noise per pixel per second in given band. For now, sum of dark current and read noise.
@@ -49,17 +49,17 @@ class HWO:
         read_noise = self.read_noise[index]
 
         return dark_current + read_noise
-    
+
     def get_dark_current(self, band):
         index = self._get_index(band)
 
         return self.dark_current[index]
-    
+
     def get_read_noise(self, band):
         index = self._get_index(band)
 
         return self.read_noise[index]
-    
+
     def get_bands(self):
         return self.camera.recover('bandnames')
 
@@ -74,5 +74,5 @@ class HWO:
         bands = self.camera.bandnames
         if band not in bands:
             raise ValueError(f"Band {band} not in {bands}")
-        
+
         return bands.index(band)
