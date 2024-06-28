@@ -259,6 +259,10 @@ def run_slsim(tuple):
     detectable_pop_csv = os.path.join(output_dir, f'detectable_pop_{str(run).zfill(2)}.csv')
     survey_sim.write_lens_pop_to_csv(detectable_pop_csv, detectable_gglenses, bands)
 
+    detectable_gglenses_pickle_path = os.path.join(output_dir, f'detectable_gglenses_{str(run).zfill(2)}.pkl')
+    if debugging: print(f'Pickling detectable gglenses to {detectable_gglenses_pickle_path}')
+    util.pickle(detectable_gglenses_pickle_path, detectable_gglenses)
+
 
 if __name__ == '__main__':
     main()
