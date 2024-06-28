@@ -60,7 +60,7 @@ def get_snr(gglens, band, mask_mult=1, zodi_mult=1.5, side=4.95):
 def get_image(gglens, band, side=4.95):
     kwargs_model, kwargs_params = gglens.lenstronomy_kwargs(band=band)
 
-    Roman_r = Roman.Roman(band='F106', psf_type='PIXEL', survey_mode='wide_area')
+    Roman_r = Roman.Roman(band=band.upper(), psf_type='PIXEL', survey_mode='wide_area')
     Roman_r.obs['num_exposures'] = 1  # set number of exposures to 1 cf. 96
     kwargs_r_band = Roman_r.kwargs_single_band()
 

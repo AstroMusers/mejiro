@@ -1,6 +1,42 @@
+from copy import deepcopy
+
 import numpy as np
 from lenstronomy.SimulationAPI.ObservationConfig import HST, LSST, Roman, DES, Euclid
 from lenstronomy.SimulationAPI.sim_api import SimAPI
+
+
+def get_roman_image(lens, band, side=4.95):
+    kwargs_model = lens.kwargs_model
+    kwargs_params = lens.kwargs_params
+
+    Roman_r = Roman.Roman(band=band.upper(), psf_type='PIXEL', survey_mode='wide_area')
+    Roman_r.obs['num_exposures'] = 1  # set number of exposures to 1 cf. 96
+    kwargs_r_band = Roman_r.kwargs_single_band()
+
+    sim_r = SimAPI(numpix=int(side / 0.11), kwargs_single_band=kwargs_r_band, kwargs_model=kwargs_model)
+
+    kwargs_numerics = {'point_source_supersampling_factor': 1, 'supersampling_factor': 3}
+    imSim_r = sim_r.image_model_class(kwargs_numerics)
+
+    kwargs_lens = kwargs_params['kwargs_lens']
+    kwargs_lens_light = kwargs_params['kwargs_lens_light']
+    kwargs_source = kwargs_params['kwargs_source']
+
+    kwargs_lens_light_r, kwargs_source_r, _ = sim_r.magnitude2amplitude(kwargs_lens_light, kwargs_source)
+
+    # set lens light to 0 for source image
+    source_kwargs_lens_light_r = deepcopy(kwargs_lens_light_r)
+    source_kwargs_lens_light_r[0]['amp'] = 0
+    source_surface_brightness = imSim_r.image(kwargs_lens, kwargs_source_r, source_kwargs_lens_light_r, None)
+
+    # set source light to 0 for lens image
+    lens_kwargs_source_r = deepcopy(kwargs_source_r)
+    lens_kwargs_source_r[0]['amp'] = 0
+    lens_surface_brightness = imSim_r.image(kwargs_lens, lens_kwargs_source_r, kwargs_lens_light_r, None)
+
+    total_image = imSim_r.image(kwargs_lens, kwargs_source_r, kwargs_lens_light_r, None)
+
+    return total_image, lens_surface_brightness, source_surface_brightness, sim_r
 
 
 def get_roman_band_kwargs(band):
