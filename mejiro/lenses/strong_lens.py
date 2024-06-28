@@ -92,7 +92,7 @@ class StrongLens:
         self.redshift_list_macro = deepcopy(self.lens_redshift_list)
 
         # additional fields to initialize
-        self.kwargs_lens_light_amp_dict, self.kwargs_source_amp_dict = None, None
+        self.kwargs_lens_light_amp_dict, self.kwargs_source_amp_dict = {}, {}
         self.oversample_factor = None
         self.side = None
         self.num_pix = None
@@ -252,12 +252,12 @@ class StrongLens:
     # TODO put final image as an attribute on this class?
 
     def get_lens_flux_cps(self, band):
-        if self.kwargs_lens_light_amp_dict is None:
+        if not self.kwargs_lens_light_amp_dict:
             self._convert_magnitudes_to_lenstronomy_amps(band)
         return self.lens_light_model_class.total_flux([self.kwargs_lens_light_amp_dict[band]])[0]
 
     def get_source_flux_cps(self, band):
-        if self.kwargs_source_amp_dict is None:
+        if not self.kwargs_source_amp_dict:
             self._convert_magnitudes_to_lenstronomy_amps(band)
         return self.source_model_class.total_flux([self.kwargs_source_amp_dict[band]])[0]
 
