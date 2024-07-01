@@ -145,7 +145,8 @@ def run_slsim(tuple):
     if debugging: print(f'Computing SNRs for {len(total_lens_population)} lenses')
     snr_list = []
     for candidate in tqdm(total_lens_population, disable=not debugging):
-        snr, _ = survey_sim.get_snr(candidate, survey_params['snr_band'],
+        snr, _ = survey_sim.get_snr(candidate, 
+                                    survey_params['snr_band'],
                                     mask_mult=survey_params['snr_mask_multiplier'],
                                     zodi_mult=survey_params['zodi_multiplier'])
         snr_list.append(snr)
