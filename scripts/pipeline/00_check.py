@@ -54,19 +54,13 @@ def main(config):
     pipeline_params = util.hydra_to_dict(config.pipeline)
     runs = pipeline_params['survey_sim_runs']
 
-    deflector_cut_band_max_list = [21, 23, 25, 27]
-    source_cut_band_max_list = [22, 24, 26, 28]
+    deflector_source_pairs = [(21, 22), (21, 23), (21, 24), (23, 24), (23, 25), (23, 26), (24, 25), (24, 26), (24, 27), (25, 26), (25, 27), (25, 28), (26, 27), (16, 28), (26, 29), (27, 28), (27, 29), (27, 30)]
 
-    total_runs = len(deflector_cut_band_max_list) * len(source_cut_band_max_list)
-
-    for i, deflector_cut in enumerate(deflector_cut_band_max_list):
-        for j, source_cut in enumerate(source_cut_band_max_list):
-            print(f'Run {(len(source_cut_band_max_list) * i) + (j + 1)} of {total_runs}')
-
+    for deflector_cut, source_cut in tqdm(deflector_source_pairs):
             survey_params['deflector_cut_band_max'] = deflector_cut
             survey_params['source_cut_band_max'] = source_cut
 
-            output_dir = os.path.join(config.machine.dir_00, f'deflector_{deflector_cut}_source_{source_cut}')
+            output_dir = os.path.join(config.machine.data_dir, 'survey_params', f'deflector_{deflector_cut}_source_{source_cut}')
             util.create_directory_if_not_exists(output_dir)
             util.clear_directory(output_dir)
             if debugging: print(f'Set up output directory {output_dir}')
