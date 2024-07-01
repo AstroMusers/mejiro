@@ -126,11 +126,6 @@ def run_slsim(tuple):
                        cosmo=cosmo)
     if debugging: print('Defined galaxy population')
 
-    # num_lenses = lens_pop.deflector_number()
-    # num_sources = lens_pop.source_number()
-    # print(f'Number of deflectors: {num_lenses}, scaled to HLWAS ({area_hlwas} sq deg): {int((area_hlwas / survey_area) * num_lenses)}')
-    # print(f'Number of sources: {num_sources}, scaled to HLWAS ({area_hlwas} sq deg): {int((area_hlwas / survey_area) * num_sources)}')
-
     # draw the total lens population
     if debugging: print('Identifying lenses...')
     kwargs_lens_total_cut = {
