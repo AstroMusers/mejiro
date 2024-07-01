@@ -81,9 +81,11 @@ def check_halo_image_alignment(lens, realization, halo_mass=1e8, halo_sort_massi
                 if return_halo:
                     return True, halo
                 else:
-                    return True, None
-
-    return False, None
+                    return True
+    if return_halo:
+        return False, None
+    else:
+        return False
 
 
 def slsim_lens_to_mejiro(slsim_lens, bands, cosmo, snr=None, uid=None):

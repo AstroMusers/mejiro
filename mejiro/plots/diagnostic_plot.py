@@ -4,6 +4,45 @@ from matplotlib import colors
 from scipy.fft import fft2
 
 from mejiro.plots import plot_util
+from mejiro.lenses import lens_util
+
+
+def power_spectrum_check(array_list, lenses, titles, save_path, oversampled):
+    if type(array_list[0]) is not np.ndarray:
+        array_list = [i.array for i in array_list]
+
+    f, ax = plt.subplots(2, 4, figsize=(12, 6))
+    for i, array in enumerate(array_list):
+        axis = ax[0][i].imshow(np.log10(array))
+        ax[0][i].set_title(titles[i])
+        ax[0][i].axis('off')
+
+    cbar = f.colorbar(axis, ax=ax[0])
+    cbar.set_label('log(Counts/sec)', rotation=90)
+
+    res_array = [array_list[3] - array_list[i] for i in range(4)]
+    v = plot_util.get_v(res_array)
+    for i in range(4):
+        axis = ax[1][i].imshow(array_list[3] - array_list[i], cmap='bwr', vmin=-v, vmax=v)
+        ax[1][i].set_axis_off()
+
+    cbar = f.colorbar(axis, ax=ax[1])
+    cbar.set_label('Counts/sec', rotation=90)
+
+    for i, lens in enumerate(lenses):
+        realization = lens.realization
+        if realization is not None:
+            for halo in realization.halos:
+                if halo.mass > 1e8:
+                    if oversampled:
+                        coords = lens_util.get_coords(45 * 5, delta_pix=0.11 / 5)
+                    else:
+                        coords = lens_util.get_coords(45, delta_pix=0.11)
+                    ax[1][i].scatter(*coords.map_coord2pix(halo.x, halo.y), s=100, facecolors='none',
+                                        edgecolors='black')
+
+    plt.savefig(save_path)
+    plt.close()
 
 
 def residual_compare(ax, array_list, linear_width, title_list=None):

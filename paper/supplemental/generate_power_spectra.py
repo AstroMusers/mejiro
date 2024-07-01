@@ -6,11 +6,10 @@ import sys
 from copy import deepcopy
 from glob import glob
 
-import galsim
 import hydra
 import matplotlib.pyplot as plt
 import numpy as np
-from galsim import InterpolatedImage, Image
+from galsim import InterpolatedImage, Image, UniformDeviate
 from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
 from lenstronomy.Util.correlation import power_spectrum_1d
 from pyHalo.preset_models import CDM
@@ -19,20 +18,16 @@ from tqdm import tqdm
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
 def main(config):
-    repo_dir = config.machine.repo_dir
-    data_dir = config.machine.data_dir
-    array_dir = os.path.join(data_dir, 'output')
-
     # enable use of local modules
-    if repo_dir not in sys.path:
-        sys.path.append(repo_dir)
+    if config.machine.repo_dir not in sys.path:
+        sys.path.append(config.machine.repo_dir)
     from mejiro.utils import util
     from mejiro.helpers import gs, psf
     from mejiro.lenses import lens_util
     from mejiro.plots import plot_util
 
-    # save_dir = os.path.join(array_dir, 'power_spectra_dev')
-    save_dir = os.path.join(array_dir, 'power_spectra')
+    # set top directory for all output of this script
+    save_dir = os.path.join(config.machine.data_dir, 'output', 'power_spectra')
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
 
@@ -97,7 +92,7 @@ def main(config):
             ax[0][i].axis('off')
 
         cbar = f.colorbar(axis, ax=ax[0])
-        cbar.set_label(r'$\log($Counts/sec$)$', rotation=90)
+        cbar.set_label('log(Counts/sec)', rotation=90)
 
         res_array = [array_list[3] - array_list[i] for i in range(4)]
         v = plot_util.get_v(res_array)
@@ -184,9 +179,9 @@ def main(config):
         cut_6 = cut_7.join(smol)
 
         # TODO do I need these?
-        util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_8.pkl'), cut_8)
-        util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_7.pkl'), cut_7)
-        util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_6.pkl'), cut_6)
+        # util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_8.pkl'), cut_8)
+        # util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_7.pkl'), cut_7)
+        # util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_6.pkl'), cut_6)
 
         lens_cut_6 = deepcopy(lens)
         lens_cut_7 = deepcopy(lens)
@@ -204,7 +199,7 @@ def main(config):
         plot(models, titles, os.path.join(image_save_dir, f'{lens.uid}_00_models.png'), oversampled=True)
 
         # create galsim rng
-        rng = galsim.UniformDeviate()
+        rng = UniformDeviate()
 
         # calculate sky backgrounds for each band
         wcs_dict = gs.get_wcs(30, -30, date=None)
