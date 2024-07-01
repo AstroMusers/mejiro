@@ -24,8 +24,13 @@ csv_path = os.path.join(module_path, 'data', 'roman_spacecraft_and_instrument_pa
 roman_params = RomanParameters(csv_path)
 
 
-def get_snr(gglens, band, mask_mult=1., zodi_mult=1.5, side=4.95):
-    total_image, _, source_surface_brightness, sim_api = get_image(gglens, band, side=side)
+def get_snr(gglens, band, mask_mult=1., zodi_mult=1.5, side=4.95, **kwargs):
+    if 'total_image' and 'source_surface_brightness' and 'sim_api' in kwargs:
+        total_image = kwargs['total_image']
+        source_surface_brightness = kwargs['source_surface_brightness']
+        sim_api = kwargs['sim_api']
+    else:
+        total_image, _, source_surface_brightness, sim_api = get_image(gglens, band, side=side)
 
     # calculate region for source surface brightness array and count signal
     stdev = np.std(source_surface_brightness)
