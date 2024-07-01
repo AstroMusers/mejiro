@@ -21,7 +21,7 @@ def main(config):
     start = time.time()
 
     # debugging mode will print statements to console
-    debugging = False
+    debugging = True
 
     # enable use of local packages
     repo_dir = config.machine.repo_dir
