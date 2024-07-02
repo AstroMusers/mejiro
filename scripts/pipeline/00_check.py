@@ -21,7 +21,7 @@ def main(config):
     start = time.time()
 
     # debugging mode will print statements to console
-    debugging = True
+    debugging = False
 
     # enable use of local packages
     repo_dir = config.machine.repo_dir
@@ -54,7 +54,7 @@ def main(config):
     pipeline_params = util.hydra_to_dict(config.pipeline)
     runs = pipeline_params['survey_sim_runs']
 
-    deflector_source_pairs = [(21, 22), (21, 23), (21, 24), (23, 24), (23, 25), (23, 26), (24, 25), (24, 26), (24, 27), (25, 26), (25, 27), (25, 28), (26, 27), (16, 28), (26, 29), (27, 28), (27, 29), (27, 30)]
+    deflector_source_pairs = [(21, 22), (21, 23), (21, 24), (23, 24), (23, 25), (23, 26), (24, 25), (24, 26), (24, 27), (25, 26), (25, 27), (25, 28), (26, 27), (26, 28), (26, 29), (27, 28), (27, 29), (27, 30)]
 
     for deflector_cut, source_cut in tqdm(deflector_source_pairs):
             survey_params['deflector_cut_band_max'] = deflector_cut

@@ -140,8 +140,8 @@ def run_slsim(tuple):
     if debugging: print(f'Computing SNRs for {len(total_lens_population)} lenses')
     snr_list = []
     for candidate in tqdm(total_lens_population, disable=not debugging):
-        snr, _ = survey_sim.get_snr(candidate, 
-                                    survey_params['snr_band'],
+        snr, _ = survey_sim.get_snr(gglens=candidate, 
+                                    band=survey_params['snr_band'],
                                     mask_mult=survey_params['snr_mask_multiplier'],
                                     zodi_mult=survey_params['zodi_multiplier'])
         snr_list.append(snr)
@@ -157,7 +157,7 @@ def run_slsim(tuple):
     kwargs_lens_detectable_cut = {
         'min_image_separation': survey_params['min_image_separation'],
         'max_image_separation': survey_params['max_image_separation'],
-        'mag_arc_limit': {survey_params['mag_arc_limit_band']: survey_params['mag_arc_limit']}
+        'mag_arc_limit': None # {survey_params['mag_arc_limit_band']: survey_params['mag_arc_limit']} TODO UPDATE
     }
     lens_population = lens_pop.draw_population(kwargs_lens_cuts=kwargs_lens_detectable_cut)
     if debugging: print(f'Number of detectable lenses from first set of criteria: {len(lens_population)}')
@@ -186,8 +186,10 @@ def run_slsim(tuple):
             continue
 
         # 2. SNR
-        snr, _ = survey_sim.get_snr(candidate, survey_params['snr_band'],
-                                    mask_mult=survey_params['snr_mask_multiplier'])
+        snr, _ = survey_sim.get_snr(gglens=candidate, 
+                                    band=survey_params['snr_band'],
+                                    mask_mult=survey_params['snr_mask_multiplier'],
+                                    zodi_mult=survey_params['zodi_multiplier'])
 
         if snr < survey_params['snr_threshold']:
             snr_list.append(snr)

@@ -46,7 +46,7 @@ def get_snr(gglens, band, mask_mult=1., zodi_mult=1.5, side=4.95, **kwargs):
     # estimate and add background
     estimated_background = (min_zodiacal_light * zodi_mult) + thermal_background  # in counts/pixel
     estimated_background *= np.ones(total_image.shape)
-    total_image += estimated_background
+    # total_image += estimated_background TODO UPDATE
 
     # add noise
     noise = sim_api.noise_for_model(model=total_image)
