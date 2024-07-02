@@ -1,6 +1,8 @@
+import datetime
 import multiprocessing
 import os
 import sys
+import time
 from copy import deepcopy
 from multiprocessing import Pool
 
@@ -15,6 +17,8 @@ from tqdm import tqdm
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
 def main(config):
+    start = time.time()
+
     # enable use of local packages
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
@@ -36,8 +40,11 @@ def main(config):
     lens_list = util.unpickle(pickled_lens_list)
     print(f'Collected {len(lens_list)} lenses.')
 
+    # debugging?
+    debugging = False
+
     # require >10^8 M_\odot subhalo alignment with image?
-    require_alignment = True
+    require_alignment = False
 
     # set subhalo and imaging params
     subhalo_params = {
@@ -53,9 +60,9 @@ def main(config):
         'side': 4.95
     }
 
-    print('Generating power spectra...')
+    if debugging: print('Generating power spectra...')
     # tuple the parameters
-    tuple_list = [(lens, subhalo_params, imaging_params, require_alignment, save_dir, image_save_dir) for lens in lens_list]
+    tuple_list = [(lens, subhalo_params, imaging_params, require_alignment, save_dir, image_save_dir, debugging) for lens in lens_list]
 
     # split up the lenses into batches based on core count
     count = len(lens_list)
@@ -64,7 +71,7 @@ def main(config):
     process_count -= 24
     if count < process_count:
         process_count = count
-    print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
+    if debugging: print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     # batch
     generator = util.batch_list(tuple_list, process_count)
@@ -75,16 +82,22 @@ def main(config):
         pool = Pool(processes=process_count)
         pool.map(generate_power_spectra, batch)
 
-    print('Done.')
+    stop = time.time()
+    execution_time = str(datetime.timedelta(seconds=round(stop - start)))
+    print(f'Execution time: {execution_time}')
+
+    execution_time_per_lens = str(datetime.timedelta(seconds=round((stop - start) / len(lens_list))))
+    print(f'Execution time per lens: {execution_time_per_lens}')
 
 
 def generate_power_spectra(tuple):
     from mejiro.helpers import gs, psf
     from mejiro.lenses import lens_util
     from mejiro.plots import diagnostic_plot, plot_util
+    from mejiro.utils import util
 
     # unpack tuple
-    (lens, subhalo_params, imaging_params, require_alignment, save_dir, image_save_dir) = tuple
+    (lens, subhalo_params, imaging_params, require_alignment, save_dir, image_save_dir, debugging) = tuple
     r_tidal = subhalo_params['r_tidal']
     sigma_sub = subhalo_params['sigma_sub']
     subhalo_cone = subhalo_params['subhalo_cone']
@@ -94,7 +107,7 @@ def generate_power_spectra(tuple):
     num_pix = imaging_params['num_pix']
     side = imaging_params['side']
 
-    print(f'Processing lens {lens.uid}...')
+    if debugging: print(f'Processing lens {lens.uid}...')
 
     lens._set_classes()
 
@@ -118,7 +131,7 @@ def generate_power_spectra(tuple):
                         LOS_normalization=los_normalization)
             cut_8_good = lens_util.check_halo_image_alignment(lens, cut_8, halo_mass=1e8, halo_sort_massive_first=True, return_halo=False)
             i += 1
-        print(f'Generated cut_8 population after {i} iterations.')
+        if debugging: print(f'Generated cut_8 population after {i} iterations.')
     else:
         cut_8 = CDM(z_lens,
                     z_source,
@@ -153,10 +166,9 @@ def generate_power_spectra(tuple):
     cut_7 = cut_8.join(med)
     cut_6 = cut_7.join(smol)
 
-    # TODO do I need these?
-    # util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_8.pkl'), cut_8)
-    # util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_7.pkl'), cut_7)
-    # util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_6.pkl'), cut_6)
+    util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_8.pkl'), cut_8)
+    util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_7.pkl'), cut_7)
+    util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_6.pkl'), cut_6)
 
     lens_cut_6 = deepcopy(lens)
     lens_cut_7 = deepcopy(lens)
@@ -281,7 +293,7 @@ def generate_power_spectra(tuple):
     plt.savefig(os.path.join(image_save_dir, f'{lens.uid}_03_psf_compare.png'))
     plt.close()
 
-    print(f'Finished lens {lens.uid}.')
+    if debugging: print(f'Finished lens {lens.uid}.')
 
 
 if __name__ == '__main__':

@@ -178,10 +178,9 @@ def main(config):
         cut_7 = cut_8.join(med)
         cut_6 = cut_7.join(smol)
 
-        # TODO do I need these?
-        # util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_8.pkl'), cut_8)
-        # util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_7.pkl'), cut_7)
-        # util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_6.pkl'), cut_6)
+        util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_8.pkl'), cut_8)
+        util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_7.pkl'), cut_7)
+        util.pickle(os.path.join(save_dir, f'realization_{lens.uid}_cut_6.pkl'), cut_6)
 
         lens_cut_6 = deepcopy(lens)
         lens_cut_7 = deepcopy(lens)
