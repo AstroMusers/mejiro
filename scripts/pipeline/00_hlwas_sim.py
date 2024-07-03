@@ -191,7 +191,7 @@ def run_slsim(tuple):
                                     mask_mult=survey_params['snr_mask_multiplier'],
                                     zodi_mult=survey_params['zodi_multiplier'])
 
-        if snr < survey_params['snr_threshold']:
+        if snr < 3:  # TODO UPDATE if snr < survey_params['snr_threshold']:
             snr_list.append(snr)
             filter_2 += 1
             if filter_2 <= num_samples:
