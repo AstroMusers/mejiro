@@ -2,6 +2,7 @@ import os
 import sys
 
 import hydra
+from hydra.core.hydra_config import HydraConfig
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -12,13 +13,17 @@ def main(config):
     from mejiro.utils import util
     from mejiro.helpers import psf
 
-    os.environ['WEBBPSF_PATH'] = '/data/scratch/btwedig/STScI/ref_data/webbpsf-data'
+    machine = HydraConfig.get().runtime.choices.machine
+    if machine == 'hpc':
+        os.environ['WEBBPSF_PATH'] = '/data/bwedig/STScI/webbpsf-data'
+    elif machine == 'uzay':
+        os.environ['WEBBPSF_PATH'] = '/data/scratch/btwedig/STScI/ref_data/webbpsf-data'
 
     # set directory for all output of this script
     save_dir = os.path.join(config.machine.repo_dir, 'mejiro', 'data', 'cached_psfs')
     util.create_directory_if_not_exists(save_dir)
 
-    oversample = 5
+    oversample = 1
     bands = ['F106', 'F129', 'F184']
     detectors = [4, 1, 9, 17]
     detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
