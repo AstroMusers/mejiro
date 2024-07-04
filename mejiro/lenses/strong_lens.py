@@ -252,14 +252,20 @@ class StrongLens:
     # TODO put final image as an attribute on this class?
 
     def get_lens_flux_cps(self, band):
-        if not self.kwargs_lens_light_amp_dict:
+        if band not in self.kwargs_lens_light_amp_dict.keys():
             self._convert_magnitudes_to_lenstronomy_amps(band)
-        return self.lens_light_model_class.total_flux([self.kwargs_lens_light_amp_dict[band]])[0]
+        
+        lens_flux_cps = self.lens_light_model_class.total_flux([self.kwargs_lens_light_amp_dict[band]])
+        lens_flux_cps_total = np.sum(lens_flux_cps)
+        return lens_flux_cps_total
 
     def get_source_flux_cps(self, band):
-        if not self.kwargs_source_amp_dict:
+        if band not in self.kwargs_source_amp_dict.keys():
             self._convert_magnitudes_to_lenstronomy_amps(band)
-        return self.source_model_class.total_flux([self.kwargs_source_amp_dict[band]])[0]
+        
+        source_flux_cps = self.source_model_class.total_flux([self.kwargs_source_amp_dict[band]])
+        source_flux_cps_total = np.sum(source_flux_cps)
+        return source_flux_cps_total
 
     def get_total_flux_cps(self, band):
         # TODO inefficient for this to call both methods if neither is initialized
