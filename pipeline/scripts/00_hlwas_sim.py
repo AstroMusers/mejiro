@@ -232,7 +232,7 @@ def run_slsim(tuple):
         lens_mags, source_mags = {}, {}
         for band in bands:
             lens_mags[band] = gglens.deflector_magnitude(band)
-            source_mags[band] = gglens.extended_source_magnitude(band, lensed=True)
+            source_mags[band] = gglens.extended_source_magnitude(band, lensed=False)
 
         z_lens, z_source = gglens.deflector_redshift, gglens.source_redshift
         kwargs_lens = kwargs_params['kwargs_lens']

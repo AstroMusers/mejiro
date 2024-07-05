@@ -41,19 +41,6 @@ def main(config):
         print('Configured Roman filters. Loaded:')
         pprint(roman_filters[:8])
 
-    # kwargs_deflector_cut = {
-    #     'band': survey_params['deflector_cut_band'],
-    #     'band_max': survey_params['deflector_cut_band_max'],
-    #     'z_min': survey_params['deflector_z_min'],
-    #     'z_max': survey_params['deflector_z_max']
-    # }
-    # kwargs_source_cut = {
-    #     'band': survey_params['source_cut_band'],
-    #     'band_max': survey_params['source_cut_band_max'],
-    #     'z_min': survey_params['source_z_min'],
-    #     'z_max': survey_params['source_z_max']
-    # }
-
     # tuple the parameters
     survey_params = util.hydra_to_dict(config.survey)
     pipeline_params = util.hydra_to_dict(config.pipeline)
@@ -78,7 +65,7 @@ def main(config):
             count = runs
             if count < process_count:
                 process_count = count
-            print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
+            if debugging: print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
             # batch
             generator = util.batch_list(tuple_list, process_count)
