@@ -13,6 +13,8 @@ import speclite
 from astropy.cosmology import default_cosmology
 from astropy.units import Quantity
 from slsim.lens_pop import LensPop
+from slsim.Observations.roman_speclite import configure_roman_filters
+from slsim.Observations.roman_speclite import filter_names
 from tqdm import tqdm
 
 
@@ -30,11 +32,14 @@ def main(config):
     from mejiro.utils import util
 
     # load Roman WFI filters
-    roman_filters = sorted(glob(os.path.join(repo_dir, 'mejiro', 'data', 'avg_filter_responses', 'Roman-*.ecsv')))
+    configure_roman_filters()
+    roman_filters = filter_names()
+    roman_filters.sort()
+    # roman_filters = sorted(glob(os.path.join(repo_dir, 'mejiro', 'data', 'avg_filter_responses', 'Roman-*.ecsv')))
     _ = speclite.filters.load_filters(*roman_filters[:8])
     if debugging:
         print('Configured Roman filters. Loaded:')
-        pprint(roman_filters)
+        pprint(roman_filters[:8])
 
     # kwargs_deflector_cut = {
     #     'band': survey_params['deflector_cut_band'],
@@ -109,8 +114,11 @@ def run_slsim(tuple):
     config_file = util.load_skypy_config(skypy_config)  # read skypy config file to get survey area
     survey_area = float(config_file['fsky'][:-5])
     sky_area = Quantity(value=survey_area, unit='deg2')
-    cosmo = default_cosmology.get()
+    from astropy.cosmology import FlatLambdaCDM
+    # cosmo = default_cosmology.get() TODO UPDATE
+    cosmo = FlatLambdaCDM(H0=70, Om0=0.3)
     bands = pipeline_params['bands']
+    if debugging: print(f'Surveying {sky_area.value} deg2 with bands {bands}')
 
     # define cuts on the intrinsic deflector and source populations (in addition to the skypy config file)
     kwargs_deflector_cut = {
