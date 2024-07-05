@@ -13,6 +13,8 @@ import speclite
 from astropy.cosmology import default_cosmology
 from astropy.units import Quantity
 from slsim.lens_pop import LensPop
+from slsim.Observations.roman_speclite import configure_roman_filters
+from slsim.Observations.roman_speclite import filter_names
 from tqdm import tqdm
 
 
@@ -36,10 +38,10 @@ def main(config):
     if debugging: print(f'Set up output directory {output_dir}')
 
     # load Roman WFI filters
-    # configure_roman_filters()
-    # roman_filters = filter_names()
-    # roman_filters.sort()
-    roman_filters = sorted(glob(os.path.join(repo_dir, 'mejiro', 'data', 'avg_filter_responses', 'Roman-*.ecsv')))
+    configure_roman_filters()
+    roman_filters = filter_names()
+    roman_filters.sort()
+    # roman_filters = sorted(glob(os.path.join(repo_dir, 'mejiro', 'data', 'avg_filter_responses', 'Roman-*.ecsv')))
     _ = speclite.filters.load_filters(*roman_filters[:8])
     if debugging:
         print('Configured Roman filters. Loaded:')
@@ -157,7 +159,7 @@ def run_slsim(tuple):
     kwargs_lens_detectable_cut = {
         'min_image_separation': survey_params['min_image_separation'],
         'max_image_separation': survey_params['max_image_separation'],
-        'mag_arc_limit': None # {survey_params['mag_arc_limit_band']: survey_params['mag_arc_limit']} TODO UPDATE
+        'mag_arc_limit': {survey_params['mag_arc_limit_band']: survey_params['mag_arc_limit']}
     }
     lens_population = lens_pop.draw_population(kwargs_lens_cuts=kwargs_lens_detectable_cut)
     if debugging: print(f'Number of detectable lenses from first set of criteria: {len(lens_population)}')
@@ -191,7 +193,7 @@ def run_slsim(tuple):
                                     mask_mult=survey_params['snr_mask_multiplier'],
                                     zodi_mult=survey_params['zodi_multiplier'])
 
-        if snr < 3:  # TODO UPDATE if snr < survey_params['snr_threshold']:
+        if snr < survey_params['snr_threshold']:
             snr_list.append(snr)
             filter_2 += 1
             if filter_2 <= num_samples:
@@ -227,7 +229,7 @@ def run_slsim(tuple):
         lens_mags, source_mags = {}, {}
         for band in bands:  # add F158
             lens_mags[band] = gglens.deflector_magnitude(band)
-            source_mags[band] = gglens.extended_source_magnitude(band)
+            source_mags[band] = gglens.extended_source_magnitude(band, lensed=True)
 
         z_lens, z_source = gglens.deflector_redshift, gglens.source_redshift
         kwargs_lens = kwargs_params['kwargs_lens']
@@ -237,7 +239,7 @@ def run_slsim(tuple):
         kwargs_model['source_redshift_list'] = [z_source]
         kwargs_model['cosmo'] = cosmo
         kwargs_model['z_source'] = z_source
-        kwargs_model['z_source_convention'] = 5
+        kwargs_model['z_source_convention'] = 5.
 
         # create dict to pickle
         gglens_dict = {
