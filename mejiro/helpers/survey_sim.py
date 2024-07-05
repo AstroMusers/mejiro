@@ -130,7 +130,7 @@ def write_lens_pop_to_csv(output_path, gg_lenses, bands, suppress_output=True):
 
         for nameband in bands:
             dict['magtlens%s' % nameband] = gg_lens.deflector_magnitude(band=nameband)
-            dict['magtsour%s' % nameband] = gg_lens.extended_source_magnitude(band=nameband)
+            dict['magtsour%s' % nameband] = gg_lens.extended_source_magnitude(band=nameband, lensed=False)
             dict['magtsourMagnified%s' % nameband] = gg_lens.extended_source_magnitude(band=nameband, lensed=True)
 
         df.loc[i] = pd.Series(dict)
