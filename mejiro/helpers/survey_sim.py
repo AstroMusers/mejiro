@@ -24,40 +24,33 @@ csv_path = os.path.join(module_path, 'data', 'roman_spacecraft_and_instrument_pa
 roman_params = RomanParameters(csv_path)
 
 
-def get_snr(gglens, band, mask_mult=1., zodi_mult=1.5, side=4.95, **kwargs):
+def get_snr(gglens, band, mask_mult=1., side=4.95, **kwargs):
     if 'total_image' and 'source_surface_brightness' and 'sim_api' in kwargs:
         total_image = kwargs['total_image']
-        source_surface_brightness = kwargs['source_surface_brightness']
+        source = kwargs['source_surface_brightness']
         sim_api = kwargs['sim_api']
     else:
-        total_image, _, source_surface_brightness, sim_api = get_image(gglens, band, side=side)
+        total_image, _, source, sim_api = get_image(gglens, band, side=side)
 
-    # calculate region for source surface brightness array and count signal
-    stdev = np.std(source_surface_brightness)
-    mean = np.mean(source_surface_brightness)
-    mask = source_surface_brightness < mean + (mask_mult * stdev)
-    masked_source = np.ma.masked_array(source_surface_brightness, mask=mask)
-    sum_source_counts = np.sum(masked_source)
+    # calculate threshold that will define masked region
+    stdev = np.std(source)
+    mean = np.mean(source)
+    threshold = mean + (mask_mult * stdev)
 
-    # get min zodiacal light and thermal background for given band
-    min_zodiacal_light = roman_params.get_min_zodi_count_rate(band)
-    thermal_background = roman_params.get_thermal_bkg(band)
-
-    # estimate and add background
-    estimated_background = (min_zodiacal_light * zodi_mult) + thermal_background  # in counts/pixel
-    estimated_background *= np.ones(total_image.shape)
-    # total_image += estimated_background TODO UPDATE
+    # mask source
+    masked_source = np.ma.masked_where(source < threshold, source)
+    source_counts = masked_source.compressed().sum()
 
     # add noise
     noise = sim_api.noise_for_model(model=total_image)
     total_image_with_noise = total_image + noise
 
-    # count total signal
-    masked_total = np.ma.masked_array(total_image, mask=mask)
-    sum_total_counts = np.sum(masked_total)
+    # mask total image
+    masked_total_image = np.ma.array(mask=masked_source.mask, data=total_image)
+    total_counts = masked_total_image.compressed().sum()
 
     # calculate estimated SNR
-    snr = sum_source_counts / np.sqrt(sum_total_counts)
+    snr = source_counts / np.sqrt(total_counts)
 
     return snr, total_image_with_noise
 
