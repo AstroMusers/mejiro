@@ -6,11 +6,11 @@ defaults:
 
 survey:
   - deflector_cut_band: F129
-  - deflector_cut_band_max: 23
+  - deflector_cut_band_max: 25
   - deflector_z_min: 0.01
-  - deflector_z_max: 2.
+  - deflector_z_max: 3.
   - source_cut_band: F129
-  - source_cut_band_max: 24
+  - source_cut_band_max: 28
   - source_z_min: 0.01
   - source_z_max: 5.
   - min_image_separation: 0.2  # arcseconds
@@ -20,8 +20,8 @@ survey:
   - large_lens_mag_max: 14  # for Einstein radius and Sersic radius criterion
   - large_lens_band: F129  # for Einstein radius and Sersic radius criterion
   - snr_band: F129
-  - snr_threshold: 10
-  - snr_mask_multiplier: 0.  # mean + (this factor * stdev) forms mask around arcs
+  - snr_threshold: 20
+  - snr_mask_multiplier: 1.  # mean + (this factor * stdev) forms mask around arcs
   - zodi_multiplier: 1.5  # multiplied with minimum zodiacal light, used in SNR estimate
 
 pipeline:

@@ -147,8 +147,8 @@ def run_slsim(tuple):
     for candidate in tqdm(total_lens_population, disable=not debugging):
         snr, _ = survey_sim.get_snr(gglens=candidate, 
                                     band=survey_params['snr_band'],
-                                    mask_mult=survey_params['snr_mask_multiplier'],
-                                    zodi_mult=survey_params['zodi_multiplier'])
+                                    subtract_lens=False,
+                                    mask_mult=survey_params['snr_mask_multiplier'])
         snr_list.append(snr)
     np.save(os.path.join(output_dir, f'snr_list_{str(run).zfill(2)}.npy'), snr_list)
 
@@ -193,8 +193,8 @@ def run_slsim(tuple):
         # 2. SNR
         snr, _ = survey_sim.get_snr(gglens=candidate, 
                                     band=survey_params['snr_band'],
-                                    mask_mult=survey_params['snr_mask_multiplier'],
-                                    zodi_mult=survey_params['zodi_multiplier'])
+                                    subtract_lens=False,
+                                    mask_mult=survey_params['snr_mask_multiplier'])
 
         if snr < survey_params['snr_threshold']:
             snr_list.append(snr)
