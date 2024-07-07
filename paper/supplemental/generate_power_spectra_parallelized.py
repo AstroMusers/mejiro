@@ -41,10 +41,10 @@ def main(config):
     print(f'Collected {len(lens_list)} lenses.')
 
     # debugging?
-    debugging = False
+    debugging = True
 
     # require >10^8 M_\odot subhalo alignment with image?
-    require_alignment = False
+    require_alignment = True
 
     # set subhalo and imaging params
     subhalo_params = {
@@ -54,8 +54,8 @@ def main(config):
         'los_normalization': 0
     }
     imaging_params = {
-        'bands': ['F106'],
-        'oversample': 5,
+        'bands': ['F129'],
+        'oversample': 3,
         'num_pix': 45,
         'side': 4.95
     }
@@ -115,53 +115,75 @@ def generate_power_spectra(tuple):
     z_source = round(lens.z_source, 2)
     log_m_host = np.log10(lens.main_halo_mass)
 
+    cut_8_success, med_success, smol_success = False, False, False
+
     if require_alignment:
         cut_8_good = False
         i = 0
 
         while not cut_8_good:
-            cut_8 = CDM(z_lens,
-                        z_source,
-                        sigma_sub=sigma_sub,
-                        log_mlow=8.,
-                        log_mhigh=10.,
-                        log_m_host=log_m_host,
-                        r_tidal=r_tidal,
-                        cone_opening_angle_arcsec=subhalo_cone,
-                        LOS_normalization=los_normalization)
-            cut_8_good = lens_util.check_halo_image_alignment(lens, cut_8, halo_mass=1e8, halo_sort_massive_first=True, return_halo=False)
-            i += 1
+            while not cut_8_success:
+                try:
+                    cut_8 = CDM(z_lens,
+                                z_source,
+                                sigma_sub=sigma_sub,
+                                log_mlow=8.,
+                                log_mhigh=10.,
+                                log_m_host=log_m_host,
+                                r_tidal=r_tidal,
+                                cone_opening_angle_arcsec=subhalo_cone,
+                                LOS_normalization=los_normalization)
+                    cut_8_good = lens_util.check_halo_image_alignment(lens, cut_8, halo_mass=1e8, halo_sort_massive_first=True, return_halo=False)
+                    i += 1
+                    cut_8_success = True
+                except:
+                    cut_8_success = False
         if debugging: print(f'Generated cut_8 population after {i} iterations.')
     else:
-        cut_8 = CDM(z_lens,
+        while not cut_8_success:
+            try:
+                cut_8 = CDM(z_lens,
+                            z_source,
+                            sigma_sub=sigma_sub,
+                            log_mlow=8.,
+                            log_mhigh=10.,
+                            log_m_host=log_m_host,
+                            r_tidal=r_tidal,
+                            cone_opening_angle_arcsec=subhalo_cone,
+                            LOS_normalization=los_normalization)
+                cut_8_success = True
+            except:
+                cut_8_success = False
+
+    while not med_success:
+        try:
+            med = CDM(z_lens,
                     z_source,
                     sigma_sub=sigma_sub,
-                    log_mlow=8.,
-                    log_mhigh=10.,
+                    log_mlow=7.,
+                    log_mhigh=8.,
                     log_m_host=log_m_host,
                     r_tidal=r_tidal,
                     cone_opening_angle_arcsec=subhalo_cone,
                     LOS_normalization=los_normalization)
-
-    med = CDM(z_lens,
-              z_source,
-              sigma_sub=sigma_sub,
-              log_mlow=7.,
-              log_mhigh=8.,
-              log_m_host=log_m_host,
-              r_tidal=r_tidal,
-              cone_opening_angle_arcsec=subhalo_cone,
-              LOS_normalization=los_normalization)
-
-    smol = CDM(z_lens,
-               z_source,
-               sigma_sub=sigma_sub,
-               log_mlow=6.,
-               log_mhigh=7.,
-               log_m_host=log_m_host,
-               r_tidal=r_tidal,
-               cone_opening_angle_arcsec=subhalo_cone,
-               LOS_normalization=los_normalization)
+            med_success = True
+        except:
+            med_success = False
+    
+    while not smol_success:
+        try:
+            smol = CDM(z_lens,
+                    z_source,
+                    sigma_sub=sigma_sub,
+                    log_mlow=6.,
+                    log_mhigh=7.,
+                    log_m_host=log_m_host,
+                    r_tidal=r_tidal,
+                    cone_opening_angle_arcsec=subhalo_cone,
+                    LOS_normalization=los_normalization)
+            smol_success = True
+        except:
+            smol_success = False
 
     cut_7 = cut_8.join(med)
     cut_6 = cut_7.join(smol)
@@ -193,7 +215,7 @@ def generate_power_spectra(tuple):
     # generate the PSFs I'll need for each unique band
     psf_kernels = {}
     for band in bands:
-        psf_kernels[band] = psf.get_webbpsf_psf(band, detector=1, detector_position=(2048, 2048), oversample=5,
+        psf_kernels[band] = psf.get_webbpsf_psf(band, detector=1, detector_position=(2048, 2048), oversample=oversample,
                                                 check_cache=True, suppress_output=False)
 
     # convolve models with the PSFs
@@ -245,7 +267,7 @@ def generate_power_spectra(tuple):
         interp = InterpolatedImage(Image(model, xmin=0, ymin=0), scale=0.11 / oversample, flux=total_flux_cps * 146)
 
         # convolve image with PSF
-        webbpsf_interp = psf.get_webbpsf_psf(band, detector=detector, detector_position=detector_pos, oversample=5,
+        webbpsf_interp = psf.get_webbpsf_psf(band, detector=detector, detector_position=detector_pos, oversample=oversample,
                                                 check_cache=True, suppress_output=False)
         image = gs.convolve(interp, webbpsf_interp, num_pix)
 
@@ -269,8 +291,8 @@ def generate_power_spectra(tuple):
 
     # use Gaussian PSF
     total_flux_cps = lens.get_total_flux_cps(band)
-    interp = InterpolatedImage(Image(model, xmin=0, ymin=0), scale=0.11 / 5, flux=total_flux_cps * 146)
-    gaussian_psf_interp = psf.get_gaussian_psf(fwhm=0.087, oversample=5, pixel_scale=0.11)
+    interp = InterpolatedImage(Image(model, xmin=0, ymin=0), scale=0.11 / oversample, flux=total_flux_cps * 146)
+    gaussian_psf_interp = psf.get_gaussian_psf(fwhm=0.087, oversample=oversample, pixel_scale=0.11)
     image = gs.convolve(interp, gaussian_psf_interp, 45)
     bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector=detector, exposure_time=146, num_pix=45)
     image += bkgs[band]  # add sky background to convolved image
