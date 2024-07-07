@@ -138,7 +138,7 @@ def generate_power_spectra(tuple):
                     cut_8_success = True
                 except:
                     cut_8_success = False
-        if debugging: print(f'Generated cut_8 population after {i} iterations.')
+        if debugging: print(f'lens {lens.uid}: Generated cut_8 population after {i} iterations.')
     else:
         while not cut_8_success:
             try:
@@ -169,6 +169,7 @@ def generate_power_spectra(tuple):
             med_success = True
         except:
             med_success = False
+    if debugging: print(f'lens {lens.uid}: Generated med population.')
     
     while not smol_success:
         try:
@@ -184,6 +185,7 @@ def generate_power_spectra(tuple):
             smol_success = True
         except:
             smol_success = False
+    if debugging: print(f'lens {lens.uid}: Generated smol population.')
 
     cut_7 = cut_8.join(med)
     cut_6 = cut_7.join(smol)
