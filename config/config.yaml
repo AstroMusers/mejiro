@@ -19,8 +19,9 @@ survey:
   - mag_arc_limit: 25  # this takes pressure off of SNR criterion, so set as high as possible without missing anything
   - large_lens_mag_max: 14  # for Einstein radius and Sersic radius criterion
   - large_lens_band: F129  # for Einstein radius and Sersic radius criterion
+  - snr_subtract_lens: True
   - snr_band: F129
-  - snr_threshold: 20
+  - snr_threshold: 10
   - snr_mask_multiplier: 1.  # mean + (this factor * stdev) forms mask around arcs
   - zodi_multiplier: 1.5  # multiplied with minimum zodiacal light, used in SNR estimate
 
@@ -48,7 +49,7 @@ pipeline:
   - seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
   - pieces: False
   - limit:   # None
-  - survey_sim_runs: 8
+  - survey_sim_runs: 16
 
 hydra:
   output_subdir: null

@@ -147,7 +147,7 @@ def run_slsim(tuple):
     for candidate in tqdm(total_lens_population, disable=not debugging):
         snr, _ = survey_sim.get_snr(gglens=candidate, 
                                     band=survey_params['snr_band'],
-                                    subtract_lens=False,
+                                    subtract_lens=survey_params['snr_subtract_lens'],
                                     mask_mult=survey_params['snr_mask_multiplier'])
         snr_list.append(snr)
     np.save(os.path.join(output_dir, f'snr_list_{str(run).zfill(2)}.npy'), snr_list)
@@ -177,7 +177,7 @@ def run_slsim(tuple):
 
     # apply additional detectability criteria
     limit = None
-    detectable_gglenses, snr_list = [], []
+    detectable_gglenses, detectable_snr_list = [], []
     for candidate in tqdm(lens_population, disable=not debugging):
         # 1. Einstein radius and Sersic radius
         _, kwargs_params = candidate.lenstronomy_kwargs(band=survey_params['large_lens_band'])
@@ -193,11 +193,11 @@ def run_slsim(tuple):
         # 2. SNR
         snr, _ = survey_sim.get_snr(gglens=candidate, 
                                     band=survey_params['snr_band'],
-                                    subtract_lens=False,
+                                    subtract_lens=survey_params['snr_subtract_lens'],
                                     mask_mult=survey_params['snr_mask_multiplier'])
 
         if snr < survey_params['snr_threshold']:
-            snr_list.append(snr)
+            # filter this candidate out
             filter_2 += 1
             if filter_2 <= num_samples:
                 filtered_sample['filter_2'].append(candidate)
@@ -205,6 +205,7 @@ def run_slsim(tuple):
 
         # if both criteria satisfied, consider detectable
         detectable_gglenses.append(candidate)
+        detectable_snr_list.append(snr)
 
         # if I've imposed a limit above this loop, exit the loop
         if limit is not None and len(detectable_gglenses) == limit:
@@ -221,9 +222,11 @@ def run_slsim(tuple):
     #     print(filtered_sample['num_filter_1']) 
     #     print(filtered_sample['num_filter_2'])
 
+    assert len(detectable_gglenses) == len(detectable_snr_list), 'Lengths of detectable_gglenses and detectable_snr_list do not match.'
+
     if debugging: print('Retrieving lenstronomy parameters...')
     dict_list = []
-    for gglens, snr in tqdm(zip(detectable_gglenses, snr_list), disable=not debugging, total=len(detectable_gglenses)):
+    for gglens, snr in tqdm(zip(detectable_gglenses, detectable_snr_list), disable=not debugging, total=len(detectable_gglenses)):
 
         # get lens params from gglens object
         kwargs_model, kwargs_params = gglens.lenstronomy_kwargs(band='F106')

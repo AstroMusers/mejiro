@@ -51,9 +51,13 @@ def get_snr(gglens, band, subtract_lens=True, mask_mult=1., side=4.95, **kwargs)
     # mask total image
     masked_total_image = np.ma.array(mask=masked_source.mask, data=total_image_with_noise)
     total_counts = masked_total_image.compressed().sum()
-
+    
     # calculate estimated SNR
-    snr = source_counts / np.sqrt(total_counts)
+    with np.errstate(invalid='raise'):
+        try:
+            snr = source_counts / np.sqrt(total_counts)
+        except:
+            snr = 0
 
     return snr, total_image_with_noise
 
