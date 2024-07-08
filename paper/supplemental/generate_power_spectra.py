@@ -127,53 +127,88 @@ def main(config):
         z_source = round(lens.z_source, 2)
         log_m_host = np.log10(lens.main_halo_mass)
 
+        cut_8_success, med_success, smol_success = False, False, False
+
         if require_alignment:
             cut_8_good = False
             i = 0
 
             while not cut_8_good:
-                cut_8 = CDM(z_lens,
-                            z_source,
-                            sigma_sub=sigma_sub,
-                            log_mlow=8.,
-                            log_mhigh=10.,
-                            log_m_host=log_m_host,
-                            r_tidal=r_tidal,
-                            cone_opening_angle_arcsec=subhalo_cone,
-                            LOS_normalization=los_normalization)
-                cut_8_good = check_halo_image_alignment(lens, cut_8)
-                i += 1
-            print(f'Generated cut_8 population after {i} iterations.')
+                while not cut_8_success:
+                    try:
+                        cut_8 = CDM(z_lens,
+                                    z_source,
+                                    sigma_sub=sigma_sub,
+                                    log_mlow=8.,
+                                    log_mhigh=10.,
+                                    log_m_host=log_m_host,
+                                    r_tidal=r_tidal,
+                                    cone_opening_angle_arcsec=subhalo_cone,
+                                    LOS_normalization=los_normalization)
+                        
+                        cut_8_good = lens_util.check_halo_image_alignment(lens, cut_8, halo_mass=1e8, halo_sort_massive_first=True, return_halo=False)
+                        i += 1
+
+                        if not cut_8_good: 
+                            print(f'lens {lens.uid}: iteration {i} insufficient alignment.')
+                        else: 
+                            cut_8_success = True
+                    except Exception as e:
+                        print(f'lens {lens.uid}: Failed: {e}')
+                        cut_8_success = False
+                        continue
+            print(f'lens {lens.uid}: Generated cut_8 population after {i} iterations.')
         else:
-            cut_8 = CDM(z_lens,
+            while not cut_8_success:
+                try:
+                    cut_8 = CDM(z_lens,
+                                z_source,
+                                sigma_sub=sigma_sub,
+                                log_mlow=8.,
+                                log_mhigh=10.,
+                                log_m_host=log_m_host,
+                                r_tidal=r_tidal,
+                                cone_opening_angle_arcsec=subhalo_cone,
+                                LOS_normalization=los_normalization)
+                    
+                    if not cut_8_good: 
+                        print(f'lens {lens.uid} cut_8: iteration {i} insufficient alignment.')
+                    else:
+                        cut_8_success = True
+                except:
+                    cut_8_success = False
+
+        while not med_success:
+            try:
+                med = CDM(z_lens,
                         z_source,
                         sigma_sub=sigma_sub,
-                        log_mlow=8.,
-                        log_mhigh=10.,
+                        log_mlow=7.,
+                        log_mhigh=8.,
                         log_m_host=log_m_host,
                         r_tidal=r_tidal,
                         cone_opening_angle_arcsec=subhalo_cone,
                         LOS_normalization=los_normalization)
-
-        med = CDM(z_lens,
-                  z_source,
-                  sigma_sub=sigma_sub,
-                  log_mlow=7.,
-                  log_mhigh=8.,
-                  log_m_host=log_m_host,
-                  r_tidal=r_tidal,
-                  cone_opening_angle_arcsec=subhalo_cone,
-                  LOS_normalization=los_normalization)
-
-        smol = CDM(z_lens,
-                   z_source,
-                   sigma_sub=sigma_sub,
-                   log_mlow=6.,
-                   log_mhigh=7.,
-                   log_m_host=log_m_host,
-                   r_tidal=r_tidal,
-                   cone_opening_angle_arcsec=subhalo_cone,
-                   LOS_normalization=los_normalization)
+                med_success = True
+            except:
+                med_success = False
+        print(f'lens {lens.uid}: Generated med population.')
+        
+        while not smol_success:
+            try:
+                smol = CDM(z_lens,
+                        z_source,
+                        sigma_sub=sigma_sub,
+                        log_mlow=6.,
+                        log_mhigh=7.,
+                        log_m_host=log_m_host,
+                        r_tidal=r_tidal,
+                        cone_opening_angle_arcsec=subhalo_cone,
+                        LOS_normalization=los_normalization)
+                smol_success = True
+            except:
+                smol_success = False
+        print(f'lens {lens.uid}: Generated smol population.')
 
         cut_7 = cut_8.join(med)
         cut_6 = cut_7.join(smol)
