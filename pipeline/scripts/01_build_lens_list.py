@@ -47,7 +47,7 @@ def main(config):
             lens_list.append(lens)
 
     # TODO this isn't the most efficient way of doing this, but these operations aren't terribly slow so I can get away with it, but also inefficient code makes me sad
-    # lens_list = lens_list[:limit]
+    # lens_list = lens_list[:limit]  # TODO but this is deterministic, so if re-running this script, the same lenses will be selected
     lens_list = np.random.choice(lens_list, size=limit)
 
     # pickle lens list
