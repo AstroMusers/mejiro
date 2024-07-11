@@ -244,7 +244,7 @@ def get_bandpass_key(band):
         'F129': 'J129',
         'F158': 'H158',
         'F184': 'F184',
-        'F149': 'W149'
+        'F146': 'W149'
     }
     return translate[band]
 

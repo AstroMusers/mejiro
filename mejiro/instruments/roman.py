@@ -23,6 +23,29 @@ class Roman:
         'F146': 0.105
     }
 
+    def translate_band(input):
+        # capitalize and remove spaces
+        input = input.upper().replace(' ', '')
+
+        # some folks are referring to Roman filters using the corresponding ground-based filters (r, z, Y, etc.)
+        options_dict = {
+            'F062': ['F062', 'R', 'R062'],
+            'F087': ['F087', 'Z', 'Z087'],
+            'F106': ['F106', 'Y', 'Y106'],
+            'F129': ['F129', 'J', 'J129'],
+            'F158': ['F158', 'H', 'H158'],
+            'F184': ['F184', 'H/K'],
+            'F146': ['F146', 'WIDE', 'W146'],
+            'F213': ['F213', 'KS', 'K213']
+        }
+
+        for band, possible_names in options_dict.items():
+            if input in possible_names:
+                return band
+            else:
+                raise ValueError(f"Band {input} not recognized. Valid bands (and aliases) are {options_dict}.")
+
+
     def get_psf_fwhm(self, band):
         """
         Return PSF FWHM in given band in arcsec. Note from STScI: "PSF FWHM in arcseconds simulated for a detector near the center of the WFI FOV using an input spectrum for a K0V type star."
