@@ -4,6 +4,7 @@ import time
 from glob import glob
 
 import hydra
+import numpy as np
 from tqdm import tqdm
 
 
@@ -21,6 +22,9 @@ def main(config):
     # create directory that this script will write to
     util.create_directory_if_not_exists(config.machine.dir_01)
     util.clear_directory(config.machine.dir_01)
+
+    pipeline_params = util.hydra_to_dict(config.pipeline)
+    limit = pipeline_params['limit']
 
     output_files = glob(config.machine.dir_00 + '/detectable_pop_*.csv')
     assert len(
@@ -41,6 +45,10 @@ def main(config):
             lens = lens_util.unpickle_lens(lens, str(uid).zfill(8))
             uid += 1
             lens_list.append(lens)
+
+    # TODO this isn't the most efficient way of doing this, but these operations aren't terribly slow so I can get away with it, but also inefficient code makes me sad
+    # lens_list = lens_list[:limit]
+    lens_list = np.random.choice(lens_list, size=limit)
 
     # pickle lens list
     pickle_target = os.path.join(config.machine.dir_01, f'01_hlwas_sim_detectable_lens_list.pkl')
