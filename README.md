@@ -6,7 +6,7 @@
 galaxy-galaxy strong
 gravitational lenses
 built
-on [`lenstronomy`](https://github.com/lenstronomy/lenstronomy), [`pyHalo`](https://github.com/dangilman/pyHalo), [GalSim](https://github.com/GalSim-developers/GalSim),
+on [`SLSim`](https://github.com/LSST-strong-lensing/slsim), [`lenstronomy`](https://github.com/lenstronomy/lenstronomy), [`pyHalo`](https://github.com/dangilman/pyHalo), [GalSim](https://github.com/GalSim-developers/GalSim),
 and [Pandeia](https://outerspace.stsci.edu/display/PEN).
 
 # Setup
