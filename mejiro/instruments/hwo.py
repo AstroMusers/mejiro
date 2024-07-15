@@ -1,8 +1,10 @@
 import numpy as np
 from syotools.models import Camera, Telescope
 
+from mejiro.instruments.instrument_base import InstrumentBase
 
-class HWO:
+
+class HWO(InstrumentBase):
 
     def __init__(self):
         # TODO eventually work with their ordereddict and astropy quantity stuff

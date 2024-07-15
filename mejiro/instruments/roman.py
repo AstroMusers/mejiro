@@ -2,11 +2,17 @@ import os
 import pandas as pd
 
 import mejiro
+from mejiro.instruments.instrument_base import InstrumentBase
 
 
-class Roman:
+class RomanWFI(InstrumentBase):
 
-    def __init__(self):
+    def __init__(
+            self, 
+            name
+            ):
+        super().__init__(name=name)
+
         module_path = os.path.dirname(mejiro.__file__)
         csv_path = os.path.join(module_path, 'data', 'roman_spacecraft_and_instrument_parameters.csv')
         self.df = pd.read_csv(csv_path)
