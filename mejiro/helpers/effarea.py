@@ -59,6 +59,7 @@ def ecsv_to_pd(ecsv_path):
     return df
 
 
+# TODO figure out why this method seems to create a bunch of CSV files in the effarea_dir which we don't need
 def configure_roman_filters():
     import mejiro
     module_path = os.path.dirname(mejiro.__file__)
@@ -76,11 +77,11 @@ def configure_roman_filters():
     # we need to divide by the area as the throughputs are given in effective area
     # in m^2
 
-    for i, ecsv in tqdm(enumerate(effarea_files)):
+    for i, ecsv in tqdm(enumerate(effarea_files), total=len(effarea_files)):
         file_name_roman = ecsv_to_csv(ecsv)
 
         sca = i + 1
-        group_name = f'RomanSCA{str(sca).zfill(2)}'
+        group_name = f'RomanSCA{str(sca).zfill(2)}'  # 
 
         wave = []
         responses = {

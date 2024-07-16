@@ -1,6 +1,7 @@
 /archive
 /dumpster
 /mejiro/data/cached_psfs
+/mejiro/data/cached_skypy_configs
 /pandeia_docs
 .nfs*
 # config/config.yaml
