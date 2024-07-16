@@ -37,21 +37,12 @@ def main(config):
     util.clear_directory(output_dir)
     if debugging: print(f'Set up output directory {output_dir}')
 
-    # load Roman WFI filters
-    configure_roman_filters()
-    roman_filters = filter_names()
-    roman_filters.sort()
-    # roman_filters = sorted(glob(os.path.join(repo_dir, 'mejiro', 'data', 'avg_filter_responses', 'Roman-*.ecsv')))
-    _ = speclite.filters.load_filters(*roman_filters[:8])
-    if debugging:
-        print('Configured Roman filters. Loaded:')
-        pprint(roman_filters[:8])
-
     # tuple the parameters
-    survey_params = util.hydra_to_dict(config.survey)
     pipeline_params = util.hydra_to_dict(config.pipeline)
-    runs = pipeline_params['survey_sim_runs']
-    tuple_list = [(run, survey_params, pipeline_params, output_dir, debugging) for run in range(runs)]
+    survey_params = util.hydra_to_dict(config.survey)
+    runs = survey_params['runs']
+    scas = survey_params['scas']
+    tuple_list = [(run, str(scas[run % len(scas)]).zfill(2), survey_params, pipeline_params, output_dir, debugging) for run in range(runs)]
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -83,17 +74,33 @@ def run_slsim(tuple):
     from mejiro.helpers import survey_sim
     from mejiro.utils import util
 
-    # unpack tuple
-    run, survey_params, pipeline_params, output_dir, debugging = tuple
-
-    # load SkyPy config file
     module_path = os.path.dirname(mejiro.__file__)
-    skypy_config = os.path.join(module_path, 'data', 'roman_hlwas.yml')
-    if debugging: print(f'Loaded SkyPy configuration file {skypy_config}')
+
+    # unpack tuple
+    run, sca_id, survey_params, pipeline_params, output_dir, debugging = tuple
 
     # prepare a directory for this particular run
-    lens_output_dir = os.path.join(output_dir, f'run_{str(run).zfill(2)}')
+    lens_output_dir = os.path.join(output_dir, f'run_{str(run).zfill(4)}_sca{sca_id}')
     util.create_directory_if_not_exists(lens_output_dir)
+
+    # load SkyPy config file
+    cache_dir = os.path.join(module_path, 'data', 'cached_skypy_configs')
+    skypy_config = os.path.join(cache_dir, f'roman_hlwas_sca{sca_id}.yml')  # TODO TEMP
+    # skypy_config = os.path.join(module_path, 'data', 'roman_hlwas.yml')
+    config_file = util.load_skypy_config(skypy_config)
+    if debugging: print(f'Loaded SkyPy configuration file {skypy_config}')
+
+    # load Roman WFI filters
+    roman_filters = sorted(glob(os.path.join(module_path, 'data', 'filter_responses', f'RomanSCA{sca_id}-*.ecsv')))
+    # configure_roman_filters()
+    # roman_filters = filter_names()
+    # roman_filters.sort()
+    _ = speclite.filters.load_filters(*roman_filters[:8])
+    if debugging:
+        print('Configured Roman filters. Loaded:')
+        pprint(roman_filters[:8])
+
+    # TODO save updated yaml file to cache
 
     # set HLWAS parameters
     config_file = util.load_skypy_config(skypy_config)  # read skypy config file to get survey area
@@ -150,10 +157,10 @@ def run_slsim(tuple):
                                     subtract_lens=survey_params['snr_subtract_lens'],
                                     mask_mult=survey_params['snr_mask_multiplier'])
         snr_list.append(snr)
-    np.save(os.path.join(output_dir, f'snr_list_{str(run).zfill(2)}.npy'), snr_list)
+    np.save(os.path.join(output_dir, f'snr_list_{str(run).zfill(2)}_sca{sca_id}.npy'), snr_list)
 
     # save other params to CSV
-    total_pop_csv = os.path.join(output_dir, f'total_pop_{str(run).zfill(2)}.csv')
+    total_pop_csv = os.path.join(output_dir, f'total_pop_{str(run).zfill(2)}_sca{sca_id}.csv')
     if debugging: print(f'Writing total population to {total_pop_csv}')
     survey_sim.write_lens_pop_to_csv(total_pop_csv, total_lens_population, bands, suppress_output=not debugging)
 
@@ -216,7 +223,7 @@ def run_slsim(tuple):
     # save information about which lenses got filtered out
     filtered_sample['num_filter_1'] = filter_1
     filtered_sample['num_filter_2'] = filter_2
-    util.pickle(os.path.join(output_dir, f'filtered_sample_{str(run).zfill(2)}.pkl'), filtered_sample)
+    util.pickle(os.path.join(output_dir, f'filtered_sample_{str(run).zfill(2)}_sca{sca_id}.pkl'), filtered_sample)
 
     # if len(detectable_gglenses) > 0:
     #     print(filtered_sample['num_filter_1']) 
@@ -229,7 +236,7 @@ def run_slsim(tuple):
     for gglens, snr in tqdm(zip(detectable_gglenses, detectable_snr_list), disable=not debugging, total=len(detectable_gglenses)):
 
         # get lens params from gglens object
-        kwargs_model, kwargs_params = gglens.lenstronomy_kwargs(band='F106')
+        kwargs_model, kwargs_params = gglens.lenstronomy_kwargs(band='F106')  # NB the band in arbitrary because all that changes is magnitude and we're overwriting that with the lens_mag and source_mag dicts below
 
         # build dicts for lens and source magnitudes
         lens_mags, source_mags = {}, {}
@@ -262,13 +269,13 @@ def run_slsim(tuple):
 
     if debugging: print('Pickling lenses...')
     for i, each in tqdm(enumerate(dict_list), disable=not debugging):
-        save_path = os.path.join(lens_output_dir, f'detectable_lens_{str(run).zfill(2)}_{str(i).zfill(5)}.pkl')
+        save_path = os.path.join(lens_output_dir, f'detectable_lens_{str(run).zfill(2)}_sca{sca_id}_{str(i).zfill(5)}.pkl')
         util.pickle(save_path, each)
 
-    detectable_pop_csv = os.path.join(output_dir, f'detectable_pop_{str(run).zfill(2)}.csv')
+    detectable_pop_csv = os.path.join(output_dir, f'detectable_pop_{str(run).zfill(2)}_sca{sca_id}.csv')
     survey_sim.write_lens_pop_to_csv(detectable_pop_csv, detectable_gglenses, bands)
 
-    detectable_gglenses_pickle_path = os.path.join(output_dir, f'detectable_gglenses_{str(run).zfill(2)}.pkl')
+    detectable_gglenses_pickle_path = os.path.join(output_dir, f'detectable_gglenses_{str(run).zfill(2)}_sca{sca_id}.pkl')
     if debugging: print(f'Pickling detectable gglenses to {detectable_gglenses_pickle_path}')
     util.pickle(detectable_gglenses_pickle_path, detectable_gglenses)
 

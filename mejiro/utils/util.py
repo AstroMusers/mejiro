@@ -22,6 +22,12 @@ def get_kwargs_cosmo(astropy_cosmo):
     }
 
 
+def save_skypy_config(skypy_config, path):
+    # TODO needs to account for serializing e.g. numpy arrays, probably some similar code to deserialization method below
+    with open(path, 'w') as file:
+        yaml.dump(skypy_config, file)
+
+
 def load_skypy_config(path):
     class SafeLoaderIgnoreUnknown(yaml.SafeLoader):
         def ignore_unknown(self, node):
