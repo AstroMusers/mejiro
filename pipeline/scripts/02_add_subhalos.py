@@ -51,7 +51,7 @@ def main(config):
         sca_id = str(sca).zfill(2)
         output_dir = os.path.join(output_parent_dir, f'sca{sca_id}')
         for lens in lens_list:
-            tuple_list.append((lens, sca_id, pipeline_params, output_dir))
+            tuple_list.append((lens, pipeline_params, output_dir))
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -79,7 +79,7 @@ def add(tuple):
     from mejiro.utils import util
 
     # unpack tuple
-    (lens, sca_id, pipeline_params, output_dir) = tuple
+    (lens, pipeline_params, output_dir) = tuple
 
     # unpack pipeline_params
     subhalo_cone = pipeline_params['subhalo_cone']

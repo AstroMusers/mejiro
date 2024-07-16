@@ -22,45 +22,65 @@ def main(config):
         sys.path.append(repo_dir)
     from mejiro.utils import util
 
-    # directory to get pickled lenses (with subhalos) from
-    input_dir = config.machine.dir_02
-
-    # directory to write the output to
-    output_dir = config.machine.dir_03
-    util.create_directory_if_not_exists(output_dir)
-    util.clear_directory(output_dir)
-
-    # build indices of uids
-    lens_pickles = sorted(glob(config.machine.dir_02 + '/lens_with_subhalos_*.pkl'))
-    lens_uids = [int(os.path.basename(i).split('_')[3].split('.')[0]) for i in lens_pickles]
-
-    # implement limit, if applicable
+    # retrieve configuration parameters
     pipeline_params = util.hydra_to_dict(config.pipeline)
     limit = pipeline_params['limit']
-    if limit is not None:
-        lens_uids = lens_uids[:limit]
+
+    # directories to get pickled lenses (with subhalos) from
+    input_parent_dir = config.machine.dir_02
+    sca_dirnames = [os.path.basename(d) for d in glob(os.path.join(input_parent_dir, 'sca*')) if os.path.isdir(d)]
+    scas = sorted([int(d[3:]) for d in sca_dirnames])
+    scas = [str(sca).zfill(2) for sca in scas]
+
+    # directories to write the output to
+    output_parent_dir = config.machine.dir_03
+    util.create_directory_if_not_exists(output_parent_dir)
+    util.clear_directory(output_parent_dir)
+    for sca in scas:
+        os.makedirs(os.path.join(output_parent_dir, f'sca{sca}'), exist_ok=True)
+
+    uid_dict = {}
+    for sca in scas:
+        pickled_lenses = sorted(glob(config.machine.dir_02 + f'/sca{sca}/lens_with_subhalos_*.pkl'))
+        lens_uids = [os.path.basename(i).split('_')[3].split('.')[0] for i in pickled_lenses]
+        uid_dict[sca] = lens_uids
+
+    count = 0
+    for sca, lens_uids in uid_dict.items():
+        count += len(lens_uids)
+
+    if limit is not None and limit < count:
+        count = limit
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - config.machine.headroom_cores
     # TODO having resource issues here as well
     process_count -= 10
-    count = len(lens_uids)
     if count < process_count:
         process_count = count
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     # tuple the parameters
     tuple_list = []
-    for i in lens_uids:
-        tuple_list.append((i, pipeline_params, input_dir, output_dir))
+    for i, (sca, lens_uids) in enumerate(uid_dict.items()):
+        input_dir = os.path.join(input_parent_dir, f'sca{sca}')
+        output_dir = os.path.join(output_parent_dir, f'sca{sca}')
+        for uid in lens_uids:
+            tuple_list.append((uid, pipeline_params, input_dir, output_dir))
+            i += 1
+            if i == limit:
+                break
+        else:
+            continue
+        break
 
     # batch
     generator = util.batch_list(tuple_list, process_count)
     batches = list(generator)
 
     # process the batches
-    for batch in tqdm(batches):
+    for batch in tqdm(batches):  # TODO tqdm thinks that there are all of the lenses, even when a limit is set
         pool = Pool(processes=process_count)
         pool.map(get_model, batch)
 
@@ -72,7 +92,7 @@ def get_model(input):
     from mejiro.utils import util
 
     # unpack tuple
-    (i, pipeline_params, input_dir, output_dir) = input
+    (uid, pipeline_params, input_dir, output_dir) = input
 
     # unpack pipeline params
     bands = pipeline_params['bands']
@@ -82,7 +102,8 @@ def get_model(input):
     pieces = pipeline_params['pieces']
 
     # load the lens based on uid
-    lens = util.unpickle(os.path.join(input_dir, f'lens_with_subhalos_{str(i).zfill(8)}.pkl'))
+    lens = util.unpickle(os.path.join(input_dir, f'lens_with_subhalos_{uid}.pkl'))
+    assert lens.uid == uid, f'UID mismatch: {lens.uid} != {uid}'
 
     # generate lenstronomy model and save
     for band in bands:
