@@ -23,39 +23,50 @@ def main(config):
     util.create_directory_if_not_exists(config.machine.dir_01)
     util.clear_directory(config.machine.dir_01)
 
+    # retrieve configuration parameters
     pipeline_params = util.hydra_to_dict(config.pipeline)
+    survey_params = util.hydra_to_dict(config.survey)
+    debugging = pipeline_params['debugging']
     limit = pipeline_params['limit']
+    scas = survey_params['scas']
 
+    # make sure there are output files to process
     output_files = glob(config.machine.dir_00 + '/detectable_pop_*.csv')
     assert len(
         output_files) != 0, f'No output files found. Check HLWAS simulation output directory ({config.machine.dir_00}).'
-    num_runs = len(output_files)
 
     uid = 0
-    lens_list = []
-    for run in range(num_runs):
-        print(f'Run {run + 1} of {num_runs}')
-        # unpickle the lenses from the population survey and create lens objects
-        lens_paths = glob(config.machine.dir_00 + f'/run_{str(run).zfill(2)}/detectable_lens_{str(run).zfill(2)}_*.pkl')
-        # TODO this fails for small survey areas where no lenses are expected
-        # assert len(
-        #     lens_paths) != 0, f'No pickled lenses found. Check SkyPy output directory {config.machine.dir_00}.'
+    for sca_id in tqdm(scas, disable=not debugging):
+        sca_id = str(sca_id).zfill(2)
 
-        for _, lens in tqdm(enumerate(lens_paths), total=len(lens_paths)):
-            lens = lens_util.unpickle_lens(lens, str(uid).zfill(8))
-            uid += 1
-            lens_list.append(lens)
+        csvs = [f for f in output_files if f'sca{sca_id}' in f]
+        
+        if len(csvs) == 0:
+            continue
 
-    # TODO this isn't the most efficient way of doing this, but these operations aren't terribly slow so I can get away with it, but also inefficient code makes me sad
-    # lens_list = lens_list[:limit]  # TODO but this is deterministic, so if re-running this script, the same lenses will be selected
-    lens_list = np.random.choice(lens_list, size=limit)
+        # get all runs associated with this SCA
+        runs = [int(f.split('_')[-2]) for f in csvs]  # TODO I don't love string parsing that relies on file naming conventions
+    
+        lens_list = []
+        for _, run in enumerate(runs):
+            # unpickle the lenses from the population survey and create lens objects
+            lens_paths = glob(config.machine.dir_00 + f'/run_{str(run).zfill(4)}_sca{sca_id}/detectable_lens_{str(run).zfill(4)}_*.pkl')
+            
+            if len(lens_paths) == 0:
+                continue
 
-    # pickle lens list
-    pickle_target = os.path.join(config.machine.dir_01, f'01_hlwas_sim_detectable_lens_list.pkl')
-    util.delete_if_exists(pickle_target)
-    util.pickle(pickle_target, lens_list)
+            for _, lens in enumerate(lens_paths):
+                lens = lens_util.unpickle_lens(lens, str(uid).zfill(8))
+                uid += 1
+                lens_list.append(lens)
+            
+            if uid == limit:
+                break
 
-    print(f'Pickled {len(lens_list)} lenses to {pickle_target}')
+        pickle_target = os.path.join(config.machine.dir_01, f'01_hlwas_sim_detectable_lenses_sca{sca_id}.pkl')
+        util.pickle(pickle_target, lens_list)
+    
+    print(f'Pickled {uid + 1} lenses to {config.machine.dir_01}')
 
     stop = time.time()
     util.print_execution_time(start, stop)

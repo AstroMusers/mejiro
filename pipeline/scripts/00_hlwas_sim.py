@@ -22,14 +22,16 @@ from tqdm import tqdm
 def main(config):
     start = time.time()
 
-    # debugging mode will print statements to console
-    debugging = True
-
     # enable use of local packages
     repo_dir = config.machine.repo_dir
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
     from mejiro.utils import util
+
+    # retrieve configuration parameters
+    pipeline_params = util.hydra_to_dict(config.pipeline)
+    survey_params = util.hydra_to_dict(config.survey)
+    debugging = pipeline_params['debugging']
 
     # set up output directory
     output_dir = config.machine.dir_00
@@ -38,11 +40,9 @@ def main(config):
     if debugging: print(f'Set up output directory {output_dir}')
 
     # tuple the parameters
-    pipeline_params = util.hydra_to_dict(config.pipeline)
-    survey_params = util.hydra_to_dict(config.survey)
     runs = survey_params['runs']
     scas = survey_params['scas']
-    tuple_list = [(run, str(scas[run % len(scas)]).zfill(2), survey_params, pipeline_params, output_dir, debugging) for run in range(runs)]
+    tuple_list = [(str(run).zfill(4), str(scas[run % len(scas)]).zfill(2), survey_params, pipeline_params, output_dir, debugging) for run in range(runs)]
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -80,7 +80,7 @@ def run_slsim(tuple):
     run, sca_id, survey_params, pipeline_params, output_dir, debugging = tuple
 
     # prepare a directory for this particular run
-    lens_output_dir = os.path.join(output_dir, f'run_{str(run).zfill(4)}_sca{sca_id}')
+    lens_output_dir = os.path.join(output_dir, f'run_{run}_sca{sca_id}')
     util.create_directory_if_not_exists(lens_output_dir)
 
     # load SkyPy config file
@@ -157,10 +157,10 @@ def run_slsim(tuple):
                                     subtract_lens=survey_params['snr_subtract_lens'],
                                     mask_mult=survey_params['snr_mask_multiplier'])
         snr_list.append(snr)
-    np.save(os.path.join(output_dir, f'snr_list_{str(run).zfill(2)}_sca{sca_id}.npy'), snr_list)
+    np.save(os.path.join(output_dir, f'snr_list_{run}_sca{sca_id}.npy'), snr_list)
 
     # save other params to CSV
-    total_pop_csv = os.path.join(output_dir, f'total_pop_{str(run).zfill(2)}_sca{sca_id}.csv')
+    total_pop_csv = os.path.join(output_dir, f'total_pop_{run}_sca{sca_id}.csv')
     if debugging: print(f'Writing total population to {total_pop_csv}')
     survey_sim.write_lens_pop_to_csv(total_pop_csv, total_lens_population, bands, suppress_output=not debugging)
 
@@ -218,12 +218,12 @@ def run_slsim(tuple):
         if limit is not None and len(detectable_gglenses) == limit:
             break
 
-    if debugging: print(f'Run {str(run).zfill(2)}: {len(detectable_gglenses)} detectable lens(es)')
+    if debugging: print(f'Run {run}: {len(detectable_gglenses)} detectable lens(es)')
 
     # save information about which lenses got filtered out
     filtered_sample['num_filter_1'] = filter_1
     filtered_sample['num_filter_2'] = filter_2
-    util.pickle(os.path.join(output_dir, f'filtered_sample_{str(run).zfill(2)}_sca{sca_id}.pkl'), filtered_sample)
+    util.pickle(os.path.join(output_dir, f'filtered_sample_{run}_sca{sca_id}.pkl'), filtered_sample)
 
     # if len(detectable_gglenses) > 0:
     #     print(filtered_sample['num_filter_1']) 
@@ -269,13 +269,13 @@ def run_slsim(tuple):
 
     if debugging: print('Pickling lenses...')
     for i, each in tqdm(enumerate(dict_list), disable=not debugging):
-        save_path = os.path.join(lens_output_dir, f'detectable_lens_{str(run).zfill(2)}_sca{sca_id}_{str(i).zfill(5)}.pkl')
+        save_path = os.path.join(lens_output_dir, f'detectable_lens_{run}_sca{sca_id}_{str(i).zfill(5)}.pkl')
         util.pickle(save_path, each)
 
-    detectable_pop_csv = os.path.join(output_dir, f'detectable_pop_{str(run).zfill(2)}_sca{sca_id}.csv')
+    detectable_pop_csv = os.path.join(output_dir, f'detectable_pop_{run}_sca{sca_id}.csv')
     survey_sim.write_lens_pop_to_csv(detectable_pop_csv, detectable_gglenses, bands)
 
-    detectable_gglenses_pickle_path = os.path.join(output_dir, f'detectable_gglenses_{str(run).zfill(2)}_sca{sca_id}.pkl')
+    detectable_gglenses_pickle_path = os.path.join(output_dir, f'detectable_gglenses_{run}_sca{sca_id}.pkl')
     if debugging: print(f'Pickling detectable gglenses to {detectable_gglenses_pickle_path}')
     util.pickle(detectable_gglenses_pickle_path, detectable_gglenses)
 

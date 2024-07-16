@@ -28,6 +28,7 @@ survey:
   - zodi_multiplier: 1.5  # multiplied with minimum zodiacal light, used in SNR estimate
 
 pipeline:
+  - debugging: True  # debugging mode will print statements to console
   - limit: 100  # None
   # scene params
   - num_pix: 96  # 51  # 96
