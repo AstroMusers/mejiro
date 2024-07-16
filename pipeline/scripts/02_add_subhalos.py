@@ -2,6 +2,7 @@ import multiprocessing
 import os
 import sys
 import time
+from glob import glob
 from multiprocessing import Pool
 
 import hydra
@@ -23,26 +24,34 @@ def main(config):
     from mejiro.utils import util
 
     # open pickled lens list
-    pickled_lens_list = os.path.join(config.machine.dir_01, '01_hlwas_sim_detectable_lens_list.pkl')
-    lens_list = util.unpickle(pickled_lens_list)
-    assert len(lens_list) != 0, f'No pickled lenses found. Check {pickled_lens_list}.'
-    count = len(lens_list)
+    pickles = glob(os.path.join(config.machine.dir_01, '01_hlwas_sim_detectable_lenses_sca*.pkl'))
+    scas = [int(f.split('_')[-1].split('.')[0][3:]) for f in pickles]
+    scas = sorted([str(sca).zfill(2) for sca in scas])
+    sca_dict = {}
+    total = 0
+    for sca in scas:
+        pickle_path = os.path.join(config.machine.dir_01, f'01_hlwas_sim_detectable_lenses_sca{sca}.pkl')
+        lens_list = util.unpickle(pickle_path)
+        assert len(lens_list) != 0, f'No pickled lenses found. Check {pickle_path}.'
+        sca_dict[sca] = lens_list
+        total += len(lens_list)
+    count = total
 
     # directory to write the lenses with subhalos to
-    output_dir = config.machine.dir_02
-    util.create_directory_if_not_exists(output_dir)
-    util.clear_directory(output_dir)
-
-    # directory to write pickled subhalos to
-    subhalo_dir = os.path.join(output_dir, 'subhalos')
-    util.create_directory_if_not_exists(subhalo_dir)
-    util.clear_directory(subhalo_dir)
+    output_parent_dir = config.machine.dir_02
+    util.create_directory_if_not_exists(output_parent_dir)
+    util.clear_directory(output_parent_dir)
+    for sca in scas:
+        os.makedirs(os.path.join(output_parent_dir, f'sca{sca}'), exist_ok=True)
 
     # tuple the parameters
     pipeline_params = util.hydra_to_dict(config.pipeline)
     tuple_list = []
-    for lens in lens_list:
-        tuple_list.append((lens, pipeline_params, output_dir))
+    for sca, lens_list in sca_dict.items():
+        sca_id = str(sca).zfill(2)
+        output_dir = os.path.join(output_parent_dir, f'sca{sca_id}')
+        for lens in lens_list:
+            tuple_list.append((lens, sca_id, pipeline_params, output_dir))
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -70,7 +79,7 @@ def add(tuple):
     from mejiro.utils import util
 
     # unpack tuple
-    (lens, pipeline_params, output_dir) = tuple
+    (lens, sca_id, pipeline_params, output_dir) = tuple
 
     # unpack pipeline_params
     subhalo_cone = pipeline_params['subhalo_cone']
