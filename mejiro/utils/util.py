@@ -9,6 +9,29 @@ import numpy as np
 import pandas as pd
 import yaml
 from omegaconf import OmegaConf
+from PIL import Image
+
+
+def rotate_array(array, angle):
+    """
+    Rotate a 2D numpy array by a given angle.
+
+    Parameters
+    ----------
+    array : numpy.ndarray 
+        The input array to be rotated.
+    angle : float
+        The angle of rotation in degrees.
+
+    Returns
+    -------
+    numpy.ndarray
+        The rotated array.
+
+    """
+    pil_image = Image.fromarray(array)
+    rotated_pil_image = pil_image.rotate(angle)
+    return np.asarray(rotated_pil_image)
 
 
 def get_kwargs_cosmo(astropy_cosmo):
