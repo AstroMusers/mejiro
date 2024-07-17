@@ -29,7 +29,7 @@ survey:
 
 pipeline:
   - debugging: True  # debugging mode will print statements to console
-  - limit: 100  # None
+  - limit: None  # None
   # scene params
   - num_pix: 96  # 51  # 96
   - side: 10.56  # 5.61  # 10.56

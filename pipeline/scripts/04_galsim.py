@@ -29,38 +29,60 @@ def main(config):
         sys.path.append(repo_dir)
     from mejiro.utils import util
 
-    # directory to read from
-    input_dir = config.machine.dir_03
-
-    # directory to write the output to
-    output_dir = config.machine.dir_04
-    util.create_directory_if_not_exists(output_dir)
-    util.clear_directory(output_dir)
-
-    # build indices of uids
-    lens_pickles = sorted(glob(config.machine.dir_02 + '/lens_with_subhalos_*.pkl'))
-    lens_uids = [int(os.path.basename(i).split('_')[3].split('.')[0]) for i in lens_pickles]
-
-    # implement limit, if applicable
+    # retrieve configuration parameters
     pipeline_params = util.hydra_to_dict(config.pipeline)
     limit = pipeline_params['limit']
-    if limit is not None:
-        lens_uids = lens_uids[:limit]
+
+    # directories to read from
+    input_parent_dir = config.machine.dir_03
+    sca_dirnames = [os.path.basename(d) for d in glob(os.path.join(input_parent_dir, 'sca*')) if os.path.isdir(d)]
+    scas = sorted([int(d[3:]) for d in sca_dirnames])
+    scas = [str(sca).zfill(2) for sca in scas]
+
+    # directories to write the output to
+    output_parent_dir = config.machine.dir_04
+    util.create_directory_if_not_exists(output_parent_dir)
+    util.clear_directory(output_parent_dir)
+    for sca in scas:
+        os.makedirs(os.path.join(output_parent_dir, f'sca{sca}'), exist_ok=True)
+
+    uid_dict = {}
+    for sca in scas:
+        pickled_lenses = sorted(glob(config.machine.dir_03 + f'/sca{sca}/array_*.npy'))
+        lens_uids = [os.path.basename(i).split('_')[1] for i in pickled_lenses]
+        lens_uids = list(set(lens_uids))  # remove duplicates
+        lens_uids = sorted(lens_uids)
+        uid_dict[sca] = lens_uids
+
+    count = 0
+    for sca, lens_uids in uid_dict.items():
+        count += len(lens_uids)
+
+    if limit != 'None' and limit < count:
+        count = limit
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - config.machine.headroom_cores
     process_count -= int(cpu_count / 2)
     # TODO for some reason, this particular script needs more headroom cores. maybe it's a memory thing?
-    count = len(lens_uids)
     if count < process_count:
         process_count = count
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     # tuple the parameters
     tuple_list = []
-    for uid in lens_uids:
-        tuple_list.append((uid, pipeline_params, input_dir, output_dir))
+    for i, (sca, lens_uids) in enumerate(uid_dict.items()):
+        input_dir = os.path.join(input_parent_dir, f'sca{sca}')
+        output_dir = os.path.join(output_parent_dir, f'sca{sca}')
+        for uid in lens_uids:
+            tuple_list.append((uid, sca, pipeline_params, input_dir, output_dir))
+            i += 1
+            if i == limit:
+                break
+        else:
+            continue
+        break
 
     # batch
     generator = util.batch_list(tuple_list, process_count)
@@ -84,7 +106,7 @@ def get_image(input):
     from mejiro.utils import util
 
     # unpack tuple
-    (uid, pipeline_params, input_dir, output_dir) = input
+    (uid, sca, pipeline_params, input_dir, output_dir) = input
 
     # unpack pipeline_params
     bands = pipeline_params['bands']
@@ -97,7 +119,7 @@ def get_image(input):
     pieces = pipeline_params['pieces']
 
     # load lens
-    lens = util.unpickle(os.path.join(input_dir, f'lens_{str(uid).zfill(8)}.pkl'))
+    lens = util.unpickle(os.path.join(input_dir, f'lens_{uid}.pkl'))
 
     # load the appropriate arrays
     arrays = [np.load(f'{input_dir}/array_{lens.uid}_{band}.npy') for band in bands]
@@ -110,7 +132,7 @@ def get_image(input):
         pieces_args = {}
 
     # determine detector and position
-    detector = gs.get_random_detector(suppress_output)
+    detector = int(sca)
     detector_pos = gs.get_random_detector_pos(input_size=num_pix, suppress_output=suppress_output)
 
     gs_results = gs.get_images(lens,

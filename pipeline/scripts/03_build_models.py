@@ -49,7 +49,7 @@ def main(config):
     for sca, lens_uids in uid_dict.items():
         count += len(lens_uids)
 
-    if limit is not None and limit < count:
+    if limit != 'None' and limit < count:
         count = limit
 
     # split up the lenses into batches based on core count
