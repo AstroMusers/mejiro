@@ -1,7 +1,8 @@
 import datetime
 import os
-from copy import deepcopy
 import time
+from copy import deepcopy
+from glob import glob
 
 import numpy as np
 import pandas as pd
@@ -22,11 +23,20 @@ import mejiro
 from mejiro.helpers import gs
 from mejiro.helpers.roman_params import RomanParameters
 from mejiro.lenses import lens_util
+from mejiro.utils import util
 
 # get Roman params
 module_path = os.path.dirname(mejiro.__file__)
 csv_path = os.path.join(module_path, 'data', 'roman_spacecraft_and_instrument_parameters.csv')
 roman_params = RomanParameters(csv_path)
+
+
+def collect_all_detectable_lenses(dir):
+    pickle_paths = glob(dir + '/01_hlwas_sim_detectable_lenses_sca*.pkl')
+    detectable_lenses = []
+    for f in pickle_paths:
+        detectable_lenses.extend(util.unpickle(f))
+    return detectable_lenses
 
 
 # TODO a(n imperfect) lens subtraction option?
@@ -51,6 +61,10 @@ def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, debugging=False):
 
     # calculate SNR in each pixel
     snr_array = source / np.sqrt(total)
+
+    # if no pixels have SNR > 1, not detectable
+    if not np.any(snr_array > 1):
+        return 0, None
 
     # mask source
     masked_source = np.ma.masked_where(snr_array <= 1, source)

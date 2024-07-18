@@ -13,7 +13,7 @@ cd pipeline/scripts
 
 # execute Python scripts sequentially
 echo 'Simulating HLWAS to find detectable strong lenses...'
-# python3 00_hlwas_sim.py
+python3 00_hlwas_sim.py
 echo 'Identified detectable strong lenses.'
 
 echo 'Building lens list from SkyPy...'

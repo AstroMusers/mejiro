@@ -5,12 +5,12 @@ defaults:
   - override hydra/job_logging: disabled
 
 survey:
-  - runs: 24
+  - runs: 50
   - scas: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]  # 
   - deflector_cut_band: F129
-  - deflector_cut_band_max: 25
+  - deflector_cut_band_max: 26
   - deflector_z_min: 0.01
-  - deflector_z_max: 2.
+  - deflector_z_max: 3.
   - source_cut_band: F129
   - source_cut_band_max: 27
   - source_z_min: 0.01
@@ -21,9 +21,9 @@ survey:
   - mag_arc_limit: 25  # this takes pressure off of SNR criterion, so set as high as possible without missing anything
   - large_lens_mag_max: 14  # for Einstein radius and Sersic radius criterion
   - large_lens_band: F129  # for Einstein radius and Sersic radius criterion
-  - snr_subtract_lens: True
+  - snr_subtract_lens: False
   - snr_band: F129
-  - snr_threshold: 10
+  - snr_threshold: 20
   - snr_mask_multiplier: 1.  # mean + (this factor * stdev) forms mask around arcs
   - zodi_multiplier: 1.5  # multiplied with minimum zodiacal light, used in SNR estimate
 
