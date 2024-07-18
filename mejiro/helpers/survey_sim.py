@@ -1,5 +1,7 @@
+import datetime
 import os
 from copy import deepcopy
+import time
 
 import numpy as np
 import pandas as pd
@@ -28,7 +30,7 @@ roman_params = RomanParameters(csv_path)
 
 
 # TODO a(n imperfect) lens subtraction option?
-def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1):
+def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, debugging=False):
     sample_lens = lens_util.slsim_lens_to_mejiro(gglens, bands=[band], cosmo=default_cosmology.get())  # TODO pass in cosmology
 
     # generate synthetic images with lenstronomy
@@ -37,8 +39,8 @@ def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1):
     # generate GalSim images
     results, lenses, sources, _ = gs.get_images(sample_lens, [model], [band], num_pix, num_pix, oversample, oversample,
                lens_surface_brightness=[lens_sb], source_surface_brightness=[source_sb], detector=1, detector_pos=(2048, 2048),
-               exposure_time=146, ra=30, dec=-30, seed=42, validate=False, suppress_output=True, check_cache=True)
-    
+               exposure_time=146, ra=30, dec=-30, seed=42, validate=False, suppress_output=not debugging, check_cache=True)
+
     # put back into units of counts
     total = results[0] * 146
     lens = lenses[0] * 146

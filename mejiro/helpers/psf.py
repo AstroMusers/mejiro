@@ -46,6 +46,8 @@ def get_webbpsf_psf(band, detector, detector_position, oversample, check_cache=F
         if len(psf_path) == 1:
             if not suppress_output: print(f'Loading cached PSF: {psf_path[0]}')
             return util.unpickle(psf_path[0])
+        else:
+            if not suppress_output: print(f'PSF {band} {detector} {detector_position} not found in cache {psf_path}')
 
     # set PSF parameters
     wfi = WFI()

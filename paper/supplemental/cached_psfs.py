@@ -13,11 +13,11 @@ def main(config):
     from mejiro.utils import util
     from mejiro.helpers import psf
 
-    machine = HydraConfig.get().runtime.choices.machine
-    if machine == 'hpc':
-        os.environ['WEBBPSF_PATH'] = '/data/bwedig/STScI/webbpsf-data'
-    elif machine == 'uzay':
-        os.environ['WEBBPSF_PATH'] = '/data/scratch/btwedig/STScI/ref_data/webbpsf-data'
+    # machine = HydraConfig.get().runtime.choices.machine
+    # if machine == 'hpc':
+    #     os.environ['WEBBPSF_PATH'] = '/data/bwedig/STScI/webbpsf-data'
+    # elif machine == 'uzay':
+    #     os.environ['WEBBPSF_PATH'] = '/data/scratch/btwedig/STScI/ref_data/webbpsf-data'
 
     # set directory for all output of this script
     save_dir = os.path.join(config.machine.repo_dir, 'mejiro', 'data', 'cached_psfs')

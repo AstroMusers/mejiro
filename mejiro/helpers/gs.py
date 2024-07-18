@@ -13,7 +13,7 @@ from mejiro.utils import util
 
 def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, psf_oversample,
                lens_surface_brightness=None, source_surface_brightness=None, detector=None, detector_pos=None,
-               exposure_time=146, ra=30, dec=-30, seed=42, validate=True, suppress_output=True, check_cache=False):
+               exposure_time=146, ra=30, dec=-30, seed=42, validate=True, suppress_output=True, check_cache=True):
     """
     Apply Roman detector effects to image(s) of a strong lens using Galsim and WebbPSF.
     """
