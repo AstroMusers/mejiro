@@ -47,6 +47,7 @@ def main(config):
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - config.machine.headroom_cores
+    process_count -= int(cpu_count / 2)  # GalSim needs headroom
     count = runs
     if count < process_count:
         process_count = count
@@ -85,7 +86,7 @@ def run_slsim(tuple):
 
     # load SkyPy config file
     cache_dir = os.path.join(module_path, 'data', 'cached_skypy_configs')
-    skypy_config = os.path.join(cache_dir, f'roman_hlwas_sca{sca_id}.yml')  # TODO TEMP
+    skypy_config = os.path.join(cache_dir, f'roman_hlwas_sca{sca_id}.yml')  # TODO TEMP: there should be one source of truth for this, and if necessary, some code should update the cache behind the scenes
     # skypy_config = os.path.join(module_path, 'data', 'roman_hlwas.yml')
     config_file = util.load_skypy_config(skypy_config)
     if debugging: print(f'Loaded SkyPy configuration file {skypy_config}')
@@ -152,10 +153,7 @@ def run_slsim(tuple):
     if debugging: print(f'Computing SNRs for {len(total_lens_population)} lenses')
     snr_list = []
     for candidate in tqdm(total_lens_population, disable=not debugging):
-        snr, _ = survey_sim.get_snr(gglens=candidate, 
-                                    band=survey_params['snr_band'],
-                                    subtract_lens=survey_params['snr_subtract_lens'],
-                                    mask_mult=survey_params['snr_mask_multiplier'])
+        snr, _ = survey_sim.get_snr(candidate, band=survey_params['snr_band'], num_pix=45, side=4.95, oversample=1)
         snr_list.append(snr)
     np.save(os.path.join(output_dir, f'snr_list_{run}_sca{sca_id}.npy'), snr_list)
 
@@ -198,10 +196,7 @@ def run_slsim(tuple):
             continue
 
         # 2. SNR
-        snr, _ = survey_sim.get_snr(gglens=candidate, 
-                                    band=survey_params['snr_band'],
-                                    subtract_lens=survey_params['snr_subtract_lens'],
-                                    mask_mult=survey_params['snr_mask_multiplier'])
+        snr, _ = survey_sim.get_snr(candidate, band=survey_params['snr_band'], num_pix=45, side=4.95, oversample=1)
 
         if snr < survey_params['snr_threshold']:
             # filter this candidate out

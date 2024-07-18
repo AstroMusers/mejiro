@@ -3,6 +3,7 @@ from copy import deepcopy
 
 import numpy as np
 import pandas as pd
+from astropy.cosmology import default_cosmology
 from lenstronomy.Data.pixel_grid import PixelGrid
 from lenstronomy.Data.psf import PSF
 from lenstronomy.ImSim.image_model import ImageModel
@@ -16,7 +17,9 @@ from lenstronomy.Util import util as len_util
 from tqdm import tqdm
 
 import mejiro
+from mejiro.helpers import gs
 from mejiro.helpers.roman_params import RomanParameters
+from mejiro.lenses import lens_util
 
 # get Roman params
 module_path = os.path.dirname(mejiro.__file__)
@@ -24,7 +27,48 @@ csv_path = os.path.join(module_path, 'data', 'roman_spacecraft_and_instrument_pa
 roman_params = RomanParameters(csv_path)
 
 
-def get_snr(gglens, band, subtract_lens=True, mask_mult=1., side=4.95, **kwargs):
+# TODO a(n imperfect) lens subtraction option?
+def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1):
+    sample_lens = lens_util.slsim_lens_to_mejiro(gglens, bands=[band], cosmo=default_cosmology.get())  # TODO pass in cosmology
+
+    # generate synthetic images with lenstronomy
+    model, lens_sb, source_sb = sample_lens.get_array(num_pix * oversample, side, band, return_pieces=True)
+
+    # generate GalSim images
+    results, lenses, sources, _ = gs.get_images(sample_lens, [model], [band], num_pix, num_pix, oversample, oversample,
+               lens_surface_brightness=[lens_sb], source_surface_brightness=[source_sb], detector=1, detector_pos=(2048, 2048),
+               exposure_time=146, ra=30, dec=-30, seed=42, validate=False, suppress_output=True, check_cache=True)
+    
+    # put back into units of counts
+    total = results[0] * 146
+    lens = lenses[0] * 146
+    source = sources[0] * 146
+
+    # get noise; NB neither lens or source has sky background to detector effects added
+    noise = total - (lens + source)
+
+    # calculate SNR in each pixel
+    snr_array = source / np.sqrt(total)
+
+    # mask source
+    masked_source = np.ma.masked_where(snr_array <= 1, source)
+    source_counts = masked_source.compressed().sum()
+
+    # mask lens
+    masked_lens = np.ma.masked_where(snr_array <= 1, lens)
+    lens_counts = masked_lens.compressed().sum()
+
+    # mask noise
+    masked_noise = np.ma.masked_where(snr_array <= 1, noise)
+    noise_counts = masked_noise.compressed().sum()
+
+    # calculate estimated SNR
+    snr = source_counts / np.sqrt(source_counts + lens_counts + noise_counts)
+
+    return snr, total
+
+
+def get_snr_lenstronomy(gglens, band, subtract_lens=True, mask_mult=1., side=4.95, **kwargs):
     if 'total_image' and 'source_surface_brightness' and 'sim_api' in kwargs:
         total_image = kwargs['total_image']
         source = kwargs['source_surface_brightness']
