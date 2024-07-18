@@ -32,10 +32,10 @@ def main(config):
     for sca in scas:
         pickle_path = os.path.join(config.machine.dir_01, f'01_hlwas_sim_detectable_lenses_sca{sca}.pkl')
         lens_list = util.unpickle(pickle_path)
-        assert len(lens_list) != 0, f'No pickled lenses found. Check {pickle_path}.'
         sca_dict[sca] = lens_list
         total += len(lens_list)
     count = total
+    assert total != 0, f'No pickled lenses found. Check {config.machine.dir_01}.'
 
     # directory to write the lenses with subhalos to
     output_parent_dir = config.machine.dir_02
