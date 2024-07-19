@@ -22,6 +22,7 @@ def main(config):
     # enable use of local packages
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
+    from mejiro.helpers import survey_sim
     from mejiro.utils import util
 
     # set top directory for all output of this script
@@ -32,19 +33,18 @@ def main(config):
     image_save_dir = os.path.join(save_dir, 'images')
     util.create_directory_if_not_exists(image_save_dir)
 
-    os.environ['WEBBPSF_PATH'] = "/data/bwedig/STScI/webbpsf-data"
+    # os.environ['WEBBPSF_PATH'] = "/data/bwedig/STScI/webbpsf-data"
 
     # collect lenses
     print(f'Collecting lenses...')
-    pickled_lens_list = os.path.join(config.machine.dir_01, '01_hlwas_sim_detectable_lens_list.pkl')
-    lens_list = util.unpickle(pickled_lens_list)
+    lens_list = survey_sim.collect_all_detectable_lenses(config.machine.dir_01)
     print(f'Collected {len(lens_list)} lenses.')
 
     # debugging?
     debugging = True
 
     # require >10^8 M_\odot subhalo alignment with image?
-    require_alignment = True
+    require_alignment = False
 
     # set subhalo and imaging params
     subhalo_params = {
@@ -55,20 +55,20 @@ def main(config):
     }
     imaging_params = {
         'bands': ['F129'],
-        'oversample': 3,
+        'oversample': 1,  # TODO maybe need to update
         'num_pix': 45,
         'side': 4.95
     }
 
     if debugging: print('Generating power spectra...')
     # tuple the parameters
-    tuple_list = [(lens, subhalo_params, imaging_params, require_alignment, save_dir, image_save_dir, debugging) for lens in lens_list]
+    tuple_list = [(lens, subhalo_params, imaging_params, require_alignment, save_dir, image_save_dir, debugging) for lens in lens_list if lens.snr > 50]
 
     # split up the lenses into batches based on core count
     count = len(lens_list)
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - config.machine.headroom_cores
-    process_count -= 24
+    process_count -= int(cpu_count / 2)
     if count < process_count:
         process_count = count
     if debugging: print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
@@ -250,7 +250,7 @@ def generate_power_spectra(tuple):
         final_array = image.array
 
         # divide through by exposure time to get in units of counts/sec/pixel
-        final_array /= 146
+        # final_array /= 146
 
         det_fx.append(final_array)
 
@@ -283,7 +283,7 @@ def generate_power_spectra(tuple):
         final_array = image.array
 
         # divide through by exposure time to get in units of counts/sec/pixel
-        final_array /= 146
+        # final_array /= 146
 
         ps, r = power_spectrum_1d(final_array)
         np.save(os.path.join(save_dir, f'im_det_{detector}_{lens.uid}.npy'), final_array)
@@ -295,12 +295,12 @@ def generate_power_spectra(tuple):
     total_flux_cps = lens.get_total_flux_cps(band)
     interp = InterpolatedImage(Image(model, xmin=0, ymin=0), scale=0.11 / oversample, flux=total_flux_cps * 146)
     gaussian_psf_interp = psf.get_gaussian_psf(fwhm=0.087, oversample=oversample, pixel_scale=0.11)
-    image = gs.convolve(interp, gaussian_psf_interp, 45)
-    bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector=detector, exposure_time=146, num_pix=45)
+    image = gs.convolve(interp, gaussian_psf_interp, num_pix)
+    bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector=detector, exposure_time=146, num_pix=num_pix)
     image += bkgs[band]  # add sky background to convolved image
     image.quantize()  # integer number of photons are being detected, so quantize
     gaussian_final_array = image.array
-    gaussian_final_array /= 146
+    # gaussian_final_array /= 146
     ps, r = power_spectrum_1d(gaussian_final_array)
     np.save(os.path.join(save_dir, f'im_gaussian_psf_{lens.uid}.npy'), gaussian_final_array)
     np.save(os.path.join(save_dir, f'ps_gaussian_psf_{lens.uid}.npy'), ps)
