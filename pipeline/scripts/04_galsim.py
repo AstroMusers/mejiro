@@ -133,7 +133,7 @@ def get_image(input):
 
     # determine detector and position
     detector = int(sca)
-    detector_pos = gs.get_random_detector_pos(input_size=num_pix, suppress_output=suppress_output)
+    detector_pos = gs.get_random_detector_pos(input_size=num_pix, oversample=grid_oversample, suppress_output=suppress_output)
 
     gs_results = gs.get_images(lens,
                                arrays,

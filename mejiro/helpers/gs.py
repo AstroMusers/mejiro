@@ -27,6 +27,8 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
     # TODO shouldn't need to do this because it should already be set, but getting AttributeError: 'SampleStrongLens' object has no attribute 'lens_light_model_class'
     lens._set_classes()
 
+    # TODO raise exception if entire image is not going to fit on the SCA because the detector position is too close to the edge
+
     # TODO need to be consistent with when a single string band is provided etc.
     # check that the inputs are reasonable
     if validate:
@@ -45,7 +47,7 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
     if detector is None:
         detector = get_random_detector(suppress_output)
     if detector_pos is None:
-        detector_pos = get_random_detector_pos(input_size, suppress_output)
+        detector_pos = get_random_detector_pos(input_size, grid_oversample, suppress_output)
 
     # create galsim rng
     rng = galsim.UniformDeviate(seed)
@@ -178,7 +180,7 @@ def get_random_detector(suppress_output=False):
     return detector
 
 
-def get_random_detector_pos(input_size, suppress_output=False):
+def get_random_detector_pos(input_size, oversample, suppress_output=False):
     """
     Generate a random detector position within the valid range.
 
@@ -194,8 +196,8 @@ def get_random_detector_pos(input_size, suppress_output=False):
     tuple
         The random detector position as a tuple of two integers (x, y).
     """
-    min_pixel = 4 + input_size
-    max_pixel = 4092 - input_size
+    min_pixel = 4 + (input_size / oversample)
+    max_pixel = 4092 - (input_size / oversample)
 
     x, y = random.randrange(min_pixel, max_pixel), random.randrange(min_pixel, max_pixel)
 

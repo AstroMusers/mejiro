@@ -47,7 +47,7 @@ def get_webbpsf_psf(band, detector, detector_position, oversample, check_cache=F
             if not suppress_output: print(f'Loading cached PSF: {psf_path[0]}')
             return util.unpickle(psf_path[0])
         else:
-            if not suppress_output: print(f'PSF {band} {detector} {detector_position} not found in cache {psf_path}')
+            if not suppress_output: print(f'PSF {band} SCA{str(detector).zfill(2)} {detector_position} {oversample} not found in cache {psf_cache_dir}')
 
     # set PSF parameters
     wfi = WFI()
@@ -136,6 +136,7 @@ def get_random_psf_kernel(band, oversample=5, save=None, suppress_output=False):
     wfi.filter = band.upper()
     wfi.detector = detector_int_to_sca(gs.get_random_detector(suppress_output))
     wfi.detector_position = gs.get_random_detector_pos(100,
+                                                       oversample,
                                                        suppress_output)  # TODO refactor so input_size is meaningful
     psf = wfi.calc_psf(oversample=oversample)
     if save is not None:
@@ -193,6 +194,7 @@ def update_pandeia_psfs(detector=None, detector_position=None, suppress_output=F
     wfi.detector = detector_int_to_sca(detector)
     if detector_position is None:
         detector_position = gs.get_random_detector_pos(100,
+                                                       oversample,
                                                        suppress_output)  # TODO refactor so input_size is meaningful
     wfi.detector_position = detector_position
 
