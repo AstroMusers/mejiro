@@ -152,9 +152,14 @@ def run_slsim(tuple):
     # compute SNRs and save
     if debugging: print(f'Computing SNRs for {len(total_lens_population)} lenses')
     snr_list = []
+    j = 0
     for candidate in tqdm(total_lens_population, disable=not debugging):
-        snr, _ = survey_sim.get_snr(candidate, band=survey_params['snr_band'], num_pix=45, side=4.95, oversample=1, debugging=False)
+        snr, masked_snr_array = survey_sim.get_snr(candidate, band=survey_params['snr_band'], num_pix=45, side=4.95, oversample=1, debugging=False)
         snr_list.append(snr)
+        if j < 25:
+            util.pickle(os.path.join(output_dir, f'masked_snr_array_{str(j).zfill(8)}.pkl'), masked_snr_array)
+            util.pickle(os.path.join(output_dir, f'masked_snr_array_snr_{str(j).zfill(8)}.pkl'), snr)
+        j += 1
     np.save(os.path.join(output_dir, f'snr_list_{run}_sca{sca_id}.npy'), snr_list)
 
     # save other params to CSV

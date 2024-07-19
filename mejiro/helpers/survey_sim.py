@@ -65,9 +65,12 @@ def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, debugging=False):
 
     # if no pixels have SNR > 1, not detectable
     if not np.any(snr_array >= 1):
-        return 0, None
+        masked_snr_array = np.ma.masked_where(snr_array <= np.quantile(snr_array, 0.95), snr_array)
+    else:
+        masked_snr_array = np.ma.masked_where(snr_array <= 1, snr_array)
+    # masked_snr_array = np.ma.masked_where(snr_array <= np.quantile(snr_array, 0.95), snr_array)
 
-    masked_snr_array = np.ma.masked_where(snr_array <= 1, snr_array)
+    # calculate regions of connected pixels given the snr mask
     indices_list = regions.get_regions(masked_snr_array)
 
     snr_list = []
@@ -79,7 +82,7 @@ def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, debugging=False):
         snr = numerator / np.sqrt(denominator)
         snr_list.append(snr)
 
-    return np.max(snr_list), total
+    return np.max(snr_list), masked_snr_array
 
 
 def get_snr_lenstronomy(gglens, band, subtract_lens=True, mask_mult=1., side=4.95, **kwargs):
