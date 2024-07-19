@@ -20,6 +20,7 @@ from lenstronomy.Util import util as len_util
 from tqdm import tqdm
 
 import mejiro
+from mejiro.analysis import regions
 from mejiro.helpers import gs
 from mejiro.helpers.roman_params import RomanParameters
 from mejiro.lenses import lens_util
@@ -63,25 +64,22 @@ def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, debugging=False):
     snr_array = source / np.sqrt(total)
 
     # if no pixels have SNR > 1, not detectable
-    if not np.any(snr_array > 1):
+    if not np.any(snr_array >= 1):
         return 0, None
 
-    # mask source
-    masked_source = np.ma.masked_where(snr_array <= 1, source)
-    source_counts = masked_source.compressed().sum()
+    masked_snr_array = np.ma.masked_where(snr_array <= 1, snr_array)
+    indices_list = regions.get_regions(masked_snr_array)
 
-    # mask lens
-    masked_lens = np.ma.masked_where(snr_array <= 1, lens)
-    lens_counts = masked_lens.compressed().sum()
+    snr_list = []
+    for region in indices_list:
+        numerator, denominator = 0, 0
+        for i, j in region:
+            numerator += source[i, j]
+            denominator += source[i, j] + lens[i, j] + noise[i, j]
+        snr = numerator / np.sqrt(denominator)
+        snr_list.append(snr)
 
-    # mask noise
-    masked_noise = np.ma.masked_where(snr_array <= 1, noise)
-    noise_counts = masked_noise.compressed().sum()
-
-    # calculate estimated SNR
-    snr = source_counts / np.sqrt(source_counts + lens_counts + noise_counts)
-
-    return snr, total
+    return np.max(snr_list), total
 
 
 def get_snr_lenstronomy(gglens, band, subtract_lens=True, mask_mult=1., side=4.95, **kwargs):
