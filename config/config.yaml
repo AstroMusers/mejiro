@@ -1,24 +1,24 @@
 defaults:
   - _self_
-  - machine: hpc
+  - machine: uzay
   - override hydra/hydra_logging: disabled
   - override hydra/job_logging: disabled
 
 survey:
-  - runs: 24
+  - runs: 80
   - scas: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]  # 
   - deflector_cut_band: F129
-  - deflector_cut_band_max: 25
+  - deflector_cut_band_max: 24
   - deflector_z_min: 0.01
   - deflector_z_max: 3.
   - source_cut_band: F129
-  - source_cut_band_max: 27
+  - source_cut_band_max: 25
   - source_z_min: 0.01
   - source_z_max: 5.
   - min_image_separation: 0.2  # arcseconds
   - max_image_separation: 10.  # arcseconds
   - mag_arc_limit_band: F129
-  - mag_arc_limit: 25  # this takes pressure off of SNR criterion, so set as high as possible without missing anything
+  - mag_arc_limit: 24  # this takes pressure off of SNR criterion, so set as high as possible without missing anything
   - large_lens_mag_max: 14  # for Einstein radius and Sersic radius criterion
   - large_lens_band: F129  # for Einstein radius and Sersic radius criterion
   - snr_subtract_lens: False
