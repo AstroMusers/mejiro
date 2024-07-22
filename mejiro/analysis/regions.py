@@ -4,6 +4,7 @@ import numpy as np
 from copy import deepcopy
 
 import os  # TODO temp
+from mejiro.utils import util
 
 
 def get_regions(masked_array):
@@ -32,7 +33,7 @@ def get_regions(masked_array):
         return indices_list
     except:
         debug_path = '/data/scratch/btwedig/mejiro/pipeline/debug/max_recursion_limit'
-        np.save(os.path.join(debug_path, f'masked_array_{id(masked_array)}'), masked_array)
+        util.pickle(os.path.join(debug_path, f'masked_array_{id(masked_array)}.pkl'), masked_array)
         return None
 
 
