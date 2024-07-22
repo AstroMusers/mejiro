@@ -211,8 +211,8 @@ def generate_power_spectra(tuple):
     diagnostic_plot.power_spectrum_check(models, lenses, titles, os.path.join(image_save_dir, f'{lens.uid}_00_models.png'), oversampled=True)
 
     # calculate sky backgrounds for each band
-    wcs_dict = gs.get_wcs(30, -30, date=None)
-    bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector=1, exposure_time=146, num_pix=num_pix)
+    # wcs_dict = gs.get_wcs(30, -30, date=None)
+    # bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector=1, exposure_time=146, num_pix=num_pix)
 
     # generate the PSFs I'll need for each unique band
     psf_kernels = {}
@@ -237,13 +237,13 @@ def generate_power_spectra(tuple):
 
     added_bkg = []
     for image, lens in zip(convolved, lenses):
-        image += bkgs[band]  # add sky background to convolved image
+    #     image += bkgs[band]  # add sky background to convolved image
         image.quantize()  # integer number of photons are being detected, so quantize
 
         added_bkg.append(image)
 
     det_fx = []
-    for image, lens, title in zip(added_bkg, lenses, titles):
+    for image, lens, title in zip(added_bkg, lenses, titles):  
         # NB no detector effects
 
         # get the array
@@ -273,8 +273,8 @@ def generate_power_spectra(tuple):
                                                 check_cache=True, suppress_output=False)
         image = gs.convolve(interp, webbpsf_interp, num_pix)
 
-        bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector=detector, exposure_time=146, num_pix=num_pix)
-        image += bkgs[band]  # add sky background to convolved image
+        # bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector=detector, exposure_time=146, num_pix=num_pix)
+        # image += bkgs[band]  # add sky background to convolved image
         image.quantize()  # integer number of photons are being detected, so quantize
 
         # NB no detector effects
@@ -296,8 +296,8 @@ def generate_power_spectra(tuple):
     interp = InterpolatedImage(Image(model, xmin=0, ymin=0), scale=0.11 / oversample, flux=total_flux_cps * 146)
     gaussian_psf_interp = psf.get_gaussian_psf(fwhm=0.087, oversample=oversample, pixel_scale=0.11)
     image = gs.convolve(interp, gaussian_psf_interp, num_pix)
-    bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector=detector, exposure_time=146, num_pix=num_pix)
-    image += bkgs[band]  # add sky background to convolved image
+    # bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector=detector, exposure_time=146, num_pix=num_pix)
+    # image += bkgs[band]  # add sky background to convolved image
     image.quantize()  # integer number of photons are being detected, so quantize
     gaussian_final_array = image.array
     # gaussian_final_array /= 146
