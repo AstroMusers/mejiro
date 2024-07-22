@@ -3,29 +3,37 @@
 import numpy as np
 from copy import deepcopy
 
+import os  # TODO temp
+
+
 def get_regions(masked_array):
-    masked_array = masked_array.filled(0)  # fill masked values with 0
-    formatted_array = masked_array.tolist()  # format as list of lists
+    try:
+        masked_array = masked_array.filled(0)  # fill masked values with 0
+        formatted_array = masked_array.tolist()  # format as list of lists
 
-    graph = Graph(*masked_array.shape, formatted_array)
-    coord_list = graph.get_coord_list()
+        graph = Graph(*masked_array.shape, formatted_array)
+        coord_list = graph.get_coord_list()
 
-    indices_list = []
-    for region in coord_list:
-        x_coords = region[1]
-        y_coords = region[0]
-        original_indices = list(zip(x_coords, y_coords))
-        # print(f'    non-truncated indices are {original_indices}')
+        indices_list = []
+        for region in coord_list:
+            x_coords = region[1]
+            y_coords = region[0]
+            original_indices = list(zip(x_coords, y_coords))
+            # print(f'    non-truncated indices are {original_indices}')
 
-        new_region = []
-        # identify any new coordinates: these are the coordinates of the new region
-        for coordinates in original_indices:
-            if not already_present(coordinates, indices_list):
-                new_region.append(coordinates)
+            new_region = []
+            # identify any new coordinates: these are the coordinates of the new region
+            for coordinates in original_indices:
+                if not already_present(coordinates, indices_list):
+                    new_region.append(coordinates)
 
-        indices_list.append(new_region)
+            indices_list.append(new_region)
 
-    return indices_list
+        return indices_list
+    except:
+        debug_path = '/data/scratch/btwedig/mejiro/pipeline/debug/max_recursion_limit'
+        np.save(os.path.join(debug_path, f'masked_array_{id(masked_array)}'), masked_array)
+        return None
 
 
 def already_present(coordinates_to_check, indices_list):

@@ -72,6 +72,8 @@ def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, return_snr_list=F
 
     # calculate regions of connected pixels given the snr mask
     indices_list = regions.get_regions(masked_snr_array)
+    if indices_list is None:
+        return None, None
 
     snr_list = []
     overall_numerator, overall_denominator = 0, 0

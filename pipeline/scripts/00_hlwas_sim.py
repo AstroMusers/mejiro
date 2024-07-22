@@ -158,6 +158,8 @@ def run_slsim(tuple):
     j = 0
     for candidate in tqdm(total_lens_population, disable=not debugging):
         snr, masked_snr_array = survey_sim.get_snr(candidate, band=survey_params['snr_band'], num_pix=45, side=4.95, oversample=1, debugging=False)
+        if snr is None:
+            continue
         snr_list.append(snr)
         if debugging:
             if j < 25:
@@ -206,6 +208,8 @@ def run_slsim(tuple):
 
         # 2. SNR
         snr, _ = survey_sim.get_snr(candidate, band=survey_params['snr_band'], num_pix=45, side=4.95, oversample=1, debugging=False)
+        if snr is None:
+            continue
 
         if snr < survey_params['snr_threshold']:
             # filter this candidate out
