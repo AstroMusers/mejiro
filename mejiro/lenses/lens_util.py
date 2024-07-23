@@ -19,15 +19,19 @@ module_path = os.path.dirname(mejiro.__file__)
 plt.style.use(f'{module_path}/mplstyle/science.mplstyle')
 
 
-def get_all_detectable_lenses(pipeline_dir, with_subhalos=False):
+def get_detectable_lenses(pipeline_dir, limit=None, with_subhalos=False):
     lens_list = []
 
     if with_subhalos:
         pickles = glob(os.path.join(pipeline_dir, '02', '**', 'lens_with_subhalos_*.pkl'))
+        if limit is not None:
+            pickles = np.random.choice(pickles, limit)
         for pickle in tqdm(pickles):
             lens_list.append(util.unpickle(pickle))
     else:
         pickles = glob(os.path.join(pipeline_dir, '01', '01_hlwas_sim_detectable_lenses_sca*.pkl'))
+        if limit is not None:
+            pickles = np.random.choice(pickles, limit)
         for pickle in tqdm(pickles):
             lens_list.extend(util.unpickle(pickle))
     
