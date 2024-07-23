@@ -68,9 +68,9 @@ def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, return_snr_list=F
     else:
         masked_snr_array = np.ma.masked_where(snr_array <= 1, snr_array)
 
-    if masked_snr_array.count() < 50:
-        debug_path = '/data/scratch/btwedig/mejiro/pipeline/debug/max_recursion_limit'
-        util.pickle(os.path.join(debug_path, f'masked_array_pre_{id(masked_snr_array)}.pkl'), masked_snr_array)
+    # if masked_snr_array.count() < 2000:
+    #     debug_path = '/data/scratch/btwedig/mejiro/pipeline/debug/max_recursion_limit'
+    #     util.pickle(os.path.join(debug_path, f'masked_array_pre_{id(masked_snr_array)}.pkl'), masked_snr_array)
 
     # calculate regions of connected pixels given the snr mask
     indices_list = regions.get_regions(masked_snr_array)
