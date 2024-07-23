@@ -45,7 +45,8 @@ def main(config):
     # tuple the parameters
     runs = survey_params['runs']
     scas = survey_params['scas']
-    tuple_list = [(str(run).zfill(4), str(scas[run % len(scas)]).zfill(2), survey_params, pipeline_params, output_dir, debugging) for run in range(runs)]
+    area = survey_params['area']
+    tuple_list = [(str(run).zfill(4), str(scas[run % len(scas)]).zfill(2), area, survey_params, pipeline_params, output_dir, debugging) for run in range(runs)]
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -81,14 +82,14 @@ def run_slsim(tuple):
     module_path = os.path.dirname(mejiro.__file__)
 
     # unpack tuple
-    run, sca_id, survey_params, pipeline_params, output_dir, debugging = tuple
+    run, sca_id, area, survey_params, pipeline_params, output_dir, debugging = tuple
 
     # prepare a directory for this particular run
     lens_output_dir = os.path.join(output_dir, f'run_{run}_sca{sca_id}')
     util.create_directory_if_not_exists(lens_output_dir)
 
     # load SkyPy config file
-    cache_dir = os.path.join(module_path, 'data', 'cached_skypy_configs')
+    cache_dir = os.path.join(module_path, 'data', f'cached_skypy_configs_{area}')
     skypy_config = os.path.join(cache_dir, f'roman_hlwas_sca{sca_id}.yml')  # TODO TEMP: there should be one source of truth for this, and if necessary, some code should update the cache behind the scenes
     # skypy_config = os.path.join(module_path, 'data', 'roman_hlwas.yml')
     config_file = util.load_skypy_config(skypy_config)
