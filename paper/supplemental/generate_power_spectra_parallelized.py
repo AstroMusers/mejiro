@@ -238,7 +238,7 @@ def generate_power_spectra(tuple):
     added_bkg = []
     for image, lens in zip(convolved, lenses):
     #     image += bkgs[band]  # add sky background to convolved image
-        image.quantize()  # integer number of photons are being detected, so quantize
+        # image.quantize()  # integer number of photons are being detected, so quantize
 
         added_bkg.append(image)
 
@@ -262,7 +262,6 @@ def generate_power_spectra(tuple):
 
     detectors = [4, 1, 9, 17]
     detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
-
     for detector, detector_pos in zip(detectors, detector_positions):
         # get interpolated image
         total_flux_cps = lens.get_total_flux_cps(band)
@@ -275,7 +274,7 @@ def generate_power_spectra(tuple):
 
         # bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector=detector, exposure_time=146, num_pix=num_pix)
         # image += bkgs[band]  # add sky background to convolved image
-        image.quantize()  # integer number of photons are being detected, so quantize
+        # image.quantize()  # integer number of photons are being detected, so quantize
 
         # NB no detector effects
 
@@ -289,6 +288,33 @@ def generate_power_spectra(tuple):
         np.save(os.path.join(save_dir, f'im_det_{detector}_{lens.uid}.npy'), final_array)
         np.save(os.path.join(save_dir, f'ps_det_{detector}_{lens.uid}.npy'), ps)
 
+    bands = ['F106', 'F129', 'F158', 'F184']
+    for band in bands:
+        # get interpolated image
+        total_flux_cps = lens.get_total_flux_cps(band)
+        interp = InterpolatedImage(Image(model, xmin=0, ymin=0), scale=0.11 / oversample, flux=total_flux_cps * 146)
+
+        # convolve image with PSF
+        webbpsf_interp = psf.get_webbpsf_psf(band, detector=1, detector_position=(2048, 2048), oversample=oversample,
+                                                check_cache=True, suppress_output=False)
+        image = gs.convolve(interp, webbpsf_interp, num_pix)
+
+        # bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector=detector, exposure_time=146, num_pix=num_pix)
+        # image += bkgs[band]  # add sky background to convolved image
+        # image.quantize()  # integer number of photons are being detected, so quantize
+
+        # NB no detector effects
+
+        # get the array
+        final_array = image.array
+
+        # divide through by exposure time to get in units of counts/sec/pixel
+        # final_array /= 146
+
+        ps, r = power_spectrum_1d(final_array)
+        np.save(os.path.join(save_dir, f'im_band_{band}_{lens.uid}.npy'), final_array)
+        np.save(os.path.join(save_dir, f'ps_band_{band}_{lens.uid}.npy'), ps)
+
     np.save(os.path.join(save_dir, 'r.npy'), r)
 
     # use Gaussian PSF
@@ -298,7 +324,7 @@ def generate_power_spectra(tuple):
     image = gs.convolve(interp, gaussian_psf_interp, num_pix)
     # bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector=detector, exposure_time=146, num_pix=num_pix)
     # image += bkgs[band]  # add sky background to convolved image
-    image.quantize()  # integer number of photons are being detected, so quantize
+    # image.quantize()  # integer number of photons are being detected, so quantize
     gaussian_final_array = image.array
     # gaussian_final_array /= 146
     ps, r = power_spectrum_1d(gaussian_final_array)
