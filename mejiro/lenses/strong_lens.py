@@ -15,7 +15,6 @@ from lenstronomy.SimulationAPI.ObservationConfig.Roman import Roman
 from lenstronomy.SimulationAPI.sim_api import SimAPI
 from lenstronomy.Util import data_util
 from lenstronomy.Util import util as len_util
-from pyHalo.Cosmology.cosmology import Cosmology
 from pyHalo.preset_models import CDM
 
 from mejiro.utils import util
@@ -101,49 +100,70 @@ class StrongLens:
         self.detector, self.detector_position = None, None
         self.galsim_rng = None
         self.ra, self.dec = None, None
+        self.pyhalo_cosmo = None
 
     def get_lenstronomy_kwargs(self, band):
         # TODO finish
         kwargs_params = {}
         return self.kwargs_model, kwargs_params
 
-    def get_macrolens_kappa(self, num_pix, cone):
-        # TODO docs; this method borrows from pyhalo.utilities.multiplane_convergence
+    def get_total_kappa(self, num_pix, side):
+        self._check_realization()  # ensure subhalos have been added
+
+        # set cosmology by initializing pyHalo's Cosmology object, otherwise Colossus throws an error when calling realization.lensing_quantities()
+        self._set_pyhalo_cosmology()
+
+        halo_lens_model_list, halo_redshift_array, kwargs_halos, _ = self.realization.lensing_quantities(add_mass_sheet_correction=True)
+
+        # halo_lens_model_list and kwargs_halos are lists, but halo_redshift_list is ndarray
+        halo_redshift_list = list(halo_redshift_array)
+
+        lens_model_total = LensModel(lens_model_list=self.lens_model_list_macro + halo_lens_model_list,
+                                z_lens=self.z_lens,
+                                z_source=self.z_source,
+                                lens_redshift_list=self.redshift_list_macro + halo_redshift_list,
+                                cosmo=self.cosmo,
+                                multi_plane=False)
+        kwargs_lens_total = self.kwargs_lens_macro + kwargs_halos
+        
+        return self._get_kappa_image(lens_model_total, kwargs_lens_total, num_pix, side)
+        
+    def get_subhalo_kappa(self, num_pix, side):
+        # TODO docs: this method does NOT include the negative mass sheet correction, so returns the convergence map of just the subhalos
+
+        self._check_realization()  # ensure subhalos have been added
+
+        # set cosmology by initializing pyHalo's Cosmology object, otherwise Colossus throws an error when calling realization.lensing_quantities()
+        self._set_pyhalo_cosmology()
+
+        halo_lens_model_list, halo_redshift_array, kwargs_halos, _ = self.realization.lensing_quantities(add_mass_sheet_correction=False)
+
+        # halo_lens_model_list and kwargs_halos are lists, but halo_redshift_list is ndarray
+        halo_redshift_list = list(halo_redshift_array)
+
+        lens_model_halos_only = LensModel(lens_model_list=halo_lens_model_list, 
+                                          z_lens=self.z_lens, 
+                                          z_source=self.z_source, 
+                                          lens_redshift_list=halo_redshift_list, 
+                                          cosmo=self.cosmo, 
+                                          multi_plane=False)
+        
+        return self._get_kappa_image(lens_model_halos_only, kwargs_halos, num_pix, side)
+
+    def get_macrolens_kappa(self, num_pix, side):
         lens_model_macro = LensModel(self.lens_model_list_macro)
+        return self._get_kappa_image(lens_model_macro, self.kwargs_lens_macro, num_pix, side)
 
-        _r = np.linspace(-cone / 2, cone / 2, num_pix)
+
+    def _get_kappa_image(self, lens_model, kwargs_lens, num_pix, side):
+        _r = np.linspace(-side / 2, side / 2, num_pix)
         xx, yy = np.meshgrid(_r, _r)
-        kappa_macro = lens_model_macro.kappa(xx.ravel(), yy.ravel(), self.kwargs_lens_macro)
-        return kappa_macro.reshape(num_pix, num_pix)
 
-    def get_kappa(self, num_pix, subhalo_cone, _get_kappa_macro=False):
-        # TODO docs; this method is essentially pyhalo.utilities.multiplane_convergence; I needed that result but with a bit of flexibility that pyhalo's method didn't offer OOTB
+        return lens_model.kappa(xx.ravel(), yy.ravel(), kwargs_lens).reshape(num_pix, num_pix)
+    
+    def _check_realization(self):
         if self.realization is None:
             raise ValueError('No subhalos have been added to this StrongLens object.')
-
-        lens_model_list_halos, redshift_array_halos, kwargs_lens_halos, _ = self.realization.lensing_quantities()
-
-        lens_model_macro = LensModel(self.lens_model_list_macro)
-        lens_model = LensModel(self.lens_model_list_macro + lens_model_list_halos,
-                               z_source=self.realization.lens_cosmo.z_source,
-                               multi_plane=True,
-                               lens_redshift_list=self.redshift_list_macro + list(redshift_array_halos),
-                               cosmo=self.cosmo)
-
-        _r = np.linspace(-subhalo_cone / 2, subhalo_cone / 2, num_pix)
-        xx, yy = np.meshgrid(_r, _r)
-
-        kappa_macro = lens_model_macro.kappa(xx.ravel(), yy.ravel(), self.kwargs_lens_macro)
-        kappa = lens_model.kappa(xx.ravel(), yy.ravel(), self.kwargs_lens_macro + kwargs_lens_halos)
-
-        if _get_kappa_macro:
-            return kappa.reshape(num_pix, num_pix), kappa_macro.reshape(num_pix, num_pix)
-        else:
-            return kappa.reshape(num_pix, num_pix)
-
-    def get_delta_kappa(self, num_pix, subhalo_cone):
-        kappa, kappa_macro = self.get_kappa(num_pix, subhalo_cone, _get_kappa_macro=True)
-        return (kappa - kappa_macro).reshape(num_pix, num_pix)
 
     def get_einstein_radius(self):
         return self.kwargs_lens[0]['theta_E']
@@ -166,20 +186,24 @@ class StrongLens:
                    cone_opening_angle_arcsec=subhalo_cone,
                    LOS_normalization=los_normalization,
                    kwargs_cosmo=util.get_kwargs_cosmo(self.cosmo))
-
-    def add_subhalos(self, realization, return_stats=False, suppress_output=True):
-        # set cosmology by initializing pyHalo's Cosmology object, otherwise Colossus throws an error down the line
+    
+    def _set_pyhalo_cosmology(self):
+        from pyHalo.Cosmology.cosmology import Cosmology
         Cosmology(astropy_instance=self.cosmo)
+
+    def add_subhalos(self, realization):  # , return_stats=False, suppress_output=True
+        # set cosmology by initializing pyHalo's Cosmology object, otherwise Colossus throws an error when calling realization.lensing_quantities()
+        self._set_pyhalo_cosmology()
 
         # set some params on the StrongLens object
         self.realization = realization
         self.num_subhalos = len(realization.halos)
 
         # generate lenstronomy objects
-        halo_lens_model_list, halo_redshift_list, kwargs_halos, _ = realization.lensing_quantities()
+        halo_lens_model_list, halo_redshift_array, kwargs_halos, _ = realization.lensing_quantities(add_mass_sheet_correction=True)
 
-        # for some reason, halo_lens_model_list and kwargs_halos are lists, but halo_redshift_list is ndarray
-        halo_redshift_list = halo_redshift_list.tolist()
+        # halo_lens_model_list and kwargs_halos are lists, but halo_redshift_array is ndarray
+        halo_redshift_list = list(halo_redshift_array)
 
         # add subhalos to lenstronomy objects that model the strong lens
         self.kwargs_lens += kwargs_halos
@@ -187,66 +211,68 @@ class StrongLens:
         self.lens_model_list += halo_lens_model_list
         self.lens_model_class = LensModel(self.lens_model_list)
 
-        # now, need to adjust the Einstein radius to account for the subhalos we're about to add
-        # convert Einstein radius to effective lensing mass
-        original_einstein_radius = self.get_einstein_radius()
-        effective_lensing_mass = einstein_radius_to_mass(original_einstein_radius, self.d_l, self.d_s, self.d_ls)
+        # TODO save the negative mass sheet correction kappa as an attribute on this object
 
-        # calculate total mass of subhalos within Einstein radius and total mass of all subhalos
-        total_mass_subhalos_within_einstein_radius, total_subhalo_mass = 0, 0
-        for halo in realization.halos:
-            total_subhalo_mass += halo.mass
-            if np.sqrt(halo.x ** 2 + halo.y ** 2) < original_einstein_radius:
-                total_mass_subhalos_within_einstein_radius += halo.mass
+        # # now, need to adjust the Einstein radius to account for the subhalos we're about to add
+        # # convert Einstein radius to effective lensing mass
+        # original_einstein_radius = self.get_einstein_radius()
+        # effective_lensing_mass = einstein_radius_to_mass(original_einstein_radius, self.d_l, self.d_s, self.d_ls)
 
-        # subtract off the mass of the subhalos within the Einstein radius to get the adjusted lensing mass
-        adjusted_lensing_mass = effective_lensing_mass - total_mass_subhalos_within_einstein_radius
+        # # calculate total mass of subhalos within Einstein radius and total mass of all subhalos
+        # total_mass_subhalos_within_einstein_radius, total_subhalo_mass = 0, 0
+        # for halo in realization.halos:
+        #     total_subhalo_mass += halo.mass
+        #     if np.sqrt(halo.x ** 2 + halo.y ** 2) < original_einstein_radius:
+        #         total_mass_subhalos_within_einstein_radius += halo.mass
 
-        # convert back to Einstein radius
-        adjusted_einstein_radius = mass_to_einstein_radius(adjusted_lensing_mass, self.d_l, self.d_s, self.d_ls)
+        # # subtract off the mass of the subhalos within the Einstein radius to get the adjusted lensing mass
+        # adjusted_lensing_mass = effective_lensing_mass - total_mass_subhalos_within_einstein_radius
 
-        # update lens_kwargs with the adjusted Einstein radius
-        self.kwargs_lens[0]['theta_E'] = adjusted_einstein_radius
+        # # convert back to Einstein radius
+        # adjusted_einstein_radius = mass_to_einstein_radius(adjusted_lensing_mass, self.d_l, self.d_s, self.d_ls)
 
-        # calculate useful percentages
-        if not suppress_output or return_stats:
-            # total subhalo mass can be zero and throw division by zero error
-            try:
-                percent_subhalo_mass_within_einstein_radius = (
-                                                                      total_mass_subhalos_within_einstein_radius / total_subhalo_mass) * 100
-            except:
-                percent_subhalo_mass_within_einstein_radius = 0
-            percent_change_lensing_mass = util.percent_change(effective_lensing_mass, adjusted_lensing_mass)
-            percent_change_einstein_radius = util.percent_change(original_einstein_radius, adjusted_einstein_radius)
+        # # update lens_kwargs with the adjusted Einstein radius
+        # self.kwargs_lens[0]['theta_E'] = adjusted_einstein_radius
 
-        if not suppress_output:
-            print(f'Original Einstein radius: {original_einstein_radius:.4f} arcsec')
-            print(f'Adjusted Einstein radius: {adjusted_einstein_radius:.4f} arcsec')
-            print(f'Percent change of Einstein radius: {percent_change_einstein_radius:.2f}%')
-            print('------------------------------------')
-            print(f'Effective lensing mass: {effective_lensing_mass:.4e} M_Sun')
-            print(f'Adjusted lensing mass: {adjusted_lensing_mass:.4e} M_Sun')
-            print(f'Percent change of lensing mass: {percent_change_lensing_mass:.2f}%')
-            print('------------------------------------')
-            print(
-                f'Total mass of CDM halos within Einstein radius: {total_mass_subhalos_within_einstein_radius:.4e} M_Sun')
-            print(f'Total mass of CDM halos: {total_subhalo_mass:.4e} M_Sun')
-            print(
-                f'Percentage of total subhalo mass within Einstein radius: {percent_subhalo_mass_within_einstein_radius:.2f}%')
-            print('\n')
+        # # calculate useful percentages
+        # if not suppress_output or return_stats:
+        #     # total subhalo mass can be zero and throw division by zero error
+        #     try:
+        #         percent_subhalo_mass_within_einstein_radius = (
+        #                                                               total_mass_subhalos_within_einstein_radius / total_subhalo_mass) * 100
+        #     except:
+        #         percent_subhalo_mass_within_einstein_radius = 0
+        #     percent_change_lensing_mass = util.percent_change(effective_lensing_mass, adjusted_lensing_mass)
+        #     percent_change_einstein_radius = util.percent_change(original_einstein_radius, adjusted_einstein_radius)
 
-        if return_stats:
-            return {
-                'original_einstein_radius': original_einstein_radius,
-                'adjusted_einstein_radius': adjusted_einstein_radius,
-                'percent_change_einstein_radius': percent_change_einstein_radius,
-                'effective_lensing_mass': effective_lensing_mass,
-                'adjusted_lensing_mass': adjusted_lensing_mass,
-                'percent_change_lensing_mass': percent_change_lensing_mass,
-                'total_mass_subhalos_within_einstein_radius': total_mass_subhalos_within_einstein_radius,
-                'total_subhalo_mass': total_subhalo_mass,
-                'percent_subhalo_mass_within_einstein_radius': percent_subhalo_mass_within_einstein_radius
-            }
+        # if not suppress_output:
+        #     print(f'Original Einstein radius: {original_einstein_radius:.4f} arcsec')
+        #     print(f'Adjusted Einstein radius: {adjusted_einstein_radius:.4f} arcsec')
+        #     print(f'Percent change of Einstein radius: {percent_change_einstein_radius:.2f}%')
+        #     print('------------------------------------')
+        #     print(f'Effective lensing mass: {effective_lensing_mass:.4e} M_Sun')
+        #     print(f'Adjusted lensing mass: {adjusted_lensing_mass:.4e} M_Sun')
+        #     print(f'Percent change of lensing mass: {percent_change_lensing_mass:.2f}%')
+        #     print('------------------------------------')
+        #     print(
+        #         f'Total mass of CDM halos within Einstein radius: {total_mass_subhalos_within_einstein_radius:.4e} M_Sun')
+        #     print(f'Total mass of CDM halos: {total_subhalo_mass:.4e} M_Sun')
+        #     print(
+        #         f'Percentage of total subhalo mass within Einstein radius: {percent_subhalo_mass_within_einstein_radius:.2f}%')
+        #     print('\n')
+
+        # if return_stats:
+        #     return {
+        #         'original_einstein_radius': original_einstein_radius,
+        #         'adjusted_einstein_radius': adjusted_einstein_radius,
+        #         'percent_change_einstein_radius': percent_change_einstein_radius,
+        #         'effective_lensing_mass': effective_lensing_mass,
+        #         'adjusted_lensing_mass': adjusted_lensing_mass,
+        #         'percent_change_lensing_mass': percent_change_lensing_mass,
+        #         'total_mass_subhalos_within_einstein_radius': total_mass_subhalos_within_einstein_radius,
+        #         'total_subhalo_mass': total_subhalo_mass,
+        #         'percent_subhalo_mass_within_einstein_radius': percent_subhalo_mass_within_einstein_radius
+        #     }
 
     # TODO method to calculate snr and update snr attribute based on the full image
     # TODO put final image as an attribute on this class?
