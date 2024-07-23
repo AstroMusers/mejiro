@@ -149,7 +149,7 @@ def combine_all_csvs(path, prefix="", filename=None):
 
     # concatenate CSVs
     pd_list = [pd.read_csv(f) for f in csv_files]
-    df_res = pd.concat(pd_list, ignore_index=True)
+    df_res = pd.concat(pd_list, ignore_index=True)  # TODO fix FutureWarning: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated. In a future version, this will no longer exclude empty or all-NA columns when determining the result dtypes. To retain the old behavior, exclude the relevant entries before the concat operation.
 
     # save as combined CSV
     if filename is not None:
