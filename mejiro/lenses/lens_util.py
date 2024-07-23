@@ -1,6 +1,7 @@
 import os
 from copy import deepcopy
 from glob import glob
+from tqdm import tqdm
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,6 +17,23 @@ from mejiro.utils import util
 
 module_path = os.path.dirname(mejiro.__file__)
 plt.style.use(f'{module_path}/mplstyle/science.mplstyle')
+
+
+def get_all_detectable_lenses(pipeline_dir, with_subhalos=False):
+    lens_list = []
+
+    if with_subhalos:
+        pickles = glob(os.path.join(pipeline_dir, '02', '**', 'lens_with_subhalos_*.pkl'))
+        for pickle in tqdm(pickles):
+            lens_list.append(util.unpickle(pickle))
+    else:
+        pickles = glob(os.path.join(pipeline_dir, '01', '01_hlwas_sim_detectable_lenses_sca*.pkl'))
+        for pickle in tqdm(pickles):
+            lens_list.extend(util.unpickle(pickle))
+    
+    assert len(lens_list) != 0, f'No pickled lenses found. Check {pipeline_dir}.'
+
+    return lens_list
 
 
 def overplot_subhalos(lens, num_pix=91, side=10.01, band='F106', figsize=7):

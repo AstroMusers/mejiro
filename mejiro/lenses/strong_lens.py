@@ -137,7 +137,7 @@ class StrongLens:
         kappa = lens_model.kappa(xx.ravel(), yy.ravel(), self.kwargs_lens_macro + kwargs_lens_halos)
 
         if _get_kappa_macro:
-            return kappa, kappa_macro
+            return kappa.reshape(num_pix, num_pix), kappa_macro.reshape(num_pix, num_pix)
         else:
             return kappa.reshape(num_pix, num_pix)
 
