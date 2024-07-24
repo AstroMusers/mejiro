@@ -64,7 +64,7 @@ def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, return_snr_list=F
     snr_array = source / np.sqrt(total)
 
     if not np.any(snr_array >= 1):
-        masked_snr_array = np.ma.masked_where(snr_array <= np.quantile(snr_array, 0.95), snr_array)
+        masked_snr_array = np.ma.masked_where(snr_array <= np.quantile(snr_array, 0.9), snr_array)
     else:
         masked_snr_array = np.ma.masked_where(snr_array <= 1, snr_array)
 
@@ -92,7 +92,7 @@ def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, return_snr_list=F
     snr_list.append(overall_snr)
 
     if return_snr_list:
-        return snr_list, overall_snr
+        return snr_list, overall_snr, None, None
     else:
         return np.max(snr_list), masked_snr_array, snr_list, overall_snr
 
