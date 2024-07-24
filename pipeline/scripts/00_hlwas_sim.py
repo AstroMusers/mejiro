@@ -6,6 +6,7 @@ import time
 from glob import glob
 from multiprocessing import Pool
 from pprint import pprint
+import matplotlib.pyplot as plt
 
 import hydra
 import numpy as np
@@ -155,19 +156,19 @@ def run_slsim(tuple):
 
     # compute SNRs and save
     if debugging: print(f'Computing SNRs for {len(total_lens_population)} lenses')
-    snr_list = []
-    j = 0
+    # snr_list = []
+    # j = 0
     for candidate in tqdm(total_lens_population, disable=not debugging):
-        snr, masked_snr_array = survey_sim.get_snr(candidate, band=survey_params['snr_band'], num_pix=45, side=4.95, oversample=1, debugging=False)
+        snr, _, _, _ = survey_sim.get_snr(candidate, band=survey_params['snr_band'], num_pix=45, side=4.95, oversample=1, debugging=False)
         if snr is None:
             continue
-        snr_list.append(snr)
-        if debugging:
-            if j < 25:
-                util.pickle(os.path.join(output_dir, f'masked_snr_array_{str(j).zfill(8)}.pkl'), masked_snr_array)
-                util.pickle(os.path.join(output_dir, f'masked_snr_array_snr_{str(j).zfill(8)}.pkl'), snr)
-        j += 1
-    np.save(os.path.join(output_dir, f'snr_list_{run}_sca{sca_id}.npy'), snr_list)
+        # snr_list.append(snr)
+        # if debugging:
+        #     if j < 25:
+        #         util.pickle(os.path.join(output_dir, f'masked_snr_array_{str(j).zfill(8)}.pkl'), masked_snr_array)
+        #         util.pickle(os.path.join(output_dir, f'masked_snr_array_snr_{str(j).zfill(8)}.pkl'), snr)
+        # j += 1
+    # np.save(os.path.join(output_dir, f'snr_list_{run}_sca{sca_id}.npy'), snr_list)
 
     # save other params to CSV
     total_pop_csv = os.path.join(output_dir, f'total_pop_{run}_sca{sca_id}.csv')
@@ -195,6 +196,7 @@ def run_slsim(tuple):
     # apply additional detectability criteria
     limit = None
     detectable_gglenses, detectable_snr_list = [], []
+    k = 0
     for candidate in tqdm(lens_population, disable=not debugging):
         # 1. Einstein radius and Sersic radius
         _, kwargs_params = candidate.lenstronomy_kwargs(band=survey_params['large_lens_band'])
@@ -208,9 +210,17 @@ def run_slsim(tuple):
             continue
 
         # 2. SNR
-        snr, _ = survey_sim.get_snr(candidate, band=survey_params['snr_band'], num_pix=45, side=4.95, oversample=1, debugging=False)
+        snr, masked_snr_array, snr_list, overall_snr = survey_sim.get_snr(candidate, band=survey_params['snr_band'], num_pix=70, side=7.7, oversample=1, debugging=False)
         if snr is None:
             continue
+
+        if k % 100 == 0:
+            plt.imshow(masked_snr_array)
+            plt.title(f'SNR: {snr}, Overall SNR: {overall_snr}, SNR list: {snr_list}')
+            plt.colorbar()
+            plt.savefig(os.path.join(output_dir, f'masked_snr_array_{id(masked_snr_array)}.png'))
+            plt.close()
+        k += 1
 
         if snr < survey_params['snr_threshold']:
             # filter this candidate out
