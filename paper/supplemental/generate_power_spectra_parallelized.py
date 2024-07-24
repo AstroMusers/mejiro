@@ -16,6 +16,10 @@ from pyHalo.preset_models import CDM
 from tqdm import tqdm
 
 
+def get_psf_id_string(band, detector, detector_position, oversample):
+    return f'{band}_{detector}_{detector_position[0]}_{detector_position[1]}_{oversample}'
+
+
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
 def main(config):
     start = time.time()
@@ -69,9 +73,8 @@ def main(config):
     detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
     psf_id_strings = []
     for band in bands:
-        for detector in detectors:
-            for detector_position in detector_positions:
-                psf_id_strings.append(f'{band}_{detector}_{detector_position[0]}_{detector_position[1]}_{imaging_params["oversample"]}')
+        for detector, detector_position in zip(detectors, detector_positions):
+            psf_id_strings.append(get_psf_id_string(band, detector, detector_position, imaging_params['oversample']))
         
     for id_string in psf_id_strings:
         psf_path = glob(os.path.join(psf_cache_dir, f'{id_string}.pkl'))
@@ -79,10 +82,9 @@ def main(config):
         print(f'Loading cached PSF: {psf_path[0]}')
         cached_psfs[id_string] = util.unpickle(psf_path[0])
 
-
     if debugging: print('Generating power spectra...')
     # tuple the parameters
-    tuple_list = [(lens, subhalo_params, imaging_params, require_alignment, save_dir, image_save_dir, debugging) for lens in lens_list if lens.snr > 50]
+    tuple_list = [(lens, subhalo_params, imaging_params, cached_psfs, require_alignment, save_dir, image_save_dir, debugging) for lens in lens_list if lens.snr > 50]
 
     # split up the lenses into batches based on core count
     count = len(lens_list)
@@ -117,15 +119,15 @@ def generate_power_spectra(tuple):
     from mejiro.utils import util
 
     # unpack tuple
-    (lens, subhalo_params, imaging_params, require_alignment, save_dir, image_save_dir, debugging) = tuple
+    (lens, subhalo_params, imaging_params, cached_psfs, require_alignment, save_dir, image_save_dir, debugging) = tuple
     r_tidal = subhalo_params['r_tidal']
     sigma_sub = subhalo_params['sigma_sub']
     subhalo_cone = subhalo_params['subhalo_cone']
     los_normalization = subhalo_params['los_normalization']
     bands = imaging_params['bands']
-    oversample = 5
-    num_pix = 45
-    side = 4.95
+    oversample = imaging_params['oversample']
+    num_pix = imaging_params['num_pix']
+    side = imaging_params['side']
 
     if debugging: print(f'Processing lens {lens.uid}...')
 
@@ -239,10 +241,16 @@ def generate_power_spectra(tuple):
             kappa = lens.get_macrolens_kappa(num_pix=num_pix * oversample, side=side)
         else:
             kappa = lens.get_total_kappa(num_pix=num_pix * oversample, side=side)
-        ps, kappa_r = power_spectrum_1d(kappa)
+        ps_kappa, kappa_r = power_spectrum_1d(kappa)
         np.save(os.path.join(save_dir, f'kappa_im_{title}.npy'), kappa)
-        np.save(os.path.join(save_dir, f'kappa_ps_{title}.npy'), ps)
+        np.save(os.path.join(save_dir, f'kappa_ps_{title}.npy'), ps_kappa)
+
+        proj_mass = lens.lens_cosmo.kappa2proj_mass(kappa)
+        ps_proj_mass, proj_mass_r = power_spectrum_1d(proj_mass)
+        np.save(os.path.join(save_dir, f'kappa_im_{title}.npy'), proj_mass)
+        np.save(os.path.join(save_dir, f'kappa_ps_{title}.npy'), ps_proj_mass)
     np.save(os.path.join(save_dir, 'kappa_r.npy'), kappa_r)
+    np.save(os.path.join(save_dir, 'proj_mass_r.npy'), proj_mass_r)
 
     # calculate sky backgrounds for each band
     # wcs_dict = gs.get_wcs(30, -30, date=None)
@@ -251,8 +259,8 @@ def generate_power_spectra(tuple):
     # generate the PSFs I'll need for each unique band
     psf_kernels = {}
     for band in bands:
-        psf_kernels[band] = psf.get_webbpsf_psf(band, detector=1, detector_position=(2048, 2048), oversample=oversample,
-                                                check_cache=True, suppress_output=False)
+        psf_id_string = get_psf_id_string(band, 1, (2048, 2048), oversample)
+        psf_kernels[band] = cached_psfs[psf_id_string]
 
     # convolve models with the PSFs
     convolved = []
@@ -302,8 +310,8 @@ def generate_power_spectra(tuple):
         interp = InterpolatedImage(Image(model, xmin=0, ymin=0), scale=0.11 / oversample, flux=total_flux_cps * 146)
 
         # convolve image with PSF
-        webbpsf_interp = psf.get_webbpsf_psf(band, detector=detector, detector_position=detector_pos, oversample=oversample,
-                                                check_cache=True, suppress_output=False)
+        psf_id_string = get_psf_id_string(band, detector, detector_pos, oversample)
+        webbpsf_interp = cached_psfs[psf_id_string]
         image = gs.convolve(interp, webbpsf_interp, num_pix)
 
         # bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector=detector, exposure_time=146, num_pix=num_pix)
@@ -329,8 +337,8 @@ def generate_power_spectra(tuple):
         interp = InterpolatedImage(Image(model, xmin=0, ymin=0), scale=0.11 / oversample, flux=total_flux_cps * 146)
 
         # convolve image with PSF
-        webbpsf_interp = psf.get_webbpsf_psf(band, detector=1, detector_position=(2048, 2048), oversample=oversample,
-                                                check_cache=True, suppress_output=False)
+        psf_id_string = get_psf_id_string(band, 1, (2048, 2048), oversample)
+        webbpsf_interp = cached_psfs[psf_id_string]
         image = gs.convolve(interp, webbpsf_interp, num_pix)
 
         # bkgs = gs.get_sky_bkgs(wcs_dict, bands, detector=detector, exposure_time=146, num_pix=num_pix)
