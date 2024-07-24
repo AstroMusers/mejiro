@@ -11,36 +11,13 @@ from mejiro.helpers import gs
 from mejiro.utils import util
 
 
-def get_webbpsf_psf(band, detector, detector_position, oversample, check_cache=False, suppress_output=True):
-    """
-    Generate a Point Spread Function (PSF) using WebbPSF and return it as an InterpolatedImage.
-
-    Parameters
-    ----------
-    band : str
-        The filter band to use for generating the PSF.
-    detector : int
-        The detector number to use for generating the PSF.
-    detector_position : str
-        The detector position to use for generating the PSF.
-    oversample : int
-        The oversampling factor to use for generating the PSF.
-    check_cache : bool, optional
-        If True, check the cached PSF directory. Default is False.
-    suppress_output : bool, optional
-        Suppress debugging output to console. Default is True.
-
-    Returns
-    -------
-    galsim.InterpolatedImage
-        The PSF as an InterpolatedImage object.
-
-    """
+def get_webbpsf_psf(band, detector, detector_position, oversample, check_cache=False, psf_cache_dir=None, suppress_output=True):
     # first, check if it exists in the cache
     if check_cache:
-        import mejiro
-        module_path = os.path.dirname(mejiro.__file__)
-        psf_cache_dir = os.path.join(module_path, 'data', 'cached_psfs')
+        if psf_cache_dir is None:
+            import mejiro
+            module_path = os.path.dirname(mejiro.__file__)
+            psf_cache_dir = os.path.join(module_path, 'data', 'cached_psfs')
         psf_path = glob(os.path.join(psf_cache_dir,
                                      f'{band}_{detector}_{detector_position[0]}_{detector_position[1]}_{oversample}.pkl'))
         if len(psf_path) == 1:
@@ -77,26 +54,6 @@ def get_gaussian_psf(fwhm, oversample, pixel_scale=0.11):
 
 
 def get_galsim_psf(band, detector, detector_position, pupil_bin=1):
-    """
-    Get the GalSim Point Spread Function (PSF) for a given band, detector, and detector position.
-
-    Parameters
-    ----------
-    band : str
-        The filter band.
-    detector : int
-        The detector for which the PSF is obtained.
-    detector_position : tuple
-        The position on the detector in (x, y) coordinates.
-    pupil_bin : int, optional
-        The pupil binning factor. Default is 1.
-
-    Returns
-    -------
-    galsim.PSF
-        The GalSim Point Spread Function.
-
-    """
     return roman.getPSF(SCA=detector,
                         SCA_pos=galsim.PositionD(*detector_position),
                         bandpass=None,

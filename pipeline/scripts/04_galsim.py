@@ -39,6 +39,8 @@ def main(config):
     scas = sorted([int(d[3:]) for d in sca_dirnames])
     scas = [str(sca).zfill(2) for sca in scas]
 
+    psf_cache_dir = os.path.join(config.machine.data_dir, 'cached_psfs')
+
     # directories to write the output to
     output_parent_dir = config.machine.dir_04
     util.create_directory_if_not_exists(output_parent_dir)
@@ -76,7 +78,7 @@ def main(config):
         input_dir = os.path.join(input_parent_dir, f'sca{sca}')
         output_dir = os.path.join(output_parent_dir, f'sca{sca}')
         for uid in lens_uids:
-            tuple_list.append((uid, sca, pipeline_params, input_dir, output_dir))
+            tuple_list.append((uid, sca, pipeline_params, input_dir, output_dir, psf_cache_dir))
             i += 1
             if i == limit:
                 break
@@ -106,7 +108,7 @@ def get_image(input):
     from mejiro.utils import util
 
     # unpack tuple
-    (uid, sca, pipeline_params, input_dir, output_dir) = input
+    (uid, sca, pipeline_params, input_dir, output_dir, psf_cache_dir) = input
 
     # unpack pipeline_params
     bands = pipeline_params['bands']
@@ -133,7 +135,9 @@ def get_image(input):
 
     # determine detector and position
     detector = int(sca)
-    detector_pos = gs.get_random_detector_pos(input_size=num_pix, oversample=grid_oversample, suppress_output=suppress_output)
+    side = int(4088 / 4)
+    possible_detector_positions = [(side, side), (3 * side, side), (side, 3 * side), (3 * side, 3 * side), (side * 2, side * 2)]
+    detector_pos = random.choice(possible_detector_positions)
 
     gs_results = gs.get_images(lens,
                                arrays,
@@ -150,6 +154,7 @@ def get_image(input):
                                dec=None,
                                seed=random.randint(0, 2 ** 16 - 1),
                                validate=False,
+                               psf_cache_dir=psf_cache_dir,
                                suppress_output=suppress_output)
 
     if pieces:

@@ -13,7 +13,7 @@ from mejiro.utils import util
 
 def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, psf_oversample,
                lens_surface_brightness=None, source_surface_brightness=None, detector=None, detector_pos=None,
-               exposure_time=146, ra=30, dec=-30, seed=42, validate=True, suppress_output=True, check_cache=True):
+               exposure_time=146, ra=30, dec=-30, seed=42, validate=True, suppress_output=True, check_cache=True, psf_cache_dir=None):
     """
     Apply Roman detector effects to image(s) of a strong lens using Galsim and WebbPSF.
     """
@@ -63,8 +63,7 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
     # generate the PSFs I'll need for each unique band
     psf_kernels = {}
     for band in bands:
-        psf_kernels[band] = psf.get_webbpsf_psf(band, detector, detector_pos, psf_oversample, check_cache,
-                                                suppress_output)
+        psf_kernels[band] = psf.get_webbpsf_psf(band, detector, detector_pos, psf_oversample, check_cache, psf_cache_dir, suppress_output)
 
     results = []
     for _, (band, array) in enumerate(zip(bands, arrays)):
