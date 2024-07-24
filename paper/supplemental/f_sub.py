@@ -84,7 +84,7 @@ def main(config):
         # generate synthetic image (surface brightness)
         sb = lens.get_array(num_pix=num_pix, side=side, band='F129')
 
-        total_kappa = lens.get_total_kappa(num_pix=num_pix, side=side)
+        # total_kappa = lens.get_total_kappa(num_pix=num_pix, side=side)
         macrolens_kappa = lens.get_macrolens_kappa(num_pix=num_pix, side=side)
         subhalo_kappa = lens.get_subhalo_kappa(num_pix=num_pix, side=side)
 
