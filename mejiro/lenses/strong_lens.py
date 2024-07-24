@@ -54,7 +54,6 @@ class StrongLens:
             # https://iopscience.iop.org/article/10.1088/0004-637X/716/2/1579
             self.main_halo_mass = self.lens_stellar_mass * 51 * (1 + self.z_lens) ** 0.9
         else:
-            self.lens_total_mass = None
             self.main_halo_mass = None
 
         # set magnitudes in each band
@@ -103,7 +102,6 @@ class StrongLens:
         self.detector, self.detector_position = None, None
         self.galsim_rng = None
         self.ra, self.dec = None, None
-        self.pyhalo_cosmo = None
 
     def get_lenstronomy_kwargs(self, band):
         # TODO finish
@@ -167,6 +165,32 @@ class StrongLens:
     def _check_realization(self):
         if self.realization is None:
             raise ValueError('No subhalos have been added to this StrongLens object.')
+        
+    def get_f_sub(self, num_pix=45, side=4.95, plot=False):
+        import matplotlib.pyplot as plt
+        from mejiro.analysis.regions import annular_mask
+
+        einstein_radius = self.get_einstein_radius()
+        r_in = (einstein_radius - 0.2) / 0.11  # units of pixels
+        r_out = (einstein_radius + 0.2) / 0.11  # units of pixels
+
+        mask = annular_mask(num_pix, num_pix, (num_pix//2, num_pix//2), r_in, r_out)
+
+        macrolens_kappa = self.get_macrolens_kappa(num_pix=num_pix, side=side)
+        subhalo_kappa = self.get_subhalo_kappa(num_pix=num_pix, side=side)
+        masked_kappa_subhalos = np.ma.masked_array(subhalo_kappa, mask=~mask)
+        masked_kappa_macro = np.ma.masked_array(macrolens_kappa, mask=~mask)
+        f_sub = masked_kappa_subhalos.compressed().sum() / masked_kappa_macro.compressed().sum()
+
+        if plot:
+            _, ax = plt.subplots(1, 2, figsize=(6, 3), constrained_layout=True)
+            ax[0].imshow(masked_kappa_subhalos, cmap='bwr')
+            ax[1].imshow(masked_kappa_macro, cmap='bwr')
+            ax[0].set_title(f'{masked_kappa_subhalos.compressed().sum():.2f}')
+            ax[1].set_title(f'{masked_kappa_macro.compressed().sum():.2f}')
+            return f_sub, ax
+        else:
+            return f_sub, None
 
     def get_einstein_radius(self):
         return self.kwargs_lens[0]['theta_E']
@@ -179,8 +203,8 @@ class StrongLens:
 
     def generate_cdm_subhalos(self, log_mlow=6, log_mhigh=10, subhalo_cone=10, los_normalization=0, r_tidal=0.5,
                               sigma_sub=0.055):
-        return CDM(self.z_lens,
-                   self.z_source,
+        return CDM(z_lens=self.z_lens,
+                   z_source=self.z_source,
                    sigma_sub=sigma_sub,
                    log_mlow=log_mlow,
                    log_mhigh=log_mhigh,
@@ -188,7 +212,8 @@ class StrongLens:
                    r_tidal=r_tidal,
                    cone_opening_angle_arcsec=subhalo_cone,
                    LOS_normalization=los_normalization,
-                   kwargs_cosmo=util.get_kwargs_cosmo(self.cosmo))
+                   kwargs_cosmo=util.get_kwargs_cosmo(self.cosmo),
+                   two_halo_contribution=False)
     
     def _set_pyhalo_cosmology(self):
         from pyHalo.Cosmology.cosmology import Cosmology

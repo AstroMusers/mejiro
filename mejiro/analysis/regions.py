@@ -1,10 +1,18 @@
-# All of this borrows heavily from the tutorial at https://www.geeksforgeeks.org/find-the-number-of-islands-using-dfs/
+# get_regions() borrows heavily from the tutorial at https://www.geeksforgeeks.org/find-the-number-of-islands-using-dfs/
 
 import numpy as np
 from copy import deepcopy
 
 import os  # TODO temp
 from mejiro.utils import util
+
+
+def annular_mask(dimx, dimy, center, r_in, r_out):
+    Y, X = np.ogrid[:dimx, :dimy]
+    distance_from_center = np.sqrt((X - center[0])**2 + (Y-center[1])**2)
+
+    return (r_in <= distance_from_center) & \
+    (distance_from_center <= r_out)
 
 
 def get_regions(masked_array):
