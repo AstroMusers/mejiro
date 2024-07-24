@@ -96,6 +96,9 @@ def add(tuple):
     z_lens = round(lens.z_lens, 2)
     z_source = round(lens.z_source, 2)
 
+    # get Einstein radius
+    einstein_radius = lens.get_einstein_radius()
+
     try:
         cdm_realization = CDM(z_lens,
                               z_source,
@@ -104,7 +107,7 @@ def add(tuple):
                               log_mhigh=log_mhigh,
                               log_m_host=log_m_host,
                               r_tidal=r_tidal,
-                              cone_opening_angle_arcsec=subhalo_cone,
+                              cone_opening_angle_arcsec=einstein_radius * 3,
                               LOS_normalization=los_normalization,
                               kwargs_cosmo=kwargs_cosmo)
     except Exception as e:
@@ -112,12 +115,13 @@ def add(tuple):
         return
 
     # add subhalos
-    stats_dict = lens.add_subhalos(cdm_realization, return_stats=True)
+    # stats_dict = lens.add_subhalos(cdm_realization, return_stats=True)
+    lens.add_subhalos(cdm_realization)
 
     # pickle the stats
-    stats_dir = os.path.join(output_dir, 'stats')
-    util.create_directory_if_not_exists(stats_dir)
-    util.pickle(os.path.join(stats_dir, f'subhalo_stats_{lens.uid}.pkl'), stats_dict)
+    # stats_dir = os.path.join(output_dir, 'stats')
+    # util.create_directory_if_not_exists(stats_dir)
+    # util.pickle(os.path.join(stats_dir, f'subhalo_stats_{lens.uid}.pkl'), stats_dict)
 
     # pickle the subhalo realization
     subhalo_dir = os.path.join(output_dir, 'subhalos')
