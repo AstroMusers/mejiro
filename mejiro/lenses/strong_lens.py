@@ -31,6 +31,10 @@ class StrongLens:
         self.snr = snr
         self.uid = uid
 
+        # get redshifts
+        self.z_lens = kwargs_model['lens_redshift_list'][0]
+        self.z_source = kwargs_model['z_source']
+
         # calculate lens total mass and main halo mass
         if lens_stellar_mass is not None:
             # see Table 3, doi:10.1088/0004-637X/724/1/511
@@ -52,10 +56,6 @@ class StrongLens:
         else:
             self.lens_total_mass = None
             self.main_halo_mass = None
-
-        # get redshifts
-        self.z_lens = kwargs_model['lens_redshift_list'][0]
-        self.z_source = kwargs_model['z_source']
 
         # set magnitudes in each band
         self.lens_mags = lens_mags
