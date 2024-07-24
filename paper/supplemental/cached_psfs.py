@@ -24,7 +24,7 @@ def main(config):
     util.create_directory_if_not_exists(save_dir)
 
     oversamples = [1, 3, 5]
-    bands = ['F106', 'F129', 'F184']
+    bands = ['F106', 'F129', 'F158', 'F184']
     detectors = [4, 1, 9, 17]
     detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
 

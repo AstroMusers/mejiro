@@ -4,6 +4,7 @@ import os
 import sys
 import time
 from copy import deepcopy
+from glob import glob
 from multiprocessing import Pool
 
 import hydra
@@ -22,6 +23,7 @@ def main(config):
     # enable use of local packages
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
+    import mejiro
     from mejiro.helpers import survey_sim
     from mejiro.utils import util
 
@@ -32,8 +34,6 @@ def main(config):
 
     image_save_dir = os.path.join(save_dir, 'images')
     util.create_directory_if_not_exists(image_save_dir)
-
-    # os.environ['WEBBPSF_PATH'] = "/data/bwedig/STScI/webbpsf-data"
 
     # collect lenses
     print(f'Collecting lenses...')
@@ -55,10 +55,30 @@ def main(config):
     }
     imaging_params = {
         'bands': ['F129'],
-        'oversample': 1,  # TODO maybe need to update
+        'oversample': 5,  # TODO maybe need to update
         'num_pix': 45,
         'side': 4.95
     }
+
+    # read cached PSFs
+    cached_psfs = {}
+    module_path = os.path.dirname(mejiro.__file__)
+    psf_cache_dir = os.path.join(module_path, 'data', 'cached_psfs')
+    bands = ['F106', 'F129', 'F158', 'F184']
+    detectors = [4, 1, 9, 17]
+    detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
+    psf_id_strings = []
+    for band in bands:
+        for detector in detectors:
+            for detector_position in detector_positions:
+                psf_id_strings.append(f'{band}_{detector}_{detector_position[0]}_{detector_position[1]}_{imaging_params["oversample"]}')
+        
+    for id_string in psf_id_strings:
+        psf_path = glob(os.path.join(psf_cache_dir, f'{id_string}.pkl'))
+        assert len(psf_path) == 1, f'Cached PSF for {id_string} not found in {psf_cache_dir}'
+        print(f'Loading cached PSF: {psf_path[0]}')
+        cached_psfs[id_string] = util.unpickle(psf_path[0])
+
 
     if debugging: print('Generating power spectra...')
     # tuple the parameters
@@ -103,9 +123,9 @@ def generate_power_spectra(tuple):
     subhalo_cone = subhalo_params['subhalo_cone']
     los_normalization = subhalo_params['los_normalization']
     bands = imaging_params['bands']
-    oversample = imaging_params['oversample']
-    num_pix = imaging_params['num_pix']
-    side = imaging_params['side']
+    oversample = 5
+    num_pix = 45
+    side = 4.95
 
     if debugging: print(f'Processing lens {lens.uid}...')
 
@@ -114,6 +134,8 @@ def generate_power_spectra(tuple):
     z_lens = round(lens.z_lens, 2)
     z_source = round(lens.z_source, 2)
     log_m_host = np.log10(lens.main_halo_mass)
+
+    # TODO set subhalo_cone based on Einstein radius?
 
     cut_8_success, med_success, smol_success = False, False, False
 
@@ -154,6 +176,7 @@ def generate_power_spectra(tuple):
                 cut_8_success = True
             except:
                 cut_8_success = False
+    if debugging: print(f'lens {lens.uid}: Generated large population.')
 
     while not med_success:
         try:
@@ -198,9 +221,9 @@ def generate_power_spectra(tuple):
     lens_cut_7 = deepcopy(lens)
     lens_cut_8 = deepcopy(lens)
 
-    lens_cut_6.add_subhalos(cut_6, suppress_output=True)
-    lens_cut_7.add_subhalos(cut_7, suppress_output=True)
-    lens_cut_8.add_subhalos(cut_8, suppress_output=True)
+    lens_cut_6.add_subhalos(cut_6)
+    lens_cut_7.add_subhalos(cut_7)
+    lens_cut_8.add_subhalos(cut_8)
 
     lenses = [lens_cut_6, lens_cut_7, lens_cut_8, lens]
     titles = [f'cut_6_{lens.uid}', f'cut_7_{lens.uid}',
@@ -209,6 +232,17 @@ def generate_power_spectra(tuple):
 
     # check that the models were generated correctly
     diagnostic_plot.power_spectrum_check(models, lenses, titles, os.path.join(image_save_dir, f'{lens.uid}_00_models.png'), oversampled=True)
+
+    # generate power spectra of convergence maps
+    for model, lens, title in zip(models, lenses, titles):
+        if title == f'no_subhalos_{lens.uid}':
+            kappa = lens.get_macrolens_kappa(num_pix=num_pix * oversample, side=side)
+        else:
+            kappa = lens.get_total_kappa(num_pix=num_pix * oversample, side=side)
+        ps, kappa_r = power_spectrum_1d(kappa)
+        np.save(os.path.join(save_dir, f'kappa_im_{title}.npy'), kappa)
+        np.save(os.path.join(save_dir, f'kappa_ps_{title}.npy'), ps)
+    np.save(os.path.join(save_dir, 'kappa_r.npy'), kappa_r)
 
     # calculate sky backgrounds for each band
     # wcs_dict = gs.get_wcs(30, -30, date=None)
