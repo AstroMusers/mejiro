@@ -171,8 +171,8 @@ class StrongLens:
         from mejiro.analysis.regions import annular_mask
 
         einstein_radius = self.get_einstein_radius()
-        r_in = (einstein_radius - 0.2) / 0.11  # units of pixels
-        r_out = (einstein_radius + 0.2) / 0.11  # units of pixels
+        r_in = (einstein_radius - 0.2) / (side / num_pix)  # units of pixels
+        r_out = (einstein_radius + 0.2) / (side / num_pix)  # units of pixels
 
         mask = annular_mask(num_pix, num_pix, (num_pix//2, num_pix//2), r_in, r_out)
 
@@ -186,8 +186,8 @@ class StrongLens:
             _, ax = plt.subplots(1, 2, figsize=(6, 3), constrained_layout=True)
             ax[0].imshow(masked_kappa_subhalos, cmap='bwr')
             ax[1].imshow(masked_kappa_macro, cmap='bwr')
-            ax[0].set_title(f'{masked_kappa_subhalos.compressed().sum():.2f}')
-            ax[1].set_title(f'{masked_kappa_macro.compressed().sum():.2f}')
+            ax[0].set_title(r'$\sum_n \int_{\mathrm{annulus}}d^2\theta\,\kappa_n=$' + f'{masked_kappa_subhalos.compressed().sum():.6f}')
+            ax[1].set_title(r'$\int_{\mathrm{annulus}}d^2\theta\,\kappa_{\mathrm{host}}=$' + f'{masked_kappa_macro.compressed().sum():.6f}')
             return f_sub, ax
         else:
             return f_sub, None
