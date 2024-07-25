@@ -113,8 +113,8 @@ def run_slsim(tuple):
     survey_area = float(config_file['fsky'][:-5])
     sky_area = Quantity(value=survey_area, unit='deg2')
     from astropy.cosmology import FlatLambdaCDM
-    # cosmo = default_cosmology.get() TODO UPDATE
-    cosmo = FlatLambdaCDM(H0=70, Om0=0.3)
+    # cosmo = default_cosmology.get()
+    cosmo = FlatLambdaCDM(H0=67.66, Om0=0.30966, Ob0=0.04897)
     bands = pipeline_params['bands']
     if debugging: print(f'Surveying {sky_area.value} deg2 with bands {bands}')
 
