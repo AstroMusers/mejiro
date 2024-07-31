@@ -1,4 +1,4 @@
-> :warning: **Currently under active development**
+> :warning: **Currently under active development. Setup instructions are likely out-of-date. Expect updated instructions and documentation by September 2024. Please reach out to me with any questions.**
 
 # Overview
 
