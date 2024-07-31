@@ -61,7 +61,7 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
     lens.galsim_rng = rng
 
     # calculate sky backgrounds for each band
-    bkgs = get_sky_bkgs(bands, exposure_time, num_pix=input_size)
+    bkgs = get_sky_bkgs(bands, exposure_time, num_pix=input_size, oversample=grid_oversample)
 
     # generate the PSFs I'll need for each unique band
     psf_kernels = {}
@@ -242,7 +242,7 @@ def convolve(interp, galsim_psf, input_size):
     return convolved.drawImage(im)
 
 
-def get_sky_bkgs(bands, exposure_time, num_pix):
+def get_sky_bkgs(bands, exposure_time, num_pix, oversample):
     # was only one band provided as a string? or a list of bands?
     single_band = False
     if not isinstance(bands, list):
@@ -267,10 +267,14 @@ def get_sky_bkgs(bands, exposure_time, num_pix):
         thermal_bkg = roman_params.get_thermal_bkg(band)
 
         # combine the two backgrounds (still counts/pixel/sec)
+        sky_image += sky_level
         sky_image += thermal_bkg
 
         # convert to counts/pixel
         sky_image *= exposure_time
+
+        # if the image is oversampled, the sky background must be spread out over more pixels
+        sky_image /= oversample ** 2
 
         bkgs[band] = sky_image
 
