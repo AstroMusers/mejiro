@@ -35,6 +35,11 @@ def main(config):
     survey_params = util.hydra_to_dict(config.survey)
     debugging = pipeline_params['debugging']
 
+    if debugging:
+        debug_dir = os.path.join(config.machine.pipeline_dir, 'debug', 'max_recursion_limit')
+        util.create_directory_if_not_exists(debug_dir)
+        util.clear_directory(debug_dir)
+
     # set recursion limit for SNR estimation code
     sys.setrecursionlimit(45 ** 2)  # Python default is 1000
 
@@ -165,7 +170,12 @@ def run_slsim(tuple):
     snr_list = []
     # j = 0
     for candidate in tqdm(total_lens_population, disable=not debugging):
-        snr, _, _, _ = survey_sim.get_snr(candidate, band=survey_params['snr_band'], num_pix=45, side=4.95, oversample=1, debugging=False)
+        snr, _, _, _ = survey_sim.get_snr(candidate, 
+                                          band=survey_params['snr_band'], 
+                                          num_pix=survey_params['snr_num_pix'], 
+                                          side=survey_params['snr_side'], 
+                                          oversample=survey_params['snr_oversample'], 
+                                          debugging=False)
         if snr is None:
             continue
         snr_list.append(snr)
@@ -216,7 +226,9 @@ def run_slsim(tuple):
             continue
 
         # 2. SNR
-        snr, masked_snr_array, snr_list, overall_snr = survey_sim.get_snr(candidate, band=survey_params['snr_band'], num_pix=70, side=7.7, oversample=1, debugging=False)
+        snr, masked_snr_array, snr_list, overall_snr = survey_sim.get_snr(candidate, 
+                                                                          band=survey_params['snr_band'], num_pix=survey_params['snr_num_pix'], side=survey_params['snr_side'], oversample=survey_params['snr_oversample'], 
+                                                                          debugging=False)
         if snr is None:
             continue
 

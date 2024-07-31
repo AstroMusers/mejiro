@@ -40,8 +40,12 @@ def get_regions(masked_array):
 
         return indices_list
     except:
-        debug_path = '/data/scratch/btwedig/mejiro/pipeline/debug/max_recursion_limit'
-        util.pickle(os.path.join(debug_path, f'masked_array_{id(masked_array)}.pkl'), masked_array)
+        try:
+            debug_path = '/data/scratch/btwedig/mejiro/pipeline/debug/max_recursion_limit'
+            util.pickle(os.path.join(debug_path, f'masked_array_{id(masked_array)}.pkl'), masked_array)
+        except:
+            debug_path = '/data/bwedig/mejiro/pipeline/debug/max_recursion_limit'
+            util.pickle(os.path.join(debug_path, f'masked_array_{id(masked_array)}.pkl'), masked_array)
         return None
 
 
