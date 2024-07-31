@@ -32,6 +32,11 @@ csv_path = os.path.join(module_path, 'data', 'roman_spacecraft_and_instrument_pa
 roman_params = RomanParameters(csv_path)
 
 
+def count_detectable_lenses(dir):
+    lens_pickles = glob(dir + '/**/detectable_lens_*.pkl')
+    return len(lens_pickles)
+
+
 def collect_all_detectable_lenses(dir):
     pickle_paths = glob(dir + '/01_hlwas_sim_detectable_lenses_sca*.pkl')
     detectable_lenses = []

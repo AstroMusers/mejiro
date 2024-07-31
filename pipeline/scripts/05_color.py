@@ -101,6 +101,8 @@ def get_image(input):
     # unpack tuple
     (uid, pipeline_params, input_dir, output_dir) = input
     rgb_bands = pipeline_params['rgb_bands']
+    stretch = pipeline_params['rgb_stretch']
+    q = pipeline_params['rgb_q']
     pieces = pipeline_params['pieces']
 
     # assign bands to colors
@@ -110,7 +112,7 @@ def get_image(input):
 
     # generate and save color image
     from mejiro.helpers import color
-    rgb_image = color.get_rgb(image_b=blue, image_g=green, image_r=red, stretch=4, Q=5)
+    rgb_image = color.get_rgb(image_b=blue, image_g=green, image_r=red, stretch=stretch, Q=q)  # originally stretch=4, Q=5; then stretch=3, Q=4
     np.save(os.path.join(output_dir, f'galsim_color_{str(uid).zfill(8)}.npy'), rgb_image)
 
     if pieces:
@@ -118,7 +120,7 @@ def get_image(input):
             red = np.load(input_dir + f'/galsim_{str(uid).zfill(8)}_{piece}_{rgb_bands[0]}.npy')
             green = np.load(input_dir + f'/galsim_{str(uid).zfill(8)}_{piece}_{rgb_bands[1]}.npy')
             blue = np.load(input_dir + f'/galsim_{str(uid).zfill(8)}_{piece}_{rgb_bands[2]}.npy')
-            rgb_image = color.get_rgb(image_b=blue, image_g=green, image_r=red, stretch=3, Q=4)  # stretch=4, Q=5
+            rgb_image = color.get_rgb(image_b=blue, image_g=green, image_r=red, stretch=stretch, Q=q)  
             np.save(os.path.join(output_dir, f'galsim_color_{str(uid).zfill(8)}_{piece}.npy'), rgb_image)
 
     stop = time.time()

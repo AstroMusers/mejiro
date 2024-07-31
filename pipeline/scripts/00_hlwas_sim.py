@@ -28,6 +28,7 @@ def main(config):
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
     from mejiro.utils import util
+    from mejiro.helpers import survey_sim
 
     # retrieve configuration parameters
     pipeline_params = util.hydra_to_dict(config.pipeline)
@@ -66,6 +67,10 @@ def main(config):
     for batch in tqdm(batches):
         pool = Pool(processes=process_count)
         pool.map(run_slsim, batch)
+
+    num_detectable = survey_sim.count_detectable_lenses(output_dir)
+    print(f'{num_detectable} detectable lenses found')
+    print(f'{num_detectable / area / runs:.2f} per square degree')
 
     stop = time.time()
     execution_time = str(datetime.timedelta(seconds=round(stop - start)))
@@ -112,9 +117,10 @@ def run_slsim(tuple):
     config_file = util.load_skypy_config(skypy_config)  # read skypy config file to get survey area
     survey_area = float(config_file['fsky'][:-5])
     sky_area = Quantity(value=survey_area, unit='deg2')
-    from astropy.cosmology import FlatLambdaCDM
-    # cosmo = default_cosmology.get()
-    cosmo = FlatLambdaCDM(H0=67.66, Om0=0.30966, Ob0=0.04897)
+    assert sky_area.value == area, f'Area mismatch: {sky_area.value} != {area}'  # TODO temp
+    cosmo = default_cosmology.get()
+    # from astropy.cosmology import FlatLambdaCDM
+    # cosmo = FlatLambdaCDM(H0=67.66, Om0=0.30966, Ob0=0.04897)
     bands = pipeline_params['bands']
     if debugging: print(f'Surveying {sky_area.value} deg2 with bands {bands}')
 

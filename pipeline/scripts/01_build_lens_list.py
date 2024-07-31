@@ -66,7 +66,7 @@ def main(config):
         pickle_target = os.path.join(config.machine.dir_01, f'01_hlwas_sim_detectable_lenses_sca{sca_id}.pkl')
         util.pickle(pickle_target, lens_list)
     
-    print(f'Pickled {uid + 1} lenses to {config.machine.dir_01}')
+    print(f'Pickled {uid} lenses to {config.machine.dir_01}')
 
     stop = time.time()
     util.print_execution_time(start, stop)

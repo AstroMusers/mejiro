@@ -36,6 +36,7 @@ def main(config):
         total += len(lens_list)
     count = total
     assert total != 0, f'No pickled lenses found. Check {config.machine.dir_01}.'
+    print(f'Processing {total} lens(es)')
 
     # directory to write the lenses with subhalos to
     output_parent_dir = config.machine.dir_02
@@ -82,7 +83,6 @@ def add(tuple):
     (lens, pipeline_params, output_dir) = tuple
 
     # unpack pipeline_params
-    subhalo_cone = pipeline_params['subhalo_cone']
     los_normalization = pipeline_params['los_normalization']
     r_tidal = pipeline_params['r_tidal']
     sigma_sub = pipeline_params['sigma_sub']
@@ -90,8 +90,8 @@ def add(tuple):
     log_mhigh = pipeline_params['log_mhigh']
 
     log_m_host = np.log10(lens.main_halo_mass)
-    # kwargs_cosmo = util.get_kwargs_cosmo(lens.cosmo)  # TODO UPDATE 
-    kwargs_cosmo = util.get_kwargs_cosmo(default_cosmology.get())
+    kwargs_cosmo = util.get_kwargs_cosmo(lens.cosmo)  
+
     # circumvent bug with pyhalo, sometimes fails when redshifts have more than 2 decimal places
     z_lens = round(lens.z_lens, 2)
     z_source = round(lens.z_source, 2)
@@ -115,13 +115,7 @@ def add(tuple):
         return
 
     # add subhalos
-    # stats_dict = lens.add_subhalos(cdm_realization, return_stats=True)
     lens.add_subhalos(cdm_realization)
-
-    # pickle the stats
-    # stats_dir = os.path.join(output_dir, 'stats')
-    # util.create_directory_if_not_exists(stats_dir)
-    # util.pickle(os.path.join(stats_dir, f'subhalo_stats_{lens.uid}.pkl'), stats_dict)
 
     # pickle the subhalo realization
     subhalo_dir = os.path.join(output_dir, 'subhalos')
