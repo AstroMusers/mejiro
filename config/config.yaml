@@ -25,6 +25,9 @@ survey:
   - snr_subtract_lens: False
   - snr_band: F129
   - snr_threshold: 20
+  - snr_num_pix: 45  # 70
+  - snr_side: 4.95  # 7.7
+  - snr_oversample: 1
   - snr_mask_multiplier: 1.  # mean + (this factor * stdev) forms mask around arcs
   - zodi_multiplier: 1.5  # multiplied with minimum zodiacal light, used in SNR estimate
 

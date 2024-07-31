@@ -52,16 +52,16 @@ class Roman:
         """
         return self.psf_fwhm[band.upper()]
 
-    # retrieved 25 June 2024 from https://roman.gsfc.nasa.gov/science/WFI_technical.html
+    # retrieved 31 July 2024 from https://roman.gsfc.nasa.gov/science/WFI_technical.html
     thermal_backgrounds = {
-        'F062': 0.,
-        'F087': 0.,
-        'F106': 0.,
-        'F129': 0.,
-        'F158': 0.04,
-        'F184': 0.17,
-        'F213': 4.52,
-        'F146': 0.98
+        'F062': 0.003,
+        'F087': 0.003,
+        'F106': 0.003,
+        'F129': 0.003,
+        'F158': 0.048,
+        'F184': 0.155,
+        'F213': 4.38,
+        'F146': 1.03
     }
 
     def get_thermal_bkg(self, band):
@@ -69,6 +69,24 @@ class Roman:
         Return internal thermal background in given band in counts/sec/pixel
         """
         return self.thermal_backgrounds[band.upper()]
+    
+    # retrieved 31 July 2024 from https://roman.gsfc.nasa.gov/science/WFI_technical.html
+    min_zodi = {
+        'F062': 0.25,
+        'F087': 0.251,
+        'F106': 0.277,
+        'F129': 0.267,
+        'F158': 0.244,
+        'F184': 0.141,
+        'F213': 0.118,
+        'F146': 0.781
+    }
+
+    def get_min_zodi(self, band):
+        """
+        Return minimum zodiacal light level in given band in counts/pixel/sec (count rate per pixel)
+        """
+        return self.min_zodi[band.upper()]
 
     # retrieved 25 June 2024 from https://iopscience.iop.org/article/10.3847/1538-4357/aac08b/pdf
     # TODO these numbers are likely outdated, so recalculate based on latest effective area curves

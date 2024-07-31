@@ -9,6 +9,9 @@ from galsim import roman
 
 from mejiro.helpers import psf
 from mejiro.utils import util
+from mejiro.instruments.roman import Roman
+
+roman_params = Roman()
 
 
 def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, psf_oversample,
@@ -35,13 +38,13 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
         _validate_input(arrays, bands)
 
     # check provided coordinates
-    assert (ra is None and dec is None) or (ra is not None and dec is not None), 'Provide both RA and DEC or neither'
-    if ra is None and dec is None:
-        # get random wcs
-        wcs_dict = get_random_hlwas_wcs(suppress_output)
-    else:
-        # get wcs
-        wcs_dict = get_wcs(ra, dec, date=None)
+    # assert (ra is None and dec is None) or (ra is not None and dec is not None), 'Provide both RA and DEC or neither'
+    # if ra is None and dec is None:
+    #     # get random wcs
+    #     wcs_dict = get_random_hlwas_wcs(suppress_output)
+    # else:
+    #     # get wcs
+    #     wcs_dict = get_wcs(ra, dec, date=None)
 
     # check provided detector and detector position
     if detector is None:
@@ -53,12 +56,12 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
     rng = galsim.UniformDeviate(seed)
 
     # set attributes on StrongLens
-    lens.ra, lens.dec = ra, dec
+    # lens.ra, lens.dec = ra, dec
     lens.detector, lens.detector_position = detector, detector_pos
     lens.galsim_rng = rng
 
     # calculate sky backgrounds for each band
-    bkgs = get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix=input_size)
+    bkgs = get_sky_bkgs(bands, exposure_time, num_pix=input_size)
 
     # generate the PSFs I'll need for each unique band
     psf_kernels = {}
@@ -160,19 +163,6 @@ def _validate_input(arrays, bands):
 
 
 def get_random_detector(suppress_output=False):
-    """
-    Generate a random detector number.
-
-    Parameters
-    ----------
-    suppress_output : bool, optional
-        If True, the detector number will not be printed. Default is False.
-
-    Returns
-    -------
-    int
-        A random detector number between 1 and 18.
-    """
     detector = random.randint(1, 18)
     if not suppress_output:
         print(f'Detector: {detector}')
@@ -180,21 +170,6 @@ def get_random_detector(suppress_output=False):
 
 
 def get_random_detector_pos(input_size, oversample, suppress_output=False):
-    """
-    Generate a random detector position within the valid range.
-
-    Parameters
-    ----------
-    input_size : int
-        The size of the input image.
-    suppress_output : bool, optional
-        Whether to suppress the output of the detector position. Default is False.
-
-    Returns
-    -------
-    tuple
-        The random detector position as a tuple of two integers (x, y).
-    """
     min_pixel = 4 + (input_size / oversample)
     max_pixel = 4092 - (input_size / oversample)
 
@@ -267,7 +242,7 @@ def convolve(interp, galsim_psf, input_size):
     return convolved.drawImage(im)
 
 
-def get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix):
+def get_sky_bkgs(bands, exposure_time, num_pix):
     # was only one band provided as a string? or a list of bands?
     single_band = False
     if not isinstance(bands, list):
@@ -276,23 +251,58 @@ def get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix):
 
     bkgs = {}
     for band in bands:
-        # get bandpass object
-        bandpass = get_bandpass(band)
-
-        # get wcs
-        wcs = wcs_dict[detector]
-
         # build Image
-        sky_image = galsim.ImageF(num_pix, num_pix, wcs=wcs)
+        sky_image = galsim.ImageF(num_pix, num_pix)
 
-        sca_cent_pos = wcs.toWorld(sky_image.true_center)
-        sky_level = roman.getSkyLevel(bandpass, world_pos=sca_cent_pos, exptime=exposure_time)
+        # get minimum zodiacal light in this band in counts/pixel/sec
+        sky_level = roman_params.get_min_zodi(band)
+
+        # "For observations at high galactic latitudes, the Zodi intensity is typically ~1.5x the minimum" (https://roman.gsfc.nasa.gov/science/WFI_technical.html)
+        sky_level *= 1.5
+
+        # the stray light level is currently set in GalSim to a pessimistic 10% of sky level
         sky_level *= (1. + roman.stray_light_fraction)
-        wcs.makeSkyImage(sky_image, sky_level)
 
-        thermal_bkg = roman.thermal_backgrounds[get_bandpass_key(band)] * exposure_time
+        # get thermal background in this band in counts/pixel/sec
+        thermal_bkg = roman_params.get_thermal_bkg(band)
+
+        # combine the two backgrounds (still counts/pixel/sec)
         sky_image += thermal_bkg
+
+        # convert to counts/pixel
+        sky_image *= exposure_time
 
         bkgs[band] = sky_image
 
     return bkgs
+
+
+# def get_sky_bkgs(wcs_dict, bands, detector, exposure_time, num_pix):
+#     # was only one band provided as a string? or a list of bands?
+#     single_band = False
+#     if not isinstance(bands, list):
+#         single_band = True
+#         bands = [bands]
+
+#     bkgs = {}
+#     for band in bands:
+#         # get bandpass object
+#         bandpass = get_bandpass(band)
+
+#         # get wcs
+#         wcs = wcs_dict[detector]
+
+#         # build Image
+#         sky_image = galsim.ImageF(num_pix, num_pix, wcs=wcs)
+
+#         sca_cent_pos = wcs.toWorld(sky_image.true_center)
+#         sky_level = roman.getSkyLevel(bandpass, world_pos=sca_cent_pos, exptime=exposure_time)
+#         sky_level *= (1. + roman.stray_light_fraction)
+#         wcs.makeSkyImage(sky_image, sky_level)
+
+#         thermal_bkg = roman.thermal_backgrounds[get_bandpass_key(band)] * exposure_time
+#         sky_image += thermal_bkg
+
+#         bkgs[band] = sky_image
+
+#     return bkgs
