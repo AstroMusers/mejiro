@@ -12,7 +12,7 @@ from omegaconf import OmegaConf
 from PIL import Image
 
 
-def rotate_array(array, angle):
+def rotate_array(array, angle, fillcolor='white'):
     """
     Rotate a 2D numpy array by a given angle.
 
@@ -30,7 +30,7 @@ def rotate_array(array, angle):
 
     """
     pil_image = Image.fromarray(array)
-    rotated_pil_image = pil_image.rotate(angle)
+    rotated_pil_image = pil_image.rotate(angle, fillcolor=fillcolor)
     return np.asarray(rotated_pil_image)
 
 
