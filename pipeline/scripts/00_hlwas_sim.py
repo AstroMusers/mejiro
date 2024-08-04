@@ -44,10 +44,14 @@ def main(config):
     sys.setrecursionlimit(45 ** 2)  # Python default is 1000
 
     # set up output directory
-    output_dir = config.machine.dir_00
+    if debugging:
+        output_dir = os.path.join(f'{config.machine.pipeline_dir}_dev')
+    else:
+        output_dir = config.machine.dir_00
     util.create_directory_if_not_exists(output_dir)
-    util.clear_directory(output_dir)
+    # util.clear_directory(output_dir)
     if debugging: print(f'Set up output directory {output_dir}')
+    sys.exit(0)
 
     # tuple the parameters
     runs = survey_params['runs']
