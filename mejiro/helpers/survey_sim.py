@@ -25,6 +25,7 @@ from mejiro.helpers import gs
 from mejiro.helpers.roman_params import RomanParameters
 from mejiro.lenses import lens_util
 from mejiro.utils import util
+from mejiro.plots import diagnostic_plot
 
 # get Roman params
 module_path = os.path.dirname(mejiro.__file__)
@@ -75,6 +76,7 @@ def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, return_snr_list=F
 
     # calculate regions of connected pixels given the snr mask
     indices_list = regions.get_regions(masked_snr_array)
+
     if indices_list is None:
         return None, None, None, None
 
@@ -91,6 +93,9 @@ def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, return_snr_list=F
         overall_denominator += denominator
     overall_snr = overall_numerator / np.sqrt(overall_denominator)
     snr_list.append(overall_snr)
+
+    if np.max(snr_list) > 20:
+        diagnostic_plot.snr_plot(total, lens, source, noise, snr_array, masked_snr_array, snr_list)
 
     if return_snr_list:
         return snr_list, overall_snr, None, None

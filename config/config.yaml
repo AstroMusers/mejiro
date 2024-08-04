@@ -5,8 +5,8 @@ defaults:
   - override hydra/job_logging: disabled
 
 survey:
-  - runs: 54
-  - area: 0.5
+  - runs: 1  # 54
+  - area: 0.1
   - scas: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]  # 
   - deflector_cut_band: F129
   - deflector_cut_band_max: 27
@@ -25,8 +25,8 @@ survey:
   - snr_subtract_lens: False
   - snr_band: F129
   - snr_threshold: 20
-  - snr_num_pix: 45  # 70
-  - snr_side: 4.95  # 7.7
+  - snr_num_pix: 90  # 45  # 70
+  - snr_side: 9.9  # 4.95  # 7.7
   - snr_oversample: 1
   # - zodi_multiplier: 1.5  # multiplied with minimum zodiacal light
 

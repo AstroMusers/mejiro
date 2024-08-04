@@ -51,7 +51,6 @@ def main(config):
     util.create_directory_if_not_exists(output_dir)
     # util.clear_directory(output_dir)
     if debugging: print(f'Set up output directory {output_dir}')
-    sys.exit(0)
 
     # tuple the parameters
     runs = survey_params['runs']

@@ -7,6 +7,40 @@ from mejiro.plots import plot_util
 from mejiro.lenses import lens_util
 
 
+def snr_plot(total, lens, source, noise, snr_array, masked_snr_array, snr_list):
+    _, ax = plt.subplots(2, 3, figsize=(12, 8))
+
+    # vmin, vmax = plot_util.get_min_max([total, lens, source, noise])
+
+    im00 = ax[0][0].imshow(total)  # , vmin=vmin, vmax=vmax
+    plt.colorbar(im00, ax=ax[0][0])
+    ax[0][0].set_title('Total Image')
+    
+    im01 = ax[0][1].imshow(lens)
+    plt.colorbar(im01, ax=ax[0][1])
+    ax[0][1].set_title('Lens')
+
+    im02 = ax[0][2].imshow(source)
+    plt.colorbar(im02, ax=ax[0][2])
+    ax[0][2].set_title('Source')
+
+    im10 = ax[1][0].imshow(noise)
+    plt.colorbar(im10, ax=ax[1][0])
+    ax[1][0].set_title('Noise')
+
+    im11 = ax[1][1].imshow(snr_array)
+    plt.colorbar(im11, ax=ax[1][1])
+    ax[1][1].set_title('SNR Array')
+
+    im12 = ax[1][2].imshow(masked_snr_array)
+    plt.colorbar(im12, ax=ax[1][2])
+    ax[1][2].set_title('Masked SNR Array')
+
+    plt.suptitle(f'SNR: {np.max(snr_list)}')
+    plt.savefig(f'/data/bwedig/mejiro/pipeline/debug/snr/snr_check_{id(total)}.png')
+    plt.close()
+
+
 def power_spectrum_check(array_list, lenses, titles, save_path, oversampled):
     if type(array_list[0]) is not np.ndarray:
         array_list = [i.array for i in array_list]
