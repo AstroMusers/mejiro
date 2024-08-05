@@ -58,7 +58,7 @@ def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, return_snr_list=F
     # generate GalSim images
     results, lenses, sources, _ = gs.get_images(sample_lens, [model], [band], num_pix, num_pix, oversample, oversample,
                lens_surface_brightness=[lens_sb], source_surface_brightness=[source_sb], detector=1, detector_pos=(2048, 2048),
-               exposure_time=146, ra=30, dec=-30, seed=42, validate=False, suppress_output=True, check_cache=True)
+               exposure_time=146, ra=30, dec=-30, seed=None, validate=False, suppress_output=True, check_cache=True)
 
     # put back into units of counts
     total = results[0] * 146
@@ -77,7 +77,7 @@ def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, return_snr_list=F
         masked_snr_array = np.ma.masked_where(snr_array <= 1, snr_array)
 
     # calculate regions of connected pixels given the snr mask
-    indices_list = regions.get_regions(masked_snr_array)
+    indices_list = regions.get_regions(masked_snr_array, debug_dir)
 
     if indices_list is None:
         return None, None, None, None
