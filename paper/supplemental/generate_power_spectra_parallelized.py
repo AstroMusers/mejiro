@@ -60,8 +60,8 @@ def main(config):
     imaging_params = {
         'bands': ['F129'],
         'oversample': 5,  # TODO maybe need to update
-        'num_pix': 45,
-        'side': 4.95
+        'num_pix': 91,  # 45
+        'side': 10.01  # 4.95
     }
 
     # read cached PSFs

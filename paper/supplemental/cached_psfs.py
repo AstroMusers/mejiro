@@ -20,8 +20,8 @@ def main(config):
         os.environ['WEBBPSF_PATH'] = '/data/scratch/btwedig/STScI/ref_data/webbpsf-data'
 
     # set directory for all output of this script
-    # save_dir = os.path.join(config.machine.repo_dir, 'mejiro', 'data', 'cached_psfs')
-    save_dir = os.path.join(config.machine.data_dir, 'cached_psfs')
+    save_dir = os.path.join(config.machine.repo_dir, 'mejiro', 'data', 'cached_psfs')
+    # save_dir = os.path.join(config.machine.data_dir, 'cached_psfs')
     util.create_directory_if_not_exists(save_dir)
 
     oversamples = [1, 3, 5]
