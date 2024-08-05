@@ -47,7 +47,9 @@ def collect_all_detectable_lenses(dir):
 
 
 # TODO a(n imperfect) lens subtraction option?
-def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, return_snr_list=False, debugging=False):
+def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, return_snr_list=False, debugging=False, debug_dir=None):
+    if debugging: assert debug_dir is not None, 'Debugging is enabled but no debug directory is provided.'
+
     sample_lens = lens_util.slsim_lens_to_mejiro(gglens, bands=[band], cosmo=default_cosmology.get())  # TODO pass in cosmology
 
     # generate synthetic images with lenstronomy
@@ -95,7 +97,7 @@ def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, return_snr_list=F
     snr_list.append(overall_snr)
 
     if debugging and np.max(snr_list) > 20:
-        diagnostic_plot.snr_plot(total, lens, source, noise, snr_array, masked_snr_array, snr_list)
+        diagnostic_plot.snr_plot(total, lens, source, noise, snr_array, masked_snr_array, snr_list, debug_dir)
 
     if return_snr_list:
         return snr_list, overall_snr, None, None

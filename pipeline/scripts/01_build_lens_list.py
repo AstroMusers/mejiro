@@ -19,6 +19,8 @@ def main(config):
     from mejiro.lenses import lens_util
     from mejiro.utils import util
 
+    # TODO enable debugging: set an output dir at the top of the script based on a config param, then reference that throughout
+
     # create directory that this script will write to
     util.create_directory_if_not_exists(config.machine.dir_01)
     util.clear_directory(config.machine.dir_01)

@@ -15,7 +15,7 @@ def annular_mask(dimx, dimy, center, r_in, r_out):
     (distance_from_center <= r_out)
 
 
-def get_regions(masked_array):
+def get_regions(masked_array, debug_dir):
     try:
         masked_array = masked_array.filled(0)  # fill masked values with 0
         formatted_array = masked_array.tolist()  # format as list of lists
@@ -40,12 +40,7 @@ def get_regions(masked_array):
 
         return indices_list
     except:
-        try:
-            debug_path = '/data/scratch/btwedig/mejiro/pipeline/debug/max_recursion_limit'
-            util.pickle(os.path.join(debug_path, f'masked_array_{id(masked_array)}.pkl'), masked_array)
-        except:
-            debug_path = '/data/bwedig/mejiro/pipeline/debug/max_recursion_limit'
-            util.pickle(os.path.join(debug_path, f'masked_array_{id(masked_array)}.pkl'), masked_array)
+        util.pickle(os.path.join(debug_dir, 'max_recursion_limit', f'masked_array_{id(masked_array)}.pkl'), masked_array)
         return None
 
 

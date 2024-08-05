@@ -35,27 +35,29 @@ def main(config):
     survey_params = util.hydra_to_dict(config.survey)
     debugging = pipeline_params['debugging']
 
-    if debugging:
-        debug_dir = os.path.join(config.machine.pipeline_dir, 'debug')
-        util.create_directory_if_not_exists(debug_dir)
-        util.clear_directory(debug_dir)
-        util.create_directory_if_not_exists(os.path.join(debug_dir, 'max_recursion_limit'))
-        util.create_directory_if_not_exists(os.path.join(debug_dir, 'snr'))
-
     # set up output directory
     if debugging:
-        output_dir = os.path.join(f'{config.machine.pipeline_dir}_dev')
+        output_dir = os.path.join(f'{config.machine.pipeline_dir}_dev', '00')
     else:
         output_dir = config.machine.dir_00
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
     if debugging: print(f'Set up output directory {output_dir}')
 
+    # set up debugging directories
+    if debugging:
+        debug_dir = os.path.join(os.path.dirname(output_dir), 'debug')
+        util.create_directory_if_not_exists(debug_dir)
+        util.clear_directory(debug_dir)
+        print(f'Set up debugging directory {debug_dir}')
+        util.create_directory_if_not_exists(os.path.join(debug_dir, 'max_recursion_limit'))
+        util.create_directory_if_not_exists(os.path.join(debug_dir, 'snr'))
+
     # tuple the parameters
     runs = survey_params['runs']
     scas = survey_params['scas']
     area = survey_params['area']
-    tuple_list = [(str(run).zfill(4), str(scas[run % len(scas)]).zfill(2), area, survey_params, pipeline_params, output_dir, debugging) for run in range(runs)]
+    tuple_list = [(str(run).zfill(4), str(scas[run % len(scas)]).zfill(2), area, survey_params, pipeline_params, output_dir, debugging, debug_dir) for run in range(runs)]
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -95,7 +97,7 @@ def run_slsim(tuple):
     module_path = os.path.dirname(mejiro.__file__)
 
     # unpack tuple
-    run, sca_id, area, survey_params, pipeline_params, output_dir, debugging = tuple
+    run, sca_id, area, survey_params, pipeline_params, output_dir, debugging, debug_dir = tuple
 
     # prepare a directory for this particular run
     lens_output_dir = os.path.join(output_dir, f'run_{run}_sca{sca_id}')
@@ -230,7 +232,8 @@ def run_slsim(tuple):
         # 2. SNR
         snr, masked_snr_array, snr_list, overall_snr = survey_sim.get_snr(candidate, 
                                                                           band=survey_params['snr_band'], num_pix=survey_params['snr_num_pix'], side=survey_params['snr_side'], oversample=survey_params['snr_oversample'], 
-                                                                          debugging=True)
+                                                                          debugging=True,
+                                                                          debug_dir=debug_dir)
         if snr is None:
             continue
 
