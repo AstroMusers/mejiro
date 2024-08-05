@@ -21,10 +21,9 @@ from mejiro.utils import util
 
 
 class StrongLens:
-    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, lens_stellar_mass=None, lens_vel_disp=None,
-                 snr=None, uid=None):
+    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, lensed_source_mags=None, lens_stellar_mass=None, lens_vel_disp=None, snr=None, uid=None):
         # set z_source convention default
-        self.z_source_convention = 5
+        self.z_source_convention = 6
 
         self.lens_stellar_mass = lens_stellar_mass
         self.lens_vel_disp = lens_vel_disp
@@ -59,6 +58,7 @@ class StrongLens:
         # set magnitudes in each band
         self.lens_mags = lens_mags
         self.source_mags = source_mags
+        self.lensed_source_mags = lensed_source_mags
 
         # confirm that magnitudes are set up correctly
         self._validate_mags(self.lens_mags, self.source_mags)

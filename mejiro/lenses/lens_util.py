@@ -110,13 +110,14 @@ def check_halo_image_alignment(lens, realization, halo_mass=1e8, halo_sort_massi
         return False
 
 
-def slsim_lens_to_mejiro(slsim_lens, bands, cosmo, snr=None, uid=None):
+def slsim_lens_to_mejiro(slsim_lens, bands, cosmo, snr=None, uid=None, z_source_convention=6):
     kwargs_model, kwargs_params = slsim_lens.lenstronomy_kwargs(band=bands[0])
 
-    lens_mags, source_mags = {}, {}
+    lens_mags, source_mags, lensed_source_mags = {}, {}, {}
     for band in bands:
         lens_mags[band] = slsim_lens.deflector_magnitude(band)
-        source_mags[band] = slsim_lens.extended_source_magnitude(band)
+        source_mags[band] = slsim_lens.extended_source_magnitude(band, lensed=False)
+        lensed_source_mags[band] = slsim_lens.extended_source_magnitude(band, lensed=True)
 
     z_lens, z_source = slsim_lens.deflector_redshift, slsim_lens.source_redshift
     kwargs_lens = kwargs_params['kwargs_lens']
@@ -126,12 +127,13 @@ def slsim_lens_to_mejiro(slsim_lens, bands, cosmo, snr=None, uid=None):
     kwargs_model['source_redshift_list'] = [z_source]
     kwargs_model['cosmo'] = cosmo
     kwargs_model['z_source'] = z_source
-    kwargs_model['z_source_convention'] = 5
+    kwargs_model['z_source_convention'] = z_source_convention
 
     return StrongLens(kwargs_model=kwargs_model,
                       kwargs_params=kwargs_params,
                       lens_mags=lens_mags,
                       source_mags=source_mags,
+                      lensed_source_mags=lensed_source_mags,
                       lens_stellar_mass=slsim_lens.deflector_stellar_mass(),
                       lens_vel_disp=slsim_lens.deflector_velocity_dispersion(),
                       snr=snr,
@@ -145,6 +147,7 @@ def unpickle_lens(pickle_path, uid):
     kwargs_params = unpickled['kwargs_params']
     lens_mags = unpickled['lens_mags']
     source_mags = unpickled['source_mags']
+    lensed_source_mags = unpickled['lensed_source_mags']
     lens_stellar_mass = unpickled['deflector_stellar_mass']
     lens_vel_disp = unpickled['deflector_velocity_dispersion']
     snr = unpickled['snr']
@@ -153,6 +156,7 @@ def unpickle_lens(pickle_path, uid):
                       kwargs_params=kwargs_params,
                       lens_mags=lens_mags,
                       source_mags=source_mags,
+                      lensed_source_mags=lensed_source_mags,
                       lens_stellar_mass=lens_stellar_mass,
                       lens_vel_disp=lens_vel_disp,
                       snr=snr,
@@ -187,26 +191,44 @@ def plot_projected_mass(lens):
     return ax.imshow(kappa_subs, vmin=-0.1, vmax=0.1, cmap='bwr')
 
 
-def get_sample(pickle_dir, color_dir, index):
+def get_sample(pipeline_dir, index, band=None, model=True):
     # get lens
-    lens_path = glob(pickle_dir + f'/**/lens_{str(index).zfill(8)}.pkl')
-    assert len(lens_path) == 1, f'StrongLens {index} not found in {pickle_dir}.'
+    lens_dir = pipeline_dir + '/03'
+    lens_path = glob(lens_dir + f'/**/lens_{str(index).zfill(8)}.pkl')
+    assert len(lens_path) == 1, f'StrongLens {index} not found in {lens_dir}.'
     lens = util.unpickle(lens_path[0])
 
-    # get rgb model
-    files = glob(pickle_dir + f'/**/array_{str(index).zfill(8)}_*.npy')
+    if model:
+        model_dir = pipeline_dir + '/03'
+        files = glob(model_dir + f'/**/array_{str(index).zfill(8)}_*.npy')
+        assert len(files) == 4, f'Array files for StrongLens {index} not found in {model_dir}.'
+    else:
+        image_dir = pipeline_dir + '/04'
+        files = glob(image_dir + f'/**/galsim_{str(index).zfill(8)}_*.npy')
+        assert len(files) == 4, f'Array files for StrongLens {index} not found in {image_dir}.'
+   
     f106 = [np.load(i) for i in files if 'F106' in i][0]
     f129 = [np.load(i) for i in files if 'F129' in i][0]
-    # f158 = [np.load(i) for i in files if 'F158' in i][0]
+    f158 = [np.load(i) for i in files if 'F158' in i][0]
     f184 = [np.load(i) for i in files if 'F184' in i][0]
     rgb_model = color.get_rgb(f106, f129, f184, minimum=None, stretch=3, Q=8)
 
     # get rgb image
+    color_dir = pipeline_dir + '/05'
     image_path = glob(color_dir + f'/**/galsim_color_{str(index).zfill(8)}.npy')
     assert len(image_path) == 1, f'Color image for StrongLens {index} not found in {color_dir}.'
     rgb_image = np.load(image_path[0])
 
-    return lens, rgb_model, rgb_image
+    if band.lower() == 'f106':
+        return lens, f106, rgb_image
+    elif band.lower() == 'f129':
+        return lens, f129, rgb_image
+    elif band.lower() == 'f158':
+        return lens, f158, rgb_image
+    elif band.lower() == 'f184':
+        return lens, f184, rgb_image
+    else:
+        return lens, rgb_model, rgb_image
 
 
 def update_kwargs_magnitude(old_kwargs, new_magnitude):

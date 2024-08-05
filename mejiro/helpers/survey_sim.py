@@ -56,7 +56,7 @@ def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, return_snr_list=F
     # generate GalSim images
     results, lenses, sources, _ = gs.get_images(sample_lens, [model], [band], num_pix, num_pix, oversample, oversample,
                lens_surface_brightness=[lens_sb], source_surface_brightness=[source_sb], detector=1, detector_pos=(2048, 2048),
-               exposure_time=146, ra=30, dec=-30, seed=42, validate=False, suppress_output=not debugging, check_cache=True)
+               exposure_time=146, ra=30, dec=-30, seed=42, validate=False, suppress_output=True, check_cache=True)
 
     # put back into units of counts
     total = results[0] * 146
@@ -94,7 +94,7 @@ def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, return_snr_list=F
     overall_snr = overall_numerator / np.sqrt(overall_denominator)
     snr_list.append(overall_snr)
 
-    if np.max(snr_list) > 20:
+    if debugging and np.max(snr_list) > 20:
         diagnostic_plot.snr_plot(total, lens, source, noise, snr_array, masked_snr_array, snr_list)
 
     if return_snr_list:

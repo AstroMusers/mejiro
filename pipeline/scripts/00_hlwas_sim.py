@@ -36,12 +36,11 @@ def main(config):
     debugging = pipeline_params['debugging']
 
     if debugging:
-        debug_dir = os.path.join(config.machine.pipeline_dir, 'debug', 'max_recursion_limit')
+        debug_dir = os.path.join(config.machine.pipeline_dir, 'debug')
         util.create_directory_if_not_exists(debug_dir)
         util.clear_directory(debug_dir)
-
-    # set recursion limit for SNR estimation code
-    sys.setrecursionlimit(45 ** 2)  # Python default is 1000
+        util.create_directory_if_not_exists(os.path.join(debug_dir, 'max_recursion_limit'))
+        util.create_directory_if_not_exists(os.path.join(debug_dir, 'snr'))
 
     # set up output directory
     if debugging:
@@ -49,7 +48,7 @@ def main(config):
     else:
         output_dir = config.machine.dir_00
     util.create_directory_if_not_exists(output_dir)
-    # util.clear_directory(output_dir)
+    util.clear_directory(output_dir)
     if debugging: print(f'Set up output directory {output_dir}')
 
     # tuple the parameters
@@ -231,7 +230,7 @@ def run_slsim(tuple):
         # 2. SNR
         snr, masked_snr_array, snr_list, overall_snr = survey_sim.get_snr(candidate, 
                                                                           band=survey_params['snr_band'], num_pix=survey_params['snr_num_pix'], side=survey_params['snr_side'], oversample=survey_params['snr_oversample'], 
-                                                                          debugging=False)
+                                                                          debugging=True)
         if snr is None:
             continue
 
@@ -279,10 +278,11 @@ def run_slsim(tuple):
         kwargs_model, kwargs_params = gglens.lenstronomy_kwargs(band='F106')  # NB the band in arbitrary because all that changes is magnitude and we're overwriting that with the lens_mag and source_mag dicts below
 
         # build dicts for lens and source magnitudes
-        lens_mags, source_mags = {}, {}
+        lens_mags, source_mags, lensed_source_mags = {}, {}, {}
         for band in bands:
             lens_mags[band] = gglens.deflector_magnitude(band)
             source_mags[band] = gglens.extended_source_magnitude(band, lensed=False)
+            lensed_source_mags[band] = gglens.extended_source_magnitude(band, lensed=True)
 
         z_lens, z_source = gglens.deflector_redshift, gglens.source_redshift
         kwargs_lens = kwargs_params['kwargs_lens']
@@ -300,6 +300,7 @@ def run_slsim(tuple):
             'kwargs_params': kwargs_params,
             'lens_mags': lens_mags,
             'source_mags': source_mags,
+            'lensed_source_mags': lensed_source_mags,
             'deflector_stellar_mass': gglens.deflector_stellar_mass(),
             'deflector_velocity_dispersion': gglens.deflector_velocity_dispersion(),
             'snr': snr

@@ -55,8 +55,8 @@ def main(config):
             if len(lens_paths) == 0:
                 continue
 
-            for _, lens in enumerate(lens_paths):
-                lens = lens_util.unpickle_lens(lens, str(uid).zfill(8))
+            for _, lens_path in enumerate(lens_paths):
+                lens = lens_util.unpickle_lens(lens_path, str(uid).zfill(8))
                 uid += 1
                 lens_list.append(lens)
             
