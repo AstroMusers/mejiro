@@ -189,11 +189,12 @@ def plot_projected_mass(lens):
 
 def get_sample(pickle_dir, color_dir, index):
     # get lens
-    lens_path = os.path.join(pickle_dir, f'lens_{str(index).zfill(8)}.pkl')
-    lens = util.unpickle(lens_path)
+    lens_path = glob(pickle_dir + f'/**/lens_{str(index).zfill(8)}.pkl')
+    assert len(lens_path) == 1, f'StrongLens {index} not found in {pickle_dir}.'
+    lens = util.unpickle(lens_path[0])
 
     # get rgb model
-    files = glob(pickle_dir + f'/array_{str(index).zfill(8)}_*')
+    files = glob(pickle_dir + f'/**/array_{str(index).zfill(8)}_*.npy')
     f106 = [np.load(i) for i in files if 'F106' in i][0]
     f129 = [np.load(i) for i in files if 'F129' in i][0]
     # f158 = [np.load(i) for i in files if 'F158' in i][0]
@@ -201,8 +202,9 @@ def get_sample(pickle_dir, color_dir, index):
     rgb_model = color.get_rgb(f106, f129, f184, minimum=None, stretch=3, Q=8)
 
     # get rgb image
-    image_path = os.path.join(color_dir, f'galsim_color_{str(index).zfill(8)}.npy')
-    rgb_image = np.load(image_path)
+    image_path = glob(color_dir + f'/**/galsim_color_{str(index).zfill(8)}.npy')
+    assert len(image_path) == 1, f'Color image for StrongLens {index} not found in {color_dir}.'
+    rgb_image = np.load(image_path[0])
 
     return lens, rgb_model, rgb_image
 
