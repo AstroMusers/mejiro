@@ -23,30 +23,38 @@ def main(config):
         sys.path.append(repo_dir)
     from mejiro.utils import util
 
-    # open pickled lens list
-    pickles = glob(os.path.join(config.machine.dir_01, '01_hlwas_sim_detectable_lenses_sca*.pkl'))
-    scas = [int(f.split('_')[-1].split('.')[0][3:]) for f in pickles]
-    scas = sorted([str(sca).zfill(2) for sca in scas])
-    sca_dict = {}
-    total = 0
-    for sca in scas:
-        pickle_path = os.path.join(config.machine.dir_01, f'01_hlwas_sim_detectable_lenses_sca{sca}.pkl')
-        lens_list = util.unpickle(pickle_path)
-        sca_dict[sca] = lens_list
-        total += len(lens_list)
-    count = total
-    assert total != 0, f'No pickled lenses found. Check {config.machine.dir_01}.'
-    print(f'Processing {total} lens(es)')
+    # retrieve configuration parameters
+    pipeline_params = util.hydra_to_dict(config.pipeline)
+    debugging = pipeline_params['debugging']
 
-    # directory to write the lenses with subhalos to
-    output_parent_dir = config.machine.dir_02
+    # set up input and output directories
+    if debugging:
+        input_dir = os.path.join(f'{config.machine.pipeline_dir}_dev', '01')
+        output_parent_dir = os.path.join(f'{config.machine.pipeline_dir}_dev', '02')
+    else:
+        input_dir = config.machine.dir_01
+        output_parent_dir = config.machine.dir_02
     util.create_directory_if_not_exists(output_parent_dir)
     util.clear_directory(output_parent_dir)
     for sca in scas:
         os.makedirs(os.path.join(output_parent_dir, f'sca{sca}'), exist_ok=True)
 
+    # open pickled lens list
+    pickles = glob(os.path.join(input_dir, '01_hlwas_sim_detectable_lenses_sca*.pkl'))
+    scas = [int(f.split('_')[-1].split('.')[0][3:]) for f in pickles]
+    scas = sorted([str(sca).zfill(2) for sca in scas])
+    sca_dict = {}
+    total = 0
+    for sca in scas:
+        pickle_path = os.path.join(input_dir, f'01_hlwas_sim_detectable_lenses_sca{sca}.pkl')
+        lens_list = util.unpickle(pickle_path)
+        sca_dict[sca] = lens_list
+        total += len(lens_list)
+    count = total
+    assert total != 0, f'No pickled lenses found. Check {input_dir}.'
+    print(f'Processing {total} lens(es)')
+
     # tuple the parameters
-    pipeline_params = util.hydra_to_dict(config.pipeline)
     tuple_list = []
     for sca, lens_list in sca_dict.items():
         sca_id = str(sca).zfill(2)

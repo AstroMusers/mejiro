@@ -24,18 +24,25 @@ def main(config):
 
     # retrieve configuration parameters
     pipeline_params = util.hydra_to_dict(config.pipeline)
+    debugging = pipeline_params['debugging']
     limit = pipeline_params['limit']
     rgb_bands = pipeline_params['rgb_bands']
     assert len(rgb_bands) == 3, 'rgb_bands must be a list of 3 bands'
 
     # directories to read from
-    input_parent_dir = config.machine.dir_04
+    if debugging:
+        input_parent_dir = os.path.join(f'{config.machine.pipeline_dir}_dev', '04')
+    else:
+        input_parent_dir = config.machine.dir_04
     sca_dirnames = [os.path.basename(d) for d in glob(os.path.join(input_parent_dir, 'sca*')) if os.path.isdir(d)]
     scas = sorted([int(d[3:]) for d in sca_dirnames])
     scas = [str(sca).zfill(2) for sca in scas]
 
     # directories to write the output to
-    output_parent_dir = config.machine.dir_05
+    if debugging:
+        output_parent_dir = os.path.join(f'{config.machine.pipeline_dir}_dev', '05')
+    else:
+        output_parent_dir = config.machine.dir_05
     util.create_directory_if_not_exists(output_parent_dir)
     util.clear_directory(output_parent_dir)
     for sca in scas:
@@ -43,7 +50,7 @@ def main(config):
 
     uid_dict = {}
     for sca in scas:
-        pickled_lenses = sorted(glob(config.machine.dir_04 + f'/sca{sca}/galsim_*.npy'))
+        pickled_lenses = sorted(glob(input_parent_dir + f'/sca{sca}/galsim_*.npy'))
         lens_uids = [os.path.basename(i).split('_')[1] for i in pickled_lenses]
         lens_uids = list(set(lens_uids))  # remove duplicates
         lens_uids = sorted(lens_uids)

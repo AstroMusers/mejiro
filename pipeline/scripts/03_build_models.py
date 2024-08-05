@@ -24,16 +24,23 @@ def main(config):
 
     # retrieve configuration parameters
     pipeline_params = util.hydra_to_dict(config.pipeline)
+    debugging = pipeline_params['debugging']
     limit = pipeline_params['limit']
 
     # directories to get pickled lenses (with subhalos) from
-    input_parent_dir = config.machine.dir_02
+    if debugging:
+        input_parent_dir = os.path.join(f'{config.machine.pipeline_dir}_dev', '02')
+    else:
+        input_parent_dir = config.machine.dir_02
     sca_dirnames = [os.path.basename(d) for d in glob(os.path.join(input_parent_dir, 'sca*')) if os.path.isdir(d)]
     scas = sorted([int(d[3:]) for d in sca_dirnames])
     scas = [str(sca).zfill(2) for sca in scas]
 
     # directories to write the output to
-    output_parent_dir = config.machine.dir_03
+    if debugging:
+        output_parent_dir = os.path.join(f'{config.machine.pipeline_dir}_dev', '03')
+    else:
+        output_parent_dir = config.machine.dir_03
     util.create_directory_if_not_exists(output_parent_dir)
     util.clear_directory(output_parent_dir)
     for sca in scas:
@@ -41,7 +48,7 @@ def main(config):
 
     uid_dict = {}
     for sca in scas:
-        pickled_lenses = sorted(glob(config.machine.dir_02 + f'/sca{sca}/lens_with_subhalos_*.pkl'))
+        pickled_lenses = sorted(glob(input_parent_dir + f'/sca{sca}/lens_with_subhalos_*.pkl'))
         lens_uids = [os.path.basename(i).split('_')[3].split('.')[0] for i in pickled_lenses]
         uid_dict[sca] = lens_uids
 
@@ -55,8 +62,7 @@ def main(config):
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - config.machine.headroom_cores
-    # TODO having resource issues here as well
-    process_count -= 10
+    process_count -= 10  # TODO having resource issues here as well
     if count < process_count:
         process_count = count
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
@@ -80,7 +86,7 @@ def main(config):
     batches = list(generator)
 
     # process the batches
-    for batch in tqdm(batches):  # TODO tqdm thinks that there are all of the lenses, even when a limit is set
+    for batch in tqdm(batches):  # TODO tqdm thinks that there are all lenses, even when a limit is set
         pool = Pool(processes=process_count)
         pool.map(get_model, batch)
 

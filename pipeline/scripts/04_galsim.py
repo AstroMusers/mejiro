@@ -16,6 +16,7 @@ from tqdm import tqdm
 def main(config):
     start = time.time()
 
+    # TODO this shouldn't be necessary if bash_profile, rc are set up correctly, which I think they are
     machine = HydraConfig.get().runtime.choices.machine
     if machine == 'hpc':
         os.environ['WEBBPSF_PATH'] = '/data/bwedig/STScI/webbpsf-data'
@@ -31,26 +32,34 @@ def main(config):
 
     # retrieve configuration parameters
     pipeline_params = util.hydra_to_dict(config.pipeline)
+    debugging = pipeline_params['debugging']
     limit = pipeline_params['limit']
 
     # directories to read from
-    input_parent_dir = config.machine.dir_03
+    if debugging:
+        input_parent_dir = os.path.join(f'{config.machine.pipeline_dir}_dev', '03')
+    else:
+        input_parent_dir = config.machine.dir_03
     sca_dirnames = [os.path.basename(d) for d in glob(os.path.join(input_parent_dir, 'sca*')) if os.path.isdir(d)]
     scas = sorted([int(d[3:]) for d in sca_dirnames])
     scas = [str(sca).zfill(2) for sca in scas]
 
-    psf_cache_dir = os.path.join(config.machine.data_dir, 'cached_psfs')
-
     # directories to write the output to
-    output_parent_dir = config.machine.dir_04
+    if debugging:
+        output_parent_dir = os.path.join(f'{config.machine.pipeline_dir}_dev', '04')
+    else:
+        output_parent_dir = config.machine.dir_04
     util.create_directory_if_not_exists(output_parent_dir)
     util.clear_directory(output_parent_dir)
     for sca in scas:
         os.makedirs(os.path.join(output_parent_dir, f'sca{sca}'), exist_ok=True)
 
+    # set PSF cache dir
+    psf_cache_dir = os.path.join(config.machine.data_dir, 'cached_psfs')
+
     uid_dict = {}
     for sca in scas:
-        pickled_lenses = sorted(glob(config.machine.dir_03 + f'/sca{sca}/array_*.npy'))
+        pickled_lenses = sorted(glob(input_parent_dir + f'/sca{sca}/array_*.npy'))
         lens_uids = [os.path.basename(i).split('_')[1] for i in pickled_lenses]
         lens_uids = list(set(lens_uids))  # remove duplicates
         lens_uids = sorted(lens_uids)
