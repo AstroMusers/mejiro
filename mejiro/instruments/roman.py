@@ -11,6 +11,9 @@ class Roman:
         csv_path = os.path.join(module_path, 'data', 'roman_spacecraft_and_instrument_parameters.csv')
         self.df = pd.read_csv(csv_path)
 
+    pixel_scale = 0.11  # arcsec/pixel
+    diameter = 2.4  # m
+
     # retrieved 25 June 2024 from https://outerspace.stsci.edu/pages/viewpage.action?spaceKey=ISWG&title=Roman+WFI+and+Observatory+Performance
     psf_fwhm = {
         'F062': 0.058,
