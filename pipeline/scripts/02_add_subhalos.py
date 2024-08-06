@@ -79,7 +79,9 @@ def main(config):
         pool.map(add, batch)
 
     stop = time.time()
-    util.print_execution_time(start, stop)
+    execution_time = util.print_execution_time(start, stop, return_string=True)
+
+    if debugging: util.write_execution_time(execution_time, '02', os.path.join(os.path.dirname(output_dir), 'execution_times.json'))
 
 
 def add(tuple):

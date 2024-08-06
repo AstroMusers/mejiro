@@ -4,12 +4,37 @@ import pickle as _pickle
 import shutil
 from collections import ChainMap
 from glob import glob
+import json
 
 import numpy as np
 import pandas as pd
 import yaml
 from omegaconf import OmegaConf
 from PIL import Image
+
+
+def write_execution_time(time, script_name, filepath):
+    """
+    Write the execution time of a script to a file.
+
+    Parameters
+    ----------
+    time : float
+        The execution time in seconds.
+    script_name : str
+        The name of the script.
+    filepath : str
+        The path to the file where the execution time will be written.
+
+    Returns
+    -------
+    None
+
+    """
+    json_object = json.dumps({script_name: time}, indent=4)
+
+    with open(filepath, 'w') as f:
+        f.write(json_object)
 
 
 def rotate_array(array, angle, fillcolor='white'):
@@ -325,7 +350,7 @@ def hydra_to_dict(config):
     return dict(ChainMap(*container))
 
 
-def print_execution_time(start, stop):
+def print_execution_time(start, stop, return_string=False):
     """
     Print the execution time between two given timestamps.
 
@@ -351,6 +376,8 @@ def print_execution_time(start, stop):
     """
     execution_time = str(datetime.timedelta(seconds=round(stop - start)))
     print(f"Execution time: {execution_time}")
+    if return_string:
+        return execution_time
 
 
 def pickle(path, thing):

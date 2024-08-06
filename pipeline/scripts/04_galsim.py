@@ -109,7 +109,9 @@ def main(config):
     np.save(os.path.join(array_dir, 'execution_times.npy'), execution_times)
 
     stop = time.time()
-    util.print_execution_time(start, stop)
+    execution_time = util.print_execution_time(start, stop, return_string=True)
+
+    if debugging: util.write_execution_time(execution_time, '04', os.path.join(os.path.dirname(output_dir), 'execution_times.json'))
 
 
 def get_image(input):

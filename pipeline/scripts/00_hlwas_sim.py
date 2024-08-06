@@ -82,8 +82,9 @@ def main(config):
     print(f'{num_detectable / area / runs:.2f} per square degree')
 
     stop = time.time()
-    execution_time = str(datetime.timedelta(seconds=round(stop - start)))
-    print(f'Execution time: {execution_time}')
+    execution_time = util.print_execution_time(start, stop, return_string=True)
+
+    if debugging: util.write_execution_time(execution_time, '00', os.path.join(os.path.dirname(output_dir), 'execution_times.json'))
 
 
 def run_slsim(tuple):
