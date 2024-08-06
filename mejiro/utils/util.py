@@ -31,10 +31,17 @@ def write_execution_time(time, script_name, filepath):
     None
 
     """
-    json_object = json.dumps({script_name: time}, indent=4)
-
-    with open(filepath, 'w') as f:
-        f.write(json_object)
+    if os.path.exists(filepath):
+        with open(filepath, 'r') as f:
+            contents = json.load(f)
+        contents[script_name] = time
+        with open(filepath, 'w') as f:
+            data = json.dumps(contents, indent=4)
+            f.write(data)
+    else:
+        with open(filepath, 'w') as f:
+            data = json.dumps({script_name: time}, indent=4)
+            f.write(data)
 
 
 def rotate_array(array, angle, fillcolor='white'):
