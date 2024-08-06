@@ -26,6 +26,8 @@ class Roman:
         'F146': 0.105
     }
 
+    psf_jitter = 0.012  # arcsec per axis
+
     def translate_band(input):
         # capitalize and remove spaces
         input = input.upper().replace(' ', '')
