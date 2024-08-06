@@ -36,13 +36,13 @@ def main(config):
         output_parent_dir = config.machine.dir_02
     util.create_directory_if_not_exists(output_parent_dir)
     util.clear_directory(output_parent_dir)
-    for sca in scas:
-        os.makedirs(os.path.join(output_parent_dir, f'sca{sca}'), exist_ok=True)
 
     # open pickled lens list
     pickles = glob(os.path.join(input_dir, '01_hlwas_sim_detectable_lenses_sca*.pkl'))
     scas = [int(f.split('_')[-1].split('.')[0][3:]) for f in pickles]
     scas = sorted([str(sca).zfill(2) for sca in scas])
+    for sca in scas:
+        os.makedirs(os.path.join(output_parent_dir, f'sca{sca}'), exist_ok=True)
     sca_dict = {}
     total = 0
     for sca in scas:
