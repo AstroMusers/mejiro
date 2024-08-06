@@ -60,3 +60,4 @@ text.latex.preamble : \usepackage{amsmath} \usepackage{amssymb}
 # Bryce additions
 axes.grid : False
 image.origin : lower
+image.interpolation: nearest  # don't blur images; recommended for scaling a small image up
