@@ -179,7 +179,7 @@ def get_image(gglens, band, side=4.95):
 def write_lens_pop_to_csv(output_path, gg_lenses, bands, suppress_output=True):
     dictparaggln = {}
     dictparaggln['Candidate'] = {}
-    listnamepara = ['velodisp', 'massstel', 'angleins', 'redssour', 'redslens', 'magnsour', 'numbimag',
+    listnamepara = ['velodisp', 'massstel', 'angleins', 'redssour', 'redslens', 'magnsour', 'snr', 'numbimag',
                     'maxmdistimag']  # 'xposlens', 'yposlens', 'xpossour', 'ypossour',
     for nameband in bands:
         listnamepara += ['magtlens%s' % nameband]
@@ -199,7 +199,7 @@ def write_lens_pop_to_csv(output_path, gg_lenses, bands, suppress_output=True):
             'redssour': gg_lens.source_redshift,
             'redslens': gg_lens.deflector_redshift,
             'magnsour': gg_lens.extended_source_magnification()
-            # TODO add SNR?
+            # 'snr': gg_lens.snr
         }
 
         posiimag = gg_lens.point_source_image_positions()
