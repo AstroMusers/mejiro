@@ -191,10 +191,17 @@ def run_slsim(tuple):
         # j += 1
     np.save(os.path.join(output_dir, f'snr_list_{run}_sca{sca_id}.npy'), snr_list)
 
+    if debugging:
+        num_exceptions = len([snr for snr in snr_list if snr is None])
+        print(f'Number of exceptions: {num_exceptions}; {num_exceptions / len(snr_list) * 100:.2f}%')
+
+    # TODO once get_regions issue(s) resolved, the following line should be reinstated
+    # assert len(total_lens_population) == len(snr_list), f'Lengths of total_lens_population ({len(total_lens_population)}) and snr_list ({len(snr_list)}) do not match.'
+
     # save other params to CSV
     total_pop_csv = os.path.join(output_dir, f'total_pop_{run}_sca{sca_id}.csv')
     if debugging: print(f'Writing total population to {total_pop_csv}')
-    survey_sim.write_lens_pop_to_csv(total_pop_csv, total_lens_population, bands, suppress_output=not debugging)
+    survey_sim.write_lens_pop_to_csv(total_pop_csv, total_lens_population, snr_list, bands, suppress_output=not debugging)
 
     # draw initial detectable lens population
     if debugging: print('Identifying detectable lenses...')
@@ -238,7 +245,7 @@ def run_slsim(tuple):
         if snr is None:
             continue
 
-        if k % 100 == 0:
+        if debugging and k % 1000 == 0:
             plt.imshow(masked_snr_array)
             plt.title(f'SNR: {snr}, Overall SNR: {overall_snr}, SNR list: {snr_list}')
             plt.colorbar()
@@ -272,7 +279,7 @@ def run_slsim(tuple):
     #     print(filtered_sample['num_filter_1']) 
     #     print(filtered_sample['num_filter_2'])
 
-    assert len(detectable_gglenses) == len(detectable_snr_list), 'Lengths of detectable_gglenses and detectable_snr_list do not match.'
+    assert len(detectable_gglenses) == len(detectable_snr_list), f'Lengths of detectable_gglenses ({len(detectable_gglenses)}) and detectable_snr_list ({len(detectable_snr_list)}) do not match.'
 
     if debugging: print('Retrieving lenstronomy parameters...')
     dict_list = []
@@ -318,7 +325,7 @@ def run_slsim(tuple):
         util.pickle(save_path, each)
 
     detectable_pop_csv = os.path.join(output_dir, f'detectable_pop_{run}_sca{sca_id}.csv')
-    survey_sim.write_lens_pop_to_csv(detectable_pop_csv, detectable_gglenses, bands)
+    survey_sim.write_lens_pop_to_csv(detectable_pop_csv, detectable_gglenses, detectable_snr_list, bands)
 
     detectable_gglenses_pickle_path = os.path.join(output_dir, f'detectable_gglenses_{run}_sca{sca_id}.pkl')
     if debugging: print(f'Pickling detectable gglenses to {detectable_gglenses_pickle_path}')

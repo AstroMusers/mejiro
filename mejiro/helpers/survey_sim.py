@@ -176,7 +176,7 @@ def get_image(gglens, band, side=4.95):
     return total_image, lens_surface_brightness, source_surface_brightness, sim_r
 
 
-def write_lens_pop_to_csv(output_path, gg_lenses, bands, suppress_output=True):
+def write_lens_pop_to_csv(output_path, gg_lenses, detectable_snr_list, bands, suppress_output=True):
     dictparaggln = {}
     dictparaggln['Candidate'] = {}
     listnamepara = ['velodisp', 'massstel', 'angleins', 'redssour', 'redslens', 'magnsour', 'snr', 'numbimag',
@@ -191,15 +191,15 @@ def write_lens_pop_to_csv(output_path, gg_lenses, bands, suppress_output=True):
 
     df = pd.DataFrame(columns=listnamepara)
 
-    for i, gg_lens in tqdm(enumerate(gg_lenses), total=len(gg_lenses), disable=suppress_output):
+    for i, (gg_lens, snr) in tqdm(enumerate(zip(gg_lenses, detectable_snr_list)), total=len(gg_lenses), disable=suppress_output):
         dict = {
             'velodisp': gg_lens.deflector_velocity_dispersion(),
             'massstel': gg_lens.deflector_stellar_mass() * 1e-12,
             'angleins': gg_lens.einstein_radius,
             'redssour': gg_lens.source_redshift,
             'redslens': gg_lens.deflector_redshift,
-            'magnsour': gg_lens.extended_source_magnification()
-            # 'snr': gg_lens.snr
+            'magnsour': gg_lens.extended_source_magnification(),
+            'snr': snr
         }
 
         posiimag = gg_lens.point_source_image_positions()

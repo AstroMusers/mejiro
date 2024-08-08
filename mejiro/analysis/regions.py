@@ -39,7 +39,9 @@ def get_regions(masked_array, debug_dir=None):
             indices_list.append(new_region)
 
         return indices_list
-    except:
+    except Exception as e:
+        print(f'Error in get_regions: {e}')
+
         if debug_dir is not None:
             util.pickle(os.path.join(debug_dir, 'max_recursion_limit', f'masked_array_{id(masked_array)}.pkl'), masked_array)
         return None
