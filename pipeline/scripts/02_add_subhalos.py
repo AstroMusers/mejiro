@@ -80,8 +80,7 @@ def main(config):
 
     stop = time.time()
     execution_time = util.print_execution_time(start, stop, return_string=True)
-
-    if debugging: util.write_execution_time(execution_time, '02', os.path.join(os.path.dirname(output_parent_dir), 'execution_times.json'))
+    util.write_execution_time(execution_time, '02', os.path.join(os.path.dirname(output_parent_dir), 'execution_times.json'))
 
 
 def add(tuple):
