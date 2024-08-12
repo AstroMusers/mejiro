@@ -52,6 +52,8 @@ def main(config):
         print(f'Set up debugging directory {debug_dir}')
         util.create_directory_if_not_exists(os.path.join(debug_dir, 'max_recursion_limit'))
         util.create_directory_if_not_exists(os.path.join(debug_dir, 'snr'))
+    else:
+        debug_dir = None
 
     # tuple the parameters
     runs = survey_params['runs']
@@ -161,47 +163,48 @@ def run_slsim(tuple):
     if debugging: print('Defined galaxy population')
 
     # draw the total lens population
-    if debugging: print('Identifying lenses...')
-    kwargs_lens_total_cut = {
-        'min_image_separation': 0,
-        'max_image_separation': 10,
-        'mag_arc_limit': None
-    }
-    total_lens_population = lens_pop.draw_population(kwargs_lens_cuts=kwargs_lens_total_cut)
-    if debugging: print(f'Number of total lenses: {len(total_lens_population)}')
+    if survey_params['total_population']:
+        if debugging: print('Identifying lenses...')
+        kwargs_lens_total_cut = {
+            'min_image_separation': 0,
+            'max_image_separation': 10,
+            'mag_arc_limit': None
+        }
+        total_lens_population = lens_pop.draw_population(kwargs_lens_cuts=kwargs_lens_total_cut)
+        if debugging: print(f'Number of total lenses: {len(total_lens_population)}')
 
-    # compute SNRs and save
-    if debugging: print(f'Computing SNRs for {len(total_lens_population)} lenses')
-    snr_list = []
-    # j = 0
-    for candidate in tqdm(total_lens_population, disable=not debugging):
-        snr, _, _, _ = survey_sim.get_snr(candidate, 
-                                          band=survey_params['snr_band'], 
-                                          num_pix=survey_params['snr_num_pix'], 
-                                          side=survey_params['snr_side'], 
-                                          oversample=survey_params['snr_oversample'], 
-                                          debugging=False)
-        if snr is None:
-            continue
-        snr_list.append(snr)
-        # if debugging:
-        #     if j < 25:
-        #         util.pickle(os.path.join(output_dir, f'masked_snr_array_{str(j).zfill(8)}.pkl'), masked_snr_array)
-        #         util.pickle(os.path.join(output_dir, f'masked_snr_array_snr_{str(j).zfill(8)}.pkl'), snr)
-        # j += 1
-    np.save(os.path.join(output_dir, f'snr_list_{run}_sca{sca_id}.npy'), snr_list)
+        # compute SNRs and save
+        if debugging: print(f'Computing SNRs for {len(total_lens_population)} lenses')
+        snr_list = []
+        # j = 0
+        for candidate in tqdm(total_lens_population, disable=not debugging):
+            snr, _, _, _ = survey_sim.get_snr(candidate, 
+                                            band=survey_params['snr_band'], 
+                                            num_pix=survey_params['snr_num_pix'], 
+                                            side=survey_params['snr_side'], 
+                                            oversample=survey_params['snr_oversample'], 
+                                            debugging=False)
+            if snr is None:
+                continue
+            snr_list.append(snr)
+            # if debugging:
+            #     if j < 25:
+            #         util.pickle(os.path.join(output_dir, f'masked_snr_array_{str(j).zfill(8)}.pkl'), masked_snr_array)
+            #         util.pickle(os.path.join(output_dir, f'masked_snr_array_snr_{str(j).zfill(8)}.pkl'), snr)
+            # j += 1
+        np.save(os.path.join(output_dir, f'snr_list_{run}_sca{sca_id}.npy'), snr_list)
 
-    if debugging:
-        num_exceptions = len([snr for snr in snr_list if snr is None])
-        print(f'Number of exceptions: {num_exceptions}; {num_exceptions / len(snr_list) * 100:.2f}%')
+        if debugging:
+            num_exceptions = len([snr for snr in snr_list if snr is None])
+            print(f'Number of exceptions: {num_exceptions}; {num_exceptions / len(snr_list) * 100:.2f}%')
 
-    # TODO once get_regions issue(s) resolved, the following line should be reinstated
-    # assert len(total_lens_population) == len(snr_list), f'Lengths of total_lens_population ({len(total_lens_population)}) and snr_list ({len(snr_list)}) do not match.'
+        # TODO once get_regions issue(s) resolved, the following line should be reinstated
+        # assert len(total_lens_population) == len(snr_list), f'Lengths of total_lens_population ({len(total_lens_population)}) and snr_list ({len(snr_list)}) do not match.'
 
-    # save other params to CSV
-    total_pop_csv = os.path.join(output_dir, f'total_pop_{run}_sca{sca_id}.csv')
-    if debugging: print(f'Writing total population to {total_pop_csv}')
-    survey_sim.write_lens_pop_to_csv(total_pop_csv, total_lens_population, snr_list, bands, suppress_output=not debugging)
+        # save other params to CSV
+        total_pop_csv = os.path.join(output_dir, f'total_pop_{run}_sca{sca_id}.csv')
+        if debugging: print(f'Writing total population to {total_pop_csv}')
+        survey_sim.write_lens_pop_to_csv(total_pop_csv, total_lens_population, snr_list, bands, suppress_output=not debugging)
 
     # draw initial detectable lens population
     if debugging: print('Identifying detectable lenses...')
@@ -240,7 +243,7 @@ def run_slsim(tuple):
         # 2. SNR
         snr, masked_snr_array, snr_list, overall_snr = survey_sim.get_snr(candidate, 
                                                                           band=survey_params['snr_band'], num_pix=survey_params['snr_num_pix'], side=survey_params['snr_side'], oversample=survey_params['snr_oversample'], 
-                                                                          debugging=True,
+                                                                          debugging=debugging,
                                                                           debug_dir=debug_dir)
         if snr is None:
             continue
