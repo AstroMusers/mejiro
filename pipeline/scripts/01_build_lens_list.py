@@ -44,7 +44,7 @@ def main(config):
         input_files) != 0, f'No output files found. Check HLWAS simulation output directory ({input_dir}).'
 
     uid = 0
-    for sca_id in tqdm(scas, disable=not debugging):
+    for sca_id in tqdm(scas):
         sca_id = str(sca_id).zfill(2)
 
         csvs = [f for f in input_files if f'sca{sca_id}' in f]
