@@ -4,12 +4,12 @@ from syotools.models import Camera, Telescope
 
 class HWO:
 
-    def __init__(self):
+    def __init__(self, aperture=10):
         # TODO eventually work with their ordereddict and astropy quantity stuff
         # self.telescope = Telescope()
         self.camera = Camera()
 
-        self.aperture = 10.  # aperture in meters 
+        self.aperture = aperture  # meters 
         self.dark_current = [0.0005, 0.0005, 0.001, 0.001, 0.001, 0.001, 0.001, 0.002, 0.002, 0.002]
         self.read_noise = [3., 3., 3., 3., 3., 3., 3., 4., 4., 4.]
         self.pivotwave = [155., 228., 360., 440., 550., 640., 790., 1260., 1600., 2220.]
@@ -18,6 +18,19 @@ class HWO:
         self.aperture_correction = [1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]
         self.bandpass_r = [5., 5., 5., 5., 5., 5., 5., 5., 5., 5.]
         self.derived_bandpass = [pw / bp_r for pw, bp_r in zip(self.pivotwave, self.bandpass_r)]
+
+        # private attributes
+        self._pixel_size = np.array([0.016, 0.016, 0.016, 0.016, 0.016, 0.016, 0.016, 0.04, 0.04, 0.04])  # set by aperture in method below
+
+        # methods
+        self.set_pixel_scale(aperture)
+        
+    def set_pixel_scale(self, aperture): 
+        self.pixel_scale = 1.22 * (self.pivotwave*0.000000001)*206264.8062/aperture / 2. 
+        # this enforces the rule that the pixel sizes are set at the shortest wavelength in each channel 
+        self.pixel_scale[0:2] = 1.22*(self.pivotwave[2]*0.000000001)*206264.8062/aperture / 2.   # UV set at U 
+        self.pixel_scale[2:-3] = 1.22*(self.pivotwave[2]*0.000000001)*206264.8062/aperture / 2.   # Opt set at U 
+        self.pixel_scale[-3:] = 1.22*(self.pivotwave[7]*0.000000001)*206264.8062/aperture / 2.   # NIR set at J 
 
     def get_zeropoint_magnitude(self, band):
         """
