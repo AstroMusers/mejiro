@@ -52,7 +52,7 @@ def power_spectrum_check(array_list, lenses, titles, save_path, oversampled):
         ax[0][i].axis('off')
 
     cbar = f.colorbar(axis, ax=ax[0])
-    cbar.set_label('log(Counts/sec)', rotation=90)
+    cbar.set_label('log(Counts)', rotation=90)
 
     res_array = [array_list[3] - array_list[i] for i in range(4)]
     v = plot_util.get_v(res_array)
@@ -61,7 +61,7 @@ def power_spectrum_check(array_list, lenses, titles, save_path, oversampled):
         ax[1][i].set_axis_off()
 
     cbar = f.colorbar(axis, ax=ax[1])
-    cbar.set_label('Counts/sec', rotation=90)
+    cbar.set_label('Counts', rotation=90)
 
     for i, lens in enumerate(lenses):
         realization = lens.realization
