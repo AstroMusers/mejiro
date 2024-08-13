@@ -34,8 +34,9 @@ def main(config):
     # script configuration options
     debugging = True
     require_alignment = False
-    limit = 100
+    limit = None
     snr_threshold = 100
+    einstein_radius_threshold = 0.5
 
     # set subhalo and imaging params
     subhalo_params = {
@@ -66,17 +67,13 @@ def main(config):
     lens_list = survey_sim.collect_all_detectable_lenses(config.machine.dir_01)
     print(f'Collected {len(lens_list)} candidate lens(es).')
     lenses_to_process = []
-    if limit is not None:
-        num_lenses = 0
-        for lens in lens_list:
-            if num_lenses < limit:
-                if lens.snr > snr_threshold:
-                    lenses_to_process.append(lens)
-                    num_lenses += 1
-            else:
-                break
-    else:
-        lenses_to_process = lens_list
+    num_lenses = 0
+    for lens in lens_list:
+        if lens.snr > snr_threshold and lens.get_einstein_radius() > einstein_radius_threshold:
+            lenses_to_process.append(lens)
+            num_lenses += 1
+        if limit is not None and num_lenses >= limit:
+            break
     print(f'Collected {len(lenses_to_process)} lens(es).')
 
     # read cached PSFs
@@ -110,7 +107,7 @@ def main(config):
     batches = list(generator)
 
     # process the batches
-    print(f'Processing {len(tuple_list)} lens(es) with SNR > {snr_threshold}')
+    print(f'Processing {len(tuple_list)} lens(es) that satisfy criteria')
     for batch in tqdm(batches):
         pool = Pool(processes=process_count)
         pool.map(generate_power_spectra, batch)
