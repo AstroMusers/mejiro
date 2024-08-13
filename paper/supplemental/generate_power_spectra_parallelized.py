@@ -246,7 +246,7 @@ def generate_power_spectra(tuple):
     control_model = deepcopy(models[2])
 
     # check that the models were generated correctly
-    diagnostic_plot.power_spectrum_check(models, lenses, titles, os.path.join(image_save_dir, f'{lens.uid}_00_models.png'), oversampled=True)
+    diagnostic_plot.power_spectrum_check(models, lenses, titles, os.path.join(image_save_dir, f'diagnostic_{lens.uid}_00_models.png'), oversampled=True)
 
     # generate power spectra of convergence maps
     for model, lens, title in zip(models, lenses, titles):
@@ -280,7 +280,7 @@ def generate_power_spectra(tuple):
         np.save(os.path.join(save_dir, f'im_subs_{title}.npy'), final_array)
         np.save(os.path.join(save_dir, f'ps_subs_{title}.npy'), ps)
 
-    diagnostic_plot.power_spectrum_check(subhalo_images, lenses, titles, os.path.join(image_save_dir, f'{lens.uid}_01_subhalos.png'), oversampled=False)
+    diagnostic_plot.power_spectrum_check(subhalo_images, lenses, titles, os.path.join(image_save_dir, f'diagnostic_{lens.uid}_01_subhalos.png'), oversampled=False)
 
     # POSITION-DEPENDENCE
     detectors = [4, 1, 9, 17]
@@ -304,7 +304,7 @@ def generate_power_spectra(tuple):
         np.save(os.path.join(save_dir, f'ps_det_{detector}_{lens.uid}.npy'), ps)
 
     position_titles = [f'{det}, {pos}' for det, pos in zip(detectors, detector_positions)]
-    diagnostic_plot.power_spectrum_check(subhalo_images, position_lenses, position_titles, os.path.join(image_save_dir, f'{lens.uid}_02_positions.png'), oversampled=False)
+    diagnostic_plot.power_spectrum_check(subhalo_images, position_lenses, position_titles, os.path.join(image_save_dir, f'diagnostic_{lens.uid}_02_positions.png'), oversampled=False)
 
     # BAND-DEPENDENCE
     bands = ['F106', 'F129', 'F158', 'F184']
@@ -326,7 +326,7 @@ def generate_power_spectra(tuple):
         np.save(os.path.join(save_dir, f'im_band_{band}_{lens.uid}.npy'), final_array)
         np.save(os.path.join(save_dir, f'ps_band_{band}_{lens.uid}.npy'), ps)
 
-    diagnostic_plot.power_spectrum_check(band_images, band_lenses, bands, os.path.join(image_save_dir, f'{lens.uid}_03_bands.png'), oversampled=False)
+    diagnostic_plot.power_spectrum_check(band_images, band_lenses, bands, os.path.join(image_save_dir, f'diagnostic_{lens.uid}_03_bands.png'), oversampled=False)
 
     # save r; should be same for all, since same size (num_pix, num_pix)
     np.save(os.path.join(save_dir, 'r.npy'), r)
