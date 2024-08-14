@@ -16,8 +16,11 @@ from pyHalo.preset_models import CDM
 from tqdm import tqdm
 
 
-def get_psf_id_string(band, detector, detector_position, oversample):
-    return f'{band}_{detector}_{detector_position[0]}_{detector_position[1]}_{oversample}'
+def get_masked_image(lens, image):
+    mask = np.ma.getmask(lens.masked_snr_array)
+    masked_image = np.ma.masked_array(image, mask)
+    np.ma.set_fill_value(masked_image, 0)
+    return masked_image.filled()
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -28,15 +31,15 @@ def main(config):
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
     import mejiro
-    from mejiro.helpers import survey_sim
+    from mejiro.helpers import survey_sim, psf
     from mejiro.utils import util
 
     # script configuration options
     debugging = True
     require_alignment = False
     limit = None
-    snr_threshold = 100
-    einstein_radius_threshold = 0.5
+    snr_threshold = 50
+    einstein_radius_threshold = 0.
 
     # set subhalo and imaging params
     subhalo_params = {
@@ -47,24 +50,31 @@ def main(config):
     imaging_params = {
         'control_band': 'F129',
         'oversample': 5,  # TODO maybe need to update
-        'num_pix': 91,  # 45
-        'side': 10.01  # 4.95
+        'num_pix': 90,  # 45
+        'side': 9.9  # 4.95
     }
     bands = ['F106', 'F129', 'F158', 'F184']
     detectors = [4, 1, 9, 17]
     detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
 
-    # set top directory for all output of this script
+    # set up directories for script output
     save_dir = os.path.join(config.machine.data_dir, 'output', 'power_spectra_parallelized')
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
-
     image_save_dir = os.path.join(save_dir, 'images')
     os.makedirs(image_save_dir, exist_ok=True)
 
+    # debugging? set pipeline dir accordingly
+    pipeline_params = util.hydra_to_dict(config.pipeline)
+    debugging = pipeline_params['debugging']
+    if debugging:
+        pipeline_dir = f'{config.machine.pipeline_dir}_dev'
+    else:
+        pipeline_dir = config.machine.pipeline_dir
+
     # collect lenses
     print(f'Collecting lenses...')
-    lens_list = survey_sim.collect_all_detectable_lenses(config.machine.dir_01)
+    lens_list = survey_sim.collect_all_detectable_lenses(os.path.join(pipeline_dir, '01'))
     print(f'Collected {len(lens_list)} candidate lens(es).')
     lenses_to_process = []
     num_lenses = 0
@@ -83,13 +93,10 @@ def main(config):
     psf_id_strings = []
     for band in bands:
         for detector, detector_position in zip(detectors, detector_positions):
-            psf_id_strings.append(get_psf_id_string(band, detector, detector_position, imaging_params['oversample']))
+            psf_id_strings.append(psf.get_psf_id_string(band, detector, detector_position, imaging_params['oversample']))
         
     for id_string in psf_id_strings:
-        psf_path = glob(os.path.join(psf_cache_dir, f'{id_string}.pkl'))
-        assert len(psf_path) == 1, f'Cached PSF for {id_string} not found in {psf_cache_dir}'
-        print(f'Loading cached PSF: {psf_path[0]}')
-        cached_psfs[id_string] = util.unpickle(psf_path[0])
+        cached_psfs[id_string] = psf.load_cached_psf(id_string, psf_cache_dir)
 
     tuple_list = [(lens, subhalo_params, imaging_params, cached_psfs, require_alignment, save_dir, image_save_dir, debugging) for lens in lenses_to_process]
 
@@ -263,7 +270,7 @@ def generate_power_spectra(tuple):
     np.save(os.path.join(save_dir, 'proj_mass_r.npy'), proj_mass_r)
 
     # SUBHALO-DEPENDENCE
-    subhalos_psf_id_string = get_psf_id_string(band=control_band, detector=1, detector_position=(2048, 2048), oversample=oversample)
+    subhalos_psf_id_string = psf.get_psf_id_string(band=control_band, detector=1, detector_position=(2048, 2048), oversample=oversample)
     subhalos_psf_kernel = cached_psfs[subhalos_psf_id_string]
     subhalo_images = []
     for model, lens, title in zip(models, lenses, titles):
@@ -271,10 +278,12 @@ def generate_power_spectra(tuple):
         interp = InterpolatedImage(Image(model, xmin=0, ymin=0), scale=0.11 / oversample, flux=total_flux_cps * 146)
         image = gs.convolve(interp, subhalos_psf_kernel, num_pix)
         final_array = image.array
-        subhalo_images.append(final_array)
 
-        ps, r = power_spectrum_1d(final_array)
-        np.save(os.path.join(save_dir, f'im_subs_{title}.npy'), final_array)
+        masked_image = get_masked_image(lens, final_array)
+        subhalo_images.append(masked_image)
+
+        ps, r = power_spectrum_1d(masked_image)
+        np.save(os.path.join(save_dir, f'im_subs_{title}.npy'), masked_image)
         np.save(os.path.join(save_dir, f'ps_subs_{title}.npy'), ps)
 
     diagnostic_plot.power_spectrum_check(subhalo_images, lenses, titles, os.path.join(image_save_dir, f'diagnostic_{lens.uid}_01_subhalos.png'), oversampled=False)
@@ -288,16 +297,18 @@ def generate_power_spectra(tuple):
     position_interp = InterpolatedImage(Image(position_model, xmin=0, ymin=0), scale=0.11 / oversample, flux=position_total_flux_cps * 146)
     position_images, position_lenses = [], []
     for detector, detector_pos in zip(detectors, detector_positions):
-        psf_id_string = get_psf_id_string(control_band, detector, detector_pos, oversample)
+        psf_id_string = psf.get_psf_id_string(control_band, detector, detector_pos, oversample)
         webbpsf_interp = cached_psfs[psf_id_string]
         interp = deepcopy(position_interp)
         image = gs.convolve(interp, webbpsf_interp, num_pix)
         final_array = image.array
-        position_images.append(final_array)
+
+        masked_image = get_masked_image(position_lens, final_array)
+        position_images.append(masked_image)
         position_lenses.append(position_lens)
 
-        ps, r = power_spectrum_1d(final_array)
-        np.save(os.path.join(save_dir, f'im_det_{detector}_{lens.uid}.npy'), final_array)
+        ps, r = power_spectrum_1d(masked_image)
+        np.save(os.path.join(save_dir, f'im_det_{detector}_{lens.uid}.npy'), masked_image)
         np.save(os.path.join(save_dir, f'ps_det_{detector}_{lens.uid}.npy'), ps)
 
     position_titles = [f'{det}, {pos}' for det, pos in zip(detectors, detector_positions)]
@@ -312,15 +323,17 @@ def generate_power_spectra(tuple):
         band_model = lens.get_array(num_pix=num_pix * oversample, side=side, band=band)
         band_total_flux_cps = band_lens.get_total_flux_cps(band)
         band_interp = InterpolatedImage(Image(band_model, xmin=0, ymin=0), scale=0.11 / oversample, flux=band_total_flux_cps * 146)
-        psf_id_string = get_psf_id_string(control_band, 1, (2048, 2048), oversample)
+        psf_id_string = psf.get_psf_id_string(control_band, 1, (2048, 2048), oversample)
         webbpsf_interp = cached_psfs[psf_id_string]
         image = gs.convolve(band_interp, webbpsf_interp, num_pix)
         final_array = image.array
-        band_images.append(final_array)
+
+        masked_image = get_masked_image(lens, final_array)
+        band_images.append(masked_image)
         band_lenses.append(lens)
 
-        ps, r = power_spectrum_1d(final_array)
-        np.save(os.path.join(save_dir, f'im_band_{band}_{lens.uid}.npy'), final_array)
+        ps, r = power_spectrum_1d(masked_image)
+        np.save(os.path.join(save_dir, f'im_band_{band}_{lens.uid}.npy'), masked_image)
         np.save(os.path.join(save_dir, f'ps_band_{band}_{lens.uid}.npy'), ps)
 
     diagnostic_plot.power_spectrum_check(band_images, band_lenses, bands, os.path.join(image_save_dir, f'diagnostic_{lens.uid}_03_bands.png'), oversampled=False)
@@ -336,8 +349,9 @@ def generate_power_spectra(tuple):
     gaussian_psf_interp = psf.get_gaussian_psf(fwhm=0.087, oversample=oversample, pixel_scale=0.11)
     image = gs.convolve(gaussian_interp, gaussian_psf_interp, num_pix)
     gaussian_final_array = image.array
-    ps, r = power_spectrum_1d(gaussian_final_array)
-    np.save(os.path.join(save_dir, f'im_gaussian_psf_{lens.uid}.npy'), gaussian_final_array)
+    gaussian_masked_image = get_masked_image(gaussian_lens, gaussian_final_array)
+    ps, r = power_spectrum_1d(gaussian_masked_image)
+    np.save(os.path.join(save_dir, f'im_gaussian_psf_{lens.uid}.npy'), gaussian_masked_image)
     np.save(os.path.join(save_dir, f'ps_gaussian_psf_{lens.uid}.npy'), ps)
     
     # plot final images with different PSFs

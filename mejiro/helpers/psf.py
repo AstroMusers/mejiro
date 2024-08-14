@@ -69,6 +69,20 @@ def get_kwargs_psf(kernel, oversample):
     }
 
 
+def get_psf_id_string(band, detector, detector_position, oversample):
+    return f'{band}_{detector}_{detector_position[0]}_{detector_position[1]}_{oversample}'
+
+
+def load_cached_psf(psf_id_string, psf_cache_dir=None, suppress_output=False):
+    if psf_cache_dir is None:
+        import mejiro
+        module_path = os.path.dirname(mejiro.__file__)
+        psf_cache_dir = os.path.join(module_path, 'data', 'cached_psfs')
+    psf_path = os.path.join(psf_cache_dir, f'{psf_id_string}.pkl')
+    if not suppress_output: print(f'Loading cached PSF: {psf_path}')
+    return util.unpickle(psf_path)
+
+
 def detector_int_to_sca(detector):
     # detector might be int or string, and WebbPSF expects 'SCA01', 'SCA02', etc.
     if type(detector) == int:
