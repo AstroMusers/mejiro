@@ -52,6 +52,7 @@ def main(config):
         print(f'Set up debugging directory {debug_dir}')
         util.create_directory_if_not_exists(os.path.join(debug_dir, 'max_recursion_limit'))
         util.create_directory_if_not_exists(os.path.join(debug_dir, 'snr'))
+        util.create_directory_if_not_exists(os.path.join(debug_dir, 'masked_snr_arrays'))
     else:
         debug_dir = None
 
@@ -103,7 +104,7 @@ def run_slsim(tuple):
 
     # prepare a directory for this particular run
     lens_output_dir = os.path.join(output_dir, f'run_{run}_sca{sca_id}')
-    util.create_directory_if_not_exists(lens_output_dir)
+    util.create_directory_if_not_exists(lens_output_dir)        
 
     # load SkyPy config file
     cache_dir = os.path.join(module_path, 'data', f'cached_skypy_configs_{area}')
@@ -225,7 +226,7 @@ def run_slsim(tuple):
 
     # apply additional detectability criteria
     limit = None
-    detectable_gglenses, detectable_snr_list = [], []
+    detectable_gglenses, detectable_snr_list, masked_snr_array_list = [], [], []
     k = 0
     for candidate in tqdm(lens_population, disable=not debugging):
         # 1. Einstein radius and Sersic radius
@@ -247,11 +248,11 @@ def run_slsim(tuple):
         if snr is None:
             continue
 
-        if debugging and k % 1000 == 0:
+        if debugging and k % 100 == 0:
             plt.imshow(masked_snr_array)
             plt.title(f'SNR: {snr}, Overall SNR: {overall_snr}, SNR list: {snr_list}')
             plt.colorbar()
-            plt.savefig(os.path.join(output_dir, f'masked_snr_array_{id(masked_snr_array)}.png'))
+            plt.savefig(os.path.join(debug_dir, 'masked_snr_arrays', f'masked_snr_array_{id(masked_snr_array)}.png'))
             plt.close()
         k += 1
 
@@ -265,6 +266,7 @@ def run_slsim(tuple):
         # if both criteria satisfied, consider detectable
         detectable_gglenses.append(candidate)
         detectable_snr_list.append(snr)
+        masked_snr_array_list.append(masked_snr_array)
 
         # if I've imposed a limit above this loop, exit the loop
         if limit is not None and len(detectable_gglenses) == limit:
@@ -277,15 +279,11 @@ def run_slsim(tuple):
     filtered_sample['num_filter_2'] = filter_2
     util.pickle(os.path.join(output_dir, f'filtered_sample_{run}_sca{sca_id}.pkl'), filtered_sample)
 
-    # if len(detectable_gglenses) > 0:
-    #     print(filtered_sample['num_filter_1']) 
-    #     print(filtered_sample['num_filter_2'])
-
     assert len(detectable_gglenses) == len(detectable_snr_list), f'Lengths of detectable_gglenses ({len(detectable_gglenses)}) and detectable_snr_list ({len(detectable_snr_list)}) do not match.'
 
     if debugging: print('Retrieving lenstronomy parameters...')
     dict_list = []
-    for gglens, snr in tqdm(zip(detectable_gglenses, detectable_snr_list), disable=not debugging, total=len(detectable_gglenses)):
+    for gglens, snr, masked_snr_array in tqdm(zip(detectable_gglenses, detectable_snr_list, masked_snr_array_list), disable=not debugging, total=len(detectable_gglenses)):
 
         # get lens params from gglens object
         kwargs_model, kwargs_params = gglens.lenstronomy_kwargs(band='F106')  # NB the band in arbitrary because all that changes is magnitude and we're overwriting that with the lens_mag and source_mag dicts below
@@ -316,7 +314,8 @@ def run_slsim(tuple):
             'lensed_source_mags': lensed_source_mags,
             'deflector_stellar_mass': gglens.deflector_stellar_mass(),
             'deflector_velocity_dispersion': gglens.deflector_velocity_dispersion(),
-            'snr': snr
+            'snr': snr,
+            'masked_snr_array': masked_snr_array
         }
 
         dict_list.append(gglens_dict)

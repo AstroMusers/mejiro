@@ -21,13 +21,14 @@ from mejiro.utils import util
 
 
 class StrongLens:
-    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, lensed_source_mags=None, lens_stellar_mass=None, lens_vel_disp=None, snr=None, uid=None):
+    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, lensed_source_mags=None, lens_stellar_mass=None, lens_vel_disp=None, snr=None, masked_snr_array=None, uid=None):
         # set z_source convention default
         self.z_source_convention = 6
 
         self.lens_stellar_mass = lens_stellar_mass
         self.lens_vel_disp = lens_vel_disp
         self.snr = snr
+        self.masked_snr_array = masked_snr_array
         self.uid = uid
 
         # get redshifts
@@ -201,7 +202,7 @@ class StrongLens:
     def mass_in_einstein_radius(self):
         return self.lens_cosmo.mass_in_theta_E(self.get_einstein_radius())
 
-    def generate_cdm_subhalos(self, log_mlow=6, log_mhigh=10, subhalo_cone=10, los_normalization=0, r_tidal=0.5,
+    def generate_cdm_subhalos(self, log_mlow=6, log_mhigh=10, los_normalization=0, r_tidal=0.5,
                               sigma_sub=0.055):
         return CDM(z_lens=self.z_lens,
                    z_source=self.z_source,
@@ -210,7 +211,7 @@ class StrongLens:
                    log_mhigh=log_mhigh,
                    log_m_host=np.log10(self.main_halo_mass),
                    r_tidal=r_tidal,
-                   cone_opening_angle_arcsec=subhalo_cone,
+                   cone_opening_angle_arcsec=self.get_einstein_radius() * 3,
                    LOS_normalization=los_normalization,
                    kwargs_cosmo=util.get_kwargs_cosmo(self.cosmo),
                    two_halo_contribution=False)
