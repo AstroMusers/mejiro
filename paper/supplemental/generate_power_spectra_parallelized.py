@@ -37,9 +37,10 @@ def main(config):
     # script configuration options
     debugging = True
     require_alignment = False
-    limit = None
+    limit = 10
     snr_threshold = 50
-    einstein_radius_threshold = 0.
+    einstein_radius_threshold = 0.5
+    log_m_host_threshold = 13.5
 
     # set subhalo and imaging params
     subhalo_params = {
@@ -79,7 +80,7 @@ def main(config):
     lenses_to_process = []
     num_lenses = 0
     for lens in lens_list:
-        if lens.snr > snr_threshold and lens.get_einstein_radius() > einstein_radius_threshold:
+        if lens.snr > snr_threshold and lens.get_einstein_radius() > einstein_radius_threshold and np.log10(lens.main_halo_mass) > log_m_host_threshold:
             lenses_to_process.append(lens)
             num_lenses += 1
         if limit is not None and num_lenses >= limit:
@@ -149,7 +150,7 @@ def generate_power_spectra(tuple):
 
     z_lens = round(lens.z_lens, 2)
     z_source = round(lens.z_source, 2)
-    log_m_host = np.log10(lens.main_halo_mass)
+    log_m_host = np.log10(lens.main_halo_mass * 1e3)
     einstein_radius = lens.get_einstein_radius()
 
     cut_8_success, med_success, smol_success = False, False, False
@@ -182,8 +183,8 @@ def generate_power_spectra(tuple):
                 cut_8 = CDM(z_lens,
                             z_source,
                             sigma_sub=sigma_sub,
-                            log_mlow=8.,
-                            log_mhigh=10.,
+                            log_mlow=10.,
+                            log_mhigh=12.,
                             log_m_host=log_m_host,
                             r_tidal=r_tidal,
                             cone_opening_angle_arcsec=einstein_radius * 3,
@@ -198,8 +199,8 @@ def generate_power_spectra(tuple):
             med = CDM(z_lens,
                     z_source,
                     sigma_sub=sigma_sub,
-                    log_mlow=7.,
-                    log_mhigh=8.,
+                    log_mlow=8.,
+                    log_mhigh=10.,
                     log_m_host=log_m_host,
                     r_tidal=r_tidal,
                     cone_opening_angle_arcsec=einstein_radius * 3,
@@ -215,7 +216,7 @@ def generate_power_spectra(tuple):
                     z_source,
                     sigma_sub=sigma_sub,
                     log_mlow=6.,
-                    log_mhigh=7.,
+                    log_mhigh=8.,
                     log_m_host=log_m_host,
                     r_tidal=r_tidal,
                     cone_opening_angle_arcsec=einstein_radius * 3,
@@ -264,8 +265,8 @@ def generate_power_spectra(tuple):
 
         proj_mass = lens.lens_cosmo.kappa2proj_mass(kappa)
         ps_proj_mass, proj_mass_r = power_spectrum_1d(proj_mass)
-        np.save(os.path.join(save_dir, f'kappa_im_{title}.npy'), proj_mass)
-        np.save(os.path.join(save_dir, f'kappa_ps_{title}.npy'), ps_proj_mass)
+        np.save(os.path.join(save_dir, f'proj_mass_im_{title}.npy'), proj_mass)
+        np.save(os.path.join(save_dir, f'proj_mass_ps_{title}.npy'), ps_proj_mass)
     np.save(os.path.join(save_dir, 'kappa_r.npy'), kappa_r)
     np.save(os.path.join(save_dir, 'proj_mass_r.npy'), proj_mass_r)
 
@@ -312,7 +313,7 @@ def generate_power_spectra(tuple):
         np.save(os.path.join(save_dir, f'ps_det_{detector}_{lens.uid}.npy'), ps)
 
     position_titles = [f'{det}, {pos}' for det, pos in zip(detectors, detector_positions)]
-    diagnostic_plot.power_spectrum_check(subhalo_images, position_lenses, position_titles, os.path.join(image_save_dir, f'diagnostic_{lens.uid}_02_positions.png'), oversampled=False)
+    diagnostic_plot.power_spectrum_check(position_images, position_lenses, position_titles, os.path.join(image_save_dir, f'diagnostic_{lens.uid}_02_positions.png'), oversampled=False)
 
     # BAND-DEPENDENCE
     bands = ['F106', 'F129', 'F158', 'F184']
