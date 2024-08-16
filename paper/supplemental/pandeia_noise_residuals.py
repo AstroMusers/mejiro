@@ -7,7 +7,7 @@ import numpy as np
 from hydra import initialize, compose
 
 # set paths to various directories based on the machine this code is being executed on
-with initialize(version_base=None, config_path='../../config'):
+with initialize(version_base=None, config_path='config'):
     config = compose(config_name='config.yaml')  # overrides=['machine=uzay']
 
 array_dir, data_dir, figure_dir, pickle_dir, repo_dir = config.machine.array_dir, config.machine.data_dir, config.machine.figure_dir, config.machine.pickle_dir, config.machine.repo_dir
