@@ -4,7 +4,6 @@ import os
 import sys
 import time
 from copy import deepcopy
-from glob import glob
 from multiprocessing import Pool
 
 import hydra
@@ -80,7 +79,8 @@ def main(config):
     lenses_to_process = []
     num_lenses = 0
     for lens in lens_list:
-        if lens.snr > snr_threshold and lens.get_einstein_radius() > einstein_radius_threshold and np.log10(lens.main_halo_mass) > log_m_host_threshold:
+        if lens.snr > snr_threshold and lens.get_einstein_radius() > einstein_radius_threshold and np.log10(
+                lens.main_halo_mass) > log_m_host_threshold:
             lenses_to_process.append(lens)
             num_lenses += 1
         if limit is not None and num_lenses >= limit:
@@ -94,12 +94,15 @@ def main(config):
     psf_id_strings = []
     for band in bands:
         for detector, detector_position in zip(detectors, detector_positions):
-            psf_id_strings.append(psf.get_psf_id_string(band, detector, detector_position, imaging_params['oversample']))
-        
+            psf_id_strings.append(
+                psf.get_psf_id_string(band, detector, detector_position, imaging_params['oversample']))
+
     for id_string in psf_id_strings:
         cached_psfs[id_string] = psf.load_cached_psf(id_string, psf_cache_dir)
 
-    tuple_list = [(lens, subhalo_params, imaging_params, cached_psfs, require_alignment, save_dir, image_save_dir, debugging) for lens in lenses_to_process]
+    tuple_list = [
+        (lens, subhalo_params, imaging_params, cached_psfs, require_alignment, save_dir, image_save_dir, debugging) for
+        lens in lenses_to_process]
 
     # split up the lenses into batches based on core count
     count = len(lenses_to_process)
@@ -171,7 +174,8 @@ def generate_power_spectra(tuple):
                                 r_tidal=r_tidal,
                                 cone_opening_angle_arcsec=einstein_radius * 3,
                                 LOS_normalization=los_normalization)
-                    cut_8_good = lens_util.check_halo_image_alignment(lens, cut_8, halo_mass=1e8, halo_sort_massive_first=True, return_halo=False)
+                    cut_8_good = lens_util.check_halo_image_alignment(lens, cut_8, halo_mass=1e8,
+                                                                      halo_sort_massive_first=True, return_halo=False)
                     i += 1
                     cut_8_success = True
                 except:
@@ -197,30 +201,30 @@ def generate_power_spectra(tuple):
     while not med_success:
         try:
             med = CDM(z_lens,
-                    z_source,
-                    sigma_sub=sigma_sub,
-                    log_mlow=8.,
-                    log_mhigh=10.,
-                    log_m_host=log_m_host,
-                    r_tidal=r_tidal,
-                    cone_opening_angle_arcsec=einstein_radius * 3,
-                    LOS_normalization=los_normalization)
+                      z_source,
+                      sigma_sub=sigma_sub,
+                      log_mlow=8.,
+                      log_mhigh=10.,
+                      log_m_host=log_m_host,
+                      r_tidal=r_tidal,
+                      cone_opening_angle_arcsec=einstein_radius * 3,
+                      LOS_normalization=los_normalization)
             med_success = True
         except:
             med_success = False
     if debugging: print(f'lens {lens.uid}: Generated med population.')
-    
+
     while not smol_success:
         try:
             smol = CDM(z_lens,
-                    z_source,
-                    sigma_sub=sigma_sub,
-                    log_mlow=6.,
-                    log_mhigh=8.,
-                    log_m_host=log_m_host,
-                    r_tidal=r_tidal,
-                    cone_opening_angle_arcsec=einstein_radius * 3,
-                    LOS_normalization=los_normalization)
+                       z_source,
+                       sigma_sub=sigma_sub,
+                       log_mlow=6.,
+                       log_mhigh=8.,
+                       log_m_host=log_m_host,
+                       r_tidal=r_tidal,
+                       cone_opening_angle_arcsec=einstein_radius * 3,
+                       LOS_normalization=los_normalization)
             smol_success = True
         except:
             smol_success = False
@@ -243,7 +247,7 @@ def generate_power_spectra(tuple):
 
     lenses = [lens_cut_6, lens_cut_7, lens_cut_8, lens]
     titles = [f'cut_6_{lens.uid}', f'cut_7_{lens.uid}',
-                f'cut_8_{lens.uid}', f'no_subhalos_{lens.uid}']
+              f'cut_8_{lens.uid}', f'no_subhalos_{lens.uid}']
     models = [l.get_array(num_pix=num_pix * oversample, side=side, band=control_band) for l in lenses]
 
     # set aside the CDM lens and model
@@ -251,7 +255,9 @@ def generate_power_spectra(tuple):
     control_model = deepcopy(models[2])
 
     # check that the models were generated correctly
-    diagnostic_plot.power_spectrum_check(models, lenses, titles, os.path.join(image_save_dir, f'diagnostic_{lens.uid}_00_models.png'), oversampled=True)
+    diagnostic_plot.power_spectrum_check(models, lenses, titles,
+                                         os.path.join(image_save_dir, f'diagnostic_{lens.uid}_00_models.png'),
+                                         oversampled=True)
 
     # generate power spectra of convergence maps
     for model, lens, title in zip(models, lenses, titles):
@@ -271,7 +277,8 @@ def generate_power_spectra(tuple):
     np.save(os.path.join(save_dir, 'proj_mass_r.npy'), proj_mass_r)
 
     # SUBHALO-DEPENDENCE
-    subhalos_psf_id_string = psf.get_psf_id_string(band=control_band, detector=1, detector_position=(2048, 2048), oversample=oversample)
+    subhalos_psf_id_string = psf.get_psf_id_string(band=control_band, detector=1, detector_position=(2048, 2048),
+                                                   oversample=oversample)
     subhalos_psf_kernel = cached_psfs[subhalos_psf_id_string]
     subhalo_images = []
     for model, lens, title in zip(models, lenses, titles):
@@ -287,7 +294,9 @@ def generate_power_spectra(tuple):
         np.save(os.path.join(save_dir, f'im_subs_{title}.npy'), masked_image)
         np.save(os.path.join(save_dir, f'ps_subs_{title}.npy'), ps)
 
-    diagnostic_plot.power_spectrum_check(subhalo_images, lenses, titles, os.path.join(image_save_dir, f'diagnostic_{lens.uid}_01_subhalos.png'), oversampled=False)
+    diagnostic_plot.power_spectrum_check(subhalo_images, lenses, titles,
+                                         os.path.join(image_save_dir, f'diagnostic_{lens.uid}_01_subhalos.png'),
+                                         oversampled=False)
 
     # POSITION-DEPENDENCE
     detectors = [4, 1, 9, 17]
@@ -295,7 +304,8 @@ def generate_power_spectra(tuple):
     position_lens = deepcopy(control_lens)
     position_model = deepcopy(control_model)
     position_total_flux_cps = position_lens.get_total_flux_cps(control_band)
-    position_interp = InterpolatedImage(Image(position_model, xmin=0, ymin=0), scale=0.11 / oversample, flux=position_total_flux_cps * 146)
+    position_interp = InterpolatedImage(Image(position_model, xmin=0, ymin=0), scale=0.11 / oversample,
+                                        flux=position_total_flux_cps * 146)
     position_images, position_lenses = [], []
     for detector, detector_pos in zip(detectors, detector_positions):
         psf_id_string = psf.get_psf_id_string(control_band, detector, detector_pos, oversample)
@@ -313,7 +323,9 @@ def generate_power_spectra(tuple):
         np.save(os.path.join(save_dir, f'ps_det_{detector}_{lens.uid}.npy'), ps)
 
     position_titles = [f'{det}, {pos}' for det, pos in zip(detectors, detector_positions)]
-    diagnostic_plot.power_spectrum_check(position_images, position_lenses, position_titles, os.path.join(image_save_dir, f'diagnostic_{lens.uid}_02_positions.png'), oversampled=False)
+    diagnostic_plot.power_spectrum_check(position_images, position_lenses, position_titles,
+                                         os.path.join(image_save_dir, f'diagnostic_{lens.uid}_02_positions.png'),
+                                         oversampled=False)
 
     # BAND-DEPENDENCE
     bands = ['F106', 'F129', 'F158', 'F184']
@@ -323,7 +335,8 @@ def generate_power_spectra(tuple):
         lens = deepcopy(band_lens)
         band_model = lens.get_array(num_pix=num_pix * oversample, side=side, band=band)
         band_total_flux_cps = band_lens.get_total_flux_cps(band)
-        band_interp = InterpolatedImage(Image(band_model, xmin=0, ymin=0), scale=0.11 / oversample, flux=band_total_flux_cps * 146)
+        band_interp = InterpolatedImage(Image(band_model, xmin=0, ymin=0), scale=0.11 / oversample,
+                                        flux=band_total_flux_cps * 146)
         psf_id_string = psf.get_psf_id_string(control_band, 1, (2048, 2048), oversample)
         webbpsf_interp = cached_psfs[psf_id_string]
         image = gs.convolve(band_interp, webbpsf_interp, num_pix)
@@ -337,7 +350,9 @@ def generate_power_spectra(tuple):
         np.save(os.path.join(save_dir, f'im_band_{band}_{lens.uid}.npy'), masked_image)
         np.save(os.path.join(save_dir, f'ps_band_{band}_{lens.uid}.npy'), ps)
 
-    diagnostic_plot.power_spectrum_check(band_images, band_lenses, bands, os.path.join(image_save_dir, f'diagnostic_{lens.uid}_03_bands.png'), oversampled=False)
+    diagnostic_plot.power_spectrum_check(band_images, band_lenses, bands,
+                                         os.path.join(image_save_dir, f'diagnostic_{lens.uid}_03_bands.png'),
+                                         oversampled=False)
 
     # save r; should be same for all, since same size (num_pix, num_pix)
     np.save(os.path.join(save_dir, 'r.npy'), r)
@@ -346,7 +361,8 @@ def generate_power_spectra(tuple):
     gaussian_lens = deepcopy(control_lens)
     gaussian_model = deepcopy(control_model)
     total_flux_cps = gaussian_lens.get_total_flux_cps(control_band)
-    gaussian_interp = InterpolatedImage(Image(gaussian_model, xmin=0, ymin=0), scale=0.11 / oversample, flux=total_flux_cps * 146)
+    gaussian_interp = InterpolatedImage(Image(gaussian_model, xmin=0, ymin=0), scale=0.11 / oversample,
+                                        flux=total_flux_cps * 146)
     gaussian_psf_interp = psf.get_gaussian_psf(fwhm=0.087, oversample=oversample, pixel_scale=0.11)
     image = gs.convolve(gaussian_interp, gaussian_psf_interp, num_pix)
     gaussian_final_array = image.array
@@ -354,7 +370,7 @@ def generate_power_spectra(tuple):
     ps, r = power_spectrum_1d(gaussian_masked_image)
     np.save(os.path.join(save_dir, f'im_gaussian_psf_{lens.uid}.npy'), gaussian_masked_image)
     np.save(os.path.join(save_dir, f'ps_gaussian_psf_{lens.uid}.npy'), ps)
-    
+
     # plot final images with different PSFs
     _, ax = plt.subplots(1, 3, figsize=(12, 4))
     ax[0].imshow(np.log10(subhalo_images[2]))

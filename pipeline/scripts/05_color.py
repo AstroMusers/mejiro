@@ -100,7 +100,8 @@ def main(config):
 
     stop = time.time()
     execution_time = util.print_execution_time(start, stop, return_string=True)
-    util.write_execution_time(execution_time, '05', os.path.join(os.path.dirname(output_parent_dir), 'execution_times.json'))
+    util.write_execution_time(execution_time, '05',
+                              os.path.join(os.path.dirname(output_parent_dir), 'execution_times.json'))
 
 
 def get_image(input):
@@ -120,7 +121,8 @@ def get_image(input):
 
     # generate and save color image
     from mejiro.helpers import color
-    rgb_image = color.get_rgb(image_b=blue, image_g=green, image_r=red, stretch=stretch, Q=q)  # originally stretch=4, Q=5; then stretch=3, Q=4
+    rgb_image = color.get_rgb(image_b=blue, image_g=green, image_r=red, stretch=stretch,
+                              Q=q)  # originally stretch=4, Q=5; then stretch=3, Q=4
     np.save(os.path.join(output_dir, f'galsim_color_{str(uid).zfill(8)}.npy'), rgb_image)
 
     if pieces:
@@ -128,7 +130,7 @@ def get_image(input):
             red = np.load(input_dir + f'/galsim_{str(uid).zfill(8)}_{piece}_{rgb_bands[0]}.npy')
             green = np.load(input_dir + f'/galsim_{str(uid).zfill(8)}_{piece}_{rgb_bands[1]}.npy')
             blue = np.load(input_dir + f'/galsim_{str(uid).zfill(8)}_{piece}_{rgb_bands[2]}.npy')
-            rgb_image = color.get_rgb(image_b=blue, image_g=green, image_r=red, stretch=stretch, Q=q)  
+            rgb_image = color.get_rgb(image_b=blue, image_g=green, image_r=red, stretch=stretch, Q=q)
             np.save(os.path.join(output_dir, f'galsim_color_{str(uid).zfill(8)}_{piece}.npy'), rgb_image)
 
     stop = time.time()

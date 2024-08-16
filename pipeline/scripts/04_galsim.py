@@ -110,7 +110,8 @@ def main(config):
 
     stop = time.time()
     execution_time = util.print_execution_time(start, stop, return_string=True)
-    util.write_execution_time(execution_time, '04', os.path.join(os.path.dirname(output_parent_dir), 'execution_times.json'))
+    util.write_execution_time(execution_time, '04',
+                              os.path.join(os.path.dirname(output_parent_dir), 'execution_times.json'))
 
 
 def get_image(input):
@@ -146,7 +147,8 @@ def get_image(input):
     # determine detector and position
     detector = int(sca)
     side = int(4088 / 4)
-    possible_detector_positions = [(side, side), (3 * side, side), (side, 3 * side), (3 * side, 3 * side), (side * 2, side * 2)]
+    possible_detector_positions = [(side, side), (3 * side, side), (side, 3 * side), (3 * side, 3 * side),
+                                   (side * 2, side * 2)]
     detector_pos = random.choice(possible_detector_positions)
 
     gs_results = gs.get_images(lens,

@@ -1,11 +1,11 @@
 import os
 import sys
 
-import numpy as np
+import hydra
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib import colors
 from tqdm import tqdm
-import hydra
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -58,11 +58,11 @@ def main(config):
 
     def annular_mask(dimx, dimy, center, r_in, r_out):
         Y, X = np.ogrid[:dimx, :dimy]
-        distance_from_center = np.sqrt((X - center[0])**2 + (Y-center[1])**2)
+        distance_from_center = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2)
 
         return (r_in <= distance_from_center) & \
-        (distance_from_center <= r_out)
-    
+            (distance_from_center <= r_out)
+
     def plot_f_sub(masked_kappa_subhalos, masked_kappa_macro, numerator, denominator, f_sub):
         f, ax = plt.subplots(1, 2, figsize=(10, 5), constrained_layout=True)
         ax[0].imshow(masked_kappa_subhalos, cmap='bwr')
@@ -96,7 +96,7 @@ def main(config):
         r_in = (einstein_radius - 0.2) / 0.11  # units of pixels
         r_out = (einstein_radius + 0.2) / 0.11  # units of pixels
 
-        mask = annular_mask(*sb.shape, (sb.shape[0]//2, sb.shape[1]//2), r_in, r_out)
+        mask = annular_mask(*sb.shape, (sb.shape[0] // 2, sb.shape[1] // 2), r_in, r_out)
 
         masked_kappa_subhalos = np.ma.masked_array(subhalo_kappa, mask=~mask)
         masked_kappa_macro = np.ma.masked_array(macrolens_kappa, mask=~mask)

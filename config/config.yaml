@@ -8,7 +8,7 @@ survey:
   - runs: 900  # 900  # 90
   - area: 0.5
   - total_population: False
-  - scas: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]  # 
+  - scas: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]  # 
   - deflector_cut_band: F129
   - deflector_cut_band_max: 24  # 27
   - deflector_z_min: 0.01
@@ -42,7 +42,7 @@ pipeline:
   - num_samples: 100000  # 100000
   - max_scene_size: 10.  # 10.01
   # subhalo params
-  - log_mlow: 6 
+  - log_mlow: 6
   - log_mhigh: 10
   - subhalo_cone: 10.  # 6.
   - los_normalization: 0.

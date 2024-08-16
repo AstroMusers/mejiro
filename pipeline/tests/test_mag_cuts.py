@@ -3,18 +3,16 @@ import multiprocessing
 import os
 import sys
 import time
-from glob import glob
 from multiprocessing import Pool
 from pprint import pprint
 
 import hydra
 import numpy as np
 import speclite
-from astropy.cosmology import default_cosmology
 from astropy.units import Quantity
-from slsim.lens_pop import LensPop
 from slsim.Observations.roman_speclite import configure_roman_filters
 from slsim.Observations.roman_speclite import filter_names
+from slsim.lens_pop import LensPop
 from tqdm import tqdm
 
 
@@ -46,35 +44,37 @@ def main(config):
     pipeline_params = util.hydra_to_dict(config.pipeline)
     runs = pipeline_params['survey_sim_runs']
 
-    deflector_source_pairs = [(21, 22), (21, 23), (21, 24), (23, 24), (23, 25), (23, 26), (24, 25), (24, 26), (24, 27), (25, 26), (25, 27), (25, 28), (26, 27), (26, 28), (26, 29), (27, 28), (27, 29), (27, 30)]
+    deflector_source_pairs = [(21, 22), (21, 23), (21, 24), (23, 24), (23, 25), (23, 26), (24, 25), (24, 26), (24, 27),
+                              (25, 26), (25, 27), (25, 28), (26, 27), (26, 28), (26, 29), (27, 28), (27, 29), (27, 30)]
 
     for deflector_cut, source_cut in tqdm(deflector_source_pairs):
-            survey_params['deflector_cut_band_max'] = deflector_cut
-            survey_params['source_cut_band_max'] = source_cut
+        survey_params['deflector_cut_band_max'] = deflector_cut
+        survey_params['source_cut_band_max'] = source_cut
 
-            output_dir = os.path.join(config.machine.data_dir, 'survey_params', f'deflector_{deflector_cut}_source_{source_cut}')
-            util.create_directory_if_not_exists(output_dir)
-            util.clear_directory(output_dir)
-            if debugging: print(f'Set up output directory {output_dir}')
+        output_dir = os.path.join(config.machine.data_dir, 'survey_params',
+                                  f'deflector_{deflector_cut}_source_{source_cut}')
+        util.create_directory_if_not_exists(output_dir)
+        util.clear_directory(output_dir)
+        if debugging: print(f'Set up output directory {output_dir}')
 
-            tuple_list = [(run, survey_params, pipeline_params, output_dir, debugging) for run in range(runs)]
+        tuple_list = [(run, survey_params, pipeline_params, output_dir, debugging) for run in range(runs)]
 
-            # split up the lenses into batches based on core count
-            cpu_count = multiprocessing.cpu_count()
-            process_count = cpu_count - config.machine.headroom_cores
-            count = runs
-            if count < process_count:
-                process_count = count
-            if debugging: print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
+        # split up the lenses into batches based on core count
+        cpu_count = multiprocessing.cpu_count()
+        process_count = cpu_count - config.machine.headroom_cores
+        count = runs
+        if count < process_count:
+            process_count = count
+        if debugging: print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
-            # batch
-            generator = util.batch_list(tuple_list, process_count)
-            batches = list(generator)
+        # batch
+        generator = util.batch_list(tuple_list, process_count)
+        batches = list(generator)
 
-            # process the batches
-            for batch in tqdm(batches):
-                pool = Pool(processes=process_count)
-                pool.map(run_slsim, batch)
+        # process the batches
+        for batch in tqdm(batches):
+            pool = Pool(processes=process_count)
+            pool.map(run_slsim, batch)
 
     stop = time.time()
     execution_time = str(datetime.timedelta(seconds=round(stop - start)))

@@ -92,7 +92,9 @@ def main(config):
 
     stop = time.time()
     execution_time = util.print_execution_time(start, stop, return_string=True)
-    util.write_execution_time(execution_time, '03', os.path.join(os.path.dirname(output_parent_dir), 'execution_times.json'))
+    util.write_execution_time(execution_time, '03',
+                              os.path.join(os.path.dirname(output_parent_dir), 'execution_times.json'))
+
 
 def get_model(input):
     from mejiro.utils import util

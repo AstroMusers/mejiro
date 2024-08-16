@@ -1,18 +1,18 @@
 # get_regions() borrows heavily from the tutorial at https://www.geeksforgeeks.org/find-the-number-of-islands-using-dfs/
 
-import numpy as np
-from copy import deepcopy
-
 import os  # TODO temp
+
+import numpy as np
+
 from mejiro.utils import util
 
 
 def annular_mask(dimx, dimy, center, r_in, r_out):
     Y, X = np.ogrid[:dimx, :dimy]
-    distance_from_center = np.sqrt((X - center[0])**2 + (Y-center[1])**2)
+    distance_from_center = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2)
 
     return (r_in <= distance_from_center) & \
-    (distance_from_center <= r_out)
+        (distance_from_center <= r_out)
 
 
 def get_regions(masked_array, debug_dir=None):
@@ -43,7 +43,8 @@ def get_regions(masked_array, debug_dir=None):
         print(f'Error in get_regions: {e}')
 
         if debug_dir is not None:
-            util.pickle(os.path.join(debug_dir, 'max_recursion_limit', f'masked_array_{id(masked_array)}.pkl'), masked_array)
+            util.pickle(os.path.join(debug_dir, 'max_recursion_limit', f'masked_array_{id(masked_array)}.pkl'),
+                        masked_array)
         return None
 
 
@@ -77,7 +78,7 @@ class Graph:
         for k in range(4):
             if self.is_safe(i + rowNbr[k], j + colNbr[k], visited):
                 self.DFS(i + rowNbr[k], j + colNbr[k], visited)
-        
+
         return np.where(visited)
 
     def get_coord_list(self):
@@ -95,4 +96,3 @@ class Graph:
                     coord_list.append(coords)
 
         return coord_list
-    

@@ -3,8 +3,8 @@ import numpy as np
 from matplotlib import colors
 from scipy.fft import fft2
 
-from mejiro.plots import plot_util
 from mejiro.lenses import lens_util
+from mejiro.plots import plot_util
 
 
 def snr_plot(total, lens, source, noise, snr_array, masked_snr_array, snr_list, debug_dir):
@@ -15,7 +15,7 @@ def snr_plot(total, lens, source, noise, snr_array, masked_snr_array, snr_list, 
     im00 = ax[0][0].imshow(total)  # , vmin=vmin, vmax=vmax
     plt.colorbar(im00, ax=ax[0][0])
     ax[0][0].set_title('Total Image')
-    
+
     im01 = ax[0][1].imshow(lens)
     plt.colorbar(im01, ax=ax[0][1])
     ax[0][1].set_title('Lens')
@@ -73,7 +73,7 @@ def power_spectrum_check(array_list, lenses, titles, save_path, oversampled):
                     else:
                         coords = lens_util.get_coords(45, delta_pix=0.11)
                     ax[1][i].scatter(*coords.map_coord2pix(halo.x, halo.y), s=100, facecolors='none',
-                                        edgecolors='black')
+                                     edgecolors='black')
 
     plt.savefig(save_path)
     plt.close()

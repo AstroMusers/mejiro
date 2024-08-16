@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import numpy as np
 import os
-import matplotlib.pyplot as plt
+
 import slsim
-from slsim.lens_pop import LensPop
-from slsim.Observations.roman_speclite import configure_roman_filters
-from slsim.Observations.roman_speclite import filter_names
 import speclite
 from astropy.cosmology import FlatLambdaCDM
 from astropy.units import Quantity
+from slsim.Observations.roman_speclite import configure_roman_filters
+from slsim.Observations.roman_speclite import filter_names
+from slsim.lens_pop import LensPop
 from tqdm import tqdm
 
 from mejiro.helpers import survey_sim
@@ -34,15 +33,12 @@ _ = speclite.filters.load_filters(
     roman_filters[7],
 )
 
-
 cosmo = FlatLambdaCDM(H0=70, Om0=0.3)
 
 sky_area = Quantity(value=5., unit="deg2")
 
-
-deflector_mag_cuts = [20, 22, 24, 26, 28]  # 
+deflector_mag_cuts = [20, 22, 24, 26, 28]  #
 source_mag_cuts = [21, 23, 25, 27, 29]  # 
-
 
 detectable_counts, lens_pop_counts = [], []
 
@@ -72,7 +68,7 @@ for deflector_mag_cut, source_mag_cut in tqdm(zip(deflector_mag_cuts, source_mag
 
     detectable = 0
     for candidate in lens_population:
-        snr, _ = survey_sim.get_snr(gglens=candidate, 
+        snr, _ = survey_sim.get_snr(gglens=candidate,
                                     band='F129',
                                     subtract_lens=True,
                                     mask_mult=1.)

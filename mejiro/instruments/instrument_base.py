@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 
 
 class InstrumentBase(ABC):
@@ -6,8 +6,7 @@ class InstrumentBase(ABC):
     def __init__(
             self,
             name
-            ):
-
+    ):
         self.name = name
 
     # TODO enforce bands an attribute
@@ -15,4 +14,3 @@ class InstrumentBase(ABC):
     # @abstractmethod
     # def psf_fwhm(self, band):
     #     pass
-    

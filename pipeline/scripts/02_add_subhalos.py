@@ -7,7 +7,6 @@ from multiprocessing import Pool
 
 import hydra
 import numpy as np
-from astropy.cosmology import default_cosmology
 from pyHalo.preset_models import CDM
 from tqdm import tqdm
 
@@ -80,7 +79,8 @@ def main(config):
 
     stop = time.time()
     execution_time = util.print_execution_time(start, stop, return_string=True)
-    util.write_execution_time(execution_time, '02', os.path.join(os.path.dirname(output_parent_dir), 'execution_times.json'))
+    util.write_execution_time(execution_time, '02',
+                              os.path.join(os.path.dirname(output_parent_dir), 'execution_times.json'))
 
 
 def add(tuple):
@@ -99,7 +99,7 @@ def add(tuple):
     log_mhigh = pipeline_params['log_mhigh']
 
     log_m_host = np.log10(lens.main_halo_mass)
-    kwargs_cosmo = util.get_kwargs_cosmo(lens.cosmo)  
+    kwargs_cosmo = util.get_kwargs_cosmo(lens.cosmo)
 
     # circumvent bug with pyhalo, sometimes fails when redshifts have more than 2 decimal places
     z_lens = round(lens.z_lens, 2)
@@ -120,7 +120,7 @@ def add(tuple):
                               LOS_normalization=los_normalization,
                               kwargs_cosmo=kwargs_cosmo)
     except Exception as e:
-        print(f'Failed to generate subhalos for lens {lens.uid}: {e}')        
+        print(f'Failed to generate subhalos for lens {lens.uid}: {e}')
         return
 
     # add subhalos

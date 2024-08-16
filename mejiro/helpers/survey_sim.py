@@ -1,22 +1,12 @@
-import datetime
 import os
-import time
 from copy import deepcopy
 from glob import glob
 
 import numpy as np
 import pandas as pd
 from astropy.cosmology import default_cosmology
-from lenstronomy.Data.pixel_grid import PixelGrid
-from lenstronomy.Data.psf import PSF
-from lenstronomy.ImSim.image_model import ImageModel
-from lenstronomy.LensModel.lens_model import LensModel
-from lenstronomy.LightModel.light_model import LightModel
-from lenstronomy.SimulationAPI.ObservationConfig import Roman
 from lenstronomy.SimulationAPI.ObservationConfig import Roman
 from lenstronomy.SimulationAPI.sim_api import SimAPI
-from lenstronomy.Util import data_util
-from lenstronomy.Util import util as len_util
 from tqdm import tqdm
 
 import mejiro
@@ -24,8 +14,8 @@ from mejiro.analysis import regions
 from mejiro.helpers import gs
 from mejiro.helpers.roman_params import RomanParameters
 from mejiro.lenses import lens_util
-from mejiro.utils import util
 from mejiro.plots import diagnostic_plot
+from mejiro.utils import util
 
 # get Roman params
 module_path = os.path.dirname(mejiro.__file__)
@@ -50,15 +40,19 @@ def collect_all_detectable_lenses(dir):
 def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, return_snr_list=False, debugging=False, debug_dir=None):
     if debugging: assert debug_dir is not None, 'Debugging is enabled but no debug directory is provided.'
 
-    sample_lens = lens_util.slsim_lens_to_mejiro(gglens, bands=[band], cosmo=default_cosmology.get())  # TODO pass in cosmology
+    sample_lens = lens_util.slsim_lens_to_mejiro(gglens, bands=[band],
+                                                 cosmo=default_cosmology.get())  # TODO pass in cosmology
 
     # generate synthetic images with lenstronomy
     model, lens_sb, source_sb = sample_lens.get_array(num_pix * oversample, side, band, return_pieces=True)
 
     # generate GalSim images
     results, lenses, sources, _ = gs.get_images(sample_lens, [model], [band], num_pix, num_pix, oversample, oversample,
-               lens_surface_brightness=[lens_sb], source_surface_brightness=[source_sb], detector=1, detector_pos=(2048, 2048),
-               exposure_time=146, ra=30, dec=-30, seed=None, validate=False, suppress_output=True, check_cache=True)
+                                                lens_surface_brightness=[lens_sb],
+                                                source_surface_brightness=[source_sb], detector=1,
+                                                detector_pos=(2048, 2048),
+                                                exposure_time=146, ra=30, dec=-30, seed=None, validate=False,
+                                                suppress_output=True, check_cache=True)
 
     # put back into units of counts
     total = results[0] * 146
@@ -72,7 +66,8 @@ def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, return_snr_list=F
     snr_array = source / np.sqrt(total)
 
     if not np.any(snr_array >= 1):
-        masked_snr_array = np.ma.masked_where(snr_array <= np.quantile(snr_array, 0.9), snr_array)  # TODO this must be the mask that's causing issues
+        masked_snr_array = np.ma.masked_where(snr_array <= np.quantile(snr_array, 0.9),
+                                              snr_array)  # TODO this must be the mask that's causing issues
     else:
         masked_snr_array = np.ma.masked_where(snr_array <= 1, snr_array)
 
@@ -132,7 +127,7 @@ def get_snr_lenstronomy(gglens, band, subtract_lens=True, mask_mult=1., side=4.9
     # mask total image
     masked_total_image = np.ma.array(mask=masked_source.mask, data=total_image_with_noise)
     total_counts = masked_total_image.compressed().sum()
-    
+
     # calculate estimated SNR
     with np.errstate(invalid='raise'):
         try:
@@ -191,7 +186,8 @@ def write_lens_pop_to_csv(output_path, gg_lenses, detectable_snr_list, bands, su
 
     df = pd.DataFrame(columns=listnamepara)
 
-    for i, (gg_lens, snr) in tqdm(enumerate(zip(gg_lenses, detectable_snr_list)), total=len(gg_lenses), disable=suppress_output):
+    for i, (gg_lens, snr) in tqdm(enumerate(zip(gg_lenses, detectable_snr_list)), total=len(gg_lenses),
+                                  disable=suppress_output):
         dict = {
             'velodisp': gg_lens.deflector_velocity_dispersion(),
             'massstel': gg_lens.deflector_stellar_mass() * 1e-12,

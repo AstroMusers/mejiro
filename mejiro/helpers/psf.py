@@ -11,7 +11,8 @@ from mejiro.helpers import gs
 from mejiro.utils import util
 
 
-def get_webbpsf_psf(band, detector, detector_position, oversample, check_cache=False, psf_cache_dir=None, suppress_output=True):
+def get_webbpsf_psf(band, detector, detector_position, oversample, check_cache=False, psf_cache_dir=None,
+                    suppress_output=True):
     # first, check if it exists in the cache
     if check_cache:
         if psf_cache_dir is None:
@@ -24,7 +25,8 @@ def get_webbpsf_psf(band, detector, detector_position, oversample, check_cache=F
             if not suppress_output: print(f'Loading cached PSF: {psf_path[0]}')
             return util.unpickle(psf_path[0])
         else:
-            if not suppress_output: print(f'PSF {band} SCA{str(detector).zfill(2)} {detector_position} {oversample} not found in cache {psf_cache_dir}')
+            if not suppress_output: print(
+                f'PSF {band} SCA{str(detector).zfill(2)} {detector_position} {oversample} not found in cache {psf_cache_dir}')
 
     # set PSF parameters
     wfi = WFI()

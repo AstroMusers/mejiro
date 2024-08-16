@@ -21,7 +21,8 @@ from mejiro.utils import util
 
 
 class StrongLens:
-    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, lensed_source_mags=None, lens_stellar_mass=None, lens_vel_disp=None, snr=None, masked_snr_array=None, uid=None):
+    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, lensed_source_mags=None,
+                 lens_stellar_mass=None, lens_vel_disp=None, snr=None, masked_snr_array=None, uid=None):
         # set z_source convention default
         self.z_source_convention = 6
 
@@ -108,7 +109,7 @@ class StrongLens:
         # TODO finish
         kwargs_params = {}
         return self.kwargs_model, kwargs_params
-    
+
     def get_shmf(self, log_mlow=6, log_mhigh=10, bins=10):
         self._check_realization()  # ensure subhalos have been added
 
@@ -116,28 +117,28 @@ class StrongLens:
         hist, bin_edges = np.histogram(cdm_halo_masses, bins=np.logspace(log_mlow, log_mhigh, bins))
         return bin_edges[0:-1], hist
 
-
     def get_total_kappa(self, num_pix, side):
         self._check_realization()  # ensure subhalos have been added
 
         # set cosmology by initializing pyHalo's Cosmology object, otherwise Colossus throws an error when calling realization.lensing_quantities()
         self._set_pyhalo_cosmology()
 
-        halo_lens_model_list, halo_redshift_array, kwargs_halos, _ = self.realization.lensing_quantities(add_mass_sheet_correction=True)
+        halo_lens_model_list, halo_redshift_array, kwargs_halos, _ = self.realization.lensing_quantities(
+            add_mass_sheet_correction=True)
 
         # halo_lens_model_list and kwargs_halos are lists, but halo_redshift_list is ndarray
         halo_redshift_list = list(halo_redshift_array)
 
         lens_model_total = LensModel(lens_model_list=self.lens_model_list_macro + halo_lens_model_list,
-                                z_lens=self.z_lens,
-                                z_source=self.z_source,
-                                lens_redshift_list=self.redshift_list_macro + halo_redshift_list,
-                                cosmo=self.cosmo,
-                                multi_plane=False)
+                                     z_lens=self.z_lens,
+                                     z_source=self.z_source,
+                                     lens_redshift_list=self.redshift_list_macro + halo_redshift_list,
+                                     cosmo=self.cosmo,
+                                     multi_plane=False)
         kwargs_lens_total = self.kwargs_lens_macro + kwargs_halos
-        
+
         return self._get_kappa_image(lens_model_total, kwargs_lens_total, num_pix, side)
-        
+
     def get_subhalo_kappa(self, num_pix, side):
         # TODO docs: this method does NOT include the negative mass sheet correction, so returns the convergence map of just the subhalos
 
@@ -146,35 +147,35 @@ class StrongLens:
         # set cosmology by initializing pyHalo's Cosmology object, otherwise Colossus throws an error when calling realization.lensing_quantities()
         self._set_pyhalo_cosmology()
 
-        halo_lens_model_list, halo_redshift_array, kwargs_halos, _ = self.realization.lensing_quantities(add_mass_sheet_correction=False)
+        halo_lens_model_list, halo_redshift_array, kwargs_halos, _ = self.realization.lensing_quantities(
+            add_mass_sheet_correction=False)
 
         # halo_lens_model_list and kwargs_halos are lists, but halo_redshift_list is ndarray
         halo_redshift_list = list(halo_redshift_array)
 
-        lens_model_halos_only = LensModel(lens_model_list=halo_lens_model_list, 
-                                          z_lens=self.z_lens, 
-                                          z_source=self.z_source, 
-                                          lens_redshift_list=halo_redshift_list, 
-                                          cosmo=self.cosmo, 
+        lens_model_halos_only = LensModel(lens_model_list=halo_lens_model_list,
+                                          z_lens=self.z_lens,
+                                          z_source=self.z_source,
+                                          lens_redshift_list=halo_redshift_list,
+                                          cosmo=self.cosmo,
                                           multi_plane=False)
-        
+
         return self._get_kappa_image(lens_model_halos_only, kwargs_halos, num_pix, side)
 
     def get_macrolens_kappa(self, num_pix, side):
         lens_model_macro = LensModel(self.lens_model_list_macro)
         return self._get_kappa_image(lens_model_macro, self.kwargs_lens_macro, num_pix, side)
 
-
     def _get_kappa_image(self, lens_model, kwargs_lens, num_pix, side):
         _r = np.linspace(-side / 2, side / 2, num_pix)
         xx, yy = np.meshgrid(_r, _r)
 
         return lens_model.kappa(xx.ravel(), yy.ravel(), kwargs_lens).reshape(num_pix, num_pix)
-    
+
     def _check_realization(self):
         if self.realization is None:
             raise ValueError('No subhalos have been added to this StrongLens object.')
-        
+
     def get_f_sub(self, num_pix=45, side=4.95, plot=False):
         import matplotlib.pyplot as plt
         from mejiro.analysis.regions import annular_mask
@@ -183,7 +184,7 @@ class StrongLens:
         r_in = (einstein_radius - 0.2) / (side / num_pix)  # units of pixels
         r_out = (einstein_radius + 0.2) / (side / num_pix)  # units of pixels
 
-        mask = annular_mask(num_pix, num_pix, (num_pix//2, num_pix//2), r_in, r_out)
+        mask = annular_mask(num_pix, num_pix, (num_pix // 2, num_pix // 2), r_in, r_out)
 
         macrolens_kappa = self.get_macrolens_kappa(num_pix=num_pix, side=side)
         subhalo_kappa = self.get_subhalo_kappa(num_pix=num_pix, side=side)
@@ -195,8 +196,10 @@ class StrongLens:
             _, ax = plt.subplots(1, 2, figsize=(6, 3), constrained_layout=True)
             ax[0].imshow(masked_kappa_subhalos, cmap='bwr')
             ax[1].imshow(masked_kappa_macro, cmap='bwr')
-            ax[0].set_title(r'$\sum_n \int_{\mathrm{annulus}}d^2\theta\,\kappa_n=$' + f'{masked_kappa_subhalos.compressed().sum():.6f}')
-            ax[1].set_title(r'$\int_{\mathrm{annulus}}d^2\theta\,\kappa_{\mathrm{host}}=$' + f'{masked_kappa_macro.compressed().sum():.6f}')
+            ax[0].set_title(
+                r'$\sum_n \int_{\mathrm{annulus}}d^2\theta\,\kappa_n=$' + f'{masked_kappa_subhalos.compressed().sum():.6f}')
+            ax[1].set_title(
+                r'$\int_{\mathrm{annulus}}d^2\theta\,\kappa_{\mathrm{host}}=$' + f'{masked_kappa_macro.compressed().sum():.6f}')
             return f_sub, ax
         else:
             return f_sub, None
@@ -223,7 +226,7 @@ class StrongLens:
                    LOS_normalization=los_normalization,
                    kwargs_cosmo=util.get_kwargs_cosmo(self.cosmo),
                    two_halo_contribution=False)
-    
+
     def _set_pyhalo_cosmology(self):
         from pyHalo.Cosmology.cosmology import Cosmology
         Cosmology(astropy_instance=self.cosmo)
@@ -237,7 +240,8 @@ class StrongLens:
         self.num_subhalos = len(realization.halos)
 
         # generate lenstronomy objects
-        halo_lens_model_list, halo_redshift_array, kwargs_halos, _ = realization.lensing_quantities(add_mass_sheet_correction=True)
+        halo_lens_model_list, halo_redshift_array, kwargs_halos, _ = realization.lensing_quantities(
+            add_mass_sheet_correction=True)
 
         # halo_lens_model_list and kwargs_halos are lists, but halo_redshift_array is ndarray
         halo_redshift_list = list(halo_redshift_array)
@@ -317,7 +321,7 @@ class StrongLens:
     def get_lens_flux_cps(self, band):
         if band not in self.kwargs_lens_light_amp_dict.keys():
             self._convert_magnitudes_to_lenstronomy_amps(band)
-        
+
         lens_flux_cps = self.lens_light_model_class.total_flux([self.kwargs_lens_light_amp_dict[band]])
         lens_flux_cps_total = np.sum(lens_flux_cps)
         return lens_flux_cps_total
@@ -325,7 +329,7 @@ class StrongLens:
     def get_source_flux_cps(self, band):
         if band not in self.kwargs_source_amp_dict.keys():
             self._convert_magnitudes_to_lenstronomy_amps(band)
-        
+
         source_flux_cps = self.source_model_class.total_flux([self.kwargs_source_amp_dict[band]])
         source_flux_cps_total = np.sum(source_flux_cps)
         return source_flux_cps_total

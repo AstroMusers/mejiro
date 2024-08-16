@@ -1,4 +1,5 @@
 import os
+
 import pandas as pd
 
 import mejiro
@@ -50,7 +51,6 @@ class Roman:
             else:
                 raise ValueError(f"Band {input} not recognized. Valid bands (and aliases) are {options_dict}.")
 
-
     def get_psf_fwhm(self, band):
         """
         Return PSF FWHM in given band in arcsec. Note from STScI: "PSF FWHM in arcseconds simulated for a detector near the center of the WFI FOV using an input spectrum for a K0V type star."
@@ -74,7 +74,7 @@ class Roman:
         Return internal thermal background in given band in counts/sec/pixel
         """
         return self.thermal_backgrounds[band.upper()]
-    
+
     # retrieved 31 July 2024 from https://roman.gsfc.nasa.gov/science/WFI_technical.html
     min_zodi = {
         'F062': 0.25,
@@ -133,4 +133,3 @@ class Roman:
         count_rate = self.df.loc[self.df['Name'] == f'WFI_Count_Rate_Zody_Minimum_{band.upper()}']['Value'].to_string(
             index=False)
         return float(count_rate)
-    

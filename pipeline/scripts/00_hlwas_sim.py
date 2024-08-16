@@ -1,4 +1,3 @@
-import datetime
 import multiprocessing
 import os
 import sys
@@ -6,16 +5,14 @@ import time
 from glob import glob
 from multiprocessing import Pool
 from pprint import pprint
-import matplotlib.pyplot as plt
 
 import hydra
+import matplotlib.pyplot as plt
 import numpy as np
 import speclite
 from astropy.cosmology import default_cosmology
 from astropy.units import Quantity
 from slsim.lens_pop import LensPop
-from slsim.Observations.roman_speclite import configure_roman_filters
-from slsim.Observations.roman_speclite import filter_names
 from tqdm import tqdm
 
 
@@ -37,7 +34,8 @@ def main(config):
 
     # set up output directory
     if debugging:
-        output_dir = os.path.join(f'{config.machine.pipeline_dir}_dev', '00')  #TODO eventually, this should do something like reading the dir_00 from the config file, taking the parent dir, appending _dev, then appending whatever the basepath of dir_00 is: otherwise, there's no point in allowing dir_00 to be configurable. also, this change must take place for all scripts
+        output_dir = os.path.join(f'{config.machine.pipeline_dir}_dev',
+                                  '00')  # TODO eventually, this should do something like reading the dir_00 from the config file, taking the parent dir, appending _dev, then appending whatever the basepath of dir_00 is: otherwise, there's no point in allowing dir_00 to be configurable. also, this change must take place for all scripts
     else:
         output_dir = config.machine.dir_00
     util.create_directory_if_not_exists(output_dir)
@@ -60,7 +58,8 @@ def main(config):
     runs = survey_params['runs']
     scas = survey_params['scas']
     area = survey_params['area']
-    tuple_list = [(str(run).zfill(4), str(scas[run % len(scas)]).zfill(2), area, survey_params, pipeline_params, output_dir, debugging, debug_dir) for run in range(runs)]
+    tuple_list = [(str(run).zfill(4), str(scas[run % len(scas)]).zfill(2), area, survey_params, pipeline_params,
+                   output_dir, debugging, debug_dir) for run in range(runs)]
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -104,11 +103,12 @@ def run_slsim(tuple):
 
     # prepare a directory for this particular run
     lens_output_dir = os.path.join(output_dir, f'run_{run}_sca{sca_id}')
-    util.create_directory_if_not_exists(lens_output_dir)        
+    util.create_directory_if_not_exists(lens_output_dir)
 
     # load SkyPy config file
     cache_dir = os.path.join(module_path, 'data', f'cached_skypy_configs_{area}')
-    skypy_config = os.path.join(cache_dir, f'roman_hlwas_sca{sca_id}.yml')  # TODO TEMP: there should be one source of truth for this, and if necessary, some code should update the cache behind the scenes
+    skypy_config = os.path.join(cache_dir,
+                                f'roman_hlwas_sca{sca_id}.yml')  # TODO TEMP: there should be one source of truth for this, and if necessary, some code should update the cache behind the scenes
     # skypy_config = os.path.join(module_path, 'data', 'roman_hlwas.yml')
     config_file = util.load_skypy_config(skypy_config)
     if debugging: print(f'Loaded SkyPy configuration file {skypy_config}')
@@ -178,12 +178,12 @@ def run_slsim(tuple):
         snr_list = []
         # j = 0
         for candidate in tqdm(total_lens_population, disable=not debugging):
-            snr, _, _, _ = survey_sim.get_snr(candidate, 
-                                            band=survey_params['snr_band'], 
-                                            num_pix=survey_params['snr_num_pix'], 
-                                            side=survey_params['snr_side'], 
-                                            oversample=survey_params['snr_oversample'], 
-                                            debugging=False)
+            snr, _, _, _ = survey_sim.get_snr(candidate,
+                                              band=survey_params['snr_band'],
+                                              num_pix=survey_params['snr_num_pix'],
+                                              side=survey_params['snr_side'],
+                                              oversample=survey_params['snr_oversample'],
+                                              debugging=False)
             if snr is None:
                 continue
             snr_list.append(snr)
@@ -204,7 +204,8 @@ def run_slsim(tuple):
         # save other params to CSV
         total_pop_csv = os.path.join(output_dir, f'total_pop_{run}_sca{sca_id}.csv')
         if debugging: print(f'Writing total population to {total_pop_csv}')
-        survey_sim.write_lens_pop_to_csv(total_pop_csv, total_lens_population, snr_list, bands, suppress_output=not debugging)
+        survey_sim.write_lens_pop_to_csv(total_pop_csv, total_lens_population, snr_list, bands,
+                                         suppress_output=not debugging)
 
     # draw initial detectable lens population
     if debugging: print('Identifying detectable lenses...')
@@ -241,8 +242,11 @@ def run_slsim(tuple):
             continue
 
         # 2. SNR
-        snr, masked_snr_array, snr_list, overall_snr = survey_sim.get_snr(candidate, 
-                                                                          band=survey_params['snr_band'], num_pix=survey_params['snr_num_pix'], side=survey_params['snr_side'], oversample=survey_params['snr_oversample'], 
+        snr, masked_snr_array, snr_list, overall_snr = survey_sim.get_snr(candidate,
+                                                                          band=survey_params['snr_band'],
+                                                                          num_pix=survey_params['snr_num_pix'],
+                                                                          side=survey_params['snr_side'],
+                                                                          oversample=survey_params['snr_oversample'],
                                                                           debugging=debugging,
                                                                           debug_dir=debug_dir)
         if snr is None:
@@ -279,14 +283,17 @@ def run_slsim(tuple):
     filtered_sample['num_filter_2'] = filter_2
     util.pickle(os.path.join(output_dir, f'filtered_sample_{run}_sca{sca_id}.pkl'), filtered_sample)
 
-    assert len(detectable_gglenses) == len(detectable_snr_list), f'Lengths of detectable_gglenses ({len(detectable_gglenses)}) and detectable_snr_list ({len(detectable_snr_list)}) do not match.'
+    assert len(detectable_gglenses) == len(
+        detectable_snr_list), f'Lengths of detectable_gglenses ({len(detectable_gglenses)}) and detectable_snr_list ({len(detectable_snr_list)}) do not match.'
 
     if debugging: print('Retrieving lenstronomy parameters...')
     dict_list = []
-    for gglens, snr, masked_snr_array in tqdm(zip(detectable_gglenses, detectable_snr_list, masked_snr_array_list), disable=not debugging, total=len(detectable_gglenses)):
+    for gglens, snr, masked_snr_array in tqdm(zip(detectable_gglenses, detectable_snr_list, masked_snr_array_list),
+                                              disable=not debugging, total=len(detectable_gglenses)):
 
         # get lens params from gglens object
-        kwargs_model, kwargs_params = gglens.lenstronomy_kwargs(band='F106')  # NB the band in arbitrary because all that changes is magnitude and we're overwriting that with the lens_mag and source_mag dicts below
+        kwargs_model, kwargs_params = gglens.lenstronomy_kwargs(
+            band='F106')  # NB the band in arbitrary because all that changes is magnitude and we're overwriting that with the lens_mag and source_mag dicts below
 
         # build dicts for lens and source magnitudes
         lens_mags, source_mags, lensed_source_mags = {}, {}, {}

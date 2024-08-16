@@ -4,7 +4,6 @@ import time
 from glob import glob
 
 import hydra
-import numpy as np
 from tqdm import tqdm
 
 
@@ -34,7 +33,7 @@ def main(config):
         output_dir = config.machine.dir_01
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
-    if debugging: 
+    if debugging:
         print(f'Reading from {input_dir}')
         print(f'Set up output directory {output_dir}')
 
@@ -48,18 +47,20 @@ def main(config):
         sca_id = str(sca_id).zfill(2)
 
         csvs = [f for f in input_files if f'sca{sca_id}' in f]
-        
+
         if len(csvs) == 0:
             continue
 
         # get all runs associated with this SCA
-        runs = [int(f.split('_')[-2]) for f in csvs]  # TODO I don't love string parsing that relies on file naming conventions
-    
+        runs = [int(f.split('_')[-2]) for f in
+                csvs]  # TODO I don't love string parsing that relies on file naming conventions
+
         lens_list = []
         for _, run in enumerate(runs):
             # unpickle the lenses from the population survey and create lens objects
-            lens_paths = glob(input_dir + f'/run_{str(run).zfill(4)}_sca{sca_id}/detectable_lens_{str(run).zfill(4)}_*.pkl')
-            
+            lens_paths = glob(
+                input_dir + f'/run_{str(run).zfill(4)}_sca{sca_id}/detectable_lens_{str(run).zfill(4)}_*.pkl')
+
             if len(lens_paths) == 0:
                 continue
 
@@ -67,13 +68,13 @@ def main(config):
                 lens = lens_util.unpickle_lens(lens_path, str(uid).zfill(8))
                 uid += 1
                 lens_list.append(lens)
-            
+
             if uid == limit:
                 break
 
         pickle_target = os.path.join(output_dir, f'01_hlwas_sim_detectable_lenses_sca{sca_id}.pkl')
         util.pickle(pickle_target, lens_list)
-    
+
     print(f'Pickled {uid} lenses to {output_dir}')
 
     stop = time.time()

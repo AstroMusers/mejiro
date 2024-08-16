@@ -1,13 +1,13 @@
 import os
 from copy import deepcopy
 from glob import glob
-from tqdm import tqdm
 
 import matplotlib.pyplot as plt
 import numpy as np
 from lenstronomy.Data.coord_transforms import Coordinates
 from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
 from lenstronomy.Util import util as lenstronomy_util
+from tqdm import tqdm
 
 # use mejiro plotting style
 import mejiro
@@ -34,7 +34,7 @@ def get_detectable_lenses(pipeline_dir, limit=None, with_subhalos=False):
             pickles = np.random.choice(pickles, limit)
         for pickle in tqdm(pickles):
             lens_list.extend(util.unpickle(pickle))
-    
+
     assert len(lens_list) != 0, f'No pickled lenses found. Check {pipeline_dir}.'
 
     return lens_list
@@ -208,7 +208,7 @@ def get_sample(pipeline_dir, index, band=None, model=True):
         image_dir = pipeline_dir + '/04'
         files = glob(image_dir + f'/**/galsim_{str(index).zfill(8)}_*.npy')
         assert len(files) == 4, f'Array files for StrongLens {index} not found in {image_dir}.'
-   
+
     f106 = [np.load(i) for i in files if 'F106' in i][0]
     f129 = [np.load(i) for i in files if 'F129' in i][0]
     f158 = [np.load(i) for i in files if 'F158' in i][0]
