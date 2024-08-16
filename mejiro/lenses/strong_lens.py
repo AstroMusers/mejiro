@@ -108,6 +108,14 @@ class StrongLens:
         # TODO finish
         kwargs_params = {}
         return self.kwargs_model, kwargs_params
+    
+    def get_shmf(self, log_mlow=6, log_mhigh=10, bins=10):
+        self._check_realization()  # ensure subhalos have been added
+
+        cdm_halo_masses = [halo.mass for halo in self.realization.halos]
+        hist, bin_edges = np.histogram(cdm_halo_masses, bins=np.logspace(log_mlow, log_mhigh, bins))
+        return bin_edges[0:-1], hist
+
 
     def get_total_kappa(self, num_pix, side):
         self._check_realization()  # ensure subhalos have been added
