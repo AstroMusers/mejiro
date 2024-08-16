@@ -403,7 +403,7 @@ class StrongLens:
         source_bands = list(source_mags.keys())
         assert lens_bands == source_bands, 'Pair of lens and source magnitudes not available for all filters.'
 
-    def _convert_magnitudes_to_lenstronomy_amps(self, band):
+    def _convert_magnitudes_to_lenstronomy_amps(self, band, sca_id=1):
         if band in ['F087', 'F146']:
             survey_mode = 'microlensing'
         else:
