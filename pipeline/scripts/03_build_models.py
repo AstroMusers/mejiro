@@ -1,3 +1,4 @@
+import json
 import multiprocessing
 import os
 import sys
@@ -20,6 +21,7 @@ def main(config):
     # enable use of local packages
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
+    import mejiro
     from mejiro.utils import util
 
     # retrieve configuration parameters
@@ -35,6 +37,10 @@ def main(config):
     sca_dirnames = [os.path.basename(d) for d in glob(os.path.join(input_parent_dir, 'sca*')) if os.path.isdir(d)]
     scas = sorted([int(d[3:]) for d in sca_dirnames])
     scas = [str(sca).zfill(2) for sca in scas]
+
+    # get zeropoint magnitudes
+    module_path = os.path.dirname(mejiro.__file__)
+    zp_dict = json.load(open(os.path.join(module_path, 'data', 'roman_zeropoint_magnitudes.json')))
 
     # directories to write the output to
     if debugging:
@@ -72,8 +78,10 @@ def main(config):
     for i, (sca, lens_uids) in enumerate(uid_dict.items()):
         input_dir = os.path.join(input_parent_dir, f'sca{sca}')
         output_dir = os.path.join(output_parent_dir, f'sca{sca}')
+        sca_zp_dict = zp_dict[f'SCA{sca}']
+
         for uid in lens_uids:
-            tuple_list.append((uid, pipeline_params, input_dir, output_dir))
+            tuple_list.append((uid, pipeline_params, sca_zp_dict, input_dir, output_dir))
             i += 1
             if i == limit:
                 break
@@ -100,7 +108,7 @@ def get_model(input):
     from mejiro.utils import util
 
     # unpack tuple
-    (uid, pipeline_params, input_dir, output_dir) = input
+    (uid, pipeline_params, sca_zp_dict, input_dir, output_dir) = input
 
     # unpack pipeline params
     bands = pipeline_params['bands']
@@ -115,13 +123,14 @@ def get_model(input):
 
     # generate lenstronomy model and save
     for band in bands:
+        zp = sca_zp_dict[band]
         if pieces:
             model, lens_surface_brightness, source_surface_brightness = lens.get_array(
-                num_pix=num_pix * grid_oversample, side=side, band=band, return_pieces=True)
+                num_pix=num_pix * grid_oversample, side=side, band=band, zp=zp, return_pieces=True)
             np.save(os.path.join(output_dir, f'array_{lens.uid}_lens_{band}'), lens_surface_brightness)
             np.save(os.path.join(output_dir, f'array_{lens.uid}_source_{band}'), source_surface_brightness)
         else:
-            model = lens.get_array(num_pix=num_pix * grid_oversample, side=side, band=band)
+            model = lens.get_array(num_pix=num_pix * grid_oversample, side=side, band=band, zp=zp)
         np.save(os.path.join(output_dir, f'array_{lens.uid}_{band}'), model)
 
     # pickle lens to save attributes updated by get_array()
