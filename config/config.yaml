@@ -5,9 +5,9 @@ defaults:
   - override hydra/job_logging: disabled
 
 survey:
-  - runs: 900  # 900  # 90
+  - runs: 90  # 900  # 90
   - area: 0.5
-  - total_population: False
+  - total_population: True
   - scas: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]  # 
   - deflector_cut_band: F129
   - deflector_cut_band_max: 24  # 27
@@ -16,7 +16,7 @@ survey:
   - source_cut_band: F129
   - source_cut_band_max: 25  # 25
   - source_z_min: 0.01
-  - source_z_max: 6.
+  - source_z_max: 7.
   - min_image_separation: 0.2  # arcseconds
   - max_image_separation: 10.  # arcseconds
   - mag_arc_limit_band: F129

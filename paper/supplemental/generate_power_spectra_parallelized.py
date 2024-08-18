@@ -35,27 +35,29 @@ def main(config):
 
     # script configuration options
     debugging = True
-    require_alignment = False
-    limit = 10
+    require_alignment = True
+    limit = 100
     snr_threshold = 50
-    einstein_radius_threshold = 0.5
+    einstein_radius_threshold = 0.
     log_m_host_threshold = 13.5
 
     # set subhalo and imaging params
     subhalo_params = {
         'r_tidal': 0.5,
-        'sigma_sub': 0.055,
-        'los_normalization': 0
+        'sigma_sub': 0.055,  
+        'los_normalization': 0.
     }
     imaging_params = {
         'control_band': 'F129',
-        'oversample': 5,  # TODO maybe need to update
+        'oversample': 1,  # TODO maybe need to update
         'num_pix': 90,  # 45
         'side': 9.9  # 4.95
     }
     bands = ['F106', 'F129', 'F158', 'F184']
-    detectors = [4, 1, 9, 17]
-    detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
+    # detectors = [4, 1, 9, 17]
+    # detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
+    detectors = [1, 2, 4, 5]
+    detector_positions = [(2048, 2048), (2048, 2048), (2048, 2048), (2048, 2048)]
 
     # set up directories for script output
     save_dir = os.path.join(config.machine.data_dir, 'output', 'power_spectra_parallelized')
@@ -101,7 +103,7 @@ def main(config):
         cached_psfs[id_string] = psf.load_cached_psf(id_string, psf_cache_dir)
 
     tuple_list = [
-        (lens, subhalo_params, imaging_params, cached_psfs, require_alignment, save_dir, image_save_dir, debugging) for
+        (lens, subhalo_params, imaging_params, detectors, detector_positions, cached_psfs, require_alignment, save_dir, image_save_dir, debugging) for
         lens in lenses_to_process]
 
     # split up the lenses into batches based on core count
@@ -138,7 +140,7 @@ def generate_power_spectra(tuple):
     from mejiro.utils import util
 
     # unpack tuple
-    (lens, subhalo_params, imaging_params, cached_psfs, require_alignment, save_dir, image_save_dir, debugging) = tuple
+    (lens, subhalo_params, imaging_params, detectors, detector_positions, cached_psfs, require_alignment, save_dir, image_save_dir, debugging) = tuple
     r_tidal = subhalo_params['r_tidal']
     sigma_sub = subhalo_params['sigma_sub']
     los_normalization = subhalo_params['los_normalization']
@@ -153,7 +155,7 @@ def generate_power_spectra(tuple):
 
     z_lens = round(lens.z_lens, 2)
     z_source = round(lens.z_source, 2)
-    log_m_host = np.log10(lens.main_halo_mass * 1e3)
+    log_m_host = np.log10(lens.main_halo_mass)
     einstein_radius = lens.get_einstein_radius()
 
     cut_8_success, med_success, smol_success = False, False, False
@@ -168,13 +170,13 @@ def generate_power_spectra(tuple):
                     cut_8 = CDM(z_lens,
                                 z_source,
                                 sigma_sub=sigma_sub,
-                                log_mlow=8.,
-                                log_mhigh=10.,
+                                log_mlow=9.,
+                                log_mhigh=12.,
                                 log_m_host=log_m_host,
                                 r_tidal=r_tidal,
                                 cone_opening_angle_arcsec=einstein_radius * 3,
                                 LOS_normalization=los_normalization)
-                    cut_8_good = lens_util.check_halo_image_alignment(lens, cut_8, halo_mass=1e8,
+                    cut_8_good = lens_util.check_halo_image_alignment(lens, cut_8, halo_mass=1e9,
                                                                       halo_sort_massive_first=True, return_halo=False)
                     i += 1
                     cut_8_success = True
@@ -299,8 +301,6 @@ def generate_power_spectra(tuple):
                                          oversampled=False)
 
     # POSITION-DEPENDENCE
-    detectors = [4, 1, 9, 17]
-    detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
     position_lens = deepcopy(control_lens)
     position_model = deepcopy(control_model)
     position_total_flux_cps = position_lens.get_total_flux_cps(control_band)
