@@ -26,18 +26,21 @@ def main(config):
 
     oversamples = [1, 3, 5]
     bands = ['F106', 'F129', 'F158', 'F184']
-    detectors = [4, 1, 9, 17]
-    detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
+    # detectors = [4, 1, 9, 17]
+    # detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
+    detectors = [1, 2, 4, 5]
+    detector_positions = [(2048, 2048), (2048, 2048), (2048, 2048), (2048, 2048)]
 
     for oversample in oversamples:
         for band in bands:
             for detector, detector_position in zip(detectors, detector_positions):
-                webbpsf_psf = psf.get_webbpsf_psf(band, detector, detector_position, oversample)
                 psf_filename = f'{band}_{detector}_{detector_position[0]}_{detector_position[1]}_{oversample}.pkl'
                 psf_path = os.path.join(save_dir, psf_filename)
                 if os.path.exists(psf_path):
                     print(f'{psf_path} already exists')
                     continue
+                else:
+                    webbpsf_psf = psf.get_webbpsf_psf(band, detector, detector_position, oversample)
                 util.pickle(psf_path, webbpsf_psf)
                 print(f'Pickled {psf_path}')
 
