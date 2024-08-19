@@ -1,5 +1,5 @@
 import os
-
+import json
 import pandas as pd
 
 import mejiro
@@ -11,6 +11,10 @@ class Roman:
         module_path = os.path.dirname(mejiro.__file__)
         csv_path = os.path.join(module_path, 'data', 'roman_spacecraft_and_instrument_parameters.csv')
         self.df = pd.read_csv(csv_path)
+
+        # load SCA-specific zeropoints
+        self.zp_dict = json.load(open(os.path.join(module_path, 'data', 'roman_zeropoint_magnitudes.json')))
+
 
     pixel_scale = 0.11  # arcsec/pixel
     diameter = 2.4  # m
@@ -28,6 +32,21 @@ class Roman:
     }
 
     psf_jitter = 0.012  # arcsec per axis
+
+    def get_zeropoint(self, band, sca_id):
+        """
+        Return AB zeropoint in given band for the given SCA
+        """
+        # might provide int 1 or string 01 or string SCA01
+        if type(sca_id) is int:
+            sca = f'SCA{sca_id}'
+        else:
+            if sca_id.startswith('SCA'):
+                sca = sca_id
+            else:
+                sca = f'SCA{sca_id}'
+
+        return self.zp_dict[sca][band.upper()]
 
     def translate_band(input):
         # capitalize and remove spaces
