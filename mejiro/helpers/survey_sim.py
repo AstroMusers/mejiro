@@ -37,17 +37,17 @@ def collect_all_detectable_lenses(dir):
 
 
 # TODO a(n imperfect) lens subtraction option?
-def get_snr(gglens, band, num_pix=45, side=4.95, oversample=1, return_snr_list=False, debugging=False, debug_dir=None):
+def get_snr(gglens, band, zp, num_pix=45, side=4.95, oversample=1, return_snr_list=False, debugging=False, debug_dir=None):
     if debugging: assert debug_dir is not None, 'Debugging is enabled but no debug directory is provided.'
 
     sample_lens = lens_util.slsim_lens_to_mejiro(gglens, bands=[band],
                                                  cosmo=default_cosmology.get())  # TODO pass in cosmology
 
     # generate synthetic images with lenstronomy
-    model, lens_sb, source_sb = sample_lens.get_array(num_pix * oversample, side, band, return_pieces=True)
+    model, lens_sb, source_sb = sample_lens.get_array(num_pix * oversample, side, band, zp,return_pieces=True)
 
     # generate GalSim images
-    results, lenses, sources, _ = gs.get_images(sample_lens, [model], [band], num_pix, num_pix, oversample, oversample,
+    results, lenses, sources, _ = gs.get_images(sample_lens, [model], [band], {band: zp}, num_pix, num_pix, oversample, oversample,
                                                 lens_surface_brightness=[lens_sb],
                                                 source_surface_brightness=[source_sb], detector=1,
                                                 detector_pos=(2048, 2048),

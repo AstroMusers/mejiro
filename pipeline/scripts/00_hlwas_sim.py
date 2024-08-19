@@ -1,3 +1,4 @@
+import json
 import multiprocessing
 import os
 import sys
@@ -24,6 +25,7 @@ def main(config):
     repo_dir = config.machine.repo_dir
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
+    import mejiro
     from mejiro.utils import util
     from mejiro.helpers import survey_sim
 
@@ -54,12 +56,20 @@ def main(config):
     else:
         debug_dir = None
 
+    # get zeropoint magnitudes
+    module_path = os.path.dirname(mejiro.__file__)
+    zp_dict = json.load(open(os.path.join(module_path, 'data', 'roman_zeropoint_magnitudes.json')))
+
     # tuple the parameters
     runs = survey_params['runs']
     scas = survey_params['scas']
     area = survey_params['area']
-    tuple_list = [(str(run).zfill(4), str(scas[run % len(scas)]).zfill(2), area, survey_params, pipeline_params,
-                   output_dir, debugging, debug_dir) for run in range(runs)]
+    tuple_list = []
+    for run in range(runs):
+        sca_id = str(scas[run % len(scas)]).zfill(2)
+        sca_zp_dict = zp_dict[f'SCA{sca_id}']
+        tuple_list.append((str(run).zfill(4), sca_id, sca_zp_dict, area, survey_params, pipeline_params,
+                   output_dir, debugging, debug_dir))
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -99,22 +109,22 @@ def run_slsim(tuple):
     module_path = os.path.dirname(mejiro.__file__)
 
     # unpack tuple
-    run, sca, area, survey_params, pipeline_params, output_dir, debugging, debug_dir = tuple
+    run, sca_id, sca_zp_dict, area, survey_params, pipeline_params, output_dir, debugging, debug_dir = tuple
 
     # prepare a directory for this particular run
-    lens_output_dir = os.path.join(output_dir, f'run_{run}_sca{sca}')
+    lens_output_dir = os.path.join(output_dir, f'run_{run}_sca{sca_id}')
     util.create_directory_if_not_exists(lens_output_dir)
 
     # load SkyPy config file
     cache_dir = os.path.join(module_path, 'data', f'cached_skypy_configs_{area}')
     skypy_config = os.path.join(cache_dir,
-                                f'roman_hlwas_sca{sca}.yml')  # TODO TEMP: there should be one source of truth for this, and if necessary, some code should update the cache behind the scenes
+                                f'roman_hlwas_sca{sca_id}.yml')  # TODO TEMP: there should be one source of truth for this, and if necessary, some code should update the cache behind the scenes
     # skypy_config = os.path.join(module_path, 'data', 'roman_hlwas.yml')
     config_file = util.load_skypy_config(skypy_config)
     if debugging: print(f'Loaded SkyPy configuration file {skypy_config}')
 
     # load Roman WFI filters
-    roman_filters = sorted(glob(os.path.join(module_path, 'data', 'filter_responses', f'RomanSCA{sca}-*.ecsv')))
+    roman_filters = sorted(glob(os.path.join(module_path, 'data', 'filter_responses', f'RomanSCA{sca_id}-*.ecsv')))
     # configure_roman_filters()
     # roman_filters = filter_names()
     # roman_filters.sort()
@@ -180,6 +190,7 @@ def run_slsim(tuple):
         for candidate in tqdm(total_lens_population, disable=not debugging):
             snr, _, _, _ = survey_sim.get_snr(candidate,
                                               band=survey_params['snr_band'],
+                                              zp=sca_zp_dict[survey_params['snr_band']],
                                               num_pix=survey_params['snr_num_pix'],
                                               side=survey_params['snr_side'],
                                               oversample=survey_params['snr_oversample'],
@@ -192,7 +203,7 @@ def run_slsim(tuple):
             #         util.pickle(os.path.join(output_dir, f'masked_snr_array_{str(j).zfill(8)}.pkl'), masked_snr_array)
             #         util.pickle(os.path.join(output_dir, f'masked_snr_array_snr_{str(j).zfill(8)}.pkl'), snr)
             # j += 1
-        np.save(os.path.join(output_dir, f'snr_list_{run}_sca{sca}.npy'), snr_list)
+        np.save(os.path.join(output_dir, f'snr_list_{run}_sca{sca_id}.npy'), snr_list)
 
         if debugging:
             num_exceptions = len([snr for snr in snr_list if snr is None])
@@ -202,7 +213,7 @@ def run_slsim(tuple):
         # assert len(total_lens_population) == len(snr_list), f'Lengths of total_lens_population ({len(total_lens_population)}) and snr_list ({len(snr_list)}) do not match.'
 
         # save other params to CSV
-        total_pop_csv = os.path.join(output_dir, f'total_pop_{run}_sca{sca}.csv')
+        total_pop_csv = os.path.join(output_dir, f'total_pop_{run}_sca{sca_id}.csv')
         if debugging: print(f'Writing total population to {total_pop_csv}')
         survey_sim.write_lens_pop_to_csv(total_pop_csv, total_lens_population, snr_list, bands,
                                          suppress_output=not debugging)
@@ -244,6 +255,7 @@ def run_slsim(tuple):
         # 2. SNR
         snr, masked_snr_array, snr_list, overall_snr = survey_sim.get_snr(candidate,
                                                                           band=survey_params['snr_band'],
+                                                                          zp=sca_zp_dict[survey_params['snr_band']],
                                                                           num_pix=survey_params['snr_num_pix'],
                                                                           side=survey_params['snr_side'],
                                                                           oversample=survey_params['snr_oversample'],
@@ -281,7 +293,7 @@ def run_slsim(tuple):
     # save information about which lenses got filtered out
     filtered_sample['num_filter_1'] = filter_1
     filtered_sample['num_filter_2'] = filter_2
-    util.pickle(os.path.join(output_dir, f'filtered_sample_{run}_sca{sca}.pkl'), filtered_sample)
+    util.pickle(os.path.join(output_dir, f'filtered_sample_{run}_sca{sca_id}.pkl'), filtered_sample)
 
     assert len(detectable_gglenses) == len(
         detectable_snr_list), f'Lengths of detectable_gglenses ({len(detectable_gglenses)}) and detectable_snr_list ({len(detectable_snr_list)}) do not match.'
@@ -323,20 +335,20 @@ def run_slsim(tuple):
             'deflector_velocity_dispersion': gglens.deflector_velocity_dispersion(),
             'snr': snr,
             'masked_snr_array': masked_snr_array,
-            'sca': sca
+            'sca': sca_id
         }
 
         dict_list.append(gglens_dict)
 
     if debugging: print('Pickling lenses...')
     for i, each in tqdm(enumerate(dict_list), disable=not debugging):
-        save_path = os.path.join(lens_output_dir, f'detectable_lens_{run}_sca{sca}_{str(i).zfill(5)}.pkl')
+        save_path = os.path.join(lens_output_dir, f'detectable_lens_{run}_sca{sca_id}_{str(i).zfill(5)}.pkl')
         util.pickle(save_path, each)
 
-    detectable_pop_csv = os.path.join(output_dir, f'detectable_pop_{run}_sca{sca}.csv')
+    detectable_pop_csv = os.path.join(output_dir, f'detectable_pop_{run}_sca{sca_id}.csv')
     survey_sim.write_lens_pop_to_csv(detectable_pop_csv, detectable_gglenses, detectable_snr_list, bands)
 
-    detectable_gglenses_pickle_path = os.path.join(output_dir, f'detectable_gglenses_{run}_sca{sca}.pkl')
+    detectable_gglenses_pickle_path = os.path.join(output_dir, f'detectable_gglenses_{run}_sca{sca_id}.pkl')
     if debugging: print(f'Pickling detectable gglenses to {detectable_gglenses_pickle_path}')
     util.pickle(detectable_gglenses_pickle_path, detectable_gglenses)
 
