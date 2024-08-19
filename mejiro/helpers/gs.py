@@ -14,7 +14,7 @@ from mejiro.utils import util
 roman_params = Roman()
 
 
-def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, psf_oversample,
+def get_images(lens, arrays, bands, sca_zp_dict=None, input_size=96, output_size=90, grid_oversample=5, psf_oversample=5,
                lens_surface_brightness=None, source_surface_brightness=None, detector=None, detector_pos=None,
                exposure_time=146, ra=30, dec=-30, seed=None, validate=True, suppress_output=True, check_cache=True,
                psf_cache_dir=None):
@@ -61,6 +61,9 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
     lens.detector, lens.detector_position = detector, detector_pos
     lens.galsim_rng = rng
 
+    if sca_zp_dict is None:
+        sca_zp_dict = roman_params.zp_dict[f'SCA{str(detector).zfill(2)}']
+
     # calculate sky backgrounds for each band
     bkgs = get_sky_bkgs(bands, exposure_time, num_pix=input_size, oversample=grid_oversample)
 
@@ -73,7 +76,8 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
     results = []
     for _, (band, array) in enumerate(zip(bands, arrays)):
         # get flux
-        total_flux_cps = lens.get_total_flux_cps(band)
+        zp = sca_zp_dict[band]
+        total_flux_cps = lens.get_total_flux_cps(band, zp)
 
         final_array = _calculate_image(array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size,
                                        total_flux_cps, exposure_time, rng)
@@ -84,8 +88,9 @@ def get_images(lens, arrays, bands, input_size, output_size, grid_oversample, ps
         lenses, sources = [], []
         for _, (band, lens_array, source_array) in enumerate(
                 zip(bands, lens_surface_brightness, source_surface_brightness)):
-            lens_flux_cps = lens.get_lens_flux_cps(band)
-            source_flux_cps = lens.get_source_flux_cps(band)
+            zp = sca_zp_dict[band]
+            lens_flux_cps = lens.get_lens_flux_cps(band, zp)
+            source_flux_cps = lens.get_source_flux_cps(band, zp)
 
             lens_image = _calculate_image(lens_array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size,
                                           lens_flux_cps, exposure_time, rng, detector_effects=False,

@@ -1,3 +1,4 @@
+import json
 import multiprocessing
 import os
 import random
@@ -28,6 +29,7 @@ def main(config):
     # enable use of local packages
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
+    import mejiro
     from mejiro.utils import util
 
     # retrieve configuration parameters
@@ -57,6 +59,7 @@ def main(config):
     # set PSF cache dir
     psf_cache_dir = os.path.join(config.machine.data_dir, 'cached_psfs')
 
+    # get lens uids, organized by SCA
     uid_dict = {}
     for sca in scas:
         pickled_lenses = sorted(glob(input_parent_dir + f'/sca{sca}/array_*.npy'))
@@ -72,6 +75,10 @@ def main(config):
     if limit != 'None' and limit < count:
         count = limit
 
+    # get zeropoint magnitudes
+    module_path = os.path.dirname(mejiro.__file__)
+    zp_dict = json.load(open(os.path.join(module_path, 'data', 'roman_zeropoint_magnitudes.json')))
+
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - config.machine.headroom_cores
@@ -86,8 +93,10 @@ def main(config):
     for i, (sca, lens_uids) in enumerate(uid_dict.items()):
         input_dir = os.path.join(input_parent_dir, f'sca{sca}')
         output_dir = os.path.join(output_parent_dir, f'sca{sca}')
+        sca_zp_dict = zp_dict[f'SCA{sca}']
+
         for uid in lens_uids:
-            tuple_list.append((uid, sca, pipeline_params, input_dir, output_dir, psf_cache_dir))
+            tuple_list.append((uid, sca, pipeline_params, sca_zp_dict, input_dir, output_dir, psf_cache_dir))
             i += 1
             if i == limit:
                 break
@@ -119,7 +128,7 @@ def get_image(input):
     from mejiro.utils import util
 
     # unpack tuple
-    (uid, sca, pipeline_params, input_dir, output_dir, psf_cache_dir) = input
+    (uid, sca, pipeline_params, sca_zp_dict, input_dir, output_dir, psf_cache_dir) = input
 
     # unpack pipeline_params
     bands = pipeline_params['bands']
@@ -154,6 +163,7 @@ def get_image(input):
     gs_results = gs.get_images(lens,
                                arrays,
                                bands,
+                               sca_zp_dict,
                                input_size=num_pix,
                                output_size=final_pixel_side,
                                grid_oversample=grid_oversample,
