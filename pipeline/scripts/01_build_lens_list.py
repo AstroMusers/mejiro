@@ -43,10 +43,10 @@ def main(config):
         input_files) != 0, f'No output files found. Check HLWAS simulation output directory ({input_dir}).'
 
     uid = 0
-    for sca_id in tqdm(scas):
-        sca_id = str(sca_id).zfill(2)
+    for sca in tqdm(scas):
+        sca = str(sca).zfill(2)
 
-        csvs = [f for f in input_files if f'sca{sca_id}' in f]
+        csvs = [f for f in input_files if f'sca{sca}' in f]
 
         if len(csvs) == 0:
             continue
@@ -59,7 +59,7 @@ def main(config):
         for _, run in enumerate(runs):
             # unpickle the lenses from the population survey and create lens objects
             lens_paths = glob(
-                input_dir + f'/run_{str(run).zfill(4)}_sca{sca_id}/detectable_lens_{str(run).zfill(4)}_*.pkl')
+                input_dir + f'/run_{str(run).zfill(4)}_sca{sca}/detectable_lens_{str(run).zfill(4)}_*.pkl')
 
             if len(lens_paths) == 0:
                 continue
@@ -72,7 +72,7 @@ def main(config):
             if uid == limit:
                 break
 
-        pickle_target = os.path.join(output_dir, f'01_hlwas_sim_detectable_lenses_sca{sca_id}.pkl')
+        pickle_target = os.path.join(output_dir, f'01_hlwas_sim_detectable_lenses_sca{sca}.pkl')
         util.pickle(pickle_target, lens_list)
 
     print(f'Pickled {uid} lenses to {output_dir}')

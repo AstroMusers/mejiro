@@ -110,7 +110,7 @@ def check_halo_image_alignment(lens, realization, halo_mass=1e8, halo_sort_massi
         return False
 
 
-def slsim_lens_to_mejiro(slsim_lens, bands, cosmo, snr=None, uid=None, z_source_convention=6):
+def slsim_lens_to_mejiro(slsim_lens, bands, cosmo, snr=None, uid=None, z_source_convention=6, sca=None):
     kwargs_model, kwargs_params = slsim_lens.lenstronomy_kwargs(band=bands[0])
 
     lens_mags, source_mags, lensed_source_mags = {}, {}, {}
@@ -137,7 +137,8 @@ def slsim_lens_to_mejiro(slsim_lens, bands, cosmo, snr=None, uid=None, z_source_
                       lens_stellar_mass=slsim_lens.deflector_stellar_mass(),
                       lens_vel_disp=slsim_lens.deflector_velocity_dispersion(),
                       snr=snr,
-                      uid=uid)
+                      uid=uid,
+                      sca=sca)
 
 
 def unpickle_lens(pickle_path, uid):
@@ -152,6 +153,7 @@ def unpickle_lens(pickle_path, uid):
     lens_vel_disp = unpickled['deflector_velocity_dispersion']
     snr = unpickled['snr']
     masked_snr_array = unpickled['masked_snr_array']
+    sca = unpickled['sca']
 
     return StrongLens(kwargs_model=kwargs_model,
                       kwargs_params=kwargs_params,
@@ -162,7 +164,8 @@ def unpickle_lens(pickle_path, uid):
                       lens_vel_disp=lens_vel_disp,
                       snr=snr,
                       masked_snr_array=masked_snr_array,
-                      uid=uid)
+                      uid=uid,
+                      sca=sca)
 
 
 # TODO check references and fix
