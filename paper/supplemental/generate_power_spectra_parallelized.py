@@ -35,7 +35,7 @@ def main(config):
 
     # script configuration options
     debugging = True
-    require_alignment = True
+    require_alignment = False
     limit = 100
     snr_threshold = 50
     einstein_radius_threshold = 0.
@@ -49,7 +49,7 @@ def main(config):
     }
     imaging_params = {
         'control_band': 'F129',
-        'oversample': 1,  # TODO maybe need to update
+        'oversample': 1,
         'num_pix': 90,  # 45
         'side': 9.9  # 4.95
     }
