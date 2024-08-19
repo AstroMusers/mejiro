@@ -20,16 +20,18 @@ def main(config):
         os.environ['WEBBPSF_PATH'] = '/data/scratch/btwedig/STScI/ref_data/webbpsf-data'
 
     # set directory for all output of this script
-    save_dir = os.path.join(config.machine.repo_dir, 'mejiro', 'data', 'cached_psfs')
-    # save_dir = os.path.join(config.machine.data_dir, 'cached_psfs')
+    # save_dir = os.path.join(config.machine.repo_dir, 'mejiro', 'data', 'cached_psfs')
+    save_dir = os.path.join(config.machine.data_dir, 'cached_psfs')
     util.create_directory_if_not_exists(save_dir)
 
     oversamples = [1, 3, 5]
     bands = ['F106', 'F129', 'F158', 'F184']
     # detectors = [4, 1, 9, 17]
     # detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
-    detectors = [1, 2, 4, 5]
-    detector_positions = [(2048, 2048), (2048, 2048), (2048, 2048), (2048, 2048)]
+    # detectors = [1, 2, 4, 5]
+    # detector_positions = [(2048, 2048), (2048, 2048), (2048, 2048), (2048, 2048)]
+    detectors = list(range(1, 19))
+    detector_positions = [(2048, 2048)] * 18
 
     for oversample in oversamples:
         for band in bands:

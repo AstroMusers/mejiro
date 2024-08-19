@@ -1,4 +1,5 @@
 import datetime
+import os
 import random
 import time
 
@@ -37,6 +38,9 @@ def get_images(lens, arrays, bands, sca_zp_dict=None, input_size=96, output_size
     # check that the inputs are reasonable
     if validate:
         _validate_input(arrays, bands)
+
+    if check_cache:
+        assert os.path.exists(psf_cache_dir), f'PSF cache directory not found: {psf_cache_dir}'
 
     # check provided coordinates
     # assert (ra is None and dec is None) or (ra is not None and dec is not None), 'Provide both RA and DEC or neither'

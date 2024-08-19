@@ -37,9 +37,14 @@ def collect_all_detectable_lenses(dir):
 
 
 # TODO a(n imperfect) lens subtraction option?
-def get_snr(gglens, band, zp, num_pix=45, side=4.95, oversample=1, return_snr_list=False, debugging=False, debug_dir=None):
+def get_snr(gglens, band, zp, sca_id=1, num_pix=45, side=4.95, oversample=1, return_snr_list=False, debugging=False, debug_dir=None, psf_cache_dir=None):
     if debugging: assert debug_dir is not None, 'Debugging is enabled but no debug directory is provided.'
 
+    if type(sca_id) is str:
+        sca_id = int(sca_id)
+
+    check_cache = False if psf_cache_dir is None else True
+    
     sample_lens = lens_util.slsim_lens_to_mejiro(gglens, bands=[band],
                                                  cosmo=default_cosmology.get())  # TODO pass in cosmology
 
@@ -49,10 +54,10 @@ def get_snr(gglens, band, zp, num_pix=45, side=4.95, oversample=1, return_snr_li
     # generate GalSim images
     results, lenses, sources, _ = gs.get_images(sample_lens, [model], [band], {band: zp}, num_pix, num_pix, oversample, oversample,
                                                 lens_surface_brightness=[lens_sb],
-                                                source_surface_brightness=[source_sb], detector=1,
+                                                source_surface_brightness=[source_sb], detector=sca_id,
                                                 detector_pos=(2048, 2048),
                                                 exposure_time=146, ra=30, dec=-30, seed=None, validate=False,
-                                                suppress_output=True, check_cache=True)
+                                                suppress_output=True, check_cache=check_cache, psf_cache_dir=psf_cache_dir)
 
     # put back into units of counts
     total = results[0] * 146
@@ -69,7 +74,9 @@ def get_snr(gglens, band, zp, num_pix=45, side=4.95, oversample=1, return_snr_li
         masked_snr_array = np.ma.masked_where(snr_array <= np.quantile(snr_array, 0.9),
                                               snr_array)  # TODO this must be the mask that's causing issues
     else:
-        masked_snr_array = np.ma.masked_where(snr_array <= 1, snr_array)
+        # TODO I'm doing this because SNRs for non-detectable lenses don't really matter right now
+        # masked_snr_array = np.ma.masked_where(snr_array <= 1, snr_array)
+        return 1, np.ma.array(snr_array, mask=True), [1], None
 
     # calculate regions of connected pixels given the snr mask
     indices_list = regions.get_regions(masked_snr_array, debug_dir)
@@ -78,7 +85,6 @@ def get_snr(gglens, band, zp, num_pix=45, side=4.95, oversample=1, return_snr_li
         return None, None, None, None
 
     snr_list = []
-    overall_numerator, overall_denominator = 0, 0
     for region in indices_list:
         numerator, denominator = 0, 0
         for i, j in region:
@@ -86,18 +92,14 @@ def get_snr(gglens, band, zp, num_pix=45, side=4.95, oversample=1, return_snr_li
             denominator += source[i, j] + lens[i, j] + noise[i, j]
         snr = numerator / np.sqrt(denominator)
         snr_list.append(snr)
-        overall_numerator += numerator
-        overall_denominator += denominator
-    overall_snr = overall_numerator / np.sqrt(overall_denominator)
-    snr_list.append(overall_snr)
 
     if debugging and np.max(snr_list) > 20:
         diagnostic_plot.snr_plot(total, lens, source, noise, snr_array, masked_snr_array, snr_list, debug_dir)
 
     if return_snr_list:
-        return snr_list, overall_snr, None, None
+        return snr_list, None, None, None
     else:
-        return np.max(snr_list), masked_snr_array, snr_list, overall_snr
+        return np.max(snr_list), masked_snr_array, snr_list, None
 
 
 def get_snr_lenstronomy(gglens, band, subtract_lens=True, mask_mult=1., side=4.95, **kwargs):

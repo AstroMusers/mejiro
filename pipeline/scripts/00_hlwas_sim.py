@@ -56,6 +56,9 @@ def main(config):
     else:
         debug_dir = None
 
+    # get psf cache directory
+    psf_cache_dir = os.path.join(config.machine.data_dir, 'cached_psfs')
+
     # get zeropoint magnitudes
     module_path = os.path.dirname(mejiro.__file__)
     zp_dict = json.load(open(os.path.join(module_path, 'data', 'roman_zeropoint_magnitudes.json')))
@@ -69,7 +72,7 @@ def main(config):
         sca_id = str(scas[run % len(scas)]).zfill(2)
         sca_zp_dict = zp_dict[f'SCA{sca_id}']
         tuple_list.append((str(run).zfill(4), sca_id, sca_zp_dict, area, survey_params, pipeline_params,
-                   output_dir, debugging, debug_dir))
+                   output_dir, debugging, debug_dir, psf_cache_dir))
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -109,7 +112,7 @@ def run_slsim(tuple):
     module_path = os.path.dirname(mejiro.__file__)
 
     # unpack tuple
-    run, sca_id, sca_zp_dict, area, survey_params, pipeline_params, output_dir, debugging, debug_dir = tuple
+    run, sca_id, sca_zp_dict, area, survey_params, pipeline_params, output_dir, debugging, debug_dir, psf_cache_dir = tuple
 
     # prepare a directory for this particular run
     lens_output_dir = os.path.join(output_dir, f'run_{run}_sca{sca_id}')
@@ -191,10 +194,12 @@ def run_slsim(tuple):
             snr, _, _, _ = survey_sim.get_snr(candidate,
                                               band=survey_params['snr_band'],
                                               zp=sca_zp_dict[survey_params['snr_band']],
+                                              sca_id=sca_id,
                                               num_pix=survey_params['snr_num_pix'],
                                               side=survey_params['snr_side'],
                                               oversample=survey_params['snr_oversample'],
-                                              debugging=False)
+                                              debugging=False,
+                                              psf_cache_dir=psf_cache_dir)
             if snr is None:
                 continue
             snr_list.append(snr)
@@ -253,24 +258,25 @@ def run_slsim(tuple):
             continue
 
         # 2. SNR
-        snr, masked_snr_array, snr_list, overall_snr = survey_sim.get_snr(candidate,
+        snr, masked_snr_array, snr_list, _ = survey_sim.get_snr(candidate,
                                                                           band=survey_params['snr_band'],
                                                                           zp=sca_zp_dict[survey_params['snr_band']],
                                                                           num_pix=survey_params['snr_num_pix'],
                                                                           side=survey_params['snr_side'],
                                                                           oversample=survey_params['snr_oversample'],
                                                                           debugging=debugging,
-                                                                          debug_dir=debug_dir)
+                                                                          debug_dir=debug_dir,
+                                                                          psf_cache_dir=psf_cache_dir)
         if snr is None:
             continue
 
-        if debugging and k % 100 == 0:
-            plt.imshow(masked_snr_array)
-            plt.title(f'SNR: {snr}, Overall SNR: {overall_snr}, SNR list: {snr_list}')
-            plt.colorbar()
-            plt.savefig(os.path.join(debug_dir, 'masked_snr_arrays', f'masked_snr_array_{id(masked_snr_array)}.png'))
-            plt.close()
-        k += 1
+        # if debugging and k % 100 == 0:
+        #     plt.imshow(masked_snr_array)
+        #     plt.title(f'SNR: {snr}, SNR list: {snr_list}')
+        #     plt.colorbar()
+        #     plt.savefig(os.path.join(debug_dir, 'masked_snr_arrays', f'masked_snr_array_{id(masked_snr_array)}.png'))
+        #     plt.close()
+        # k += 1
 
         if snr < survey_params['snr_threshold']:
             # filter this candidate out
@@ -340,17 +346,20 @@ def run_slsim(tuple):
 
         dict_list.append(gglens_dict)
 
-    if debugging: print('Pickling lenses...')
-    for i, each in tqdm(enumerate(dict_list), disable=not debugging):
-        save_path = os.path.join(lens_output_dir, f'detectable_lens_{run}_sca{sca_id}_{str(i).zfill(5)}.pkl')
-        util.pickle(save_path, each)
+    if len(dict_list) > 0:
+        if debugging: print('Pickling lenses...')
+        for i, each in tqdm(enumerate(dict_list), disable=not debugging):
+            save_path = os.path.join(lens_output_dir, f'detectable_lens_{run}_sca{sca_id}_{str(i).zfill(5)}.pkl')
+            util.pickle(save_path, each)
 
-    detectable_pop_csv = os.path.join(output_dir, f'detectable_pop_{run}_sca{sca_id}.csv')
-    survey_sim.write_lens_pop_to_csv(detectable_pop_csv, detectable_gglenses, detectable_snr_list, bands)
+        detectable_pop_csv = os.path.join(output_dir, f'detectable_pop_{run}_sca{sca_id}.csv')
+        survey_sim.write_lens_pop_to_csv(detectable_pop_csv, detectable_gglenses, detectable_snr_list, bands)
 
-    detectable_gglenses_pickle_path = os.path.join(output_dir, f'detectable_gglenses_{run}_sca{sca_id}.pkl')
-    if debugging: print(f'Pickling detectable gglenses to {detectable_gglenses_pickle_path}')
-    util.pickle(detectable_gglenses_pickle_path, detectable_gglenses)
+        detectable_gglenses_pickle_path = os.path.join(output_dir, f'detectable_gglenses_{run}_sca{sca_id}.pkl')
+        if debugging: print(f'Pickling detectable gglenses to {detectable_gglenses_pickle_path}')
+        util.pickle(detectable_gglenses_pickle_path, detectable_gglenses)
+    else:
+        if debugging: print(f'No detectable lenses found for run {run}, SCA{sca_id}')
 
 
 if __name__ == '__main__':
