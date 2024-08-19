@@ -3,11 +3,18 @@ import json
 import pandas as pd
 
 import mejiro
+from mejiro.instruments.instrument_base import InstrumentBase
 
 
-class Roman:
+class Roman(InstrumentBase):
 
     def __init__(self):
+        name = 'Roman'
+
+        super().__init__(
+            name
+        )
+
         module_path = os.path.dirname(mejiro.__file__)
         csv_path = os.path.join(module_path, 'data', 'roman_spacecraft_and_instrument_parameters.csv')
         self.df = pd.read_csv(csv_path)
@@ -15,9 +22,8 @@ class Roman:
         # load SCA-specific zeropoints
         self.zp_dict = json.load(open(os.path.join(module_path, 'data', 'roman_zeropoint_magnitudes.json')))
 
-
-    pixel_scale = 0.11  # arcsec/pixel
-    diameter = 2.4  # m
+        self.pixel_scale = 0.11  # arcsec/pixel
+        self.diameter = 2.4  # m
 
     # retrieved 25 June 2024 from https://outerspace.stsci.edu/pages/viewpage.action?spaceKey=ISWG&title=Roman+WFI+and+Observatory+Performance
     psf_fwhm = {
