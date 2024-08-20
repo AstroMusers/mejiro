@@ -28,10 +28,10 @@ def count_detectable_lenses(dir):
     return len(lens_pickles)
 
 
-def collect_all_detectable_lenses(dir):
+def collect_all_detectable_lenses(dir, suppress_output=True):
     pickle_paths = glob(dir + '/01_hlwas_sim_detectable_lenses_sca*.pkl')
     detectable_lenses = []
-    for f in pickle_paths:
+    for f in tqdm(pickle_paths, disable=suppress_output):
         detectable_lenses.extend(util.unpickle(f))
     return detectable_lenses
 

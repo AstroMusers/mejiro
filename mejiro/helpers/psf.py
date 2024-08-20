@@ -75,20 +75,29 @@ def get_psf_id_string(band, detector, detector_position, oversample):
     return f'{band}_{detector}_{detector_position[0]}_{detector_position[1]}_{oversample}'
 
 
-def load_cached_psf(psf_id_string, psf_cache_dir=None, suppress_output=False):
+def load_cached_psf(psf_id_string, psf_cache_dir=None, suppress_output=True):
     if psf_cache_dir is None:
         import mejiro
         module_path = os.path.dirname(mejiro.__file__)
         psf_cache_dir = os.path.join(module_path, 'data', 'cached_psfs')
     psf_path = os.path.join(psf_cache_dir, f'{psf_id_string}.pkl')
-    if not suppress_output: print(f'Loading cached PSF: {psf_path}')
-    return util.unpickle(psf_path)
+    if os.path.exists(psf_path):
+        if not suppress_output: print(f'Loading cached PSF: {psf_path}')
+        return util.unpickle(psf_path)
+    else:
+        if not suppress_output: print(f'PSF {psf_id_string} not found in cache {psf_cache_dir}')
+        band, detector, detector_pos_x, detector_pos_y, oversample = psf_id_string.split('_')
+        psf_kernel = get_psf_kernel(band, int(detector), (int(detector_pos_x), int(detector_pos_y)), int(oversample))
+        util.pickle(psf_path, psf_kernel)
+        if not suppress_output: print(f'Generated and cached PSF: {psf_path}')
+        return psf_kernel
 
 
 def detector_int_to_sca(detector):
     # detector might be int or string, and WebbPSF expects 'SCA01', 'SCA02', etc.
     if type(detector) == int:
         return f'SCA{str(detector).zfill(2)}'
+    # TODO handle a few more cases
 
 
 def get_psf_kernel(band, detector, detector_position, oversample=5, fov_arcsec=None, save=None):
