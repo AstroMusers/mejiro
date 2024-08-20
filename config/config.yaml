@@ -5,9 +5,9 @@ defaults:
   - override hydra/job_logging: disabled
 
 survey:
-  - runs: 108  # 900  # 90
-  - area: 0.5
-  - total_population: True
+  - runs: 18  # 900  # 90
+  - area: 0.1
+  - total_population: False
   - scas: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]  # 
   - deflector_cut_band: F129
   - deflector_cut_band_max: 24  # 27
@@ -32,7 +32,7 @@ survey:
   # - zodi_multiplier: 1.5  # multiplied with minimum zodiacal light
 
 pipeline:
-  - debugging: True  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
+  - debugging: False  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
   - limit: None  # None
   # scene params
   - num_pix: 96  # 51  # 96
