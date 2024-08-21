@@ -81,10 +81,10 @@ def main(config):
     # script configuration options
     debugging = False
     require_alignment = True
-    limit = 100
+    limit = None
     snr_threshold = 50
     einstein_radius_threshold = 0.
-    log_m_host_threshold = 13.  # 13.3
+    log_m_host_threshold = 12.5  # 13.3
 
     # set subhalo and imaging params
     subhalo_params = {
@@ -133,7 +133,7 @@ def main(config):
     lenses_to_process = []
     num_lenses = 0
     for lens in lens_list:
-        if lens.snr > snr_threshold and lens.get_einstein_radius() > einstein_radius_threshold and np.log10(lens.main_halo_mass) > log_m_host_threshold:
+        if lens.snr > snr_threshold and lens.get_einstein_radius() > einstein_radius_threshold and np.log10(lens.main_halo_mass) > log_m_host_threshold and lens.snr != np.inf:
             lenses_to_process.append(lens)
             num_lenses += 1
         if limit is not None and num_lenses >= limit:
