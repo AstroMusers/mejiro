@@ -37,9 +37,12 @@ def get_webbpsf_psf(band, detector, detector_position, oversample, check_cache=F
     # generate PSF in WebbPSF
     psf = wfi.calc_psf(oversample=oversample)
 
-    # import PSF to GalSim
-    oversampled_pixel_scale = wfi.pixelscale / oversample
-    psf_image = galsim.Image(psf[0].data, scale=oversampled_pixel_scale)
+    return kernel_to_galsim_interpolated_image(psf[0].data, oversample, pixel_scale=wfi.pixelscale)
+
+
+def kernel_to_galsim_interpolated_image(kernel, oversample, pixel_scale=0.11):
+    oversampled_pixel_scale = pixel_scale / oversample
+    psf_image = galsim.Image(kernel, scale=oversampled_pixel_scale)
     return galsim.InterpolatedImage(psf_image)
 
 
@@ -90,7 +93,7 @@ def load_cached_psf(psf_id_string, psf_cache_dir=None, suppress_output=True):
         psf_kernel = get_psf_kernel(band, int(detector), (int(detector_pos_x), int(detector_pos_y)), int(oversample))
         util.pickle(psf_path, psf_kernel)
         if not suppress_output: print(f'Generated and cached PSF: {psf_path}')
-        return psf_kernel
+        return kernel_to_galsim_interpolated_image(psf_kernel, int(oversample))
 
 
 def detector_int_to_sca(detector):
