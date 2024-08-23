@@ -37,7 +37,7 @@ def collect_all_detectable_lenses(dir, suppress_output=True):
 
 
 # TODO a(n imperfect) lens subtraction option?
-def get_snr(gglens, band, zp, sca_id=1, num_pix=45, side=4.95, oversample=1, return_snr_list=False, debugging=False, debug_dir=None, psf_cache_dir=None):
+def get_snr(gglens, band, zp, sca_id=1, num_pix=45, side=4.95, oversample=1, exposure_time=146, return_snr_list=False, debugging=False, debug_dir=None, psf_cache_dir=None):
     if debugging: assert debug_dir is not None, 'Debugging is enabled but no debug directory is provided.'
 
     if type(sca_id) is str:
@@ -56,13 +56,13 @@ def get_snr(gglens, band, zp, sca_id=1, num_pix=45, side=4.95, oversample=1, ret
                                                 lens_surface_brightness=[lens_sb],
                                                 source_surface_brightness=[source_sb], detector=sca_id,
                                                 detector_pos=(2048, 2048),
-                                                exposure_time=146, ra=30, dec=-30, seed=None, validate=False,
+                                                exposure_time=exposure_time, ra=30, dec=-30, seed=None, validate=False,
                                                 suppress_output=True, check_cache=check_cache, psf_cache_dir=psf_cache_dir)
 
     # put back into units of counts
-    total = results[0] * 146
-    lens = lenses[0] * 146
-    source = sources[0] * 146
+    total = results[0] * exposure_time
+    lens = lenses[0] * exposure_time
+    source = sources[0] * exposure_time
 
     # get noise; NB neither lens or source has sky background to detector effects added
     noise = total - (lens + source)
