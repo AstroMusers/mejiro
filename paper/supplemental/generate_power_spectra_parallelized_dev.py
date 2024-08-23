@@ -237,7 +237,10 @@ def generate_power_spectra(tuple):
     plt.plot(image_x, image_y, 'go', ms=10, markeredgewidth=2, fillstyle='none')
     plt.axis('off')
     plt.title(f'{lens.uid}: Large Population ({len(large.halos)} subhalo(es))')
-    plt.savefig(os.path.join(image_save_dir, f'00_{lens.uid}_large.png'))
+    try:
+        plt.savefig(os.path.join(image_save_dir, f'00_{lens.uid}_large.png'))
+    except Exception as e:
+        print(e)
     plt.close()
 
     # medium subhalos
@@ -264,7 +267,10 @@ def generate_power_spectra(tuple):
     plt.plot(image_x, image_y, 'go', ms=10, markeredgewidth=2, fillstyle='none')
     plt.axis('off')
     plt.title(f'{lens.uid}: Medium Population ({len(med.halos)} subhalo(es))')
-    plt.savefig(os.path.join(image_save_dir, f'01_{lens.uid}_med.png'))
+    try:
+        plt.savefig(os.path.join(image_save_dir, f'01_{lens.uid}_med.png'))
+    except Exception as e:
+        print(e)
     plt.close()
 
     # small subhalos
@@ -281,7 +287,10 @@ def generate_power_spectra(tuple):
     plt.plot(image_x, image_y, 'go', ms=10, markeredgewidth=2, fillstyle='none')
     plt.axis('off')
     plt.title(f'{lens.uid}: Small Population ({len(small.halos)} subhalo(es))')
-    plt.savefig(os.path.join(image_save_dir, f'02_{lens.uid}_small.png'))
+    try:
+        plt.savefig(os.path.join(image_save_dir, f'02_{lens.uid}_small.png'))
+    except Exception as e:
+        print(e)
     plt.close()
 
     # ---------------------BUILD WDM/MDM/CDM POPULATIONS---------------------
@@ -318,7 +327,10 @@ def generate_power_spectra(tuple):
         a.plot(image_x, image_y, 'go', ms=10, markeredgewidth=2, fillstyle='none')
 
     plt.suptitle(f'{lens.uid}: Convergence Maps and Image Positions')
-    plt.savefig(os.path.join(image_save_dir, f'03_{lens.uid}_convergence_maps.png'))
+    try:
+        plt.savefig(os.path.join(image_save_dir, f'03_{lens.uid}_convergence_maps.png'))
+    except Exception as e:
+        print(e)
     plt.close()
 
     # ---------------------GENERATE SYNTHETIC IMAGES---------------------
@@ -347,7 +359,10 @@ def generate_power_spectra(tuple):
         a.axis('off')
 
     plt.suptitle(f'{lens.uid}: Synthetic Images Varying Subhalo Population')
-    plt.savefig(os.path.join(image_save_dir, f'04_{lens.uid}_synthetic_images.png'))
+    try:
+        plt.savefig(os.path.join(image_save_dir, f'04_{lens.uid}_synthetic_images.png'))
+    except Exception as e:
+        print(e)
     plt.close()
 
     wdm_ps, r = power_spectrum_1d(wdm_array)
@@ -359,7 +374,10 @@ def generate_power_spectra(tuple):
     plt.xscale('log')
     plt.title(f'{lens.uid}: Synthetic Image Power Spectra Residuals Varying Subhalo Population')
     plt.legend()
-    plt.savefig(os.path.join(image_save_dir, f'05_{lens.uid}_synthetic_image_power_spectra.png'))
+    try:
+        plt.savefig(os.path.join(image_save_dir, f'05_{lens.uid}_synthetic_image_power_spectra.png'))
+    except Exception as e:
+        print(e)
     plt.close()
 
     # ---------------------GENERATE EXPOSURES VARYING SUBHALO POPULATION---------------------
@@ -388,7 +406,10 @@ def generate_power_spectra(tuple):
     for a in ax.flatten():
         a.axis('off')
     plt.suptitle(f'{lens.uid}: Exposures Varying Subhalo Population')
-    plt.savefig(os.path.join(image_save_dir, f'06_{lens.uid}_exposures_varying_subhalos.png'))
+    try:
+        plt.savefig(os.path.join(image_save_dir, f'06_{lens.uid}_exposures_varying_subhalos.png'))
+    except Exception as e:
+        print(e)
     plt.close() 
 
     wdm_ps, r = power_spectrum_1d(wdm_exposure)
@@ -409,7 +430,10 @@ def generate_power_spectra(tuple):
     plt.xscale('log')
     plt.title(f'{lens.uid}: Exposure Power Spectra Residuals Varying Subhalo Population')
     plt.legend()
-    plt.savefig(os.path.join(image_save_dir, f'07_{lens.uid}_exposure_power_spectra_varying_subhalos.png'))
+    try:
+        plt.savefig(os.path.join(image_save_dir, f'07_{lens.uid}_exposure_power_spectra_varying_subhalos.png'))
+    except Exception as e:
+        print(e)
     plt.close() 
 
     # ---------------------GENERATE EXPOSURES VARYING PSFS---------------------
@@ -458,7 +482,10 @@ def generate_power_spectra(tuple):
         a.axis('off')
 
     plt.suptitle(f'{lens.uid}: Varying PSFs')
-    plt.savefig(os.path.join(image_save_dir, f'08_{lens.uid}_exposures_varying_psfs.png'))
+    try:
+        plt.savefig(os.path.join(image_save_dir, f'08_{lens.uid}_exposures_varying_psfs.png'))
+    except Exception as e:
+        print(e)
     plt.close() 
 
     # ---------------------COMPARE POWER SPECTRA RESIDUALS---------------------
@@ -470,7 +497,10 @@ def generate_power_spectra(tuple):
     plt.xscale('log')
     plt.title(f'{lens.uid}: Comparing Power Spectra Residuals')
     plt.legend()
-    plt.savefig(os.path.join(image_save_dir, f'09_{lens.uid}_compare_power_spectra_residuals.png'))
+    try:
+        plt.savefig(os.path.join(image_save_dir, f'09_{lens.uid}_compare_power_spectra_residuals.png'))
+    except Exception as e:
+        print(e)
     plt.close() 
 
     print(f'Finished lens {lens.uid}.')
