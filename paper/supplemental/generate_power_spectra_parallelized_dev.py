@@ -15,7 +15,7 @@ from pyHalo.preset_models import CDM
 from tqdm import tqdm
 
 
-def get_masked_exposure(lens, model, band, psf, num_pix, oversample, exposure_time):
+def get_masked_exposure(lens, model, band, psf, num_pix, oversample, exposure_time, snr_threshold):
     from mejiro.helpers import gs
     from mejiro.helpers import psf as psf_util
     from mejiro.utils import util
@@ -28,7 +28,10 @@ def get_masked_exposure(lens, model, band, psf, num_pix, oversample, exposure_ti
     image = gs.convolve(interp, psf, num_pix)
     final_array = image.array
 
-    mask = np.ma.getmask(lens.masked_snr_array)
+    # mask = np.ma.getmask(lens.masked_snr_array)
+    data = lens.masked_snr_array.data
+    strict_mask = np.ma.masked_where(data < snr_threshold, data)
+    mask = np.ma.getmask(strict_mask)
     if mask.shape != final_array.shape:
         mask = util.center_crop_image(mask, final_array.shape)
     masked_image = np.ma.masked_array(final_array, mask)
@@ -86,9 +89,10 @@ def main(config):
     debugging = False
     require_alignment = True
     limit = None
-    snr_threshold = 50
+    snr_threshold = 50.
+    snr_pixel_threshold = 2.
     einstein_radius_threshold = 0.
-    log_m_host_threshold = 13.5  # 13.3
+    log_m_host_threshold = 13.3  # 13.3
 
     # set subhalo and imaging params
     subhalo_params = {
@@ -101,7 +105,7 @@ def main(config):
         'num_pix': 45,
         'side': 4.95,
         'control_band': 'F106',
-        'exposure_time': 3600 * 3,
+        'exposure_time': 146,
     }
     bands = ['F106']
     # bands = ['F106', 'F129', 'F158', 'F184']
@@ -109,9 +113,9 @@ def main(config):
         '2': (2048, 2048),
     }
     positions = {
-        '5': (4092, 2048),
-        '11': (4, 2048),
-        '1': (2048, 4)
+        '5': (2048, 2048),
+        '11': (2048, 2048),
+        '14': (2048, 2048)
         # '9': (4, 4),
         # '17': (4092, 4092)
     }
@@ -144,10 +148,8 @@ def main(config):
         if limit is not None and num_lenses >= limit:
             break
     # TODO TEMP: multiply lenses to process
-    lenses_to_process = lenses_to_process * 10
+    # lenses_to_process = lenses_to_process * 10
     print(f'Collected {len(lenses_to_process)} lens(es).')
-
-  
 
     for i, lens in enumerate(lenses_to_process):
         print(f'{i}: StrongLens {lens.uid}, {np.log10(lens.main_halo_mass):.2f}, {lens.snr:.2f}')
@@ -165,7 +167,7 @@ def main(config):
         cached_psfs[id_string] = psf.load_cached_psf(id_string, psf_cache_dir, suppress_output=False)
 
     tuple_list = [
-        (lens, subhalo_params, imaging_params, position_control, positions, cached_psfs, require_alignment, save_dir, image_save_dir, debugging) for
+        (lens, subhalo_params, imaging_params, position_control, positions, cached_psfs, require_alignment, snr_pixel_threshold, save_dir, image_save_dir, debugging) for
         lens in lenses_to_process]
 
     # split up the lenses into batches based on core count
@@ -201,7 +203,7 @@ def generate_power_spectra(tuple):
     from mejiro.utils import util
 
     # unpack tuple
-    (lens, subhalo_params, imaging_params, position_control, positions, cached_psfs, require_alignment, save_dir, image_save_dir, debugging) = tuple
+    (lens, subhalo_params, imaging_params, position_control, positions, cached_psfs, require_alignment, snr_pixel_threshold, save_dir, image_save_dir, debugging) = tuple
     control_band = imaging_params['control_band']
     oversample = imaging_params['oversample']
     num_pix = imaging_params['num_pix']
@@ -384,9 +386,9 @@ def generate_power_spectra(tuple):
     subhalos_psf_id_string = psf.get_psf_id_string(band=control_band, detector=2, detector_position=(2048, 2048), oversample=oversample)
     subhalos_psf_kernel = cached_psfs[subhalos_psf_id_string]
 
-    wdm_exposure = get_masked_exposure(wdm_lens, wdm_array, control_band, subhalos_psf_kernel, num_pix, oversample, exposure_time)
-    mdm_exposure = get_masked_exposure(mdm_lens, mdm_array, control_band, subhalos_psf_kernel, num_pix, oversample, exposure_time)
-    cdm_exposure = get_masked_exposure(cdm_lens, cdm_array, control_band, subhalos_psf_kernel, num_pix, oversample, exposure_time)
+    wdm_exposure = get_masked_exposure(wdm_lens, wdm_array, control_band, subhalos_psf_kernel, num_pix, oversample, exposure_time, snr_pixel_threshold)
+    mdm_exposure = get_masked_exposure(mdm_lens, mdm_array, control_band, subhalos_psf_kernel, num_pix, oversample, exposure_time, snr_pixel_threshold)
+    cdm_exposure = get_masked_exposure(cdm_lens, cdm_array, control_band, subhalos_psf_kernel, num_pix, oversample, exposure_time, snr_pixel_threshold)
 
     wdm_residual = cdm_exposure - wdm_exposure
     mdm_residual = cdm_exposure - mdm_exposure
@@ -439,7 +441,7 @@ def generate_power_spectra(tuple):
     # ---------------------GENERATE EXPOSURES VARYING PSFS---------------------
     position_exposures = []
     for detector, detector_position in {**position_control, **positions}.items():
-        exposure = get_masked_exposure(cdm_lens, cdm_array, control_band, cached_psfs[psf.get_psf_id_string(control_band, detector, detector_position, oversample)], num_pix, oversample, exposure_time)
+        exposure = get_masked_exposure(cdm_lens, cdm_array, control_band, cached_psfs[psf.get_psf_id_string(control_band, detector, detector_position, oversample)], num_pix, oversample, exposure_time, snr_pixel_threshold)
         position_exposures.append(exposure)
 
     pos_0_ps, _ = power_spectrum_1d(position_exposures[0])
