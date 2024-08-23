@@ -84,7 +84,7 @@ def main(config):
     limit = None
     snr_threshold = 50
     einstein_radius_threshold = 0.
-    log_m_host_threshold = 12.5  # 13.3
+    log_m_host_threshold = 13.5  # 13.3
 
     # set subhalo and imaging params
     subhalo_params = {
@@ -93,7 +93,7 @@ def main(config):
         'los_normalization': 0.
     }
     imaging_params = {
-        'oversample': 5,
+        'oversample': 3,
         'num_pix': 45,
         'side': 4.95,
         'control_band': 'F106'
@@ -104,9 +104,9 @@ def main(config):
         '2': (2048, 2048),
     }
     positions = {
-        '1': (2048, 2048),
-        '5': (2048, 2048),
-        '11': (2048, 2048)
+        '5': (4092, 2048),
+        '11': (4, 2048),
+        '1': (2048, 4)
         # '9': (4, 4),
         # '17': (4092, 4092)
     }
@@ -353,7 +353,7 @@ def generate_power_spectra(tuple):
     plt.close()
 
     # ---------------------GENERATE EXPOSURES VARYING SUBHALO POPULATION---------------------
-    subhalos_psf_id_string = psf.get_psf_id_string(band=control_band, detector=1, detector_position=(2048, 2048), oversample=oversample)
+    subhalos_psf_id_string = psf.get_psf_id_string(band=control_band, detector=2, detector_position=(2048, 2048), oversample=oversample)
     subhalos_psf_kernel = cached_psfs[subhalos_psf_id_string]
 
     wdm_exposure = get_masked_exposure(wdm_lens, wdm_array, control_band, subhalos_psf_kernel, num_pix, oversample)
