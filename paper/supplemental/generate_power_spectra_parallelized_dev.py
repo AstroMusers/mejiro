@@ -15,13 +15,17 @@ from pyHalo.preset_models import CDM
 from tqdm import tqdm
 
 
-def get_masked_exposure(lens, model, band, psf_kernel, num_pix, oversample):
+def get_masked_exposure(lens, model, band, psf, num_pix, oversample, exposure_time):
     from mejiro.helpers import gs
+    from mejiro.helpers import psf as psf_util
     from mejiro.utils import util
 
+    if type(psf) is np.ndarray:
+        psf = psf_util.kernel_to_galsim_interpolated_image(psf, oversample)
+
     total_flux_cps = lens.get_total_flux_cps(band)
-    interp = InterpolatedImage(Image(model, xmin=0, ymin=0), scale=0.11 / oversample, flux=total_flux_cps * 146)
-    image = gs.convolve(interp, psf_kernel, num_pix)
+    interp = InterpolatedImage(Image(model, xmin=0, ymin=0), scale=0.11 / oversample, flux=total_flux_cps * exposure_time)
+    image = gs.convolve(interp, psf, num_pix)
     final_array = image.array
 
     mask = np.ma.getmask(lens.masked_snr_array)
@@ -93,10 +97,11 @@ def main(config):
         'los_normalization': 0.
     }
     imaging_params = {
-        'oversample': 3,
+        'oversample': 5,
         'num_pix': 45,
         'side': 4.95,
-        'control_band': 'F106'
+        'control_band': 'F106',
+        'exposure_time': 3600 * 3,
     }
     bands = ['F106']
     # bands = ['F106', 'F129', 'F158', 'F184']
@@ -138,7 +143,11 @@ def main(config):
             num_lenses += 1
         if limit is not None and num_lenses >= limit:
             break
+    # TODO TEMP: multiply lenses to process
+    lenses_to_process = lenses_to_process * 10
     print(f'Collected {len(lenses_to_process)} lens(es).')
+
+  
 
     for i, lens in enumerate(lenses_to_process):
         print(f'{i}: StrongLens {lens.uid}, {np.log10(lens.main_halo_mass):.2f}, {lens.snr:.2f}')
@@ -197,6 +206,7 @@ def generate_power_spectra(tuple):
     oversample = imaging_params['oversample']
     num_pix = imaging_params['num_pix']
     side = imaging_params['side']
+    exposure_time = imaging_params['exposure_time']
 
     if debugging: print(f'Processing lens {lens.uid}...')
 
@@ -356,9 +366,9 @@ def generate_power_spectra(tuple):
     subhalos_psf_id_string = psf.get_psf_id_string(band=control_band, detector=2, detector_position=(2048, 2048), oversample=oversample)
     subhalos_psf_kernel = cached_psfs[subhalos_psf_id_string]
 
-    wdm_exposure = get_masked_exposure(wdm_lens, wdm_array, control_band, subhalos_psf_kernel, num_pix, oversample)
-    mdm_exposure = get_masked_exposure(mdm_lens, mdm_array, control_band, subhalos_psf_kernel, num_pix, oversample)
-    cdm_exposure = get_masked_exposure(cdm_lens, cdm_array, control_band, subhalos_psf_kernel, num_pix, oversample)
+    wdm_exposure = get_masked_exposure(wdm_lens, wdm_array, control_band, subhalos_psf_kernel, num_pix, oversample, exposure_time)
+    mdm_exposure = get_masked_exposure(mdm_lens, mdm_array, control_band, subhalos_psf_kernel, num_pix, oversample, exposure_time)
+    cdm_exposure = get_masked_exposure(cdm_lens, cdm_array, control_band, subhalos_psf_kernel, num_pix, oversample, exposure_time)
 
     wdm_residual = cdm_exposure - wdm_exposure
     mdm_residual = cdm_exposure - mdm_exposure
@@ -405,7 +415,7 @@ def generate_power_spectra(tuple):
     # ---------------------GENERATE EXPOSURES VARYING PSFS---------------------
     position_exposures = []
     for detector, detector_position in {**position_control, **positions}.items():
-        exposure = get_masked_exposure(cdm_lens, cdm_array, control_band, cached_psfs[psf.get_psf_id_string(control_band, detector, detector_position, oversample)], num_pix, oversample)
+        exposure = get_masked_exposure(cdm_lens, cdm_array, control_band, cached_psfs[psf.get_psf_id_string(control_band, detector, detector_position, oversample)], num_pix, oversample, exposure_time)
         position_exposures.append(exposure)
 
     pos_0_ps, _ = power_spectrum_1d(position_exposures[0])
