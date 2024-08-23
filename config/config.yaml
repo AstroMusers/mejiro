@@ -53,7 +53,7 @@ pipeline:
   - rgb_bands: [ F184, F129, F106 ]  # in RGB order
   - rgb_stretch: 2
   - rgb_q: 3
-  - exposure_time: 3600  # 146
+  - exposure_time: 146  # 146
   # other
   - suppress_output: True
   - seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
