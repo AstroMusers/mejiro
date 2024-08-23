@@ -45,7 +45,7 @@ class Roman(InstrumentBase):
         """
         # might provide int 1 or string 01 or string SCA01
         if type(sca_id) is int:
-            sca = f'SCA{sca_id}'
+            sca = f'SCA{str(sca_id).zfill(2)}'
         else:
             if sca_id.startswith('SCA'):
                 sca = sca_id
