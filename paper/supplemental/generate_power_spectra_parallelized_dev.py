@@ -40,39 +40,31 @@ def get_masked_exposure(lens, model, band, psf, num_pix, oversample, exposure_ti
 
 
 def get_large(lens, subhalo_params):
-    return CDM(round(lens.z_lens, 2),
-                round(lens.z_source, 2),
-                sigma_sub=subhalo_params['sigma_sub'],
-                log_mlow=9.5,
-                log_mhigh=11.,
-                log_m_host=np.log10(lens.main_halo_mass),
-                r_tidal=subhalo_params['r_tidal'],
-                cone_opening_angle_arcsec=lens.get_einstein_radius() * 3,
-                LOS_normalization=subhalo_params['los_normalization'])
+    return _get_subhalos(lens, subhalo_params, log_mlow=9.5, log_mhigh=11., cone_factor=3)
 
 
 def get_med(lens, subhalo_params):
-    return CDM(round(lens.z_lens, 2),
-                round(lens.z_source, 2),
-                sigma_sub=subhalo_params['sigma_sub'],
-                log_mlow=7.5,
-                log_mhigh=9.5,
-                log_m_host=np.log10(lens.main_halo_mass),
-                r_tidal=subhalo_params['r_tidal'],
-                cone_opening_angle_arcsec=lens.get_einstein_radius() * 3,
-                LOS_normalization=subhalo_params['los_normalization'])
+    return _get_subhalos(lens, subhalo_params, log_mlow=7.5, log_mhigh=9.5, cone_factor=4)
 
 
 def get_small(lens, subhalo_params):
-    return CDM(round(lens.z_lens, 2),
-                round(lens.z_source, 2),
-                sigma_sub=subhalo_params['sigma_sub'],
-                log_mlow=6.,
-                log_mhigh=7.5,
-                log_m_host=np.log10(lens.main_halo_mass),
-                r_tidal=subhalo_params['r_tidal'],
-                cone_opening_angle_arcsec=lens.get_einstein_radius() * 6,
-                LOS_normalization=subhalo_params['los_normalization'])
+    return _get_subhalos(lens, subhalo_params, log_mlow=6., log_mhigh=7.5, cone_factor=6)
+
+
+def _get_subhalos(lens, subhalo_params, log_mlow, log_mhigh, cone_factor):
+    try:
+        return CDM(round(lens.z_lens, 2),
+                    round(lens.z_source, 2),
+                    sigma_sub=subhalo_params['sigma_sub'],
+                    log_mlow=log_mlow,
+                    log_mhigh=log_mhigh,
+                    log_m_host=np.log10(lens.main_halo_mass),
+                    r_tidal=subhalo_params['r_tidal'],
+                    cone_opening_angle_arcsec=lens.get_einstein_radius() * cone_factor,
+                    LOS_normalization=subhalo_params['los_normalization'])
+    except Exception as e:
+        print(f'StrongLens {lens.uid}: {e}')
+        return None
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -87,12 +79,12 @@ def main(config):
 
     # script configuration options
     debugging = False
-    require_alignment = True
-    limit = None
+    require_alignment = False
+    limit = 100
     snr_threshold = 50.
-    snr_pixel_threshold = 2.
+    snr_pixel_threshold = 1.
     einstein_radius_threshold = 0.
-    log_m_host_threshold = 13.3  # 13.3
+    log_m_host_threshold = 13.  # 13.3
 
     # set subhalo and imaging params
     subhalo_params = {
@@ -139,19 +131,25 @@ def main(config):
     print(f'Collecting lenses...')
     lens_list = survey_sim.collect_all_detectable_lenses(os.path.join(pipeline_dir, '01'), suppress_output=False)
     print(f'Collected {len(lens_list)} candidate lens(es).')
-    lenses_to_process = []
+    filtered_lenses = []
     num_lenses = 0
     for lens in lens_list:
         if lens.snr > snr_threshold and lens.get_einstein_radius() > einstein_radius_threshold and np.log10(lens.main_halo_mass) > log_m_host_threshold and lens.snr != np.inf:
-            lenses_to_process.append(lens)
+            filtered_lenses.append(lens)
             num_lenses += 1
         if limit is not None and num_lenses >= limit:
             break
-    # TODO TEMP: multiply lenses to process
-    # lenses_to_process = lenses_to_process * 10
-    print(f'Collected {len(lenses_to_process)} lens(es).')
+    print(f'Collected {len(filtered_lenses)} lens(es).')
 
-    for i, lens in enumerate(lenses_to_process):
+    # repeat lenses up to limit
+    lenses_to_process = []
+    if limit is not None:
+        repeats = int(np.ceil(limit / len(filtered_lenses)))
+        print(f'Repeating lenses {repeats} times...')
+        lenses_to_process = filtered_lenses * repeats
+        lenses_to_process = lenses_to_process[:limit]
+
+    for i, lens in enumerate(filtered_lenses):
         print(f'{i}: StrongLens {lens.uid}, {np.log10(lens.main_halo_mass):.2f}, {lens.snr:.2f}')
 
     # read cached PSFs
@@ -216,17 +214,22 @@ def generate_power_spectra(tuple):
 
     # ---------------------GENERATE SUBHALO POPULATIONS---------------------
     # large subhalos
-    if require_alignment:
-        aligned = False
-        i = 0
-        while not aligned:
+    large_subhalo_exists = False
+    while not large_subhalo_exists:
+        if require_alignment:
+            aligned = False
+            i = 0
+            while not aligned:
+                large = get_large(lens, subhalo_params)
+                if large is None: sys.exit(0)
+                aligned = lens_util.check_halo_image_alignment(lens, large, halo_mass=5e9)
+                i += 1
+            print(f'Aligned in {i} iteration(s).')
+        else:
             large = get_large(lens, subhalo_params)
-            aligned = lens_util.check_halo_image_alignment(lens, large, halo_mass=5e9)
-            i += 1
-        print(f'Aligned in {i} iteration(s).')
-    else:
-        large = get_large(lens, subhalo_params)
-    print(f'{len(large.halos)} subhalo(es) in large subhalo population.')
+        if len(large.halos) > 0:
+            large_subhalo_exists = True
+    # print(f'{len(large.halos)} subhalo(es) in large subhalo population.')
 
     subhalo_lens = deepcopy(lens)
     subhalo_lens.add_subhalos(large)
@@ -246,17 +249,22 @@ def generate_power_spectra(tuple):
     plt.close()
 
     # medium subhalos
-    if require_alignment:
-        aligned = False
-        i = 0
-        while not aligned:
+    medium_subhalo_exists = False
+    while not medium_subhalo_exists:
+        if require_alignment:
+            aligned = False
+            i = 0
+            while not aligned:
+                med = get_med(lens, subhalo_params)
+                if med is None: sys.exit(0)
+                aligned = lens_util.check_halo_image_alignment(lens, med, halo_mass=5e8)
+                i += 1
+            print(f'Aligned in {i} iteration(s).')
+        else:
             med = get_med(lens, subhalo_params)
-            aligned = lens_util.check_halo_image_alignment(lens, med, halo_mass=5e8)
-            i += 1
-        print(f'Aligned in {i} iteration(s).')
-    else:
-        med = get_med(lens, subhalo_params)
-    print(f'{len(med.halos)} subhalo(es) in medium subhalo population.')
+        if len(med.halos) > 0:
+            medium_subhalo_exists = True
+    # print(f'{len(med.halos)} subhalo(es) in medium subhalo population.')
 
     subhalo_lens = deepcopy(lens)
     subhalo_lens.add_subhalos(med)
@@ -277,6 +285,7 @@ def generate_power_spectra(tuple):
 
     # small subhalos
     small = get_small(lens, subhalo_params)
+    if small is None: sys.exit(0)
 
     subhalo_lens = deepcopy(lens)
     subhalo_lens.add_subhalos(small)
@@ -300,6 +309,10 @@ def generate_power_spectra(tuple):
     mdm = wdm.join(med)
     cdm = mdm.join(small)
 
+    util.pickle(os.path.join(save_dir, f'wdm_realization_{lens.uid}_{id(wdm)}.pkl'), wdm)
+    util.pickle(os.path.join(save_dir, f'mdm_realization_{lens.uid}_{id(mdm)}.pkl'), mdm)
+    util.pickle(os.path.join(save_dir, f'cdm_realization_{lens.uid}_{id(cdm)}.pkl'), cdm)
+
     wdm_lens = deepcopy(lens)
     mdm_lens = deepcopy(lens)
     cdm_lens = deepcopy(lens)
@@ -311,6 +324,14 @@ def generate_power_spectra(tuple):
     wdm_kappa = wdm_lens.get_subhalo_kappa(num_pix, side)
     mdm_kappa = mdm_lens.get_subhalo_kappa(num_pix, side)
     cdm_kappa = cdm_lens.get_subhalo_kappa(num_pix, side)
+
+    ps_kappa_wdm, kappa_r = power_spectrum_1d(wdm_kappa)
+    ps_kappa_mdm, _ = power_spectrum_1d(mdm_kappa)
+    ps_kappa_cdm, _ = power_spectrum_1d(cdm_kappa)
+    np.save(os.path.join(save_dir, 'kappa_r.npy'), kappa_r)
+    np.save(os.path.join(save_dir, f'ps_kappa_wdm_{lens.uid}_{id(ps_kappa_wdm)}.npy'), ps_kappa_wdm)
+    np.save(os.path.join(save_dir, f'ps_kappa_mdm_{lens.uid}_{id(ps_kappa_mdm)}.npy'), ps_kappa_mdm)
+    np.save(os.path.join(save_dir, f'ps_kappa_cdm_{lens.uid}_{id(ps_kappa_cdm)}.npy'), ps_kappa_cdm)
 
     vmin = 0
     vmax = np.max([wdm_kappa, mdm_kappa, cdm_kappa])
@@ -336,9 +357,12 @@ def generate_power_spectra(tuple):
     plt.close()
 
     # ---------------------GENERATE SYNTHETIC IMAGES---------------------
-    wdm_array = wdm_lens.get_array(num_pix * oversample, side, control_band)
-    mdm_array = mdm_lens.get_array(num_pix * oversample, side, control_band)
-    cdm_array = cdm_lens.get_array(num_pix * oversample, side, control_band)
+    _, _, wdm_array = wdm_lens.get_array(num_pix * oversample, side, control_band, return_pieces=True)
+    _, _, mdm_array = mdm_lens.get_array(num_pix * oversample, side, control_band, return_pieces=True)
+    _, _, cdm_array = cdm_lens.get_array(num_pix * oversample, side, control_band, return_pieces=True)
+    # wdm_array = wdm_lens.get_array(num_pix * oversample, side, control_band)
+    # mdm_array = mdm_lens.get_array(num_pix * oversample, side, control_band)
+    # cdm_array = cdm_lens.get_array(num_pix * oversample, side, control_band)
 
     wdm_residual = cdm_array - wdm_array
     mdm_residual = cdm_array - mdm_array
