@@ -40,7 +40,7 @@ def get_masked_exposure(lens, model, band, psf, num_pix, oversample, exposure_ti
 
 
 def get_large(lens, subhalo_params):
-    return _get_subhalos(lens, subhalo_params, log_mlow=9.5, log_mhigh=11., cone_factor=3)
+    return _get_subhalos(lens, subhalo_params, log_mlow=9.5, log_mhigh=10., cone_factor=3)
 
 
 def get_med(lens, subhalo_params):
@@ -80,11 +80,11 @@ def main(config):
     # script configuration options
     debugging = False
     require_alignment = False
-    limit = 20
+    limit = 1000
     snr_threshold = 50.
     snr_pixel_threshold = 1.
     einstein_radius_threshold = 0.
-    log_m_host_threshold = 13.5  # 13.3
+    log_m_host_threshold = 13.  # 13.3
 
     # set subhalo and imaging params
     subhalo_params = {
@@ -102,12 +102,27 @@ def main(config):
     bands = ['F106']
     # bands = ['F106', 'F129', 'F158', 'F184']
     position_control = [
-        ('2', (2048, 2048))
+        ('4', (2048, 2048))
     ]
     positions = [
-        ('8', (2048, 2048)),
-        ('11', (2048, 2048)),
-        ('17', (2048, 2048))
+        # ('1', (2048, 2048)),
+        ('2', (2048, 2048)),
+        # ('3', (2048, 2048)),
+        # ('4', (2048, 2048)),
+        # ('5', (2048, 2048)),
+        ('6', (2048, 2048)),
+        # ('7', (2048, 2048)),
+        # ('8', (2048, 2048)),
+        # ('9', (2048, 2048)),
+        # ('10', (2048, 2048)),
+        # ('11', (2048, 2048)),
+        # ('12', (2048, 2048)),
+        # ('13', (2048, 2048)),
+        # ('14', (2048, 2048)),
+        # ('15', (2048, 2048)),
+        # ('16', (2048, 2048)),
+        # ('17', (2048, 2048)),
+        ('18', (2048, 2048))
     ]
 
     # set up directories for script output
@@ -366,8 +381,8 @@ def generate_power_spectra(tuple):
     # mdm_array = mdm_lens.get_array(num_pix * oversample, side, control_band)
     # cdm_array = cdm_lens.get_array(num_pix * oversample, side, control_band)
 
-    wdm_residual = cdm_array - wdm_array
-    mdm_residual = cdm_array - mdm_array
+    wdm_residual = wdm_array - cdm_array
+    mdm_residual = mdm_array - cdm_array
     min = np.min([wdm_residual, mdm_residual])
     max = np.max([wdm_residual, mdm_residual])
     vmax = np.max([np.abs(min), np.abs(max)])
@@ -398,8 +413,8 @@ def generate_power_spectra(tuple):
     mdm_ps, _ = power_spectrum_1d(mdm_array)
     cdm_ps, _ = power_spectrum_1d(cdm_array)
 
-    plt.plot(r, cdm_ps - wdm_ps, label='WDM')
-    plt.plot(r, cdm_ps - mdm_ps, label='MDM')
+    plt.plot(r, wdm_ps - cdm_ps, label='WDM')
+    plt.plot(r, mdm_ps - cdm_ps, label='MDM')
     plt.xscale('log')
     plt.title(f'{lens.uid}: Synthetic Image Power Spectra Residuals Varying Subhalo Population')
     plt.legend()
@@ -411,15 +426,15 @@ def generate_power_spectra(tuple):
     plt.close()
 
     # ---------------------GENERATE EXPOSURES VARYING SUBHALO POPULATION---------------------
-    subhalos_psf_id_string = psf.get_psf_id_string(band=control_band, detector=2, detector_position=(2048, 2048), oversample=oversample)
+    subhalos_psf_id_string = psf.get_psf_id_string(band=control_band, detector=position_control[0][0], detector_position=position_control[0][1], oversample=oversample)
     subhalos_psf_kernel = cached_psfs[subhalos_psf_id_string]
 
     wdm_exposure = get_masked_exposure(wdm_lens, wdm_array, control_band, subhalos_psf_kernel, num_pix, oversample, exposure_time, snr_pixel_threshold)
     mdm_exposure = get_masked_exposure(mdm_lens, mdm_array, control_band, subhalos_psf_kernel, num_pix, oversample, exposure_time, snr_pixel_threshold)
     cdm_exposure = get_masked_exposure(cdm_lens, cdm_array, control_band, subhalos_psf_kernel, num_pix, oversample, exposure_time, snr_pixel_threshold)
 
-    wdm_residual = cdm_exposure - wdm_exposure
-    mdm_residual = cdm_exposure - mdm_exposure
+    wdm_residual = wdm_exposure - cdm_exposure
+    mdm_residual = mdm_exposure - cdm_exposure
     min = np.min([wdm_residual, mdm_residual])
     max = np.max([wdm_residual, mdm_residual])
     vmax = np.max([np.abs(min), np.abs(max)])
@@ -456,8 +471,8 @@ def generate_power_spectra(tuple):
     # np.save(os.path.join(save_dir, f'{lens.uid}_ps_subs_mdm_{id(mdm_ps)}.npy'), mdm_ps)
     # np.save(os.path.join(save_dir, f'{lens.uid}_ps_subs_cdm_{id(cdm_ps)}.npy'), cdm_ps)
 
-    res_ps_wdm = cdm_ps - wdm_ps
-    res_ps_mdm = cdm_ps - mdm_ps
+    res_ps_wdm = wdm_ps - cdm_ps
+    res_ps_mdm = mdm_ps - cdm_ps
     np.save(os.path.join(save_dir, f'res_ps_wdm_{lens.uid}_run{run}.npy'), res_ps_wdm)
     np.save(os.path.join(save_dir, f'res_ps_mdm_{lens.uid}_run{run}.npy'), res_ps_mdm)
 
@@ -484,17 +499,47 @@ def generate_power_spectra(tuple):
         ps, _ = power_spectrum_1d(position_exposure)
         power_spectra_list.append(ps)
 
-    res_im_pos_1 = position_exposures[0] - position_exposures[1]
-    res_im_pos_2 = position_exposures[0] - position_exposures[2]
-    res_im_pos_3 = position_exposures[0] - position_exposures[3]
+    res_im_pos_1 = position_exposures[1] - position_exposures[0]
+    res_im_pos_2 = position_exposures[2] - position_exposures[0]
+    res_im_pos_3 = position_exposures[3] - position_exposures[0]
 
-    res_ps_pos_1 = power_spectra_list[0] - power_spectra_list[1]
-    res_ps_pos_2 = power_spectra_list[0] - power_spectra_list[2]
-    res_ps_pos_3 = power_spectra_list[0] - power_spectra_list[3]
+    res_ps_pos_1 = power_spectra_list[1] - power_spectra_list[0]
+    res_ps_pos_2 = power_spectra_list[2] - power_spectra_list[0]
+    res_ps_pos_3 = power_spectra_list[3] - power_spectra_list[0]
+    # res_ps_pos_4 = power_spectra_list[4] - power_spectra_list[0]
+    # res_ps_pos_5 = power_spectra_list[5] - power_spectra_list[0]
+    # res_ps_pos_6 = power_spectra_list[6] - power_spectra_list[0]
+    # res_ps_pos_7 = power_spectra_list[7] - power_spectra_list[0]
+    # res_ps_pos_8 = power_spectra_list[8] - power_spectra_list[0]
+    # res_ps_pos_9 = power_spectra_list[9] - power_spectra_list[0]
+    # res_ps_pos_10 = power_spectra_list[10] - power_spectra_list[0]
+    # res_ps_pos_11 = power_spectra_list[11] - power_spectra_list[0]
+    # res_ps_pos_12 = power_spectra_list[12] - power_spectra_list[0]
+    # res_ps_pos_13 = power_spectra_list[13] - power_spectra_list[0]
+    # res_ps_pos_14 = power_spectra_list[14] - power_spectra_list[0]
+    # res_ps_pos_15 = power_spectra_list[15] - power_spectra_list[0]
+    # res_ps_pos_16 = power_spectra_list[16] - power_spectra_list[0]
+    # res_ps_pos_17 = power_spectra_list[17] - power_spectra_list[0]
+    # res_ps_pos_18 = power_spectra_list[18] - power_spectra_list[0]
 
     np.save(os.path.join(save_dir, f'res_ps_pos_1_{lens.uid}_run{run}.npy'), res_ps_pos_1)
     np.save(os.path.join(save_dir, f'res_ps_pos_2_{lens.uid}_run{run}.npy'), res_ps_pos_2)
     np.save(os.path.join(save_dir, f'res_ps_pos_3_{lens.uid}_run{run}.npy'), res_ps_pos_3)
+    # np.save(os.path.join(save_dir, f'res_ps_pos_4_{lens.uid}_run{run}.npy'), res_ps_pos_4)
+    # np.save(os.path.join(save_dir, f'res_ps_pos_5_{lens.uid}_run{run}.npy'), res_ps_pos_5)
+    # np.save(os.path.join(save_dir, f'res_ps_pos_6_{lens.uid}_run{run}.npy'), res_ps_pos_6)
+    # np.save(os.path.join(save_dir, f'res_ps_pos_7_{lens.uid}_run{run}.npy'), res_ps_pos_7)
+    # np.save(os.path.join(save_dir, f'res_ps_pos_8_{lens.uid}_run{run}.npy'), res_ps_pos_8)
+    # np.save(os.path.join(save_dir, f'res_ps_pos_9_{lens.uid}_run{run}.npy'), res_ps_pos_9)
+    # np.save(os.path.join(save_dir, f'res_ps_pos_10_{lens.uid}_run{run}.npy'), res_ps_pos_10)
+    # np.save(os.path.join(save_dir, f'res_ps_pos_11_{lens.uid}_run{run}.npy'), res_ps_pos_11)
+    # np.save(os.path.join(save_dir, f'res_ps_pos_12_{lens.uid}_run{run}.npy'), res_ps_pos_12)
+    # np.save(os.path.join(save_dir, f'res_ps_pos_13_{lens.uid}_run{run}.npy'), res_ps_pos_13)
+    # np.save(os.path.join(save_dir, f'res_ps_pos_14_{lens.uid}_run{run}.npy'), res_ps_pos_14)
+    # np.save(os.path.join(save_dir, f'res_ps_pos_15_{lens.uid}_run{run}.npy'), res_ps_pos_15)
+    # np.save(os.path.join(save_dir, f'res_ps_pos_16_{lens.uid}_run{run}.npy'), res_ps_pos_16)
+    # np.save(os.path.join(save_dir, f'res_ps_pos_17_{lens.uid}_run{run}.npy'), res_ps_pos_17)
+    # np.save(os.path.join(save_dir, f'res_ps_pos_18_{lens.uid}_run{run}.npy'), res_ps_pos_18)
 
     # generate figure
     _, ax = plt.subplots(2, 4, figsize=(12, 7), constrained_layout=True)
