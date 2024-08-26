@@ -84,7 +84,7 @@ def main(config):
     snr_threshold = 50.
     snr_pixel_threshold = 1.
     einstein_radius_threshold = 0.
-    log_m_host_threshold = 13.  # 13.3
+    log_m_host_threshold = 13.3  # 13.3
 
     # set subhalo and imaging params
     subhalo_params = {
@@ -105,23 +105,23 @@ def main(config):
         ('4', (2048, 2048))
     ]
     positions = [
-        # ('1', (2048, 2048)),
+        ('1', (2048, 2048)),
         ('2', (2048, 2048)),
-        # ('3', (2048, 2048)),
-        # ('4', (2048, 2048)),
-        # ('5', (2048, 2048)),
+        ('3', (2048, 2048)),
+        ('4', (2048, 2048)),
+        ('5', (2048, 2048)),
         ('6', (2048, 2048)),
-        # ('7', (2048, 2048)),
-        # ('8', (2048, 2048)),
-        # ('9', (2048, 2048)),
-        # ('10', (2048, 2048)),
-        # ('11', (2048, 2048)),
-        # ('12', (2048, 2048)),
-        # ('13', (2048, 2048)),
-        # ('14', (2048, 2048)),
-        # ('15', (2048, 2048)),
-        # ('16', (2048, 2048)),
-        # ('17', (2048, 2048)),
+        ('7', (2048, 2048)),
+        ('8', (2048, 2048)),
+        ('9', (2048, 2048)),
+        ('10', (2048, 2048)),
+        ('11', (2048, 2048)),
+        ('12', (2048, 2048)),
+        ('13', (2048, 2048)),
+        ('14', (2048, 2048)),
+        ('15', (2048, 2048)),
+        ('16', (2048, 2048)),
+        ('17', (2048, 2048)),
         ('18', (2048, 2048))
     ]
 
@@ -215,15 +215,18 @@ def generate_power_spectra(tuple):
 
     # unpack tuple
     (run, lens, subhalo_params, imaging_params, position_control, positions, cached_psfs, require_alignment, snr_pixel_threshold, save_dir, image_save_dir, debugging) = tuple
-    run = str(run).zfill(3)
     control_band = imaging_params['control_band']
     oversample = imaging_params['oversample']
     num_pix = imaging_params['num_pix']
     side = imaging_params['side']
     exposure_time = imaging_params['exposure_time']
 
-    if debugging: print(f'Processing lens {lens.uid}...')
+    plot_figures = False
+    if run % 10 == 0:
+        plot_figures = True
+    run = str(run).zfill(3)
 
+    if debugging: print(f'Processing lens {lens.uid}...')
     lens._set_classes()
 
     # ---------------------GENERATE SUBHALO POPULATIONS---------------------
@@ -251,17 +254,18 @@ def generate_power_spectra(tuple):
     array = subhalo_lens.get_array(num_pix, side, control_band)
     image_x, image_y = subhalo_lens.get_image_positions()
 
-    plt.imshow(np.log10(array), alpha=0.9, cmap='inferno')
-    plt.imshow(subhalo_kappa, alpha=0.4, cmap='binary')
-    plt.plot(image_x, image_y, 'go', ms=10, markeredgewidth=2, fillstyle='none')
-    plt.axis('off')
-    plt.title(f'{lens.uid}: Large Population ({len(large.halos)} subhalo(es))')
-    image_save_path = os.path.join(image_save_dir, f'00_{lens.uid}_large_run{run}.png')
-    try:
-        plt.savefig(image_save_path)
-    except Exception as e:
-        print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
-    plt.close()
+    if plot_figures:
+        plt.imshow(np.log10(array), alpha=0.9, cmap='inferno')
+        plt.imshow(subhalo_kappa, alpha=0.4, cmap='binary')
+        plt.plot(image_x, image_y, 'go', ms=10, markeredgewidth=2, fillstyle='none')
+        plt.axis('off')
+        plt.title(f'{lens.uid}: Large Population ({len(large.halos)} subhalo(es))')
+        image_save_path = os.path.join(image_save_dir, f'00_{lens.uid}_large_run{run}.png')
+        try:
+            plt.savefig(image_save_path)
+        except Exception as e:
+            print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
+        plt.close()
 
     # medium subhalos
     medium_subhalo_exists = False
@@ -287,17 +291,18 @@ def generate_power_spectra(tuple):
     array = subhalo_lens.get_array(num_pix, side, control_band)
     image_x, image_y = subhalo_lens.get_image_positions()
 
-    plt.imshow(np.log10(array), alpha=0.9, cmap='inferno')
-    plt.imshow(subhalo_kappa, alpha=0.4, cmap='binary')
-    plt.plot(image_x, image_y, 'go', ms=10, markeredgewidth=2, fillstyle='none')
-    plt.axis('off')
-    plt.title(f'{lens.uid}: Medium Population ({len(med.halos)} subhalo(es))')
-    image_save_path = os.path.join(image_save_dir, f'01_{lens.uid}_med_run{run}.png')
-    try:
-        plt.savefig(image_save_path)
-    except Exception as e:
-        print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
-    plt.close()
+    if plot_figures:
+        plt.imshow(np.log10(array), alpha=0.9, cmap='inferno')
+        plt.imshow(subhalo_kappa, alpha=0.4, cmap='binary')
+        plt.plot(image_x, image_y, 'go', ms=10, markeredgewidth=2, fillstyle='none')
+        plt.axis('off')
+        plt.title(f'{lens.uid}: Medium Population ({len(med.halos)} subhalo(es))')
+        image_save_path = os.path.join(image_save_dir, f'01_{lens.uid}_med_run{run}.png')
+        try:
+            plt.savefig(image_save_path)
+        except Exception as e:
+            print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
+        plt.close()
 
     # small subhalos
     small = get_small(lens, subhalo_params)
@@ -309,16 +314,17 @@ def generate_power_spectra(tuple):
     array = subhalo_lens.get_array(num_pix, side, control_band)
     image_x, image_y = subhalo_lens.get_image_positions()
 
-    plt.imshow(np.log10(array), alpha=0.75, cmap='inferno')
-    plt.imshow(subhalo_kappa, alpha=0.25, cmap='binary')
-    plt.plot(image_x, image_y, 'go', ms=10, markeredgewidth=2, fillstyle='none')
-    plt.axis('off')
-    plt.title(f'{lens.uid}: Small Population ({len(small.halos)} subhalo(es))')
-    try:
-        plt.savefig(os.path.join(image_save_dir, f'02_{lens.uid}_small_run{run}.png'))
-    except Exception as e:
-        print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
-    plt.close()
+    if plot_figures:
+        plt.imshow(np.log10(array), alpha=0.75, cmap='inferno')
+        plt.imshow(subhalo_kappa, alpha=0.25, cmap='binary')
+        plt.plot(image_x, image_y, 'go', ms=10, markeredgewidth=2, fillstyle='none')
+        plt.axis('off')
+        plt.title(f'{lens.uid}: Small Population ({len(small.halos)} subhalo(es))')
+        try:
+            plt.savefig(os.path.join(image_save_dir, f'02_{lens.uid}_small_run{run}.png'))
+        except Exception as e:
+            print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
+        plt.close()
 
     # ---------------------BUILD WDM/MDM/CDM POPULATIONS---------------------
     wdm = deepcopy(large)
@@ -352,26 +358,27 @@ def generate_power_spectra(tuple):
     vmin = 0
     vmax = np.max([wdm_kappa, mdm_kappa, cdm_kappa])
 
-    _, ax = plt.subplots(1, 3, figsize=(12, 4), constrained_layout=True)
-    ax[0].imshow(wdm_kappa, cmap='binary', vmin=vmin, vmax=vmax)
-    ax[1].imshow(mdm_kappa, cmap='binary', vmin=vmin, vmax=vmax)
-    ax[2].imshow(cdm_kappa, cmap='binary', vmin=vmin, vmax=vmax)
+    if plot_figures:
+        _, ax = plt.subplots(1, 3, figsize=(12, 4), constrained_layout=True)
+        ax[0].imshow(wdm_kappa, cmap='binary', vmin=vmin, vmax=vmax)
+        ax[1].imshow(mdm_kappa, cmap='binary', vmin=vmin, vmax=vmax)
+        ax[2].imshow(cdm_kappa, cmap='binary', vmin=vmin, vmax=vmax)
 
-    ax[0].set_title('WDM')
-    ax[1].set_title('MDM')
-    ax[2].set_title('CDM')
+        ax[0].set_title('WDM')
+        ax[1].set_title('MDM')
+        ax[2].set_title('CDM')
 
-    for a in ax:
-        a.axis('off')
-        a.plot(image_x, image_y, 'go', ms=10, markeredgewidth=2, fillstyle='none')
+        for a in ax:
+            a.axis('off')
+            a.plot(image_x, image_y, 'go', ms=10, markeredgewidth=2, fillstyle='none')
 
-    plt.suptitle(f'{lens.uid}: Convergence Maps and Image Positions')
-    image_save_path = os.path.join(image_save_dir, f'03_{lens.uid}_convergence_maps_run{run}.png')
-    try:
-        plt.savefig(image_save_path)
-    except Exception as e:
-        print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
-    plt.close()
+        plt.suptitle(f'{lens.uid}: Convergence Maps and Image Positions')
+        image_save_path = os.path.join(image_save_dir, f'03_{lens.uid}_convergence_maps_run{run}.png')
+        try:
+            plt.savefig(image_save_path)
+        except Exception as e:
+            print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
+        plt.close()
 
     # ---------------------GENERATE SYNTHETIC IMAGES---------------------
     _, _, wdm_array = wdm_lens.get_array(num_pix * oversample, side, control_band, return_pieces=True)
@@ -387,43 +394,45 @@ def generate_power_spectra(tuple):
     max = np.max([wdm_residual, mdm_residual])
     vmax = np.max([np.abs(min), np.abs(max)])
 
-    _, ax = plt.subplots(2, 3, figsize=(10, 7), constrained_layout=True)
-    ax[0, 0].imshow(wdm_array)
-    ax[0, 1].imshow(mdm_array)
-    ax[0, 2].imshow(cdm_array)
-    ax[1, 0].imshow(wdm_residual, cmap='bwr', vmin=-vmax, vmax=vmax)
-    ax[1, 1].imshow(mdm_residual, cmap='bwr', vmin=-vmax, vmax=vmax)
+    if plot_figures:
+        _, ax = plt.subplots(2, 3, figsize=(10, 7), constrained_layout=True)
+        ax[0, 0].imshow(wdm_array)
+        ax[0, 1].imshow(mdm_array)
+        ax[0, 2].imshow(cdm_array)
+        ax[1, 0].imshow(wdm_residual, cmap='bwr', vmin=-vmax, vmax=vmax)
+        ax[1, 1].imshow(mdm_residual, cmap='bwr', vmin=-vmax, vmax=vmax)
 
-    ax[0, 0].set_title('WDM')
-    ax[0, 1].set_title('MDM')
-    ax[0, 2].set_title('CDM')
+        ax[0, 0].set_title('WDM')
+        ax[0, 1].set_title('MDM')
+        ax[0, 2].set_title('CDM')
 
-    for a in ax.flatten():
-        a.axis('off')
+        for a in ax.flatten():
+            a.axis('off')
 
-    plt.suptitle(f'{lens.uid}: Synthetic Images Varying Subhalo Population')
-    image_save_path = os.path.join(image_save_dir, f'04_{lens.uid}_synthetic_images_run{run}.png')
-    try:
-        plt.savefig(image_save_path)
-    except Exception as e:
-        print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
-    plt.close()
+        plt.suptitle(f'{lens.uid}: Synthetic Images Varying Subhalo Population')
+        image_save_path = os.path.join(image_save_dir, f'04_{lens.uid}_synthetic_images_run{run}.png')
+        try:
+            plt.savefig(image_save_path)
+        except Exception as e:
+            print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
+        plt.close()
 
     wdm_ps, r = power_spectrum_1d(wdm_array)
     mdm_ps, _ = power_spectrum_1d(mdm_array)
     cdm_ps, _ = power_spectrum_1d(cdm_array)
 
-    plt.plot(r, wdm_ps - cdm_ps, label='WDM')
-    plt.plot(r, mdm_ps - cdm_ps, label='MDM')
-    plt.xscale('log')
-    plt.title(f'{lens.uid}: Synthetic Image Power Spectra Residuals Varying Subhalo Population')
-    plt.legend()
-    image_save_path = os.path.join(image_save_dir, f'05_{lens.uid}_synthetic_image_power_spectra_run{run}.png')
-    try:
-        plt.savefig(image_save_path)
-    except Exception as e:
-        print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
-    plt.close()
+    if plot_figures:
+        plt.plot(r, wdm_ps - cdm_ps, label='WDM')
+        plt.plot(r, mdm_ps - cdm_ps, label='MDM')
+        plt.xscale('log')
+        plt.title(f'{lens.uid}: Synthetic Image Power Spectra Residuals Varying Subhalo Population')
+        plt.legend()
+        image_save_path = os.path.join(image_save_dir, f'05_{lens.uid}_synthetic_image_power_spectra_run{run}.png')
+        try:
+            plt.savefig(image_save_path)
+        except Exception as e:
+            print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
+        plt.close()
 
     # ---------------------GENERATE EXPOSURES VARYING SUBHALO POPULATION---------------------
     subhalos_psf_id_string = psf.get_psf_id_string(band=control_band, detector=position_control[0][0], detector_position=position_control[0][1], oversample=oversample)
@@ -439,24 +448,25 @@ def generate_power_spectra(tuple):
     max = np.max([wdm_residual, mdm_residual])
     vmax = np.max([np.abs(min), np.abs(max)])
 
-    _, ax = plt.subplots(2, 3, figsize=(10, 7), constrained_layout=True)
-    ax[0, 0].imshow(wdm_exposure)
-    ax[0, 1].imshow(mdm_exposure)
-    ax[0, 2].imshow(cdm_exposure)
-    ax[1, 0].imshow(wdm_residual, cmap='bwr', vmin=-vmax, vmax=vmax)
-    ax[1, 1].imshow(mdm_residual, cmap='bwr', vmin=-vmax, vmax=vmax)
-    ax[0, 0].set_title('WDM')
-    ax[0, 1].set_title('MDM')
-    ax[0, 2].set_title('CDM')
-    for a in ax.flatten():
-        a.axis('off')
-    plt.suptitle(f'{lens.uid}: Exposures Varying Subhalo Population')
-    image_save_path = os.path.join(image_save_dir, f'06_{lens.uid}_exposures_varying_subhalos_run{run}.png')
-    try:
-        plt.savefig(image_save_path)
-    except Exception as e:
-        print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
-    plt.close() 
+    if plot_figures:
+        _, ax = plt.subplots(2, 3, figsize=(10, 7), constrained_layout=True)
+        ax[0, 0].imshow(wdm_exposure)
+        ax[0, 1].imshow(mdm_exposure)
+        ax[0, 2].imshow(cdm_exposure)
+        ax[1, 0].imshow(wdm_residual, cmap='bwr', vmin=-vmax, vmax=vmax)
+        ax[1, 1].imshow(mdm_residual, cmap='bwr', vmin=-vmax, vmax=vmax)
+        ax[0, 0].set_title('WDM')
+        ax[0, 1].set_title('MDM')
+        ax[0, 2].set_title('CDM')
+        for a in ax.flatten():
+            a.axis('off')
+        plt.suptitle(f'{lens.uid}: Exposures Varying Subhalo Population')
+        image_save_path = os.path.join(image_save_dir, f'06_{lens.uid}_exposures_varying_subhalos_run{run}.png')
+        try:
+            plt.savefig(image_save_path)
+        except Exception as e:
+            print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
+        plt.close() 
 
     wdm_ps, r = power_spectrum_1d(wdm_exposure)
     mdm_ps, _ = power_spectrum_1d(mdm_exposure)
@@ -476,17 +486,18 @@ def generate_power_spectra(tuple):
     np.save(os.path.join(save_dir, f'res_ps_wdm_{lens.uid}_run{run}.npy'), res_ps_wdm)
     np.save(os.path.join(save_dir, f'res_ps_mdm_{lens.uid}_run{run}.npy'), res_ps_mdm)
 
-    plt.plot(r, res_ps_wdm, label='WDM')
-    plt.plot(r, res_ps_mdm, label='MDM')
-    plt.xscale('log')
-    plt.title(f'{lens.uid}: Exposure Power Spectra Residuals Varying Subhalo Population')
-    plt.legend()
-    image_save_path = os.path.join(image_save_dir, f'07_{lens.uid}_exposure_power_spectra_varying_subhalos_run{run}.png')
-    try:
-        plt.savefig(image_save_path)
-    except Exception as e:
-        print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
-    plt.close() 
+    if plot_figures:
+        plt.plot(r, res_ps_wdm, label='WDM')
+        plt.plot(r, res_ps_mdm, label='MDM')
+        plt.xscale('log')
+        plt.title(f'{lens.uid}: Exposure Power Spectra Residuals Varying Subhalo Population')
+        plt.legend()
+        image_save_path = os.path.join(image_save_dir, f'07_{lens.uid}_exposure_power_spectra_varying_subhalos_run{run}.png')
+        try:
+            plt.savefig(image_save_path)
+        except Exception as e:
+            print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
+        plt.close() 
 
     # ---------------------GENERATE EXPOSURES VARYING PSFS---------------------
     position_exposures = []
@@ -506,86 +517,87 @@ def generate_power_spectra(tuple):
     res_ps_pos_1 = power_spectra_list[1] - power_spectra_list[0]
     res_ps_pos_2 = power_spectra_list[2] - power_spectra_list[0]
     res_ps_pos_3 = power_spectra_list[3] - power_spectra_list[0]
-    # res_ps_pos_4 = power_spectra_list[4] - power_spectra_list[0]
-    # res_ps_pos_5 = power_spectra_list[5] - power_spectra_list[0]
-    # res_ps_pos_6 = power_spectra_list[6] - power_spectra_list[0]
-    # res_ps_pos_7 = power_spectra_list[7] - power_spectra_list[0]
-    # res_ps_pos_8 = power_spectra_list[8] - power_spectra_list[0]
-    # res_ps_pos_9 = power_spectra_list[9] - power_spectra_list[0]
-    # res_ps_pos_10 = power_spectra_list[10] - power_spectra_list[0]
-    # res_ps_pos_11 = power_spectra_list[11] - power_spectra_list[0]
-    # res_ps_pos_12 = power_spectra_list[12] - power_spectra_list[0]
-    # res_ps_pos_13 = power_spectra_list[13] - power_spectra_list[0]
-    # res_ps_pos_14 = power_spectra_list[14] - power_spectra_list[0]
-    # res_ps_pos_15 = power_spectra_list[15] - power_spectra_list[0]
-    # res_ps_pos_16 = power_spectra_list[16] - power_spectra_list[0]
-    # res_ps_pos_17 = power_spectra_list[17] - power_spectra_list[0]
-    # res_ps_pos_18 = power_spectra_list[18] - power_spectra_list[0]
+    res_ps_pos_4 = power_spectra_list[4] - power_spectra_list[0]
+    res_ps_pos_5 = power_spectra_list[5] - power_spectra_list[0]
+    res_ps_pos_6 = power_spectra_list[6] - power_spectra_list[0]
+    res_ps_pos_7 = power_spectra_list[7] - power_spectra_list[0]
+    res_ps_pos_8 = power_spectra_list[8] - power_spectra_list[0]
+    res_ps_pos_9 = power_spectra_list[9] - power_spectra_list[0]
+    res_ps_pos_10 = power_spectra_list[10] - power_spectra_list[0]
+    res_ps_pos_11 = power_spectra_list[11] - power_spectra_list[0]
+    res_ps_pos_12 = power_spectra_list[12] - power_spectra_list[0]
+    res_ps_pos_13 = power_spectra_list[13] - power_spectra_list[0]
+    res_ps_pos_14 = power_spectra_list[14] - power_spectra_list[0]
+    res_ps_pos_15 = power_spectra_list[15] - power_spectra_list[0]
+    res_ps_pos_16 = power_spectra_list[16] - power_spectra_list[0]
+    res_ps_pos_17 = power_spectra_list[17] - power_spectra_list[0]
+    res_ps_pos_18 = power_spectra_list[18] - power_spectra_list[0]
 
     np.save(os.path.join(save_dir, f'res_ps_pos_1_{lens.uid}_run{run}.npy'), res_ps_pos_1)
     np.save(os.path.join(save_dir, f'res_ps_pos_2_{lens.uid}_run{run}.npy'), res_ps_pos_2)
     np.save(os.path.join(save_dir, f'res_ps_pos_3_{lens.uid}_run{run}.npy'), res_ps_pos_3)
-    # np.save(os.path.join(save_dir, f'res_ps_pos_4_{lens.uid}_run{run}.npy'), res_ps_pos_4)
-    # np.save(os.path.join(save_dir, f'res_ps_pos_5_{lens.uid}_run{run}.npy'), res_ps_pos_5)
-    # np.save(os.path.join(save_dir, f'res_ps_pos_6_{lens.uid}_run{run}.npy'), res_ps_pos_6)
-    # np.save(os.path.join(save_dir, f'res_ps_pos_7_{lens.uid}_run{run}.npy'), res_ps_pos_7)
-    # np.save(os.path.join(save_dir, f'res_ps_pos_8_{lens.uid}_run{run}.npy'), res_ps_pos_8)
-    # np.save(os.path.join(save_dir, f'res_ps_pos_9_{lens.uid}_run{run}.npy'), res_ps_pos_9)
-    # np.save(os.path.join(save_dir, f'res_ps_pos_10_{lens.uid}_run{run}.npy'), res_ps_pos_10)
-    # np.save(os.path.join(save_dir, f'res_ps_pos_11_{lens.uid}_run{run}.npy'), res_ps_pos_11)
-    # np.save(os.path.join(save_dir, f'res_ps_pos_12_{lens.uid}_run{run}.npy'), res_ps_pos_12)
-    # np.save(os.path.join(save_dir, f'res_ps_pos_13_{lens.uid}_run{run}.npy'), res_ps_pos_13)
-    # np.save(os.path.join(save_dir, f'res_ps_pos_14_{lens.uid}_run{run}.npy'), res_ps_pos_14)
-    # np.save(os.path.join(save_dir, f'res_ps_pos_15_{lens.uid}_run{run}.npy'), res_ps_pos_15)
-    # np.save(os.path.join(save_dir, f'res_ps_pos_16_{lens.uid}_run{run}.npy'), res_ps_pos_16)
-    # np.save(os.path.join(save_dir, f'res_ps_pos_17_{lens.uid}_run{run}.npy'), res_ps_pos_17)
-    # np.save(os.path.join(save_dir, f'res_ps_pos_18_{lens.uid}_run{run}.npy'), res_ps_pos_18)
+    np.save(os.path.join(save_dir, f'res_ps_pos_4_{lens.uid}_run{run}.npy'), res_ps_pos_4)
+    np.save(os.path.join(save_dir, f'res_ps_pos_5_{lens.uid}_run{run}.npy'), res_ps_pos_5)
+    np.save(os.path.join(save_dir, f'res_ps_pos_6_{lens.uid}_run{run}.npy'), res_ps_pos_6)
+    np.save(os.path.join(save_dir, f'res_ps_pos_7_{lens.uid}_run{run}.npy'), res_ps_pos_7)
+    np.save(os.path.join(save_dir, f'res_ps_pos_8_{lens.uid}_run{run}.npy'), res_ps_pos_8)
+    np.save(os.path.join(save_dir, f'res_ps_pos_9_{lens.uid}_run{run}.npy'), res_ps_pos_9)
+    np.save(os.path.join(save_dir, f'res_ps_pos_10_{lens.uid}_run{run}.npy'), res_ps_pos_10)
+    np.save(os.path.join(save_dir, f'res_ps_pos_11_{lens.uid}_run{run}.npy'), res_ps_pos_11)
+    np.save(os.path.join(save_dir, f'res_ps_pos_12_{lens.uid}_run{run}.npy'), res_ps_pos_12)
+    np.save(os.path.join(save_dir, f'res_ps_pos_13_{lens.uid}_run{run}.npy'), res_ps_pos_13)
+    np.save(os.path.join(save_dir, f'res_ps_pos_14_{lens.uid}_run{run}.npy'), res_ps_pos_14)
+    np.save(os.path.join(save_dir, f'res_ps_pos_15_{lens.uid}_run{run}.npy'), res_ps_pos_15)
+    np.save(os.path.join(save_dir, f'res_ps_pos_16_{lens.uid}_run{run}.npy'), res_ps_pos_16)
+    np.save(os.path.join(save_dir, f'res_ps_pos_17_{lens.uid}_run{run}.npy'), res_ps_pos_17)
+    np.save(os.path.join(save_dir, f'res_ps_pos_18_{lens.uid}_run{run}.npy'), res_ps_pos_18)
 
-    # generate figure
-    _, ax = plt.subplots(2, 4, figsize=(12, 7), constrained_layout=True)
+    if plot_figures:
+        _, ax = plt.subplots(2, 4, figsize=(12, 7), constrained_layout=True)
 
-    ax[0, 0].imshow(position_exposures[0])
-    ax[0, 1].imshow(position_exposures[1])
-    ax[0, 2].imshow(position_exposures[2])
-    ax[0, 3].imshow(position_exposures[3])
+        ax[0, 0].imshow(position_exposures[0])
+        ax[0, 1].imshow(position_exposures[1])
+        ax[0, 2].imshow(position_exposures[2])
+        ax[0, 3].imshow(position_exposures[3])
 
-    min = np.min([res_im_pos_1, res_im_pos_2, res_im_pos_3])
-    max = np.max([res_im_pos_1, res_im_pos_2, res_im_pos_3])
-    vmax = np.max([np.abs(min), np.abs(max)])
+        min = np.min([res_im_pos_1, res_im_pos_2, res_im_pos_3])
+        max = np.max([res_im_pos_1, res_im_pos_2, res_im_pos_3])
+        vmax = np.max([np.abs(min), np.abs(max)])
 
-    ax[1, 1].imshow(res_im_pos_1, cmap='bwr', vmin=-vmax, vmax=vmax)
-    ax[1, 2].imshow(res_im_pos_2, cmap='bwr', vmin=-vmax, vmax=vmax)
-    ax[1, 3].imshow(res_im_pos_3, cmap='bwr', vmin=-vmax, vmax=vmax)
+        ax[1, 1].imshow(res_im_pos_1, cmap='bwr', vmin=-vmax, vmax=vmax)
+        ax[1, 2].imshow(res_im_pos_2, cmap='bwr', vmin=-vmax, vmax=vmax)
+        ax[1, 3].imshow(res_im_pos_3, cmap='bwr', vmin=-vmax, vmax=vmax)
 
-    # for i, (detector, detector_position) in enumerate(position_control.items()):
-    #     ax[0, i].set_title(f'{detector} ({detector_position})')
+        # for i, (detector, detector_position) in enumerate(position_control.items()):
+        #     ax[0, i].set_title(f'{detector} ({detector_position})')
 
-    for a in ax.flatten():
-        a.axis('off')
+        for a in ax.flatten():
+            a.axis('off')
 
-    plt.suptitle(f'{lens.uid}: Varying PSFs')
-    image_save_path = os.path.join(image_save_dir, f'08_{lens.uid}_exposures_varying_psfs_run{run}.png')
-    try:
-        plt.savefig(os.path.join(image_save_dir, f'08_{lens.uid}_exposures_varying_psfs_run{run}.png'))
-    except Exception as e:
-        print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
-    plt.close() 
+        plt.suptitle(f'{lens.uid}: Varying PSFs')
+        image_save_path = os.path.join(image_save_dir, f'08_{lens.uid}_exposures_varying_psfs_run{run}.png')
+        try:
+            plt.savefig(os.path.join(image_save_dir, f'08_{lens.uid}_exposures_varying_psfs_run{run}.png'))
+        except Exception as e:
+            print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
+        plt.close() 
 
     # ---------------------COMPARE POWER SPECTRA RESIDUALS---------------------
-    plt.plot(r, res_ps_pos_1)  # , label=f'{list(positions.keys())[0]}'
-    plt.plot(r, res_ps_pos_2)
-    plt.plot(r, res_ps_pos_3)
-    plt.plot(r, res_ps_wdm, label='WDM')
-    plt.plot(r, res_ps_mdm, label='MDM')
-    plt.xscale('log')
-    plt.title(f'{lens.uid}: Comparing Power Spectra Residuals')
-    plt.legend()
-    image_save_path = os.path.join(image_save_dir, f'09_{lens.uid}_compare_power_spectra_residuals_run{run}.png')
-    try:
-        plt.savefig(os.path.join(image_save_dir, f'09_{lens.uid}_compare_power_spectra_residuals_run{run}.png'))
-    except Exception as e:
-        print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
-    plt.close() 
+    if plot_figures:
+        plt.plot(r, res_ps_pos_1)  # , label=f'{list(positions.keys())[0]}'
+        plt.plot(r, res_ps_pos_2)
+        plt.plot(r, res_ps_pos_3)
+        plt.plot(r, res_ps_wdm, label='WDM')
+        plt.plot(r, res_ps_mdm, label='MDM')
+        plt.xscale('log')
+        plt.title(f'{lens.uid}: Comparing Power Spectra Residuals')
+        plt.legend()
+        image_save_path = os.path.join(image_save_dir, f'09_{lens.uid}_compare_power_spectra_residuals_run{run}.png')
+        try:
+            plt.savefig(os.path.join(image_save_dir, f'09_{lens.uid}_compare_power_spectra_residuals_run{run}.png'))
+        except Exception as e:
+            print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
+        plt.close() 
 
     print(f'Finished lens {lens.uid}.')
 
