@@ -239,7 +239,7 @@ def run_slsim(tuple):
     filtered_sample['total'] = len(lens_population)
     num_samples = 16
     filter_1, filter_2 = 0, 0
-    filtered_sample['filter_1'] = []
+    # filtered_sample['filter_1'] = []
     filtered_sample['filter_2'] = []
 
     # apply additional detectability criteria
@@ -248,15 +248,15 @@ def run_slsim(tuple):
     k = 0
     for candidate in tqdm(lens_population, disable=not debugging):
         # 1. Einstein radius and Sersic radius
-        _, kwargs_params = candidate.lenstronomy_kwargs(band=survey_params['large_lens_band'])
-        lens_mag = candidate.deflector_magnitude(band=survey_params['large_lens_band'])
+        # _, kwargs_params = candidate.lenstronomy_kwargs(band=survey_params['large_lens_band'])
+        # lens_mag = candidate.deflector_magnitude(band=survey_params['large_lens_band'])
 
-        if kwargs_params['kwargs_lens'][0]['theta_E'] < kwargs_params['kwargs_lens_light'][0][
-            'R_sersic'] and lens_mag < survey_params['large_lens_mag_max']:
-            filter_1 += 1
-            if filter_1 <= num_samples:
-                filtered_sample['filter_1'].append(candidate)
-            continue
+        # if kwargs_params['kwargs_lens'][0]['theta_E'] < kwargs_params['kwargs_lens_light'][0][
+        #     'R_sersic'] and lens_mag < survey_params['large_lens_mag_max']:
+        #     filter_1 += 1
+        #     if filter_1 <= num_samples:
+        #         filtered_sample['filter_1'].append(candidate)
+        #     continue
 
         # 2. SNR
         snr, masked_snr_array, snr_list, _ = survey_sim.get_snr(candidate,
@@ -299,7 +299,7 @@ def run_slsim(tuple):
     if debugging: print(f'Run {run}: {len(detectable_gglenses)} detectable lens(es)')
 
     # save information about which lenses got filtered out
-    filtered_sample['num_filter_1'] = filter_1
+    # filtered_sample['num_filter_1'] = filter_1
     filtered_sample['num_filter_2'] = filter_2
     util.pickle(os.path.join(output_dir, f'filtered_sample_{run}_sca{sca_id}.pkl'), filtered_sample)
 
