@@ -71,12 +71,10 @@ def get_snr(gglens, band, zp, sca_id=1, num_pix=45, side=4.95, oversample=1, exp
     snr_array = source / np.sqrt(total)
 
     if not np.any(snr_array >= 1):
-        masked_snr_array = np.ma.masked_where(snr_array <= np.quantile(snr_array, 0.9),
-                                              snr_array)  # TODO this must be the mask that's causing issues
+        return 1, np.ma.array(snr_array, mask=True), [1], None  # TODO I'm doing this because SNRs for non-detectable lenses don't really matter right now
+        # masked_snr_array = np.ma.masked_where(snr_array <= np.quantile(snr_array, 0.9), snr_array)  # TODO this must be the mask that's causing issues
     else:
-        # TODO I'm doing this because SNRs for non-detectable lenses don't really matter right now
-        # masked_snr_array = np.ma.masked_where(snr_array <= 1, snr_array)
-        return 1, np.ma.array(snr_array, mask=True), [1], None
+        masked_snr_array = np.ma.masked_where(snr_array <= 1, snr_array)
 
     # calculate regions of connected pixels given the snr mask
     indices_list = regions.get_regions(masked_snr_array, debug_dir)

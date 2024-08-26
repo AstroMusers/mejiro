@@ -1,4 +1,4 @@
-# get_regions() borrows heavily from the tutorial at https://www.geeksforgeeks.org/find-the-number-of-islands-using-dfs/
+# this file borrows heavily from the tutorial at https://www.geeksforgeeks.org/find-the-number-of-islands-using-dfs/
 
 import os  # TODO temp
 
@@ -87,11 +87,9 @@ class Graph:
 
         for i in range(self.ROW):
             for j in range(self.COL):
-                # If a cell with value 1 is not visited yet,
-                # then new island found
+                # if a cell with value 1 is not visited yet, then new island found
                 if visited[i][j] == False and self.graph[i][j] != 0:
-                    # Visit all cells in this island
-                    # and increment island count
+                    # visit all cells in this island and increment island count
                     coords = self.DFS(i, j, visited)
                     coord_list.append(coords)
 
