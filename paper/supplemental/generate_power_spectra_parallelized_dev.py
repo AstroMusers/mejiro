@@ -40,11 +40,11 @@ def get_masked_exposure(lens, model, band, psf, num_pix, oversample, exposure_ti
 
 
 def get_large(lens, subhalo_params):
-    return _get_subhalos(lens, subhalo_params, log_mlow=9.5, log_mhigh=10., cone_factor=3)
+    return _get_subhalos(lens, subhalo_params, log_mlow=9., log_mhigh=10., cone_factor=3)
 
 
 def get_med(lens, subhalo_params):
-    return _get_subhalos(lens, subhalo_params, log_mlow=7.5, log_mhigh=9.5, cone_factor=4)
+    return _get_subhalos(lens, subhalo_params, log_mlow=7.5, log_mhigh=9., cone_factor=4)
 
 
 def get_small(lens, subhalo_params):
@@ -80,11 +80,11 @@ def main(config):
     # script configuration options
     debugging = False
     require_alignment = False
-    limit = 1000
+    limit = 100
     snr_threshold = 50.
     snr_pixel_threshold = 1.
     einstein_radius_threshold = 0.
-    log_m_host_threshold = 13.3  # 13.3
+    log_m_host_threshold = 13.  # 13.3
 
     # set subhalo and imaging params
     subhalo_params = {
