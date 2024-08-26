@@ -190,6 +190,7 @@ def run_slsim(tuple):
         if debugging: print(f'Computing SNRs for {len(total_lens_population)} lenses')
         snr_list = []
         # j = 0
+        num_exceptions = 0
         for candidate in tqdm(total_lens_population, disable=not debugging):
             snr, _, _, _ = survey_sim.get_snr(candidate,
                                               band=survey_params['snr_band'],
@@ -202,7 +203,9 @@ def run_slsim(tuple):
                                               debugging=False,
                                               psf_cache_dir=psf_cache_dir)
             if snr is None:
+                num_exceptions += 1
                 continue
+            
             snr_list.append(snr)
             # if debugging:
             #     if j < 25:
@@ -212,7 +215,6 @@ def run_slsim(tuple):
         np.save(os.path.join(output_dir, f'snr_list_{run}_sca{sca_id}.npy'), snr_list)
 
         if debugging:
-            num_exceptions = len([snr for snr in snr_list if snr is None])
             print(f'Number of exceptions: {num_exceptions}; {num_exceptions / len(snr_list) * 100:.2f}%')
 
         # TODO once get_regions issue(s) resolved, the following line should be reinstated
