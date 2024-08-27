@@ -46,16 +46,20 @@ def kernel_to_galsim_interpolated_image(kernel, oversample, pixel_scale=0.11):
     return galsim.InterpolatedImage(psf_image)
 
 
-def get_gaussian_psf(fwhm, oversample, pixel_scale=0.11):
-    from lenstronomy.Data.psf import PSF
+# def get_gaussian_psf(fwhm, oversample, pixel_scale=0.11):
+#     from lenstronomy.Data.psf import PSF
 
-    kwargs_psf = {'psf_type': 'GAUSSIAN', 'fwhm': fwhm, 'pixel_size': pixel_scale, 'truncation': 6}
-    psf_class = PSF(**kwargs_psf)
+#     kwargs_psf = {'psf_type': 'GAUSSIAN', 'fwhm': fwhm, 'pixel_size': pixel_scale, 'truncation': 6}
+#     psf_class = PSF(**kwargs_psf)
 
-    # import PSF to GalSim
-    oversampled_pixel_scale = pixel_scale / oversample
-    psf_image = galsim.Image(psf_class.kernel_pixel, scale=oversampled_pixel_scale)
-    return galsim.InterpolatedImage(psf_image)
+#     # import PSF to GalSim
+#     oversampled_pixel_scale = pixel_scale / oversample
+#     psf_image = galsim.Image(psf_class.kernel_pixel, scale=oversampled_pixel_scale)
+#     return galsim.InterpolatedImage(psf_image)
+
+
+def get_gaussian_psf(fwhm):
+    return galsim.Gaussian(fwhm=fwhm, flux=1.)
 
 
 def get_galsim_psf(band, detector, detector_position, pupil_bin=1):

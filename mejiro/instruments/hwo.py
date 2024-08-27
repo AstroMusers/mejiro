@@ -34,9 +34,11 @@ class HWO(InstrumentBase):
             [0.016, 0.016, 0.016, 0.016, 0.016, 0.016, 0.016, 0.04, 0.04, 0.04])  # set by aperture in method below
 
         # methods
-        self.set_pixel_scale()
+        self._set_pixel_scale()
+        self._set_psf_fwhm()
+        
 
-    def set_pixel_scale(self):
+    def _set_pixel_scale(self):
         self.pixel_scale = 1.22 * (self.pivotwave * 0.000000001) * 206264.8062 / self.aperture / 2.
         # this enforces the rule that the pixel sizes are set at the shortest wavelength in each channel 
         self.pixel_scale[0:2] = 1.22 * (
@@ -45,17 +47,18 @@ class HWO(InstrumentBase):
                 self.pivotwave[2] * 0.000000001) * 206264.8062 / self.aperture / 2.  # Opt set at U
         self.pixel_scale[-3:] = 1.22 * (
                 self.pivotwave[7] * 0.000000001) * 206264.8062 / self.aperture / 2.  # NIR set at J
+        
+    def _set_psf_fwhm(self):
+        diff_limit = 1.22 * (500. * 0.000000001) * 206264.8062 / self.aperture
+
+        self.fwhm_psf = 1.22 * self.pivotwave * 0.000000001 * 206264.8062 / self.aperture
+        self.fwhm_psf[self.fwhm_psf < diff_limit] = self.fwhm_psf[self.fwhm_psf < diff_limit] * 0.0 + diff_limit
 
     def get_pixel_scale(self, band):
         index = self._get_index(band)
         return self._pixel_size[index]
 
     def get_psf_fwhm(self, band):
-        diff_limit = 1.22 * (500. * 0.000000001) * 206264.8062 / self.aperture
-
-        self.fwhm_psf = 1.22 * self.pivotwave * 0.000000001 * 206264.8062 / self.aperture
-        self.fwhm_psf[self.fwhm_psf < diff_limit] = self.fwhm_psf[self.fwhm_psf < diff_limit] * 0.0 + diff_limit
-
         index = self._get_index(band)
         return self.fwhm_psf[index]
 

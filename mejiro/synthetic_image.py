@@ -89,7 +89,7 @@ class SyntheticImage:
         self.num_pix = np.ceil(self.arcsec / self.pixel_scale).astype(int)
         self.arcsec = self.num_pix * self.pixel_scale
         print(
-            f'Computing on pixel grid of size {self.num_pix}x{self.num_pix} ({self.arcsec}\"x{self.arcsec}\") with pixel scale {self.pixel_scale} (natively {self.native_pixel_scale} oversampled by factor {self.oversample})')
+            f'Computing on pixel grid of size {self.num_pix}x{self.num_pix} ({self.arcsec}\"x{self.arcsec}\") with pixel scale {self.pixel_scale} arcsec/pixel (natively {self.native_pixel_scale} arcsec/pixel oversampled by factor {self.oversample})')
 
         _, _, self.ra_at_xy_0, self.dec_at_xy_0, _, _, self.Mpix2coord, self.Mcoord2pix = (
             len_util.make_grid_with_coordtransform(
