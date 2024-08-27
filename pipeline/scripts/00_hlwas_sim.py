@@ -264,6 +264,7 @@ def run_slsim(tuple):
         snr, masked_snr_array, snr_list, _ = survey_sim.get_snr(candidate,
                                                                           band=survey_params['snr_band'],
                                                                           zp=sca_zp_dict[survey_params['snr_band']],
+                                                                          sca_id=sca_id,
                                                                           num_pix=survey_params['snr_num_pix'],
                                                                           side=survey_params['snr_side'],
                                                                           oversample=survey_params['snr_oversample'],
