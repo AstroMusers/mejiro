@@ -63,7 +63,8 @@ def _get_subhalos(lens, subhalo_params, log_mlow, log_mhigh, cone_factor):
                     log_mhigh=log_mhigh,
                     log_m_host=np.log10(lens.main_halo_mass),
                     r_tidal=subhalo_params['r_tidal'],
-                    cone_opening_angle_arcsec=lens.get_einstein_radius() * cone_factor,
+                    # cone_opening_angle_arcsec=lens.get_einstein_radius() * cone_factor,
+                    cone_opening_angle_arcsec=5.,
                     LOS_normalization=subhalo_params['los_normalization'])
     except Exception as e:
         print(f'StrongLens {lens.uid}: {e}')
@@ -83,11 +84,11 @@ def main(config):
     # script configuration options
     debugging = False
     require_alignment = False
-    limit = 100
+    limit = 1000
     snr_threshold = 50.
     snr_pixel_threshold = 1.
     einstein_radius_threshold = 0.
-    log_m_host_threshold = 13.3  # 13.3
+    log_m_host_threshold = 13.  # 13.3
 
     # set subhalo and imaging params
     subhalo_params = {
@@ -105,7 +106,7 @@ def main(config):
     bands = ['F106']
     # bands = ['F106', 'F129', 'F158', 'F184']
     position_control = [
-        ('4', (2048, 2048))
+        ('2', (2048, 2048))
     ]
     positions = [
         ('1', (2048, 2048)),
@@ -231,6 +232,9 @@ def generate_power_spectra(tuple):
 
     if debugging: print(f'Processing lens {lens.uid}...')
     lens._set_classes()
+
+    from datetime import datetime
+    np.random.seed(int(datetime.now().timestamp()))
 
     # ---------------------GENERATE SUBHALO POPULATIONS---------------------
     # large subhalos
