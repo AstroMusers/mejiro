@@ -80,7 +80,7 @@ def main(config):
     # script configuration options
     debugging = False
     require_alignment = False
-    limit = 100
+    limit = 1000
     snr_threshold = 50.
     snr_pixel_threshold = 1.
     einstein_radius_threshold = 0.
@@ -442,8 +442,8 @@ def generate_power_spectra(tuple):
     mdm_exposure = get_masked_exposure(mdm_lens, mdm_array, control_band, subhalos_psf_kernel, num_pix, oversample, exposure_time, snr_pixel_threshold)
     cdm_exposure = get_masked_exposure(cdm_lens, cdm_array, control_band, subhalos_psf_kernel, num_pix, oversample, exposure_time, snr_pixel_threshold)
 
-    wdm_residual = wdm_exposure - cdm_exposure
-    mdm_residual = mdm_exposure - cdm_exposure
+    wdm_residual = cdm_exposure - wdm_exposure
+    mdm_residual = cdm_exposure - mdm_exposure
     min = np.min([wdm_residual, mdm_residual])
     max = np.max([wdm_residual, mdm_residual])
     vmax = np.max([np.abs(min), np.abs(max)])
@@ -481,8 +481,8 @@ def generate_power_spectra(tuple):
     # np.save(os.path.join(save_dir, f'{lens.uid}_ps_subs_mdm_{id(mdm_ps)}.npy'), mdm_ps)
     # np.save(os.path.join(save_dir, f'{lens.uid}_ps_subs_cdm_{id(cdm_ps)}.npy'), cdm_ps)
 
-    res_ps_wdm = wdm_ps - cdm_ps
-    res_ps_mdm = mdm_ps - cdm_ps
+    res_ps_wdm = cdm_ps - wdm_ps
+    res_ps_mdm = cdm_ps - mdm_ps
     np.save(os.path.join(save_dir, f'res_ps_wdm_{lens.uid}_run{run}.npy'), res_ps_wdm)
     np.save(os.path.join(save_dir, f'res_ps_mdm_{lens.uid}_run{run}.npy'), res_ps_mdm)
 
