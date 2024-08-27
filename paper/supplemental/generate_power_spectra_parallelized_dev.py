@@ -15,7 +15,7 @@ from pyHalo.preset_models import CDM
 from tqdm import tqdm
 
 
-def get_masked_exposure(lens, model, band, psf, num_pix, oversample, exposure_time, snr_threshold):
+def get_masked_exposure(lens, model, band, psf, num_pix, oversample, exposure_time, snr_threshold, mask=False):
     from mejiro.helpers import gs
     from mejiro.helpers import psf as psf_util
     from mejiro.utils import util
@@ -28,15 +28,18 @@ def get_masked_exposure(lens, model, band, psf, num_pix, oversample, exposure_ti
     image = gs.convolve(interp, psf, num_pix)
     final_array = image.array
 
-    # mask = np.ma.getmask(lens.masked_snr_array)
-    data = lens.masked_snr_array.data
-    strict_mask = np.ma.masked_where(data < snr_threshold, data)
-    mask = np.ma.getmask(strict_mask)
-    if mask.shape != final_array.shape:
-        mask = util.center_crop_image(mask, final_array.shape)
-    masked_image = np.ma.masked_array(final_array, mask)
-    np.ma.set_fill_value(masked_image, 0)
-    return masked_image.filled()
+    if mask:
+        # mask = np.ma.getmask(lens.masked_snr_array)
+        data = lens.masked_snr_array.data
+        strict_mask = np.ma.masked_where(data < snr_threshold, data)
+        mask = np.ma.getmask(strict_mask)
+        if mask.shape != final_array.shape:
+            mask = util.center_crop_image(mask, final_array.shape)
+        masked_image = np.ma.masked_array(final_array, mask)
+        np.ma.set_fill_value(masked_image, 0)
+        return masked_image.filled()
+    else:
+        return final_array
 
 
 def get_large(lens, subhalo_params):
@@ -80,11 +83,11 @@ def main(config):
     # script configuration options
     debugging = False
     require_alignment = False
-    limit = 1000
+    limit = 100
     snr_threshold = 50.
     snr_pixel_threshold = 1.
     einstein_radius_threshold = 0.
-    log_m_host_threshold = 13.  # 13.3
+    log_m_host_threshold = 13.3  # 13.3
 
     # set subhalo and imaging params
     subhalo_params = {
