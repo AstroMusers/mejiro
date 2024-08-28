@@ -28,6 +28,8 @@ def get_masked_exposure(lens, model, band, psf, num_pix, oversample, exposure_ti
     image = gs.convolve(interp, psf, num_pix)
     final_array = image.array
 
+    util.center_crop_image(final_array, (90, 90))
+
     if mask:
         # mask = np.ma.getmask(lens.masked_snr_array)
         data = lens.masked_snr_array.data
@@ -84,7 +86,7 @@ def main(config):
     # script configuration options
     debugging = False
     require_alignment = False
-    limit = 1000
+    limit = 100
     snr_threshold = 50.
     snr_pixel_threshold = 1.
     einstein_radius_threshold = 0.
@@ -98,8 +100,8 @@ def main(config):
     }
     imaging_params = {
         'oversample': 5,
-        'num_pix': 45,
-        'side': 4.95,
+        'num_pix': 97,
+        'side': 10.67,
         'control_band': 'F106',
         'exposure_time': 146,
     }
