@@ -98,6 +98,12 @@ def load_skypy_config(path):
     return skypy_config
 
 
+def polar_to_cartesian(r, theta):
+    x = r * np.cos(theta)
+    y = r * np.sin(theta)
+    return x, y
+
+
 def percent_change(a, b):
     """
     Calculate the percentage change between two values.

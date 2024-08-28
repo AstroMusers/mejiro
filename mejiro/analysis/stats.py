@@ -3,7 +3,8 @@ from scipy.optimize import curve_fit
 
 
 def chi_square(observed, expected):
-    return (((observed - expected) ** 2) / expected).sum().sum()
+    array = ((observed - expected) ** 2) / expected
+    return np.nan_to_num(array, copy=False).sum().sum()
 
 
 def chi2_distance(A, B):

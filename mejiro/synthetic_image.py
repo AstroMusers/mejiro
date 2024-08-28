@@ -8,7 +8,7 @@ from lenstronomy.Util import util as len_util
 
 
 class SyntheticImage:
-    def __init__(self, strong_lens, instrument, band, arcsec, oversample=1):
+    def __init__(self, strong_lens, instrument, band, arcsec, oversample=1, **kwargs):
         # TODO assert band is valid for instrument
         # assert band in instrument.get_bands()
 
@@ -17,6 +17,7 @@ class SyntheticImage:
         self.band = band
         self.arcsec = arcsec
         self.oversample = oversample
+        self.kwargs = kwargs
 
         # calculate surface brightness
         self.image = self._calculate_surface_brightness()
@@ -69,7 +70,11 @@ class SyntheticImage:
             return total_image
 
     def _convert_magnitudes_to_lenstronomy_amps(self):
-        magnitude_zero_point = self.instrument.get_zeropoint_magnitude(self.band)
+        # TODO this is also awful
+        if self.instrument.name == 'Roman':
+            magnitude_zero_point = self.instrument.get_zeropoint_magnitude(self.band, self.kwargs['sca'])
+        elif self.instrument.name == 'HWO':
+            magnitude_zero_point = self.instrument.get_zeropoint_magnitude(self.band)
 
         kwargs_lens_light_amp = data_util.magnitude2amplitude(self.strong_lens.lens_light_model_class,
                                                               [self.strong_lens.kwargs_lens_light_dict[self.band]],
@@ -83,8 +88,12 @@ class SyntheticImage:
         self.strong_lens.kwargs_source_amp_dict[self.band] = kwargs_source_amp[0]
 
     def _set_up_pixel_grid(self):
-        # TODO compute num_pix based on arcsec and oversample
-        self.native_pixel_scale = self.instrument.get_pixel_scale(self.band)
+        # TODO this is awful
+        if self.instrument.name == 'Roman':
+            self.native_pixel_scale = self.instrument.pixel_scale
+        elif self.instrument.name == 'HWO':
+            self.native_pixel_scale = self.instrument.get_pixel_scale(self.band)
+
         self.pixel_scale = self.native_pixel_scale / self.oversample
         self.num_pix = np.ceil(self.arcsec / self.pixel_scale).astype(int)
         self.arcsec = self.num_pix * self.pixel_scale

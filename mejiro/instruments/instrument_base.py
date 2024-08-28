@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
 
 class InstrumentBase(ABC):
@@ -12,5 +12,9 @@ class InstrumentBase(ABC):
     # TODO enforce bands an attribute
 
     # @abstractmethod
-    # def psf_fwhm(self, band):
+    # def get_pixel_scale(self, band):
     #     pass
+
+    @abstractmethod
+    def validate_instrument_config(self, config):
+        pass

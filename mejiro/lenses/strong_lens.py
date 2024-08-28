@@ -215,8 +215,6 @@ class StrongLens:
         return self.lens_cosmo.mass_in_theta_E(self.get_einstein_radius())
 
     def get_image_positions(self, pixel_coordinates=True):
-        self._set_up_pixel_grid()
-
         from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
         source_x = self.kwargs_source_dict['F106']['center_x']
         source_y = self.kwargs_source_dict['F106']['center_y']
@@ -224,6 +222,7 @@ class StrongLens:
         image_x, image_y = solver.image_position_from_source(sourcePos_x=source_x, sourcePos_y=source_y,
                                                             kwargs_lens=self.kwargs_lens)
         if pixel_coordinates:
+            self._set_up_pixel_grid()
             return self.coords.map_coord2pix(ra=image_x, dec=image_y)
         else:
             return image_x, image_y
@@ -241,6 +240,12 @@ class StrongLens:
                    LOS_normalization=los_normalization,
                    kwargs_cosmo=util.get_kwargs_cosmo(self.cosmo),
                    two_halo_contribution=False)
+    
+    def add_subhalo(self, subhalo_type, subhalo_kwargs):
+        self.lens_model_list.append(subhalo_type)
+        self.lens_redshift_list.append(self.z_lens)
+        self.kwargs_lens.append(subhalo_kwargs)
+        self.lens_model_class = LensModel(self.lens_model_list)        
 
     def _set_pyhalo_cosmology(self):
         from pyHalo.Cosmology.cosmology import Cosmology

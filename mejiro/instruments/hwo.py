@@ -1,7 +1,9 @@
+import galsim
 import numpy as np
+import math
 
 from mejiro.instruments.instrument_base import InstrumentBase
-
+from mejiro.helpers import psf
 
 # from syotools.models import Camera, Telescope
 
@@ -37,7 +39,57 @@ class HWO(InstrumentBase):
         # methods
         self._set_pixel_scale()
         self._set_psf_fwhm()
-        
+
+    def get_exposure(self, synthetic_image, interp, rng, exposure_time):
+        # get PSF
+        self.psf_fwhm = self.get_psf_fwhm(self.synthetic_image.band)
+        print(f'PSF FWHM: {self.psf_fwhm}')
+        # self.psf = psf.get_gaussian_psf(self.psf_fwhm, self.synthetic_image.oversample,
+                                        # pixel_scale=self.synthetic_image.native_pixel_scale)
+        self.psf = psf.get_gaussian_psf(self.psf_fwhm)
+        self.psf_image = self.psf.drawImage(scale=self.synthetic_image.pixel_scale)
+
+        # convolve with PSF
+        convolved = galsim.Convolve([interp, self.psf])
+
+        # draw image
+        output_num_pix = math.floor(synthetic_image.num_pix / synthetic_image.oversample)
+        im = galsim.ImageF(output_num_pix, output_num_pix, scale=synthetic_image.native_pixel_scale)
+        im.setOrigin(0, 0)
+        image = convolved.drawImage(im)
+
+        # quantize, since integer number of photo-electrons are being created
+        image.quantize()
+
+        # add sky background
+        sky_level = None 
+        # TODO remember to use output_num_pix
+
+        # add Poisson noise due to arrival times of photons from signal and sky
+        poisson_noise = galsim.PoissonNoise(rng)
+        image.addNoise(poisson_noise)
+
+        # add dark current
+        dark_current = self.get_dark_current(self.synthetic_image.band)
+        dark_noise = galsim.DeviateNoise(galsim.PoissonDeviate(rng, dark_current))
+        image.addNoise(dark_noise)
+
+        # add read noise
+        read_noise_sigma = self.get_read_noise(self.synthetic_image.band)
+        read_noise = galsim.GaussianNoise(rng, sigma=read_noise_sigma)
+        image.addNoise(read_noise)
+
+        # gain
+        image /= self.gain
+
+        # quantize, since analog-to-digital conversion gives integers
+        image.quantize()
+
+
+    @staticmethod
+    def validate_instrument_config(config):
+        # TODO implement this
+        pass
 
     def _set_pixel_scale(self):
         self.pixel_scale = 1.22 * (self.pivotwave * 0.000000001) * 206264.8062 / self.aperture / 2.

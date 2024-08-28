@@ -1,9 +1,13 @@
 import os
 import json
 import pandas as pd
+import galsim
+import math
+from copy import deepcopy
 
 import mejiro
 from mejiro.instruments.instrument_base import InstrumentBase
+from mejiro.helpers import psf, gs
 
 
 class Roman(InstrumentBase):
@@ -24,22 +28,86 @@ class Roman(InstrumentBase):
 
         self.pixel_scale = 0.11  # arcsec/pixel
         self.diameter = 2.4  # m
+        self.psf_jitter = 0.012  # arcsec per axis
 
-    # retrieved 25 June 2024 from https://outerspace.stsci.edu/pages/viewpage.action?spaceKey=ISWG&title=Roman+WFI+and+Observatory+Performance
-    psf_fwhm = {
-        'F062': 0.058,
-        'F087': 0.073,
-        'F106': 0.087,
-        'F129': 0.106,
-        'F158': 0.128,
-        'F184': 0.146,
-        'F213': 0.169,
-        'F146': 0.105
-    }
+    def get_exposure(self, synthetic_image, interp, rng, exposure_time, **kwargs):
+        # get PSF
+        detector = kwargs['sca']
+        detector_position = kwargs['sca_position']
+        self.psf = psf.get_webbpsf_psf(synthetic_image.band, detector, detector_position, synthetic_image.oversample, check_cache=True, psf_cache_dir=None, suppress_output=False)
 
-    psf_jitter = 0.012  # arcsec per axis
+        # TODO FIX
+        self.psf_image = self.psf.drawImage(scale=synthetic_image.pixel_scale)
 
-    def get_zeropoint(self, band, sca_id):
+        # convolve with PSF
+        convolved = galsim.Convolve([interp, self.psf])
+
+        # draw image
+        output_num_pix = math.floor(synthetic_image.num_pix / synthetic_image.oversample)
+        im = galsim.ImageF(output_num_pix, output_num_pix, scale=synthetic_image.native_pixel_scale)
+        im.setOrigin(0, 0)
+        image = convolved.drawImage(im)
+
+        # add sky background
+        bkgs = gs.get_sky_bkgs(synthetic_image.band, exposure_time, num_pix=output_num_pix, oversample=synthetic_image.oversample)
+        bkg = bkgs[synthetic_image.band]
+        image += bkg
+
+        # Poisson noise
+        if 'poisson_noise' in kwargs:
+            image += kwargs['poisson_noise']
+        else:
+            before = deepcopy(image)
+            image.addNoise(galsim.PoissonNoise(rng))
+            poisson_noise = image - before
+        image.quantize()
+
+        # reciprocity failure
+        galsim.roman.addReciprocityFailure(image, exptime=exposure_time)
+
+        # dark current
+        if 'dark_noise' in kwargs:
+            image += kwargs['dark_noise']
+        else:
+            before = deepcopy(image)
+            total_dark_current = galsim.roman.dark_current
+            image.addNoise(galsim.DeviateNoise(galsim.PoissonDeviate(rng, total_dark_current)))
+            dark_noise = image - before
+
+        # skip persistence
+
+        # nonlinearity
+        galsim.roman.applyNonlinearity(image)
+
+        # IPC
+        galsim.roman.applyIPC(image)
+
+        # read noise
+        if 'read_noise' in kwargs:
+            image += kwargs['read_noise']
+        else:
+            before = deepcopy(image)
+            read_noise_sigma = galsim.roman.read_noise
+            image.addNoise(galsim.GaussianNoise(rng, sigma=read_noise_sigma))
+            read_noise = image - before
+
+        # gain
+        image /= galsim.roman.gain
+
+        # quantize
+        image.quantize()
+
+        if 'return_noise' in kwargs and kwargs['return_noise']:
+            return image, poisson_noise, dark_noise, read_noise
+        else:
+            return image
+
+    @staticmethod
+    def validate_instrument_config(config):
+        # TODO implement this
+        pass
+
+    def get_zeropoint_magnitude(self, band, sca_id):
         """
         Return AB zeropoint in given band for the given SCA
         """
@@ -158,3 +226,15 @@ class Roman(InstrumentBase):
         count_rate = self.df.loc[self.df['Name'] == f'WFI_Count_Rate_Zody_Minimum_{band.upper()}']['Value'].to_string(
             index=False)
         return float(count_rate)
+    
+    # retrieved 25 June 2024 from https://outerspace.stsci.edu/pages/viewpage.action?spaceKey=ISWG&title=Roman+WFI+and+Observatory+Performance
+    psf_fwhm = {
+        'F062': 0.058,
+        'F087': 0.073,
+        'F106': 0.087,
+        'F129': 0.106,
+        'F158': 0.128,
+        'F184': 0.146,
+        'F213': 0.169,
+        'F146': 0.105
+    }
