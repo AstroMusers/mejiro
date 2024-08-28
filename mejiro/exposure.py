@@ -6,9 +6,12 @@ from mejiro.helpers import gs, psf
 
 class Exposure:
 
-    def __init__(self, synthetic_image, exposure_time):
+    def __init__(self, synthetic_image, exposure_time, seed=1):
         self.synthetic_image = synthetic_image
         self.exposure_time = exposure_time
+
+        # set GalSim random number generator
+        self.rng = galsim.UniformDeviate(seed)
 
         # get PSF
         self.psf_fwhm = self.synthetic_image.instrument.get_psf_fwhm(self.synthetic_image.band)
@@ -31,13 +34,37 @@ class Exposure:
                                    flux=self.total_flux_cps * self.exposure_time)
 
         # convolve with PSF
-        image = galsim.Convolve([interp, self.psf])
-
-        # TODO add noise based on instrument and synthetic image band
+        convolved = galsim.Convolve([interp, self.psf])
 
         # draw image
         im = galsim.ImageF(self.synthetic_image.num_pix, self.synthetic_image.num_pix)
-        final = image.drawImage(im, scale=self.synthetic_image.native_pixel_scale)
+        image = convolved.drawImage(im, scale=self.synthetic_image.native_pixel_scale)
+
+        # quantize, since integer number of photo-electrons are being created
+        image.quantize()
+
+        # add sky background
+        sky_level = None
+
+        # add Poisson noise due to arrival times of photons from signal and sky
+        poisson_noise = galsim.PoissonNoise(self.rng)
+        image.addNoise(poisson_noise)
+
+        # add dark current
+        dark_current = self.synthetic_image.instrument.get_dark_current(self.synthetic_image.band)
+        dark_noise = galsim.DeviateNoise(galsim.PoissonDeviate(self.rng, dark_current))
+        image.addNoise(dark_noise)
+
+        # add read noise
+        read_noise_sigma = self.synthetic_image.instrument.get_read_noise(self.synthetic_image.band)
+        read_noise = galsim.GaussianNoise(self.rng, sigma=read_noise_sigma)
+        image.addNoise(read_noise)
+
+        # gain
+        image /= self.synthetic_image.instrument.gain
+
+        # quantize, since analog-to-digital conversion gives integers
+        image.quantize()
 
         # set exposure
-        self.exposure = final.array
+        self.exposure = image.array

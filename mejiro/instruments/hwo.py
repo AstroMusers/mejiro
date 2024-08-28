@@ -28,6 +28,7 @@ class HWO(InstrumentBase):
         self.aperture_correction = [1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]
         self.bandpass_r = [5., 5., 5., 5., 5., 5., 5., 5., 5., 5.]
         self.derived_bandpass = [pw / bp_r for pw, bp_r in zip(self.pivotwave, self.bandpass_r)]
+        self.gain = 1.
 
         # private attributes
         self._pixel_size = np.array(
