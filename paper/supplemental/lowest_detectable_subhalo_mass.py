@@ -30,8 +30,8 @@ def main(config):
     debugging = True
     script_config = {
         'image_radius': 0.1,  # arcsec
-        'num_lenses': 1,
-        'num_positions': 10,
+        'num_lenses': 10,
+        'num_positions': 25,
         'rng': galsim.UniformDeviate(42)
     }
     subhalo_params = {
@@ -52,16 +52,16 @@ def main(config):
         ('02', (2048, 2048)),
         ('03', (2048, 2048)),
         ('04', (2048, 2048)),
-        ('05', (2048, 2048)),
-        ('06', (2048, 2048)),
-        ('07', (2048, 2048)),
-        ('08', (2048, 2048)),
-        ('09', (2048, 2048)),
-        ('10', (2048, 2048)),
-        ('11', (2048, 2048)),
-        ('12', (2048, 2048)),
-        ('13', (2048, 2048)),
-        ('14', (2048, 2048)),
+        # ('05', (2048, 2048)),
+        # ('06', (2048, 2048)),
+        # ('07', (2048, 2048)),
+        # ('08', (2048, 2048)),
+        # ('09', (2048, 2048)),
+        # ('10', (2048, 2048)),
+        # ('11', (2048, 2048)),
+        # ('12', (2048, 2048)),
+        # ('13', (2048, 2048)),
+        # ('14', (2048, 2048)),
         ('15', (2048, 2048)),
         ('16', (2048, 2048)),
         ('17', (2048, 2048)),
@@ -149,6 +149,8 @@ def run(tuple):
     image_x, image_y = lens.get_image_positions(pixel_coordinates=False)
     num_images = len(image_x)
 
+    # TODO a diagnostic plot that shows image positions and lens configuration
+
     results = {}
     for sca, sca_position in positions:
         sca = int(sca)
@@ -207,7 +209,7 @@ def run(tuple):
                 chi_square_list.append(chi_square)
 
                 # save image
-                if run % 100 == 0:
+                if i % 100 == 0:
                     residual = exposure.exposure - exposure_no_subhalo.exposure
                     vmax = np.max(np.abs(residual))
                     plt.imshow(residual, cmap='bwr', vmin=-vmax, vmax=vmax)
