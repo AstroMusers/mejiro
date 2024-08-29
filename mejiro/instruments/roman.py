@@ -34,7 +34,7 @@ class Roman(InstrumentBase):
         # get PSF
         detector = kwargs['sca']
         detector_position = kwargs['sca_position']
-        self.psf = psf.get_webbpsf_psf(synthetic_image.band, detector, detector_position, synthetic_image.oversample, check_cache=True, psf_cache_dir=None, suppress_output=False)
+        self.psf = psf.get_webbpsf_psf(synthetic_image.band, detector, detector_position, synthetic_image.oversample, check_cache=True, psf_cache_dir='/data/bwedig/mejiro/cached_psfs', suppress_output=False)
 
         # TODO FIX
         self.psf_image = self.psf.drawImage(scale=synthetic_image.pixel_scale)
