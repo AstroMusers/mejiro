@@ -30,6 +30,7 @@ class Roman(InstrumentBase):
         self.pixel_scale = 0.11  # arcsec/pixel
         self.diameter = 2.4  # m
         self.psf_jitter = 0.012  # arcsec per axis
+        self.pixels_per_axis = 4088
         self.total_pixels_per_axis = 4096
         self.thermal_backgrounds = {
             'F062': 0.003,
@@ -71,7 +72,7 @@ class Roman(InstrumentBase):
         # get PSF
         detector = kwargs['sca']
         detector_position = kwargs['sca_position']
-        self.psf = psf.get_webbpsf_psf(synthetic_image.band, detector, detector_position, synthetic_image.oversample, check_cache=True, psf_cache_dir='/data/bwedig/mejiro/cached_psfs', suppress_output=False)
+        self.psf = psf.get_webbpsf_psf(synthetic_image.band, detector, detector_position, synthetic_image.oversample, check_cache=True, psf_cache_dir='/data/bwedig/mejiro/cached_psfs', suppress_output=kwargs['suppress_output'])
         # self.psf_image = self.psf.drawImage(scale=synthetic_image.pixel_scale)  # TODO FIX
 
         # convolve with PSF
@@ -224,12 +225,11 @@ class Roman(InstrumentBase):
         sca = Roman.get_sca_string(sca)
         return self.zp_dict[sca][band.upper()]
     
-    @staticmethod
-    def divide_up_sca(sides):
+    def divide_up_sca(self, sides):
         assert sides % 2 == 0, "For now, sides must be even"
 
         num_centers = sides ** 2
-        piece = int(Roman.pixels_per_axis / num_centers)
+        piece = int(self.pixels_per_axis / num_centers)
 
         centers = []
         for i in range(num_centers):
