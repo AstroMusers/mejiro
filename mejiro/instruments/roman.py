@@ -12,6 +12,8 @@ from mejiro.helpers import psf, gs
 
 class Roman(InstrumentBase):
 
+    pixels_per_axis = 4088
+
     def __init__(self):
         name = 'Roman'
 
@@ -30,7 +32,6 @@ class Roman(InstrumentBase):
         self.diameter = 2.4  # m
         self.psf_jitter = 0.012  # arcsec per axis
         self.total_pixels_per_axis = 4096
-        self.pixels_per_axis = 4088
 
     def get_exposure(self, synthetic_image, interp, rng, exposure_time, **kwargs):
         # get PSF

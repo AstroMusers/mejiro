@@ -3,6 +3,7 @@ import sys
 
 import hydra
 from hydra.core.hydra_config import HydraConfig
+from tqdm.contrib import itertools
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -12,6 +13,7 @@ def main(config):
         sys.path.append(config.machine.repo_dir)
     from mejiro.utils import util
     from mejiro.helpers import psf
+    from mejiro.instruments import roman
 
     machine = HydraConfig.get().runtime.choices.machine
     if machine == 'hpc':
@@ -24,27 +26,30 @@ def main(config):
     save_dir = os.path.join(config.machine.data_dir, 'cached_psfs')
     util.create_directory_if_not_exists(save_dir)
 
-    oversamples = [1, 3, 5]
-    bands = ['F106', 'F129', 'F158', 'F184']
+    # oversamples = [1, 3, 5]
+    oversamples = [5]
+    # bands = ['F106', 'F129', 'F158', 'F184']
+    bands = ['F106', 'F129']
     # detectors = [4, 1, 9, 17]
     # detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
     # detectors = [1, 2, 4, 5]
     # detector_positions = [(2048, 2048), (2048, 2048), (2048, 2048), (2048, 2048)]
     detectors = list(range(1, 19))
-    detector_positions = [(2048, 2048)] * 18
+    # detector_positions = [(2048, 2048)] * 18
+    detector_positions = roman.divide_up_sca(4)
+    
+    total = len(oversamples) * len(bands) * len(detectors) * len(detector_positions)
 
-    for oversample in oversamples:
-        for band in bands:
-            for detector, detector_position in zip(detectors, detector_positions):
-                psf_filename = f'{band}_{detector}_{detector_position[0]}_{detector_position[1]}_{oversample}.pkl'
-                psf_path = os.path.join(save_dir, psf_filename)
-                if os.path.exists(psf_path):
-                    print(f'{psf_path} already exists')
-                    continue
-                else:
-                    webbpsf_psf = psf.get_webbpsf_psf(band, detector, detector_position, oversample)
-                util.pickle(psf_path, webbpsf_psf)
-                print(f'Pickled {psf_path}')
+    for oversample, band, (detector, detector_position) in itertools.product(oversamples, bands, zip(detectors, detector_positions), total=total):
+        psf_filename = f'{band}_{detector}_{detector_position[0]}_{detector_position[1]}_{oversample}.pkl'
+        psf_path = os.path.join(save_dir, psf_filename)
+        if os.path.exists(psf_path):
+            print(f'{psf_path} already exists')
+            continue
+        else:
+            webbpsf_psf = psf.get_webbpsf_psf(band, detector, detector_position, oversample)
+        util.pickle(psf_path, webbpsf_psf)
+        print(f'Pickled {psf_path}')
 
 
 if __name__ == '__main__':
