@@ -37,7 +37,7 @@ def collect_all_detectable_lenses(dir, suppress_output=True):
 
 
 # TODO a(n imperfect) lens subtraction option?
-def get_snr(gglens, band, zp, sca_id=1, num_pix=45, side=4.95, oversample=1, exposure_time=146, return_snr_list=False, debugging=False, debug_dir=None, psf_cache_dir=None):
+def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), num_pix=45, side=4.95, oversample=1, exposure_time=146, return_snr_list=False, debugging=False, debug_dir=None, psf_cache_dir=None):
     if debugging: assert debug_dir is not None, 'Debugging is enabled but no debug directory is provided.'
 
     if type(sca_id) is str:
@@ -54,8 +54,8 @@ def get_snr(gglens, band, zp, sca_id=1, num_pix=45, side=4.95, oversample=1, exp
     # generate GalSim images
     results, lenses, sources, _ = gs.get_images(sample_lens, [model], [band], {band: zp}, num_pix, num_pix, oversample, oversample,
                                                 lens_surface_brightness=[lens_sb],
-                                                source_surface_brightness=[source_sb], detector=sca_id,
-                                                detector_pos=(2048, 2048),
+                                                source_surface_brightness=[source_sb], detector=detector,
+                                                detector_pos=detector_position,
                                                 exposure_time=exposure_time, ra=30, dec=-30, seed=None, validate=False,
                                                 suppress_output=True, check_cache=check_cache, psf_cache_dir=psf_cache_dir)
 
