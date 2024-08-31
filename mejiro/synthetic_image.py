@@ -8,7 +8,7 @@ from lenstronomy.Util import util as len_util
 
 
 class SyntheticImage:
-    def __init__(self, strong_lens, instrument, band, arcsec, oversample=1, **kwargs):
+    def __init__(self, strong_lens, instrument, band, arcsec, oversample=1, debugging=True, **kwargs):
         # TODO assert band is valid for instrument
         # assert band in instrument.get_bands()
 
@@ -18,12 +18,12 @@ class SyntheticImage:
         self.arcsec = arcsec
         self.oversample = oversample
         self.kwargs = kwargs
+        self.debugging = debugging
 
         # calculate surface brightness
         self.image = self._calculate_surface_brightness()
 
-        print(
-            f'Initialized SyntheticImage for StrongLens {self.strong_lens.uid} by {self.instrument.name} in {self.band} band')
+        if self.debugging: print(f'Initialized SyntheticImage for StrongLens {self.strong_lens.uid} by {self.instrument.name} in {self.band} band')
 
     def _calculate_surface_brightness(self, kwargs_psf=None, return_pieces=False):
         self._set_up_pixel_grid()
@@ -97,8 +97,7 @@ class SyntheticImage:
         self.pixel_scale = self.native_pixel_scale / self.oversample
         self.num_pix = np.ceil(self.arcsec / self.pixel_scale).astype(int)
         self.arcsec = self.num_pix * self.pixel_scale
-        print(
-            f'Computing on pixel grid of size {self.num_pix}x{self.num_pix} ({self.arcsec}\"x{self.arcsec}\") with pixel scale {self.pixel_scale} arcsec/pixel (natively {self.native_pixel_scale} arcsec/pixel oversampled by factor {self.oversample})')
+        if self.debugging: print(f'Computing on pixel grid of size {self.num_pix}x{self.num_pix} ({self.arcsec}\"x{self.arcsec}\") with pixel scale {self.pixel_scale} arcsec/pixel (natively {self.native_pixel_scale} arcsec/pixel oversampled by factor {self.oversample})')
 
         _, _, self.ra_at_xy_0, self.dec_at_xy_0, _, _, self.Mpix2coord, self.Mcoord2pix = (
             len_util.make_grid_with_coordtransform(

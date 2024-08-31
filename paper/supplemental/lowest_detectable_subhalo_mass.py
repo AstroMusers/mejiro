@@ -22,7 +22,7 @@ def main(config):
     # enable use of local packages
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
-    from mejiro.helpers import survey_sim, psf
+    from mejiro.helpers import survey_sim
     from mejiro.utils import util
     from mejiro.instruments.roman import Roman
 
@@ -35,7 +35,7 @@ def main(config):
         'rng': galsim.UniformDeviate(42)
     }
     subhalo_params = {
-        'masses': np.linspace(1e6, 1e10, 10),
+        'masses': np.linspace(1e6, 1e10, 20),
         'concentration': 6,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,  
@@ -75,17 +75,14 @@ def main(config):
     image_save_dir = os.path.join(save_dir, 'images')
     os.makedirs(image_save_dir, exist_ok=True)
 
-    # debugging? set pipeline dir accordingly
-    pipeline_params = util.hydra_to_dict(config.pipeline)
-    # TODO set debugging here based on yaml file? or manually above?
+    # collect lenses
+    print(f'Collecting lenses...')
     if debugging:
         pipeline_dir = f'{config.machine.pipeline_dir}_dev'
     else:
         pipeline_dir = config.machine.pipeline_dir
-
-    # collect lenses
-    print(f'Collecting lenses...')
     lens_list = survey_sim.collect_all_detectable_lenses(os.path.join(pipeline_dir, '01'), suppress_output=False)
+    lens_list = [lens for lens in lens_list if lens.snr > 50 and lens.snr != np.inf]
     num_lenses = script_config['num_lenses']
     print(f'Collected {len(lens_list)} lens(es) and processing {num_lenses}.')
     lens_list = lens_list[:num_lenses]
@@ -155,9 +152,10 @@ def run(tuple):
     for sca, sca_position in positions:
         sca = int(sca)
         position_key = f'{sca}_{sca_position[0]}_{sca_position[1]}'
+        print(position_key)
         results[position_key] = {}
-        for m200 in masses:
-            mass_key = f'{m200:.2f}'
+        for m200 in tqdm(masses):
+            mass_key = f'{int(m200)}'
             results[position_key][mass_key] = []
 
             Rs_angle, alpha_Rs = lens.lens_cosmo.nfw_physical2angle(M=m200, c=concentration)
@@ -190,8 +188,8 @@ def run(tuple):
 
                 # get image with no subhalo
                 lens_no_subhalo = deepcopy(lens)
-                synth_no_subhalo = SyntheticImage(lens_no_subhalo, roman, band=band, arcsec=scene_size, oversample=oversample, sca=sca, sca_position=sca_position)
-                exposure_no_subhalo = Exposure(synth_no_subhalo, exposure_time=exposure_time, rng=rng, sca=sca, sca_position=sca_position, return_noise=True)
+                synth_no_subhalo = SyntheticImage(lens_no_subhalo, roman, band=band, arcsec=scene_size, oversample=oversample, sca=sca, sca_position=sca_position, debugging=False)
+                exposure_no_subhalo = Exposure(synth_no_subhalo, exposure_time=exposure_time, rng=rng, sca=sca, sca_position=sca_position, return_noise=True, suppress_output=True)
 
                 # get noise
                 poisson_noise = exposure_no_subhalo.poisson_noise
@@ -201,8 +199,8 @@ def run(tuple):
                 # get image with subhalo
                 lens_with_subhalo = deepcopy(lens)
                 lens_with_subhalo.add_subhalo(subhalo_type, kwargs_subhalo)
-                synth = SyntheticImage(lens_with_subhalo, roman, band=band, arcsec=scene_size, oversample=oversample, sca=sca, sca_position=sca_position)
-                exposure = Exposure(synth, exposure_time=exposure_time, rng=rng, sca=sca, sca_position=sca_position, poisson_noise=poisson_noise, dark_noise=dark_noise, read_noise=read_noise)
+                synth = SyntheticImage(lens_with_subhalo, roman, band=band, arcsec=scene_size, oversample=oversample, sca=sca, sca_position=sca_position, debugging=False)
+                exposure = Exposure(synth, exposure_time=exposure_time, rng=rng, sca=sca, sca_position=sca_position, poisson_noise=poisson_noise, dark_noise=dark_noise, read_noise=read_noise, suppress_output=True)
 
                 # calculate chi square
                 chi_square = stats.chi_square(observed=exposure.exposure, expected=exposure_no_subhalo.exposure)
