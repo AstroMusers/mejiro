@@ -6,7 +6,6 @@ import time
 import galsim
 from astropy.coordinates import SkyCoord
 from galsim import InterpolatedImage, Image
-from galsim import roman
 
 from mejiro.helpers import psf
 from mejiro.instruments.roman import Roman
@@ -220,7 +219,7 @@ def _get_wcs_dict(ra, dec, date):
     targ_pos = galsim.CelestialCoord(ra=ra_targ, dec=dec_targ)
 
     # NB targ_pos indicates the position to observe at the center of the focal plane array
-    return roman.getWCS(world_pos=targ_pos, date=date)
+    return galsim.roman.getWCS(world_pos=targ_pos, date=date)
 
 
 def get_bandpass_key(band):
@@ -238,7 +237,7 @@ def get_bandpass_key(band):
 
 def get_bandpass(band):
     bandpass_key = get_bandpass_key(band)
-    return roman.getBandpasses()[bandpass_key]
+    return galsim.roman.getBandpasses()[bandpass_key]
 
 
 def convolve(interp, galsim_psf, input_size):
@@ -272,7 +271,7 @@ def get_sky_bkgs(bands, exposure_time, num_pix, oversample):
         sky_level *= 1.5
 
         # the stray light level is currently set in GalSim to a pessimistic 10% of sky level
-        sky_level *= (1. + roman.stray_light_fraction)
+        sky_level *= (1. + galsim.roman.stray_light_fraction)
 
         # get thermal background in this band in counts/pixel/sec
         thermal_bkg = roman_params.get_thermal_bkg(band)
