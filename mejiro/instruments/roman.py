@@ -29,6 +29,8 @@ class Roman(InstrumentBase):
         self.pixel_scale = 0.11  # arcsec/pixel
         self.diameter = 2.4  # m
         self.psf_jitter = 0.012  # arcsec per axis
+        self.total_pixels_per_axis = 4096
+        self.pixels_per_axis = 4088
 
     def get_exposure(self, synthetic_image, interp, rng, exposure_time, **kwargs):
         # get PSF
@@ -238,3 +240,17 @@ class Roman(InstrumentBase):
         'F213': 0.169,
         'F146': 0.105
     }
+
+@staticmethod
+def divide_up_sca(sides):
+    assert sides % 2 == 0, "For now, sides must be even"
+
+    num_centers = sides ** 2
+    piece = int(Roman.pixels_per_axis / num_centers)
+
+    centers = []
+    for i in range(num_centers):
+        for j in range(num_centers):
+            if i % 2 != 0 and j % 2 != 0:
+                centers.append((piece * i, piece * j))
+    return centers
