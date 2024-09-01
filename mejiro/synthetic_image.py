@@ -8,7 +8,7 @@ from lenstronomy.Util import util as len_util
 
 
 class SyntheticImage:
-    def __init__(self, strong_lens, instrument, band, arcsec, oversample=1, debugging=True, **kwargs):
+    def __init__(self, strong_lens, instrument, band, arcsec, oversample=1, pieces=False, debugging=True, **kwargs):
         # TODO assert band is valid for instrument
         # assert band in instrument.get_bands()
 
@@ -19,13 +19,14 @@ class SyntheticImage:
         self.oversample = oversample
         self.kwargs = kwargs
         self.debugging = debugging
+        self.pieces = pieces
 
         # calculate surface brightness
-        self.image = self._calculate_surface_brightness()
+        self._calculate_surface_brightness(pieces=pieces)
 
         if self.debugging: print(f'Initialized SyntheticImage for StrongLens {self.strong_lens.uid} by {self.instrument.name} in {self.band} band')
 
-    def _calculate_surface_brightness(self, kwargs_psf=None, return_pieces=False):
+    def _calculate_surface_brightness(self, pieces=False, kwargs_psf=None):
         self._set_up_pixel_grid()
 
         # define PSF, e.g. kwargs_psf = {'psf_type': 'NONE'}, {'psf_type': 'GAUSSIAN', 'fwhm': psf_fwhm}
@@ -57,32 +58,29 @@ class SyntheticImage:
         kwargs_lens_light_amp = [self.strong_lens.kwargs_lens_light_amp_dict[self.band]]
         kwargs_source_amp = [self.strong_lens.kwargs_source_amp_dict[self.band]]
 
-        total_image = image_model.image(kwargs_lens=self.strong_lens.kwargs_lens,
+        self.image = image_model.image(kwargs_lens=self.strong_lens.kwargs_lens,
                                         kwargs_source=kwargs_source_amp,
                                         kwargs_lens_light=kwargs_lens_light_amp)
 
-        if return_pieces:
-            lens_surface_brightness = image_model.lens_surface_brightness(kwargs_lens_light_amp)
-            source_surface_brightness = image_model.source_surface_brightness(kwargs_source_amp,
+        if pieces:
+            self.lens_surface_brightness = image_model.lens_surface_brightness(kwargs_lens_light_amp)
+            self.source_surface_brightness = image_model.source_surface_brightness(kwargs_source_amp,
                                                                               self.strong_lens.kwargs_lens)
-            return total_image, lens_surface_brightness, source_surface_brightness
-        else:
-            return total_image
 
     def _convert_magnitudes_to_lenstronomy_amps(self):
         # TODO this is also awful
         if self.instrument.name == 'Roman':
-            magnitude_zero_point = self.instrument.get_zeropoint_magnitude(self.band, self.kwargs['sca'])
+            self.magnitude_zero_point = self.instrument.get_zeropoint_magnitude(self.band, self.kwargs['sca'])
         elif self.instrument.name == 'HWO':
-            magnitude_zero_point = self.instrument.get_zeropoint_magnitude(self.band)
+            self.magnitude_zero_point = self.instrument.get_zeropoint_magnitude(self.band)
 
         kwargs_lens_light_amp = data_util.magnitude2amplitude(self.strong_lens.lens_light_model_class,
                                                               [self.strong_lens.kwargs_lens_light_dict[self.band]],
-                                                              magnitude_zero_point)
+                                                              self.magnitude_zero_point)
 
         kwargs_source_amp = data_util.magnitude2amplitude(self.strong_lens.source_model_class,
                                                           [self.strong_lens.kwargs_source_dict[self.band]],
-                                                          magnitude_zero_point)
+                                                          self.magnitude_zero_point)
 
         self.strong_lens.kwargs_lens_light_amp_dict[self.band] = kwargs_lens_light_amp[0]
         self.strong_lens.kwargs_source_amp_dict[self.band] = kwargs_source_amp[0]

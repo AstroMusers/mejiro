@@ -68,11 +68,13 @@ class Roman(InstrumentBase):
         # TODO implement this
         pass
 
-    def get_exposure(self, synthetic_image, interp, rng, exposure_time, **kwargs):
+    def get_exposure(self, synthetic_image, interp, rng, exposure_time, sky_background=True, detector_effects=True, **kwargs):
+        suppress_output = kwargs['suppress_output'] if 'suppress_output' in kwargs else True
+
         # get PSF
         detector = kwargs['sca']
         detector_position = kwargs['sca_position']
-        self.psf = psf.get_webbpsf_psf(synthetic_image.band, detector, detector_position, synthetic_image.oversample, check_cache=True, psf_cache_dir='/data/bwedig/mejiro/cached_psfs', suppress_output=kwargs['suppress_output'])
+        self.psf = psf.get_webbpsf_psf(synthetic_image.band, detector, detector_position, synthetic_image.oversample, check_cache=True, psf_cache_dir='/data/bwedig/mejiro/cached_psfs', suppress_output=suppress_output)
         # self.psf_image = self.psf.drawImage(scale=synthetic_image.pixel_scale)  # TODO FIX
 
         # convolve with PSF
@@ -85,55 +87,58 @@ class Roman(InstrumentBase):
         image = convolved.drawImage(im)
 
         # add sky background
-        bkgs = self.get_sky_bkgs(synthetic_image.band, exposure_time, num_pix=output_num_pix, oversample=synthetic_image.oversample)
-        bkg = bkgs[synthetic_image.band]
-        image += bkg
+        if sky_background:
+            bkgs = self.get_sky_bkgs(synthetic_image.band, exposure_time, num_pix=output_num_pix, oversample=synthetic_image.oversample)
+            bkg = bkgs[synthetic_image.band]
+            image += bkg
 
-        # Poisson noise
-        if 'poisson_noise' in kwargs:
-            image += kwargs['poisson_noise']
-        else:
-            before = deepcopy(image)
-            image.addNoise(galsim.PoissonNoise(rng))
-            poisson_noise = image - before
-        image.quantize()
+        # add detector effects
+        if detector_effects:
+            # Poisson noise
+            if 'poisson_noise' in kwargs:
+                image += kwargs['poisson_noise']
+            else:
+                before = deepcopy(image)
+                image.addNoise(galsim.PoissonNoise(rng))
+                poisson_noise = image - before
+            image.quantize()
 
-        # reciprocity failure
-        galsim.roman.addReciprocityFailure(image, exptime=exposure_time)
+            # reciprocity failure
+            galsim.roman.addReciprocityFailure(image, exptime=exposure_time)
 
-        # dark current
-        if 'dark_noise' in kwargs:
-            image += kwargs['dark_noise']
-        else:
-            before = deepcopy(image)
-            total_dark_current = galsim.roman.dark_current
-            image.addNoise(galsim.DeviateNoise(galsim.PoissonDeviate(rng, total_dark_current)))
-            dark_noise = image - before
+            # dark current
+            if 'dark_noise' in kwargs:
+                image += kwargs['dark_noise']
+            else:
+                before = deepcopy(image)
+                total_dark_current = galsim.roman.dark_current
+                image.addNoise(galsim.DeviateNoise(galsim.PoissonDeviate(rng, total_dark_current)))
+                dark_noise = image - before
 
-        # skip persistence
+            # skip persistence
 
-        # nonlinearity
-        galsim.roman.applyNonlinearity(image)
+            # nonlinearity
+            galsim.roman.applyNonlinearity(image)
 
-        # IPC
-        galsim.roman.applyIPC(image)
+            # IPC
+            galsim.roman.applyIPC(image)
 
-        # read noise
-        if 'read_noise' in kwargs:
-            image += kwargs['read_noise']
-        else:
-            before = deepcopy(image)
-            read_noise_sigma = galsim.roman.read_noise
-            image.addNoise(galsim.GaussianNoise(rng, sigma=read_noise_sigma))
-            read_noise = image - before
+            # read noise
+            if 'read_noise' in kwargs:
+                image += kwargs['read_noise']
+            else:
+                before = deepcopy(image)
+                read_noise_sigma = galsim.roman.read_noise
+                image.addNoise(galsim.GaussianNoise(rng, sigma=read_noise_sigma))
+                read_noise = image - before
 
-        # gain
-        image /= galsim.roman.gain
+            # gain
+            image /= galsim.roman.gain
 
-        # quantize
-        image.quantize()
+            # quantize
+            image.quantize()
 
-        if 'return_noise' in kwargs and kwargs['return_noise']:
+        if detector_effects and 'return_noise' in kwargs and kwargs['return_noise']:
             return image, poisson_noise, dark_noise, read_noise
         else:
             return image

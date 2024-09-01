@@ -22,18 +22,16 @@ class Exposure:
             self.rng = galsim.UniformDeviate(42)
 
         # total flux cps
-        self.lens_flux_cps = np.sum(self.synthetic_image.strong_lens.lens_light_model_class.total_flux(
-            [self.synthetic_image.strong_lens.kwargs_lens_light_amp_dict[self.synthetic_image.band]]))
-        self.source_flux_cps = np.sum(self.synthetic_image.strong_lens.source_model_class.total_flux(
-            [self.synthetic_image.strong_lens.kwargs_source_amp_dict[self.synthetic_image.band]]))
+        self.lens_flux_cps = self.synthetic_image.strong_lens.get_lens_flux_cps(self.synthetic_image.band, self.synthetic_image.magnitude_zero_point)
+        self.source_flux_cps = self.synthetic_image.strong_lens.get_source_flux_cps(self.synthetic_image.band, self.synthetic_image.magnitude_zero_point)
         self.total_flux_cps = self.lens_flux_cps + self.source_flux_cps
 
         # create interpolated image
-        self.interp = galsim.InterpolatedImage(galsim.Image(self.synthetic_image.image, xmin=0, ymin=0),
+        self.interp_total = galsim.InterpolatedImage(galsim.Image(self.synthetic_image.image, xmin=0, ymin=0),
                                    scale=self.synthetic_image.pixel_scale,
                                    flux=self.total_flux_cps * self.exposure_time)
 
-        tuple = self.synthetic_image.instrument.get_exposure(self.synthetic_image, self.interp, self.rng, self.exposure_time, **kwargs)
+        tuple = self.synthetic_image.instrument.get_exposure(self.synthetic_image, self.interp_total, self.rng, self.exposure_time, **kwargs)
         if 'return_noise' in kwargs and kwargs['return_noise']:
             self.image, self.poisson_noise, self.dark_noise, self.read_noise = tuple
         else:
@@ -48,3 +46,25 @@ class Exposure:
 
         # set exposure
         self.exposure = final
+
+        if self.synthetic_image.pieces:
+            self.lens_interp = galsim.InterpolatedImage(galsim.Image(self.synthetic_image.lens_surface_brightness, xmin=0, ymin=0),
+                                   scale=self.synthetic_image.pixel_scale,
+                                   flux=self.lens_flux_cps * self.exposure_time)
+            self.source_interp = galsim.InterpolatedImage(galsim.Image(self.synthetic_image.source_surface_brightness, xmin=0, ymin=0),
+                                   scale=self.synthetic_image.pixel_scale,
+                                   flux=self.source_flux_cps * self.exposure_time)
+            self.lens_image = self.synthetic_image.instrument.get_exposure(self.synthetic_image, self.lens_interp, self.rng, self.exposure_time, sky_background=False, detector_effects=False, **kwargs)
+            self.source_image = self.synthetic_image.instrument.get_exposure(self.synthetic_image, self.source_interp, self.rng, self.exposure_time, sky_background=False, detector_effects=False, **kwargs)
+            lens = self.lens_image.array
+            source = self.source_image.array
+
+            # crop off edge effects (e.g., IPC)
+            lens = util.center_crop_image(lens, (output_num_pix, output_num_pix))
+            source = util.center_crop_image(source, (output_num_pix, output_num_pix))
+
+            # set exposures
+            self.lens_exposure = lens
+            self.source_exposure = source
+        else:
+            self.lens_exposure, self.source_exposure = None, None
