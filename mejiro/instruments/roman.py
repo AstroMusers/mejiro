@@ -94,6 +94,8 @@ class Roman(InstrumentBase):
 
         # add detector effects
         if detector_effects:
+            image.replaceNegative(0.)
+
             # Poisson noise
             if 'poisson_noise' in kwargs:
                 image += kwargs['poisson_noise']
