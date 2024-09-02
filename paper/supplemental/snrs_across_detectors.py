@@ -31,7 +31,7 @@ def main(config):
     # script configuration options
     debugging = False
     script_config = {
-        'num_lenses': 1000,
+        'num_lenses': 100,  # 1000
         'rng': galsim.UniformDeviate(42),
         'detectors': list(range(1, 19)),
         'detector_positions': roman.divide_up_sca(4)
@@ -109,13 +109,13 @@ def main(config):
     # process the batches
     for batch in tqdm(batches):
         pool = Pool(processes=process_count)
-        pool.map(run_slsim, batch)
+        pool.map(run_process, batch)
 
     stop = time.time()
     _ = util.print_execution_time(start, stop, return_string=True)
 
 
-def run_slsim(tuple):
+def run_process(tuple):
     # a legacy function but prevents duplicate runs
     np.random.seed()
 
@@ -148,7 +148,7 @@ def run_slsim(tuple):
     lens.add_subhalos(realization)
 
     results = {}
-    for detector in detectors:
+    for detector in tqdm(detectors, leave=True, disable=False):
         lens_for_noise = deepcopy(lens)
         synth_for_noise = SyntheticImage(lens_for_noise, 
                                           roman, band=band, arcsec=scene_size, oversample=oversample, sca=detector, sca_position=(2048, 2048), debugging=False)
@@ -165,7 +165,7 @@ def run_slsim(tuple):
             ax[0].imshow(exposure_for_noise.exposure)
             ax[0].set_title('Total')
             ax[1].imshow(poisson_noise.array)
-            ax[1].set_title('Poisson')
+            ax[1].set_title(f'Poisson (min: {np.min(poisson_noise.array):.2f})')
             ax[2].imshow(dark_noise.array)
             ax[2].set_title('Dark')
             ax[3].imshow(read_noise.array)
@@ -179,10 +179,17 @@ def run_slsim(tuple):
             plt.close()
 
         snrs_for_positions = []
-        for detector_position in detector_positions:
+        for detector_position in tqdm(detector_positions, leave=False, disable=True):
             lens_tmp = deepcopy(lens)
             synth_tmp = SyntheticImage(lens_tmp, 
-                                   roman, band=band, arcsec=scene_size, oversample=oversample, sca=detector, sca_position=detector_position, debugging=False, pieces=True)
+                                   roman, 
+                                   band=band, 
+                                   arcsec=scene_size, 
+                                   oversample=oversample, 
+                                   sca=detector, 
+                                   sca_position=detector_position, 
+                                   debugging=False, 
+                                   pieces=True)
             exposure = Exposure(synth_tmp, 
                                 exposure_time=exposure_time, 
                                 rng=rng, 
@@ -199,25 +206,39 @@ def run_slsim(tuple):
 
             # plt.imshow(source_exposure)
             # plt.colorbar()
-            # plt.title(np.isnan(np.min(source_exposure)))
+            # plt.title(np.min(source_exposure))
             # plt.savefig(os.path.join(image_save_dir, f'02_{lens.uid}_source_exposure_run{run}.png'))
             # plt.close()
 
             # plt.imshow(total_exposure)
             # plt.colorbar()
-            # plt.title(np.isnan(np.min(total_exposure)))
+            # plt.title(np.min(total_exposure))
             # plt.savefig(os.path.join(image_save_dir, f'02_{lens.uid}_total_exposure_run{run}.png'))
             # plt.close()
 
             # calculate SNR in each pixel
-            snr_array = np.nan_to_num(source_exposure / np.sqrt(total_exposure))
+            np.where(total_exposure <= 0, 1, total_exposure)
+            snr_array = np.nan_to_num(source_exposure / np.sqrt(total_exposure), posinf=0., neginf=0.)
+            # plt.imshow(snr_array)
+            # plt.colorbar()
+            # plt.title(np.min(snr_array))
+            # plt.savefig(os.path.join(image_save_dir, f'02_{lens.uid}_snr_array_run{run}.png'))
+            # plt.close()
+
+            # sys.exit(0)
+
             # print(np.count_nonzero(np.isnan(snr_array)))
             assert np.any(snr_array >= 1), 'No SNR >= 1'
             assert np.isnan(np.min(snr_array)) == False, 'NaN in SNR array'
+            assert np.isinf(np.min(snr_array)) == False, 'Inf in SNR array'
             masked_snr_array = np.ma.masked_where(snr_array <= 1, snr_array)
 
             # calculate regions of connected pixels given the snr mask
             indices_list = regions.get_regions(masked_snr_array, debug_dir=None)
+            if indices_list is None:
+                print(f'Error in get_regions for {lens.uid} at {detector_position}')
+                continue
+            # print(f'{len(indices_list)} regions found')
             
             snr_list = []
             for region in indices_list:
@@ -225,10 +246,13 @@ def run_slsim(tuple):
                 for i, j in region:
                     numerator += source_exposure[i, j]
                     denominator += source_exposure[i, j] + lens_exposure[i, j] + noise[i, j]
+                if denominator <= 0.:
+                    continue
                 snr = numerator / np.sqrt(denominator)
-                if not np.isnan(snr) and not np.isinf(snr):
-                    # print(snr)
-                    snr_list.append(snr)
+                # print(f'{snr=}, {numerator=}, {denominator=}')
+                assert not np.isnan(snr), 'NaN in SNR list'
+                assert not np.isinf(snr), 'Inf in SNR list'
+                snr_list.append(snr)
 
             snrs_for_positions.append(np.max(snr_list))
 
