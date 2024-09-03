@@ -419,7 +419,7 @@ def pickle(path, thing):
 
 def unpickle(path):
     """
-    Unpickle the object stored in the given file path and return it.
+    Unpickle the object stored in the given file path and return it. If the file path does not exist, it is interpreted as a glob pattern.
 
     Parameters
     ----------
@@ -432,9 +432,18 @@ def unpickle(path):
         The unpickled object.
 
     """
-    with open(path, "rb") as results_file:
-        result = _pickle.load(results_file)
-    return result
+    if os.path.exists(path):
+        with open(path, "rb") as results_file:
+            return _pickle.load(results_file)
+    else:
+        result_files = sorted(glob(path))
+        if len(result_files) == 0:
+            raise ValueError(f'No files matching {os.path.basename(path)} found in {os.path.dirname(path)}')
+        elif len(result_files) > 1:
+            raise ValueError(f'Multiple files found: {result_files}')
+        else:
+            with open(result_files[0], "rb") as results_file:
+                return _pickle.load(results_file)
 
 
 def unpickle_all(dir_path, prefix="", suffix="", limit=None):
