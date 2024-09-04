@@ -40,8 +40,8 @@ def collect_all_detectable_lenses(dir, suppress_output=True):
 def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), num_pix=45, side=4.95, oversample=1, exposure_time=146, return_snr_list=False, debugging=False, debug_dir=None, psf_cache_dir=None):
     if debugging: assert debug_dir is not None, 'Debugging is enabled but no debug directory is provided.'
 
-    if type(sca_id) is str:
-        sca_id = int(sca_id)
+    if type(detector) is str:
+        detector = int(detector)
 
     check_cache = False if psf_cache_dir is None else True
     
@@ -68,7 +68,7 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), num_pi
     noise = total - (lens + source)
 
     # calculate SNR in each pixel
-    snr_array = source / np.sqrt(total)
+    snr_array = np.nan_to_num(source / np.sqrt(total))
 
     if not np.any(snr_array >= 1):
         return 1, np.ma.array(snr_array, mask=True), [1], None  # TODO I'm doing this because SNRs for non-detectable lenses don't really matter right now
@@ -88,7 +88,11 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), num_pi
         for i, j in region:
             numerator += source[i, j]
             denominator += source[i, j] + lens[i, j] + noise[i, j]
+        if denominator <= 0.:
+            continue
         snr = numerator / np.sqrt(denominator)
+        assert not np.isnan(snr), 'NaN in SNR list'
+        assert not np.isinf(snr), 'Inf in SNR list'
         snr_list.append(snr)
 
     if debugging and np.max(snr_list) > 20:
@@ -97,7 +101,10 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), num_pi
     if return_snr_list:
         return snr_list, None, None, None
     else:
-        return np.max(snr_list), masked_snr_array, snr_list, None
+        if len(snr_list) != 0:
+            return np.max(snr_list), masked_snr_array, snr_list, None
+        else:
+            return None, None, None, None
 
 
 def get_snr_lenstronomy(gglens, band, subtract_lens=True, mask_mult=1., side=4.95, **kwargs):
