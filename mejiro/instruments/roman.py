@@ -88,7 +88,7 @@ class Roman(InstrumentBase):
 
         # add sky background
         if sky_background:
-            bkgs = self.get_sky_bkgs(synthetic_image.band, exposure_time, num_pix=output_num_pix, oversample=synthetic_image.oversample)
+            bkgs = self.get_sky_bkgs(synthetic_image.band, exposure_time, num_pix=output_num_pix, oversample=synthetic_image.native_pixel_scale)
             bkg = bkgs[synthetic_image.band]
             image += bkg
 

@@ -68,7 +68,7 @@ def get_images(lens, arrays, bands, sca_zp_dict=None, input_size=96, output_size
         sca_zp_dict = roman_params.zp_dict[f'SCA{str(detector).zfill(2)}']
 
     # calculate sky backgrounds for each band
-    bkgs = get_sky_bkgs(bands, exposure_time, num_pix=input_size, oversample=grid_oversample)
+    bkgs = get_sky_bkgs(bands, exposure_time, num_pix=input_size, oversample=1)
 
     # generate the PSFs I'll need for each unique band
     psf_kernels = {}
