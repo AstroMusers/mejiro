@@ -84,5 +84,3 @@ def test_translate_band():
         assert False, "Expected ValueError"
     except ValueError:
         pass
-
-

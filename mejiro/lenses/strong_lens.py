@@ -220,7 +220,7 @@ class StrongLens:
         source_y = self.kwargs_source_dict['F106']['center_y']
         solver = LensEquationSolver(self.lens_model_class)
         image_x, image_y = solver.image_position_from_source(sourcePos_x=source_x, sourcePos_y=source_y,
-                                                            kwargs_lens=self.kwargs_lens)
+                                                             kwargs_lens=self.kwargs_lens)
         if pixel_coordinates:
             self._set_up_pixel_grid()
             return self.coords.map_coord2pix(ra=image_x, dec=image_y)
@@ -240,12 +240,12 @@ class StrongLens:
                    LOS_normalization=los_normalization,
                    kwargs_cosmo=util.get_kwargs_cosmo(self.cosmo),
                    two_halo_contribution=False)
-    
+
     def add_subhalo(self, subhalo_type, subhalo_kwargs):
         self.lens_model_list.append(subhalo_type)
         self.lens_redshift_list.append(self.z_lens)
         self.kwargs_lens.append(subhalo_kwargs)
-        self.lens_model_class = LensModel(self.lens_model_list)        
+        self.lens_model_class = LensModel(self.lens_model_list)
 
     def _set_pyhalo_cosmology(self):
         from pyHalo.Cosmology.cosmology import Cosmology
@@ -432,8 +432,8 @@ class StrongLens:
             else:
                 survey_mode = 'wide_area'
             lenstronomy_roman_config = Roman(band=band.upper(),
-                                            psf_type='PIXEL',
-                                            survey_mode=survey_mode).kwargs_single_band()
+                                             psf_type='PIXEL',
+                                             survey_mode=survey_mode).kwargs_single_band()
             magnitude_zero_point = lenstronomy_roman_config.get('magnitude_zero_point')
 
         kwargs_lens_light_amp = self._get_amp_light_kwargs(magnitude_zero_point, self.lens_light_model_class,

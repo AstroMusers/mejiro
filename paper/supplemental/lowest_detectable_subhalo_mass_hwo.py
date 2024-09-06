@@ -10,10 +10,8 @@ import galsim
 import hydra
 import matplotlib.pyplot as plt
 import numpy as np
-from galsim import InterpolatedImage, Image
-from lenstronomy.Util.correlation import power_spectrum_1d
-from pyHalo.preset_models import CDM
 from tqdm import tqdm
+
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
 def main(config):
@@ -22,7 +20,7 @@ def main(config):
     # enable use of local packages
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
-    from mejiro.helpers import survey_sim, psf
+    from mejiro.helpers import survey_sim
     from mejiro.utils import util
     from mejiro.instruments.roman import Roman
 
@@ -38,7 +36,7 @@ def main(config):
         'masses': np.linspace(1e6, 1e10, 10),
         'concentration': 6,
         'r_tidal': 0.5,
-        'sigma_sub': 0.055,  
+        'sigma_sub': 0.055,
         'los_normalization': 0.
     }
     imaging_params = {
@@ -98,7 +96,9 @@ def main(config):
 
     roman = Roman()
     tuple_list = [
-        (run, lens, roman, script_config, imaging_params, subhalo_params, positions, save_dir, image_save_dir, debugging) for
+        (
+        run, lens, roman, script_config, imaging_params, subhalo_params, positions, save_dir, image_save_dir, debugging)
+        for
         run, lens in enumerate(lens_list)]
 
     # split up the lenses into batches based on core count
@@ -126,15 +126,16 @@ def main(config):
     execution_time_per_lens = str(datetime.timedelta(seconds=round((stop - start) / len(lens_list))))
     print(f'Execution time per lens: {execution_time_per_lens}')
 
+
 def run(tuple):
     from mejiro.analysis import stats
-    from mejiro.helpers import gs, psf
     from mejiro.utils import util
     from mejiro.synthetic_image import SyntheticImage
     from mejiro.exposure import Exposure
 
     # unpack tuple
-    (run, lens, roman, script_config, imaging_params, subhalo_params, positions, save_dir, image_save_dir, debugging) = tuple
+    (run, lens, roman, script_config, imaging_params, subhalo_params, positions, save_dir, image_save_dir,
+     debugging) = tuple
     image_radius = script_config['image_radius']
     num_positions = script_config['num_positions']
     rng = script_config['rng']
@@ -181,17 +182,19 @@ def run(tuple):
                 # build subhalo parameters
                 subhalo_type = 'TNFW'
                 kwargs_subhalo = {
-                    'alpha_Rs': alpha_Rs, 
-                    'Rs': Rs_angle, 
-                    'center_x': center_x, 
-                    'center_y': center_y, 
+                    'alpha_Rs': alpha_Rs,
+                    'Rs': Rs_angle,
+                    'center_x': center_x,
+                    'center_y': center_y,
                     'r_trunc': 5 * Rs_angle
                 }
 
                 # get image with no subhalo
                 lens_no_subhalo = deepcopy(lens)
-                synth_no_subhalo = SyntheticImage(lens_no_subhalo, roman, band=band, arcsec=scene_size, oversample=oversample, sca=sca, sca_position=sca_position)
-                exposure_no_subhalo = Exposure(synth_no_subhalo, exposure_time=exposure_time, rng=rng, sca=sca, sca_position=sca_position, return_noise=True)
+                synth_no_subhalo = SyntheticImage(lens_no_subhalo, roman, band=band, arcsec=scene_size,
+                                                  oversample=oversample, sca=sca, sca_position=sca_position)
+                exposure_no_subhalo = Exposure(synth_no_subhalo, exposure_time=exposure_time, rng=rng, sca=sca,
+                                               sca_position=sca_position, return_noise=True)
 
                 # get noise
                 poisson_noise = exposure_no_subhalo.poisson_noise
@@ -201,8 +204,10 @@ def run(tuple):
                 # get image with subhalo
                 lens_with_subhalo = deepcopy(lens)
                 lens_with_subhalo.add_subhalo(subhalo_type, kwargs_subhalo)
-                synth = SyntheticImage(lens_with_subhalo, roman, band=band, arcsec=scene_size, oversample=oversample, sca=sca, sca_position=sca_position)
-                exposure = Exposure(synth, exposure_time=exposure_time, rng=rng, sca=sca, sca_position=sca_position, poisson_noise=poisson_noise, dark_noise=dark_noise, read_noise=read_noise)
+                synth = SyntheticImage(lens_with_subhalo, roman, band=band, arcsec=scene_size, oversample=oversample,
+                                       sca=sca, sca_position=sca_position)
+                exposure = Exposure(synth, exposure_time=exposure_time, rng=rng, sca=sca, sca_position=sca_position,
+                                    poisson_noise=poisson_noise, dark_noise=dark_noise, read_noise=read_noise)
 
                 # calculate chi square
                 chi_square = stats.chi_square(observed=exposure.exposure, expected=exposure_no_subhalo.exposure)
@@ -217,11 +222,11 @@ def run(tuple):
                     plt.title(r'$\chi^2=$ ' + f'{chi_square:.2f}')
                     plt.savefig(os.path.join(image_save_dir, f'{execution_key}.png'))
                     plt.close()
-            
+
             results[position_key][mass_key] = chi_square_list
-    
+
     util.pickle(os.path.join(save_dir, f'results_{lens.uid}.pkl'), results)
-            
+
 
 if __name__ == '__main__':
     main()

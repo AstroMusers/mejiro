@@ -1,13 +1,14 @@
-import os
 import json
-import pandas as pd
-import galsim
 import math
+import os
 from copy import deepcopy
 
+import galsim
+import pandas as pd
+
 import mejiro
-from mejiro.instruments.instrument_base import InstrumentBase
 from mejiro.helpers import psf
+from mejiro.instruments.instrument_base import InstrumentBase
 
 
 class Roman(InstrumentBase):
@@ -63,18 +64,20 @@ class Roman(InstrumentBase):
             'F146': 0.105
         }  # retrieved 25 June 2024 from https://outerspace.stsci.edu/pages/viewpage.action?spaceKey=ISWG&title=Roman+WFI+and+Observatory+Performance
 
-        
     def validate_instrument_config(config):
         # TODO implement this
         pass
 
-    def get_exposure(self, synthetic_image, interp, rng, exposure_time, sky_background=True, detector_effects=True, **kwargs):
+    def get_exposure(self, synthetic_image, interp, rng, exposure_time, sky_background=True, detector_effects=True,
+                     **kwargs):
         suppress_output = kwargs['suppress_output'] if 'suppress_output' in kwargs else True
 
         # get PSF
         detector = kwargs['sca']
         detector_position = kwargs['sca_position']
-        self.psf = psf.get_webbpsf_psf(synthetic_image.band, detector, detector_position, synthetic_image.oversample, check_cache=True, psf_cache_dir='/data/bwedig/mejiro/cached_psfs', suppress_output=suppress_output)
+        self.psf = psf.get_webbpsf_psf(synthetic_image.band, detector, detector_position, synthetic_image.oversample,
+                                       check_cache=True, psf_cache_dir='/data/bwedig/mejiro/cached_psfs',
+                                       suppress_output=suppress_output)
         # self.psf_image = self.psf.drawImage(scale=synthetic_image.pixel_scale)  # TODO FIX
 
         # convolve with PSF
@@ -88,7 +91,8 @@ class Roman(InstrumentBase):
 
         # add sky background
         if sky_background:
-            bkgs = self.get_sky_bkgs(synthetic_image.band, exposure_time, num_pix=output_num_pix, oversample=synthetic_image.native_pixel_scale)
+            bkgs = self.get_sky_bkgs(synthetic_image.band, exposure_time, num_pix=output_num_pix,
+                                     oversample=synthetic_image.native_pixel_scale)
             bkg = bkgs[synthetic_image.band]
             image += bkg
 
@@ -144,7 +148,7 @@ class Roman(InstrumentBase):
             return image, poisson_noise, dark_noise, read_noise
         else:
             return image
-            
+
     def get_sky_bkgs(self, bands, exposure_time, num_pix, oversample):
         # was only one band provided as a string? or a list of bands?
         single_band = False
@@ -231,7 +235,7 @@ class Roman(InstrumentBase):
         """
         sca = Roman.get_sca_string(sca)
         return self.zp_dict[sca][band.upper()]
-    
+
     def divide_up_sca(self, sides):
         assert sides % 2 == 0, "For now, sides must be even"
 
@@ -244,7 +248,7 @@ class Roman(InstrumentBase):
                 if i % 2 != 0 and j % 2 != 0:
                     centers.append((piece * i, piece * j))
         return centers
-    
+
     @staticmethod
     def get_sca_string(sca):
         if type(sca) is int:
@@ -270,7 +274,7 @@ class Roman(InstrumentBase):
                 return int(sca[3:])
             else:
                 return int(sca)
-    
+
     # TODO consider making all methods which might call this one methods on the class that only call this method if a flag on the class (e.g., override) is False. this way, scripts can instantiate Roman() with override=True and then avoid running this method every single time
     @staticmethod
     def translate_band(input):
@@ -298,4 +302,3 @@ class Roman(InstrumentBase):
                 return band
             else:
                 raise ValueError(f"Band {input} not recognized. Valid bands (and aliases) are {options_dict}.")
-        

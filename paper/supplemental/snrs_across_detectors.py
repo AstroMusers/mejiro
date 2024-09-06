@@ -3,17 +3,13 @@ import os
 import sys
 import time
 from copy import deepcopy
-from glob import glob
 from multiprocessing import Pool
-from pprint import pprint
 
 import galsim
 import hydra
 import matplotlib.pyplot as plt
 import numpy as np
-from hydra.core.hydra_config import HydraConfig
 from tqdm import tqdm
-from tqdm.contrib import itertools
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -40,7 +36,7 @@ def main(config):
         'log_mlow': 6,
         'log_mhigh': 10,
         'r_tidal': 0.5,
-        'sigma_sub': 0.055,  
+        'sigma_sub': 0.055,
         'los_normalization': 0.
     }
     imaging_params = {
@@ -150,10 +146,12 @@ def run_process(tuple):
     results = {}
     for detector in tqdm(detectors, leave=True, disable=False):
         lens_for_noise = deepcopy(lens)
-        synth_for_noise = SyntheticImage(lens_for_noise, 
-                                          roman, band=band, arcsec=scene_size, oversample=oversample, sca=detector, sca_position=(2048, 2048), debugging=False)
-        exposure_for_noise = Exposure(synth_for_noise, 
-                                       exposure_time=exposure_time, rng=rng, sca=detector, sca_position=(2048, 2048), return_noise=True, suppress_output=True)
+        synth_for_noise = SyntheticImage(lens_for_noise,
+                                         roman, band=band, arcsec=scene_size, oversample=oversample, sca=detector,
+                                         sca_position=(2048, 2048), debugging=False)
+        exposure_for_noise = Exposure(synth_for_noise,
+                                      exposure_time=exposure_time, rng=rng, sca=detector, sca_position=(2048, 2048),
+                                      return_noise=True, suppress_output=True)
 
         # NB noise depends on brightnesses of pixels, which in turn depend on SCA-specific zeropoint
         poisson_noise = exposure_for_noise.poisson_noise
@@ -181,28 +179,29 @@ def run_process(tuple):
         snrs_for_positions = []
         for detector_position in tqdm(detector_positions, leave=False, disable=True):
             lens_tmp = deepcopy(lens)
-            synth_tmp = SyntheticImage(lens_tmp, 
-                                   roman, 
-                                   band=band, 
-                                   arcsec=scene_size, 
-                                   oversample=oversample, 
-                                   sca=detector, 
-                                   sca_position=detector_position, 
-                                   debugging=False, 
-                                   pieces=True)
-            exposure = Exposure(synth_tmp, 
-                                exposure_time=exposure_time, 
-                                rng=rng, 
-                                sca=detector, 
-                                sca_position=detector_position, 
-                                poisson_noise=poisson_noise, 
-                                dark_noise=dark_noise, 
-                                read_noise=read_noise, 
+            synth_tmp = SyntheticImage(lens_tmp,
+                                       roman,
+                                       band=band,
+                                       arcsec=scene_size,
+                                       oversample=oversample,
+                                       sca=detector,
+                                       sca_position=detector_position,
+                                       debugging=False,
+                                       pieces=True)
+            exposure = Exposure(synth_tmp,
+                                exposure_time=exposure_time,
+                                rng=rng,
+                                sca=detector,
+                                sca_position=detector_position,
+                                poisson_noise=poisson_noise,
+                                dark_noise=dark_noise,
+                                read_noise=read_noise,
                                 suppress_output=True)
             total_exposure = exposure.exposure
             lens_exposure = exposure.lens_exposure
             source_exposure = exposure.source_exposure
-            noise = total_exposure - (lens_exposure + source_exposure)  # NB neither lens or source has sky background to detector effects added
+            noise = total_exposure - (
+                        lens_exposure + source_exposure)  # NB neither lens or source has sky background to detector effects added
 
             # plt.imshow(source_exposure)
             # plt.colorbar()
@@ -239,7 +238,7 @@ def run_process(tuple):
                 print(f'Error in get_regions for {lens.uid} at {detector_position}')
                 continue
             # print(f'{len(indices_list)} regions found')
-            
+
             snr_list = []
             for region in indices_list:
                 numerator, denominator = 0, 0
@@ -258,7 +257,8 @@ def run_process(tuple):
 
         # for last detector position, save a few diagostic plots
         if plot_figures:
-            diagnostic_plot.snr_plot(total_exposure, lens_exposure, source_exposure, noise, snr_array, masked_snr_array, snr_list, image_save_dir)
+            diagnostic_plot.snr_plot(total_exposure, lens_exposure, source_exposure, noise, snr_array, masked_snr_array,
+                                     snr_list, image_save_dir)
 
             _, ax = plt.subplots(1, 3, figsize=(15, 5))
             ax[0].imshow(exposure_for_noise.exposure)
@@ -274,7 +274,7 @@ def run_process(tuple):
             except Exception as e:
                 print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
             plt.close()
-        
+
         results[detector] = snrs_for_positions
 
     util.pickle(os.path.join(save_dir, f'results_{lens.uid}.pkl'), results)

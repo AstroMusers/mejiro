@@ -24,7 +24,8 @@ class SyntheticImage:
         # calculate surface brightness
         self._calculate_surface_brightness(pieces=pieces)
 
-        if self.debugging: print(f'Initialized SyntheticImage for StrongLens {self.strong_lens.uid} by {self.instrument.name} in {self.band} band')
+        if self.debugging: print(
+            f'Initialized SyntheticImage for StrongLens {self.strong_lens.uid} by {self.instrument.name} in {self.band} band')
 
     def _calculate_surface_brightness(self, pieces=False, kwargs_psf=None):
         self._set_up_pixel_grid()
@@ -59,13 +60,13 @@ class SyntheticImage:
         kwargs_source_amp = [self.strong_lens.kwargs_source_amp_dict[self.band]]
 
         self.image = image_model.image(kwargs_lens=self.strong_lens.kwargs_lens,
-                                        kwargs_source=kwargs_source_amp,
-                                        kwargs_lens_light=kwargs_lens_light_amp)
+                                       kwargs_source=kwargs_source_amp,
+                                       kwargs_lens_light=kwargs_lens_light_amp)
 
         if pieces:
             self.lens_surface_brightness = image_model.lens_surface_brightness(kwargs_lens_light_amp)
             self.source_surface_brightness = image_model.source_surface_brightness(kwargs_source_amp,
-                                                                              self.strong_lens.kwargs_lens)
+                                                                                   self.strong_lens.kwargs_lens)
 
     def _convert_magnitudes_to_lenstronomy_amps(self):
         # TODO this is also awful
@@ -95,7 +96,8 @@ class SyntheticImage:
         self.pixel_scale = self.native_pixel_scale / self.oversample
         self.num_pix = np.ceil(self.arcsec / self.pixel_scale).astype(int)
         self.arcsec = self.num_pix * self.pixel_scale
-        if self.debugging: print(f'Computing on pixel grid of size {self.num_pix}x{self.num_pix} ({self.arcsec}\"x{self.arcsec}\") with pixel scale {self.pixel_scale} arcsec/pixel (natively {self.native_pixel_scale} arcsec/pixel oversampled by factor {self.oversample})')
+        if self.debugging: print(
+            f'Computing on pixel grid of size {self.num_pix}x{self.num_pix} ({self.arcsec}\"x{self.arcsec}\") with pixel scale {self.pixel_scale} arcsec/pixel (natively {self.native_pixel_scale} arcsec/pixel oversampled by factor {self.oversample})')
 
         _, _, self.ra_at_xy_0, self.dec_at_xy_0, _, _, self.Mpix2coord, self.Mcoord2pix = (
             len_util.make_grid_with_coordtransform(

@@ -44,7 +44,7 @@ def main(config):
     # set subhalo and imaging params
     subhalo_params = {
         'r_tidal': 0.5,
-        'sigma_sub': 0.055,  
+        'sigma_sub': 0.055,
         'los_normalization': 0.
     }
     imaging_params = {
@@ -103,7 +103,8 @@ def main(config):
         cached_psfs[id_string] = psf.load_cached_psf(id_string, psf_cache_dir)
 
     tuple_list = [
-        (lens, subhalo_params, imaging_params, detectors, detector_positions, cached_psfs, require_alignment, save_dir, image_save_dir, debugging) for
+        (lens, subhalo_params, imaging_params, detectors, detector_positions, cached_psfs, require_alignment, save_dir,
+         image_save_dir, debugging) for
         lens in lenses_to_process]
 
     # split up the lenses into batches based on core count
@@ -140,7 +141,8 @@ def generate_power_spectra(tuple):
     from mejiro.utils import util
 
     # unpack tuple
-    (lens, subhalo_params, imaging_params, detectors, detector_positions, cached_psfs, require_alignment, save_dir, image_save_dir, debugging) = tuple
+    (lens, subhalo_params, imaging_params, detectors, detector_positions, cached_psfs, require_alignment, save_dir,
+     image_save_dir, debugging) = tuple
     r_tidal = subhalo_params['r_tidal']
     sigma_sub = subhalo_params['sigma_sub']
     los_normalization = subhalo_params['los_normalization']

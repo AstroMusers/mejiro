@@ -1,11 +1,11 @@
+import json
 import os
 import sys
+from glob import glob
 
 import hydra
-import json
 import numpy as np
 import speclite.filters
-from glob import glob
 from tqdm import tqdm
 
 
@@ -24,7 +24,7 @@ def get_zeropoint_magnitude(wavelength, response, effective_area=4.5 * 1e4):
     integral = 0
     for wl, resp in zip(wavelength, response):
         integral += (dv * (1 / wl) * resp)
-    
+
     return 8.9 + (2.5 * np.log10(((effective_area * 1e-23) / (6.602 * 1e-27)) * integral))
 
 
@@ -52,9 +52,9 @@ def main(config):
         sca_dict = {}
         for band, filter in zip(roman_bands, roman_filters):
             sca_dict[band] = get_zeropoint_magnitude(filter.wavelength, filter.response)
-        
+
         zp_dict[f'SCA{str(sca).zfill(2)}'] = sca_dict
-    
+
     output_file = os.path.join(module_path, 'data', 'roman_zeropoint_magnitudes.json')
     json.dump(zp_dict, open(output_file, 'w'), indent=4)
     print(f'Zeropoint magnitudes saved to {output_file}')

@@ -24,7 +24,8 @@ def get_masked_exposure(lens, model, band, psf, num_pix, oversample, exposure_ti
         psf = psf_util.kernel_to_galsim_interpolated_image(psf, oversample)
 
     total_flux_cps = lens.get_total_flux_cps(band)
-    interp = InterpolatedImage(Image(model, xmin=0, ymin=0), scale=0.11 / oversample, flux=total_flux_cps * exposure_time)
+    interp = InterpolatedImage(Image(model, xmin=0, ymin=0), scale=0.11 / oversample,
+                               flux=total_flux_cps * exposure_time)
     image = gs.convolve(interp, psf, num_pix)
     final_array = image.array
 
@@ -59,15 +60,15 @@ def get_small(lens, subhalo_params):
 def _get_subhalos(lens, subhalo_params, log_mlow, log_mhigh, cone_factor):
     try:
         return CDM(round(lens.z_lens, 2),
-                    round(lens.z_source, 2),
-                    sigma_sub=subhalo_params['sigma_sub'],
-                    log_mlow=log_mlow,
-                    log_mhigh=log_mhigh,
-                    log_m_host=np.log10(lens.main_halo_mass),
-                    r_tidal=subhalo_params['r_tidal'],
-                    # cone_opening_angle_arcsec=lens.get_einstein_radius() * cone_factor,
-                    cone_opening_angle_arcsec=5.,
-                    LOS_normalization=subhalo_params['los_normalization'])
+                   round(lens.z_source, 2),
+                   sigma_sub=subhalo_params['sigma_sub'],
+                   log_mlow=log_mlow,
+                   log_mhigh=log_mhigh,
+                   log_m_host=np.log10(lens.main_halo_mass),
+                   r_tidal=subhalo_params['r_tidal'],
+                   # cone_opening_angle_arcsec=lens.get_einstein_radius() * cone_factor,
+                   cone_opening_angle_arcsec=5.,
+                   LOS_normalization=subhalo_params['los_normalization'])
     except Exception as e:
         print(f'StrongLens {lens.uid}: {e}')
         return None
@@ -95,7 +96,7 @@ def main(config):
     # set subhalo and imaging params
     subhalo_params = {
         'r_tidal': 0.5,
-        'sigma_sub': 0.055,  
+        'sigma_sub': 0.055,
         'los_normalization': 0.
     }
     imaging_params = {
@@ -153,7 +154,8 @@ def main(config):
     filtered_lenses = []
     num_lenses = 0
     for lens in lens_list:
-        if lens.snr > snr_threshold and lens.get_einstein_radius() > einstein_radius_threshold and np.log10(lens.main_halo_mass) > log_m_host_threshold and lens.snr != np.inf:
+        if lens.snr > snr_threshold and lens.get_einstein_radius() > einstein_radius_threshold and np.log10(
+                lens.main_halo_mass) > log_m_host_threshold and lens.snr != np.inf:
             filtered_lenses.append(lens)
             num_lenses += 1
         if limit is not None and num_lenses >= limit:
@@ -184,7 +186,8 @@ def main(config):
         cached_psfs[id_string] = psf.load_cached_psf(id_string, psf_cache_dir, suppress_output=False)
 
     tuple_list = [
-        (run, lens, subhalo_params, imaging_params, position_control, positions, cached_psfs, require_alignment, snr_pixel_threshold, save_dir, image_save_dir, debugging) for
+        (run, lens, subhalo_params, imaging_params, position_control, positions, cached_psfs, require_alignment,
+         snr_pixel_threshold, save_dir, image_save_dir, debugging) for
         run, lens in enumerate(lenses_to_process)]
 
     # split up the lenses into batches based on core count
@@ -215,12 +218,13 @@ def main(config):
 
 
 def generate_power_spectra(tuple):
-    from mejiro.helpers import gs, psf
+    from mejiro.helpers import psf
     from mejiro.lenses import lens_util
     from mejiro.utils import util
 
     # unpack tuple
-    (run, lens, subhalo_params, imaging_params, position_control, positions, cached_psfs, require_alignment, snr_pixel_threshold, save_dir, image_save_dir, debugging) = tuple
+    (run, lens, subhalo_params, imaging_params, position_control, positions, cached_psfs, require_alignment,
+     snr_pixel_threshold, save_dir, image_save_dir, debugging) = tuple
     control_band = imaging_params['control_band']
     oversample = imaging_params['oversample']
     num_pix = imaging_params['num_pix']
@@ -447,12 +451,16 @@ def generate_power_spectra(tuple):
         plt.close()
 
     # ---------------------GENERATE EXPOSURES VARYING SUBHALO POPULATION---------------------
-    subhalos_psf_id_string = psf.get_psf_id_string(band=control_band, detector=position_control[0][0], detector_position=position_control[0][1], oversample=oversample)
+    subhalos_psf_id_string = psf.get_psf_id_string(band=control_band, detector=position_control[0][0],
+                                                   detector_position=position_control[0][1], oversample=oversample)
     subhalos_psf_kernel = cached_psfs[subhalos_psf_id_string]
 
-    wdm_exposure = get_masked_exposure(wdm_lens, wdm_array, control_band, subhalos_psf_kernel, num_pix, oversample, exposure_time, snr_pixel_threshold)
-    mdm_exposure = get_masked_exposure(mdm_lens, mdm_array, control_band, subhalos_psf_kernel, num_pix, oversample, exposure_time, snr_pixel_threshold)
-    cdm_exposure = get_masked_exposure(cdm_lens, cdm_array, control_band, subhalos_psf_kernel, num_pix, oversample, exposure_time, snr_pixel_threshold)
+    wdm_exposure = get_masked_exposure(wdm_lens, wdm_array, control_band, subhalos_psf_kernel, num_pix, oversample,
+                                       exposure_time, snr_pixel_threshold)
+    mdm_exposure = get_masked_exposure(mdm_lens, mdm_array, control_band, subhalos_psf_kernel, num_pix, oversample,
+                                       exposure_time, snr_pixel_threshold)
+    cdm_exposure = get_masked_exposure(cdm_lens, cdm_array, control_band, subhalos_psf_kernel, num_pix, oversample,
+                                       exposure_time, snr_pixel_threshold)
     np.save(os.path.join(save_dir, f'im_wdm_{lens.uid}_run{run}.npy'), wdm_exposure)
     np.save(os.path.join(save_dir, f'im_mdm_{lens.uid}_run{run}.npy'), mdm_exposure)
     np.save(os.path.join(save_dir, f'im_cdm_{lens.uid}_run{run}.npy'), cdm_exposure)
@@ -481,7 +489,7 @@ def generate_power_spectra(tuple):
             plt.savefig(image_save_path)
         except Exception as e:
             print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
-        plt.close() 
+        plt.close()
 
     wdm_ps, r = power_spectrum_1d(wdm_exposure)
     mdm_ps, _ = power_spectrum_1d(mdm_exposure)
@@ -507,17 +515,20 @@ def generate_power_spectra(tuple):
         plt.xscale('log')
         plt.title(f'{lens.uid}: Exposure Power Spectra Residuals Varying Subhalo Population')
         plt.legend()
-        image_save_path = os.path.join(image_save_dir, f'07_{lens.uid}_exposure_power_spectra_varying_subhalos_run{run}.png')
+        image_save_path = os.path.join(image_save_dir,
+                                       f'07_{lens.uid}_exposure_power_spectra_varying_subhalos_run{run}.png')
         try:
             plt.savefig(image_save_path)
         except Exception as e:
             print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
-        plt.close() 
+        plt.close()
 
-    # ---------------------GENERATE EXPOSURES VARYING PSFS---------------------
+        # ---------------------GENERATE EXPOSURES VARYING PSFS---------------------
     position_exposures = []
     for detector, detector_position in position_control + positions:
-        exposure = get_masked_exposure(cdm_lens, cdm_array, control_band, cached_psfs[psf.get_psf_id_string(control_band, detector, detector_position, oversample)], num_pix, oversample, exposure_time, snr_pixel_threshold)
+        exposure = get_masked_exposure(cdm_lens, cdm_array, control_band, cached_psfs[
+            psf.get_psf_id_string(control_band, detector, detector_position, oversample)], num_pix, oversample,
+                                       exposure_time, snr_pixel_threshold)
         position_exposures.append(exposure)
         np.save(os.path.join(save_dir, f'im_pos_{detector}_{lens.uid}_run{run}.npy'), exposure)
 
@@ -628,9 +639,9 @@ def generate_power_spectra(tuple):
             plt.savefig(os.path.join(image_save_dir, f'08_{lens.uid}_exposures_varying_psfs_run{run}.png'))
         except Exception as e:
             print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
-        plt.close() 
+        plt.close()
 
-    # ---------------------COMPARE POWER SPECTRA RESIDUALS---------------------
+        # ---------------------COMPARE POWER SPECTRA RESIDUALS---------------------
     if plot_figures:
         plt.plot(r, res_ps_pos_1)  # , label=f'{list(positions.keys())[0]}'
         plt.plot(r, res_ps_pos_2)
@@ -645,7 +656,7 @@ def generate_power_spectra(tuple):
             plt.savefig(os.path.join(image_save_dir, f'09_{lens.uid}_compare_power_spectra_residuals_run{run}.png'))
         except Exception as e:
             print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
-        plt.close() 
+        plt.close()
 
     print(f'Finished lens {lens.uid}.')
 

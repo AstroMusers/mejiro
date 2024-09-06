@@ -37,27 +37,30 @@ def collect_all_detectable_lenses(dir, suppress_output=True):
 
 
 # TODO a(n imperfect) lens subtraction option?
-def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), num_pix=45, side=4.95, oversample=1, exposure_time=146, return_snr_list=False, debugging=False, debug_dir=None, psf_cache_dir=None):
+def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), num_pix=45, side=4.95, oversample=1,
+            exposure_time=146, return_snr_list=False, debugging=False, debug_dir=None, psf_cache_dir=None):
     if debugging: assert debug_dir is not None, 'Debugging is enabled but no debug directory is provided.'
 
     if type(detector) is str:
         detector = int(detector)
 
     check_cache = False if psf_cache_dir is None else True
-    
+
     sample_lens = lens_util.slsim_lens_to_mejiro(gglens, bands=[band],
                                                  cosmo=default_cosmology.get())  # TODO pass in cosmology
 
     # generate synthetic images with lenstronomy
-    model, lens_sb, source_sb = sample_lens.get_array(num_pix * oversample, side, band, zp,return_pieces=True)
+    model, lens_sb, source_sb = sample_lens.get_array(num_pix * oversample, side, band, zp, return_pieces=True)
 
     # generate GalSim images
-    results, lenses, sources, _ = gs.get_images(sample_lens, [model], [band], {band: zp}, num_pix, num_pix, oversample, oversample,
+    results, lenses, sources, _ = gs.get_images(sample_lens, [model], [band], {band: zp}, num_pix, num_pix, oversample,
+                                                oversample,
                                                 lens_surface_brightness=[lens_sb],
                                                 source_surface_brightness=[source_sb], detector=detector,
                                                 detector_pos=detector_position,
                                                 exposure_time=exposure_time, ra=30, dec=-30, seed=None, validate=False,
-                                                suppress_output=True, check_cache=check_cache, psf_cache_dir=psf_cache_dir)
+                                                suppress_output=True, check_cache=check_cache,
+                                                psf_cache_dir=psf_cache_dir)
 
     # put back into units of counts
     total = results[0] * exposure_time
@@ -71,7 +74,8 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), num_pi
     snr_array = np.nan_to_num(source / np.sqrt(total))
 
     if not np.any(snr_array >= 1):
-        return 1, np.ma.array(snr_array, mask=True), [1], None  # TODO I'm doing this because SNRs for non-detectable lenses don't really matter right now
+        return 1, np.ma.array(snr_array, mask=True), [
+            1], None  # TODO I'm doing this because SNRs for non-detectable lenses don't really matter right now
         # masked_snr_array = np.ma.masked_where(snr_array <= np.quantile(snr_array, 0.9), snr_array)  # TODO this must be the mask that's causing issues
     else:
         masked_snr_array = np.ma.masked_where(snr_array <= 1, snr_array)

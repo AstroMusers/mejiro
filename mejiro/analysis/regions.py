@@ -26,18 +26,23 @@ def remove_single_pixels(masked_array):
                     if masked_array.data[x - 1, y] == 0 and masked_array.data[x, y - 1] == 0:
                         masked_array.mask[x, y] = True
                 elif x == 0:  # left edge (not corners)
-                    if masked_array.data[x + 1, y] == 0 and masked_array.data[x, y + 1] == 0 and masked_array.data[x, y - 1] == 0:
+                    if masked_array.data[x + 1, y] == 0 and masked_array.data[x, y + 1] == 0 and masked_array.data[
+                        x, y - 1] == 0:
                         masked_array.mask[x, y] = True
                 elif x == x_shape - 1:  # right edge (not corners)
-                    if masked_array.data[x - 1, y] == 0 and masked_array.data[x, y - 1] == 0 and masked_array.data[x, y + 1] == 0:
+                    if masked_array.data[x - 1, y] == 0 and masked_array.data[x, y - 1] == 0 and masked_array.data[
+                        x, y + 1] == 0:
                         masked_array.mask[x, y] = True
                 elif y == 0:  # bottom edge (not corners)
-                    if masked_array.data[x - 1, y] == 0 and masked_array.data[x + 1, y] == 0 and masked_array.data[x, y + 1] == 0:
+                    if masked_array.data[x - 1, y] == 0 and masked_array.data[x + 1, y] == 0 and masked_array.data[
+                        x, y + 1] == 0:
                         masked_array.mask[x, y] = True
                 elif y == y_shape - 1:  # top edge (not corners)
-                    if masked_array.data[x - 1, y] == 0 and masked_array.data[x + 1, y] == 0 and masked_array.data[x, y - 1] == 0:
+                    if masked_array.data[x - 1, y] == 0 and masked_array.data[x + 1, y] == 0 and masked_array.data[
+                        x, y - 1] == 0:
                         masked_array.mask[x, y] = True
-                elif masked_array.data[x - 1, y] == 0 and masked_array.data[x + 1, y] == 0 and masked_array.data[x, y - 1] == 0 and masked_array.data[x, y + 1] == 0:
+                elif masked_array.data[x - 1, y] == 0 and masked_array.data[x + 1, y] == 0 and masked_array.data[
+                    x, y - 1] == 0 and masked_array.data[x, y + 1] == 0:
                     masked_array.mask[x, y] = True
 
     return masked_array

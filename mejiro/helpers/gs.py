@@ -2,9 +2,9 @@ import datetime
 import os
 import random
 import time
-import numpy as np
 
 import galsim
+import numpy as np
 from astropy.coordinates import SkyCoord
 from galsim import InterpolatedImage, Image
 
@@ -15,7 +15,8 @@ from mejiro.utils import util
 roman_params = Roman()
 
 
-def get_images(lens, arrays, bands, sca_zp_dict=None, input_size=96, output_size=90, grid_oversample=5, psf_oversample=5,
+def get_images(lens, arrays, bands, sca_zp_dict=None, input_size=96, output_size=90, grid_oversample=5,
+               psf_oversample=5,
                lens_surface_brightness=None, source_surface_brightness=None, detector=None, detector_pos=None,
                exposure_time=146, ra=30, dec=-30, seed=None, validate=True, suppress_output=True, check_cache=True,
                psf_cache_dir=None):

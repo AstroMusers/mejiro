@@ -8,7 +8,6 @@ from multiprocessing import Pool
 from pprint import pprint
 
 import hydra
-import matplotlib.pyplot as plt
 import numpy as np
 import speclite
 from astropy.cosmology import default_cosmology
@@ -72,7 +71,7 @@ def main(config):
         sca_id = str(scas[run % len(scas)]).zfill(2)
         sca_zp_dict = zp_dict[f'SCA{sca_id}']
         tuple_list.append((str(run).zfill(4), sca_id, sca_zp_dict, area, survey_params, pipeline_params,
-                   output_dir, debugging, debug_dir, psf_cache_dir))
+                           output_dir, debugging, debug_dir, psf_cache_dir))
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -209,7 +208,7 @@ def run_slsim(tuple):
             if snr is None:
                 num_exceptions += 1
                 continue
-            
+
             snr_list.append(snr)
             # if debugging:
             #     if j < 25:
@@ -266,17 +265,17 @@ def run_slsim(tuple):
 
         # 2. SNR
         snr, masked_snr_array, snr_list, _ = survey_sim.get_snr(candidate,
-                                                                          band=survey_params['snr_band'],
-                                                                          zp=sca_zp_dict[survey_params['snr_band']],
-                                                                          detector=sca_id,
-                                                                          detector_position=(2048, 2048),
-                                                                          num_pix=survey_params['snr_num_pix'],
-                                                                          side=survey_params['snr_side'],
-                                                                          oversample=survey_params['snr_oversample'],
-                                                                          exposure_time=pipeline_params['exposure_time'],
-                                                                          debugging=debugging,
-                                                                          debug_dir=debug_dir,
-                                                                          psf_cache_dir=psf_cache_dir)
+                                                                band=survey_params['snr_band'],
+                                                                zp=sca_zp_dict[survey_params['snr_band']],
+                                                                detector=sca_id,
+                                                                detector_position=(2048, 2048),
+                                                                num_pix=survey_params['snr_num_pix'],
+                                                                side=survey_params['snr_side'],
+                                                                oversample=survey_params['snr_oversample'],
+                                                                exposure_time=pipeline_params['exposure_time'],
+                                                                debugging=debugging,
+                                                                debug_dir=debug_dir,
+                                                                psf_cache_dir=psf_cache_dir)
         if snr is None:
             continue
 

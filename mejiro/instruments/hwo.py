@@ -1,9 +1,11 @@
-import galsim
-import numpy as np
 import math
 
-from mejiro.instruments.instrument_base import InstrumentBase
+import galsim
+import numpy as np
+
 from mejiro.helpers import psf
+from mejiro.instruments.instrument_base import InstrumentBase
+
 
 # from syotools.models import Camera, Telescope
 
@@ -45,7 +47,7 @@ class HWO(InstrumentBase):
         self.psf_fwhm = self.get_psf_fwhm(self.synthetic_image.band)
         print(f'PSF FWHM: {self.psf_fwhm}')
         # self.psf = psf.get_gaussian_psf(self.psf_fwhm, self.synthetic_image.oversample,
-                                        # pixel_scale=self.synthetic_image.native_pixel_scale)
+        # pixel_scale=self.synthetic_image.native_pixel_scale)
         self.psf = psf.get_gaussian_psf(self.psf_fwhm)
         self.psf_image = self.psf.drawImage(scale=self.synthetic_image.pixel_scale)
 
@@ -62,7 +64,7 @@ class HWO(InstrumentBase):
         image.quantize()
 
         # add sky background
-        sky_level = None 
+        sky_level = None
         # TODO remember to use output_num_pix
 
         # add Poisson noise due to arrival times of photons from signal and sky
@@ -85,7 +87,6 @@ class HWO(InstrumentBase):
         # quantize, since analog-to-digital conversion gives integers
         image.quantize()
 
-
     @staticmethod
     def validate_instrument_config(config):
         # TODO implement this
@@ -100,7 +101,7 @@ class HWO(InstrumentBase):
                 self.pivotwave[2] * 0.000000001) * 206264.8062 / self.aperture / 2.  # Opt set at U
         self.pixel_scale[-3:] = 1.22 * (
                 self.pivotwave[7] * 0.000000001) * 206264.8062 / self.aperture / 2.  # NIR set at J
-        
+
     def _set_psf_fwhm(self):
         diff_limit = 1.22 * (500. * 0.000000001) * 206264.8062 / self.aperture
 
