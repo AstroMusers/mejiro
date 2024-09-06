@@ -95,8 +95,9 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), num_pi
         assert not np.isinf(snr), 'Inf in SNR list'
         snr_list.append(snr)
 
-    if debugging and np.max(snr_list) > 20:
-        diagnostic_plot.snr_plot(total, lens, source, noise, snr_array, masked_snr_array, snr_list, debug_dir)
+    if len(snr_list) != 0:
+        if debugging and np.max(snr_list) > 20:
+            diagnostic_plot.snr_plot(total, lens, source, noise, snr_array, masked_snr_array, snr_list, debug_dir)
 
     if return_snr_list:
         return snr_list, None, None, None
