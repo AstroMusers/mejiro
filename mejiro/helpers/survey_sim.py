@@ -76,6 +76,9 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), num_pi
     else:
         masked_snr_array = np.ma.masked_where(snr_array <= 1, snr_array)
 
+    # speed up region-identifying code by removing single pixel regions
+    masked_snr_array = regions.remove_single_pixels(masked_snr_array)
+
     # calculate regions of connected pixels given the snr mask
     indices_list = regions.get_regions(masked_snr_array, debug_dir)
 

@@ -10,43 +10,35 @@ from mejiro.utils import util
 def remove_single_pixels(masked_array):
     x_shape, y_shape = masked_array.shape
 
-    masked_array[0, 10] = 1
-    masked_array[0, 0] = 1
-    masked_array[x_shape - 1, y_shape - 1] = 1
-
-    coords = []
     for x in range(0, x_shape):
         for y in range(0, y_shape):
-            if masked_array[x, y] != 0:
+            if masked_array.data[x, y] != 0:
                 if x == 0 and y == 0:  # bottom left corner
-                    if masked_array[x + 1, y] == 0 and masked_array[x, y + 1] == 0:
-                        coords.append((x, y))
-                elif x == 0 and y == y_shape - 1:  # bottom right corner
-                    if masked_array[x + 1, y] == 0 and masked_array[x, y - 1] == 0:
-                        coords.append((x, y))
-                elif x == x_shape and y == 0:  # top left corner
-                    if masked_array[x - 1, y] == 0 and masked_array[x, y + 1] == 0:
-                        coords.append((x, y))
+                    if masked_array.data[x + 1, y] == 0 and masked_array.data[x, y + 1] == 0:
+                        masked_array.mask[x, y] = True
+                elif x == 0 and y == y_shape - 1:  # top left corner
+                    if masked_array.data[x + 1, y] == 0 and masked_array.data[x, y - 1] == 0:
+                        masked_array.mask[x, y] = True
+                elif x == x_shape and y == 0:  # bottom right corner
+                    if masked_array.data[x - 1, y] == 0 and masked_array.data[x, y + 1] == 0:
+                        masked_array.mask[x, y] = True
                 elif x == x_shape - 1 and y == y_shape - 1:  # top right corner
-                    if masked_array[x - 1, y] == 0 and masked_array[x, y - 1] == 0:
-                        coords.append((x, y))
-                elif x == 0:  # bottom edge
-                    if masked_array[x - 1, y] == 0 and masked_array[x + 1, y] == 0 and masked_array[x, y + 1] == 0:
-                        coords.append((x, y))
-                elif x == x_shape - 1:  # top edge
-                    if masked_array[x - 1, y] == 0 and masked_array[x + 1, y] == 0 and masked_array[x, y - 1] == 0 and masked_array[x, y + 1] == 0:
-                        coords.append((x, y))
-                elif y == 0:  # left edge
-                    if masked_array[x - 1, y] == 0 and masked_array[x + 1, y] == 0 and masked_array[x, y - 1] == 0 and masked_array[x, y + 1] == 0:
-                        coords.append((x, y))
-                elif y == y_shape - 1:  # right edge
-                    if masked_array[x - 1, y] == 0 and masked_array[x + 1, y] == 0 and masked_array[x, y - 1] == 0:
-                        coords.append((x, y))
-                elif masked_array[x - 1, y] == 0 and masked_array[x + 1, y] == 0 and masked_array[x, y - 1] == 0 and masked_array[x, y + 1] == 0:
-                    coords.append((x, y))
-
-    for coord in coords:
-        masked_array[coord] = 0
+                    if masked_array.data[x - 1, y] == 0 and masked_array.data[x, y - 1] == 0:
+                        masked_array.mask[x, y] = True
+                elif x == 0:  # left edge (not corners)
+                    if masked_array.data[x + 1, y] == 0 and masked_array.data[x, y + 1] == 0 and masked_array.data[x, y - 1] == 0:
+                        masked_array.mask[x, y] = True
+                elif x == x_shape - 1:  # right edge (not corners)
+                    if masked_array.data[x - 1, y] == 0 and masked_array.data[x, y - 1] == 0 and masked_array.data[x, y + 1] == 0:
+                        masked_array.mask[x, y] = True
+                elif y == 0:  # bottom edge (not corners)
+                    if masked_array.data[x - 1, y] == 0 and masked_array.data[x + 1, y] == 0 and masked_array.data[x, y + 1] == 0:
+                        masked_array.mask[x, y] = True
+                elif y == y_shape - 1:  # top edge (not corners)
+                    if masked_array.data[x - 1, y] == 0 and masked_array.data[x + 1, y] == 0 and masked_array.data[x, y - 1] == 0:
+                        masked_array.mask[x, y] = True
+                elif masked_array.data[x - 1, y] == 0 and masked_array.data[x + 1, y] == 0 and masked_array.data[x, y - 1] == 0 and masked_array.data[x, y + 1] == 0:
+                    masked_array.mask[x, y] = True
 
     return masked_array
 
