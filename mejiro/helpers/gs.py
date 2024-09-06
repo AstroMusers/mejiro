@@ -2,6 +2,7 @@ import datetime
 import os
 import random
 import time
+import numpy as np
 
 import galsim
 from astropy.coordinates import SkyCoord
@@ -140,6 +141,8 @@ def _calculate_image(array, band, grid_oversample, psf_kernels, bkgs, input_size
 
     # divide through by exposure time to get in units of counts/sec/pixel
     final_array /= exposure_time
+
+    assert np.any(final_array >= 0.), 'Negative pixel values found'
 
     return final_array
 
