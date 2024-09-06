@@ -118,6 +118,9 @@ def run_slsim(tuple):
     lens_output_dir = os.path.join(output_dir, f'run_{run}_sca{sca_id}')
     util.create_directory_if_not_exists(lens_output_dir)
 
+    # set max recursion limit
+    sys.setrecursionlimit(survey_params['snr_num_pix'] ** 2)
+
     # load SkyPy config file
     cache_dir = os.path.join(module_path, 'data', f'cached_skypy_configs_{area}')
     skypy_config = os.path.join(cache_dir,
