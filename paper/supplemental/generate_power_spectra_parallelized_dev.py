@@ -355,6 +355,9 @@ def generate_power_spectra(tuple):
     wdm_kappa = wdm_lens.get_subhalo_kappa(num_pix, side)
     mdm_kappa = mdm_lens.get_subhalo_kappa(num_pix, side)
     cdm_kappa = cdm_lens.get_subhalo_kappa(num_pix, side)
+    np.save(os.path.join(save_dir, f'im_kappa_wdm_{lens.uid}_run{run}.npy'), wdm_kappa)
+    np.save(os.path.join(save_dir, f'im_kappa_mdm_{lens.uid}_run{run}.npy'), mdm_kappa)
+    np.save(os.path.join(save_dir, f'im_kappa_cdm_{lens.uid}_run{run}.npy'), cdm_kappa)
 
     ps_kappa_wdm, kappa_r = power_spectrum_1d(wdm_kappa)
     ps_kappa_mdm, _ = power_spectrum_1d(mdm_kappa)
@@ -450,6 +453,9 @@ def generate_power_spectra(tuple):
     wdm_exposure = get_masked_exposure(wdm_lens, wdm_array, control_band, subhalos_psf_kernel, num_pix, oversample, exposure_time, snr_pixel_threshold)
     mdm_exposure = get_masked_exposure(mdm_lens, mdm_array, control_band, subhalos_psf_kernel, num_pix, oversample, exposure_time, snr_pixel_threshold)
     cdm_exposure = get_masked_exposure(cdm_lens, cdm_array, control_band, subhalos_psf_kernel, num_pix, oversample, exposure_time, snr_pixel_threshold)
+    np.save(os.path.join(save_dir, f'im_wdm_{lens.uid}_run{run}.npy'), wdm_exposure)
+    np.save(os.path.join(save_dir, f'im_mdm_{lens.uid}_run{run}.npy'), mdm_exposure)
+    np.save(os.path.join(save_dir, f'im_cdm_{lens.uid}_run{run}.npy'), cdm_exposure)
 
     wdm_residual = cdm_exposure - wdm_exposure
     mdm_residual = cdm_exposure - mdm_exposure
@@ -513,6 +519,7 @@ def generate_power_spectra(tuple):
     for detector, detector_position in position_control + positions:
         exposure = get_masked_exposure(cdm_lens, cdm_array, control_band, cached_psfs[psf.get_psf_id_string(control_band, detector, detector_position, oversample)], num_pix, oversample, exposure_time, snr_pixel_threshold)
         position_exposures.append(exposure)
+        np.save(os.path.join(save_dir, f'im_pos_{detector}_{lens.uid}_run{run}.npy'), exposure)
 
     power_spectra_list = []
     for i, position_exposure in enumerate(position_exposures):
@@ -522,6 +529,39 @@ def generate_power_spectra(tuple):
     res_im_pos_1 = position_exposures[1] - position_exposures[0]
     res_im_pos_2 = position_exposures[2] - position_exposures[0]
     res_im_pos_3 = position_exposures[3] - position_exposures[0]
+    res_im_pos_4 = position_exposures[4] - position_exposures[0]
+    res_im_pos_5 = position_exposures[5] - position_exposures[0]
+    res_im_pos_6 = position_exposures[6] - position_exposures[0]
+    res_im_pos_7 = position_exposures[7] - position_exposures[0]
+    res_im_pos_8 = position_exposures[8] - position_exposures[0]
+    res_im_pos_9 = position_exposures[9] - position_exposures[0]
+    res_im_pos_10 = position_exposures[10] - position_exposures[0]
+    res_im_pos_11 = position_exposures[11] - position_exposures[0]
+    res_im_pos_12 = position_exposures[12] - position_exposures[0]
+    res_im_pos_13 = position_exposures[13] - position_exposures[0]
+    res_im_pos_14 = position_exposures[14] - position_exposures[0]
+    res_im_pos_15 = position_exposures[15] - position_exposures[0]
+    res_im_pos_16 = position_exposures[16] - position_exposures[0]
+    res_im_pos_17 = position_exposures[17] - position_exposures[0]
+    res_im_pos_18 = position_exposures[18] - position_exposures[0]
+    np.save(os.path.join(save_dir, f'res_im_pos_1_{lens.uid}_run{run}.npy'), res_im_pos_1)
+    np.save(os.path.join(save_dir, f'res_im_pos_2_{lens.uid}_run{run}.npy'), res_im_pos_2)
+    np.save(os.path.join(save_dir, f'res_im_pos_3_{lens.uid}_run{run}.npy'), res_im_pos_3)
+    np.save(os.path.join(save_dir, f'res_im_pos_4_{lens.uid}_run{run}.npy'), res_im_pos_4)
+    np.save(os.path.join(save_dir, f'res_im_pos_5_{lens.uid}_run{run}.npy'), res_im_pos_5)
+    np.save(os.path.join(save_dir, f'res_im_pos_6_{lens.uid}_run{run}.npy'), res_im_pos_6)
+    np.save(os.path.join(save_dir, f'res_im_pos_7_{lens.uid}_run{run}.npy'), res_im_pos_7)
+    np.save(os.path.join(save_dir, f'res_im_pos_8_{lens.uid}_run{run}.npy'), res_im_pos_8)
+    np.save(os.path.join(save_dir, f'res_im_pos_9_{lens.uid}_run{run}.npy'), res_im_pos_9)
+    np.save(os.path.join(save_dir, f'res_im_pos_10_{lens.uid}_run{run}.npy'), res_im_pos_10)
+    np.save(os.path.join(save_dir, f'res_im_pos_11_{lens.uid}_run{run}.npy'), res_im_pos_11)
+    np.save(os.path.join(save_dir, f'res_im_pos_12_{lens.uid}_run{run}.npy'), res_im_pos_12)
+    np.save(os.path.join(save_dir, f'res_im_pos_13_{lens.uid}_run{run}.npy'), res_im_pos_13)
+    np.save(os.path.join(save_dir, f'res_im_pos_14_{lens.uid}_run{run}.npy'), res_im_pos_14)
+    np.save(os.path.join(save_dir, f'res_im_pos_15_{lens.uid}_run{run}.npy'), res_im_pos_15)
+    np.save(os.path.join(save_dir, f'res_im_pos_16_{lens.uid}_run{run}.npy'), res_im_pos_16)
+    np.save(os.path.join(save_dir, f'res_im_pos_17_{lens.uid}_run{run}.npy'), res_im_pos_17)
+    np.save(os.path.join(save_dir, f'res_im_pos_18_{lens.uid}_run{run}.npy'), res_im_pos_18)
 
     res_ps_pos_1 = power_spectra_list[1] - power_spectra_list[0]
     res_ps_pos_2 = power_spectra_list[2] - power_spectra_list[0]
@@ -541,7 +581,6 @@ def generate_power_spectra(tuple):
     res_ps_pos_16 = power_spectra_list[16] - power_spectra_list[0]
     res_ps_pos_17 = power_spectra_list[17] - power_spectra_list[0]
     res_ps_pos_18 = power_spectra_list[18] - power_spectra_list[0]
-
     np.save(os.path.join(save_dir, f'res_ps_pos_1_{lens.uid}_run{run}.npy'), res_ps_pos_1)
     np.save(os.path.join(save_dir, f'res_ps_pos_2_{lens.uid}_run{run}.npy'), res_ps_pos_2)
     np.save(os.path.join(save_dir, f'res_ps_pos_3_{lens.uid}_run{run}.npy'), res_ps_pos_3)
