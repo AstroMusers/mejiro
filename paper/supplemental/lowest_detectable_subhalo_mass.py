@@ -31,11 +31,11 @@ def main(config):
     script_config = {
         'image_radius': 0.1,  # arcsec
         'num_lenses': 10,
-        'num_positions': 100,
+        'num_positions': 10,
         'rng': galsim.UniformDeviate(42)
     }
     subhalo_params = {
-        'masses': np.linspace(1e6, 1e10, 20),
+        'masses': np.linspace(1e6, 1e12, 10),
         'concentration': 6,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,  
