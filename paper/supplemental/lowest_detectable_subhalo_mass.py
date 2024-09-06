@@ -31,11 +31,11 @@ def main(config):
     script_config = {
         'image_radius': 0.1,  # arcsec
         'num_lenses': 10,
-        'num_positions': 10,
+        'num_positions': 25,
         'rng': galsim.UniformDeviate(42)
     }
     subhalo_params = {
-        'masses': np.linspace(1e6, 1e12, 10),
+        'masses': np.linspace(1e6, 1e12, 20),
         'concentration': 6,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,  
@@ -43,7 +43,7 @@ def main(config):
     }
     imaging_params = {
         'band': 'F106',
-        'scene_size': 5,  # arcsec
+        'scene_size': 10,  # arcsec
         'oversample': 5,
         'exposure_time': 146
     }
