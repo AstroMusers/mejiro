@@ -12,11 +12,11 @@ survey:
   - deflector_cut_band: F129
   - deflector_cut_band_max: 24  # 27
   - deflector_z_min: 0.1
-  - deflector_z_max: 3.
+  - deflector_z_max: 4.
   - source_cut_band: F129
   - source_cut_band_max: 25  # 25
   - source_z_min: 0.01
-  - source_z_max: 7.
+  - source_z_max: 8.
   - min_image_separation: 0.2  # arcseconds
   - max_image_separation: 10.  # arcseconds
   - mag_arc_limit_band: F129
@@ -32,7 +32,7 @@ survey:
   # - zodi_multiplier: 1.5  # multiplied with minimum zodiacal light
 
 pipeline:
-  - debugging: True  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
+  - debugging: False  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
   - limit: None  # None
   # scene params
   - num_pix: 97  # 51  # 96
