@@ -38,7 +38,7 @@ def collect_all_detectable_lenses(dir, suppress_output=True):
 
 # TODO a(n imperfect) lens subtraction option?
 def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), num_pix=45, side=4.95, oversample=1,
-            exposure_time=146, return_snr_list=False, debugging=False, debug_dir=None, psf_cache_dir=None):
+            exposure_time=146, add_subhalos=True, return_snr_list=False, debugging=False, debug_dir=None, psf_cache_dir=None):
     if debugging: assert debug_dir is not None, 'Debugging is enabled but no debug directory is provided.'
 
     if type(detector) is str:
@@ -49,8 +49,9 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), num_pi
     sample_lens = lens_util.slsim_lens_to_mejiro(gglens, bands=[band],
                                                  cosmo=default_cosmology.get())  # TODO pass in cosmology
 
-    realization = sample_lens.generate_cdm_subhalos()
-    sample_lens.add_subhalos(realization)
+    if add_subhalos:
+        realization = sample_lens.generate_cdm_subhalos()
+        sample_lens.add_subhalos(realization)
 
     # generate synthetic images with lenstronomy
     model, lens_sb, source_sb = sample_lens.get_array(num_pix * oversample, side, band, zp, return_pieces=True)
