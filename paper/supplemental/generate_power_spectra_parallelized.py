@@ -147,6 +147,10 @@ def main(config):
     else:
         pipeline_dir = config.machine.pipeline_dir
 
+    # get zeropoint magnitudes
+    module_path = os.path.dirname(mejiro.__file__)
+    zp_dict = json.load(open(os.path.join(module_path, 'data', 'roman_zeropoint_magnitudes.json')))
+
     # collect lenses
     print(f'Collecting lenses...')
     lens_list = survey_sim.collect_all_detectable_lenses(os.path.join(pipeline_dir, '01'), suppress_output=False)
