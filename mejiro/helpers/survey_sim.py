@@ -49,6 +49,9 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), num_pi
     sample_lens = lens_util.slsim_lens_to_mejiro(gglens, bands=[band],
                                                  cosmo=default_cosmology.get())  # TODO pass in cosmology
 
+    realization = sample_lens.generate_cdm_subhalos()
+    sample_lens.add_subhalos(realization)
+
     # generate synthetic images with lenstronomy
     model, lens_sb, source_sb = sample_lens.get_array(num_pix * oversample, side, band, zp, return_pieces=True)
 
