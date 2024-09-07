@@ -115,6 +115,16 @@ class SyntheticImage:
         self.pixel_grid = PixelGrid(**kwargs_pixel)
         self.coords = Coordinates(self.Mpix2coord, self.ra_at_xy_0, self.dec_at_xy_0)
 
+    def set_native_coords(self):
+        _, _, self.ra_at_xy_0_native, self.dec_at_xy_0_native, _, _, self.Mpix2coord_native, self.Mcoord2pix_native = (
+            len_util.make_grid_with_coordtransform(
+                numPix=np.ceil(self.arcsec / self.native_pixel_scale).astype(int),
+                deltapix=self.native_pixel_scale,
+                subgrid_res=1,
+                left_lower=False,
+                inverse=False))
+        self.coords_native = Coordinates(self.Mpix2coord_native, self.ra_at_xy_0_native, self.dec_at_xy_0_native)
+
     # TODO resample method to change oversample factor
     # should just re-run _calculate_surface_brightness with new oversample factor instead of doing some kind of interpolation
     # def resample():

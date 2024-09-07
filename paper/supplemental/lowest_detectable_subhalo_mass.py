@@ -30,11 +30,11 @@ def main(config):
     script_config = {
         'image_radius': 0.1,  # arcsec
         'num_lenses': 10,
-        'num_positions': 25,
+        'num_positions': 5,
         'rng': galsim.UniformDeviate(42)
     }
     subhalo_params = {
-        'masses': np.linspace(1e6, 1e12, 20),
+        'masses': np.logspace(6, 12, 7),
         'concentration': 6,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -42,7 +42,7 @@ def main(config):
     }
     imaging_params = {
         'band': 'F106',
-        'scene_size': 10,  # arcsec
+        'scene_size': 5,  # arcsec
         'oversample': 5,
         'exposure_time': 146
     }
@@ -57,12 +57,12 @@ def main(config):
         # ('08', (2048, 2048)),
         # ('09', (2048, 2048)),
         # ('10', (2048, 2048)),
-        ('11', (2048, 2048)),
+        # ('11', (2048, 2048)),
         # ('12', (2048, 2048)),
         # ('13', (2048, 2048)),
         # ('14', (2048, 2048)),
         # ('15', (2048, 2048)),
-        ('16', (2048, 2048)),
+        # ('16', (2048, 2048)),
         # ('17', (2048, 2048)),
         # ('18', (2048, 2048))
     ]
@@ -127,7 +127,6 @@ def main(config):
 
 def run(tuple):
     from mejiro.analysis import stats
-    from mejiro.helpers import gs, psf
     from mejiro.utils import util
     from mejiro.synthetic_image import SyntheticImage
     from mejiro.exposure import Exposure
@@ -149,13 +148,11 @@ def run(tuple):
     image_x, image_y = lens.get_image_positions(pixel_coordinates=False)
     num_images = len(image_x)
 
-    # TODO a diagnostic plot that shows image positions and lens configuration
-
     results = {}
     for sca, sca_position in positions:
         sca = int(sca)
         position_key = f'{sca}_{sca_position[0]}_{sca_position[1]}'
-        print(position_key)
+        # print(position_key)
         results[position_key] = {}
         for m200 in tqdm(masses):
             mass_key = f'{int(m200)}'
@@ -191,11 +188,21 @@ def run(tuple):
 
                 # get image with no subhalo
                 lens_no_subhalo = deepcopy(lens)
-                synth_no_subhalo = SyntheticImage(lens_no_subhalo, roman, band=band, arcsec=scene_size,
-                                                  oversample=oversample, sca=sca, sca_position=sca_position,
+                synth_no_subhalo = SyntheticImage(lens_no_subhalo, 
+                                                  roman, 
+                                                  band=band, 
+                                                  arcsec=scene_size,
+                                                  oversample=oversample, 
+                                                  sca=sca, 
+                                                  sca_position=sca_position,
                                                   debugging=False)
-                exposure_no_subhalo = Exposure(synth_no_subhalo, exposure_time=exposure_time, rng=rng, sca=sca,
-                                               sca_position=sca_position, return_noise=True, suppress_output=True)
+                exposure_no_subhalo = Exposure(synth_no_subhalo, 
+                                               exposure_time=exposure_time, 
+                                               rng=rng, 
+                                               sca=sca,
+                                               sca_position=sca_position, 
+                                               return_noise=True, 
+                                               suppress_output=True)
 
                 # get noise
                 poisson_noise = exposure_no_subhalo.poisson_noise
@@ -205,25 +212,50 @@ def run(tuple):
                 # get image with subhalo
                 lens_with_subhalo = deepcopy(lens)
                 lens_with_subhalo.add_subhalo(subhalo_type, kwargs_subhalo)
-                synth = SyntheticImage(lens_with_subhalo, roman, band=band, arcsec=scene_size, oversample=oversample,
-                                       sca=sca, sca_position=sca_position, debugging=False)
-                exposure = Exposure(synth, exposure_time=exposure_time, rng=rng, sca=sca, sca_position=sca_position,
-                                    poisson_noise=poisson_noise, dark_noise=dark_noise, read_noise=read_noise,
+                synth = SyntheticImage(lens_with_subhalo, 
+                                       roman, 
+                                       band=band, 
+                                       arcsec=scene_size, 
+                                       oversample=oversample,
+                                       sca=sca, 
+                                       sca_position=sca_position, 
+                                       debugging=False)
+                exposure = Exposure(synth, 
+                                    exposure_time=exposure_time, 
+                                    rng=rng, 
+                                    sca=sca, 
+                                    sca_position=sca_position,
+                                    poisson_noise=poisson_noise, 
+                                    dark_noise=dark_noise, 
+                                    read_noise=read_noise,
                                     suppress_output=True)
 
                 # calculate chi square
                 chi_square = stats.chi_square(observed=exposure.exposure, expected=exposure_no_subhalo.exposure)
                 chi_square_list.append(chi_square)
+                assert chi_square >= 0.
 
                 # save image
-                if i % 100 == 0:
+                # if i % 100 == 0:
+                try:
+                    _, ax = plt.subplots(1, 3, figsize=(15, 5))
                     residual = exposure.exposure - exposure_no_subhalo.exposure
                     vmax = np.max(np.abs(residual))
-                    plt.imshow(residual, cmap='bwr', vmin=-vmax, vmax=vmax)
-                    plt.colorbar()
-                    plt.title(r'$\chi^2=$ ' + f'{chi_square:.2f}')
-                    plt.savefig(os.path.join(image_save_dir, f'{execution_key}.png'))
+                    if vmax == 0.: vmax = 0.1
+                    synth.set_native_coords()
+                    coords_x, coords_y = synth.coords_native.map_coord2pix(halo_x, halo_y)
+                    ax[0].imshow(exposure_no_subhalo.exposure)
+                    ax[0].set_title(f'SNR: {lens.snr:.2f}')
+                    ax[1].imshow(exposure.exposure)
+                    ax[1].scatter(coords_x, coords_y, c='r', s=10)
+                    ax[1].set_title(f'{m200:.2e}')
+                    ax[2].imshow(residual, cmap='bwr', vmin=-vmax, vmax=vmax)
+                    ax[2].set_title(r'$\chi^2=$ ' + f'{chi_square:.2f}')
+                    plt.title(f'{lens.uid}, {exposure.exposure.shape}')
+                    plt.savefig(os.path.join(image_save_dir, f'{lens.uid}_{execution_key}.png'))
                     plt.close()
+                except Exception as e:
+                    print(e)
 
             results[position_key][mass_key] = chi_square_list
 
