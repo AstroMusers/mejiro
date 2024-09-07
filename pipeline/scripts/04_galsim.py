@@ -13,6 +13,18 @@ from hydra.core.hydra_config import HydraConfig
 from tqdm import tqdm
 
 
+def divide_up_sca(sides):
+    num_centers = sides ** 2
+    piece = int(4088 / num_centers)
+
+    centers = []
+    for i in range(num_centers):
+        for j in range(num_centers):
+            if i % 2 != 0 and j % 2 != 0:
+                centers.append((piece * i, piece * j))
+    return centers
+
+
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
 def main(config):
     start = time.time()
@@ -126,7 +138,6 @@ def main(config):
 def get_image(input):
     from mejiro.helpers import gs
     from mejiro.utils import util
-    from mejiro.instruments.roman import Roman
 
     # unpack tuple
     (uid, sca, pipeline_params, sca_zp_dict, input_dir, output_dir, psf_cache_dir) = input
@@ -156,7 +167,7 @@ def get_image(input):
 
     # determine detector and position
     detector = int(sca)
-    possible_detector_positions = Roman.divide_up_sca(4)
+    possible_detector_positions = divide_up_sca(4)
     detector_pos = random.choice(possible_detector_positions)
 
     gs_results = gs.get_images(lens,
