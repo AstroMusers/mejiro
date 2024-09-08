@@ -1,6 +1,5 @@
 import os
 from copy import deepcopy
-from glob import glob
 
 import numpy as np
 import pandas as pd
@@ -17,23 +16,11 @@ from mejiro.lenses import lens_util
 from mejiro.plots import diagnostic_plot
 from mejiro.utils import util
 
+
 # get Roman params
 module_path = os.path.dirname(mejiro.__file__)
 csv_path = os.path.join(module_path, 'data', 'roman_spacecraft_and_instrument_parameters.csv')
 roman_params = RomanParameters(csv_path)
-
-
-def count_detectable_lenses(dir):
-    lens_pickles = glob(dir + '/**/detectable_lens_*.pkl')
-    return len(lens_pickles)
-
-
-def collect_all_detectable_lenses(dir, suppress_output=True):
-    pickle_paths = glob(dir + '/01_hlwas_sim_detectable_lenses_sca*.pkl')
-    detectable_lenses = []
-    for f in tqdm(pickle_paths, disable=suppress_output):
-        detectable_lenses.extend(util.unpickle(f))
-    return detectable_lenses
 
 
 # TODO a(n imperfect) lens subtraction option?

@@ -26,7 +26,7 @@ def main(config):
         sys.path.append(repo_dir)
     import mejiro
     from mejiro.utils import util
-    from mejiro.helpers import survey_sim
+    from mejiro.lenses import lens_util
 
     # retrieve configuration parameters
     pipeline_params = util.hydra_to_dict(config.pipeline)
@@ -91,7 +91,7 @@ def main(config):
         pool = Pool(processes=process_count)
         pool.map(run_slsim, batch)
 
-    num_detectable = survey_sim.count_detectable_lenses(output_dir)
+    num_detectable = lens_util.count_detectable_lenses(output_dir)
     print(f'{num_detectable} detectable lenses found')
     print(f'{num_detectable / area / runs:.2f} per square degree')
 
@@ -245,7 +245,7 @@ def run_slsim(tuple):
     filtered_sample['total'] = len(lens_population)
     num_samples = 16
     filter_1, filter_2 = 0, 0
-    # filtered_sample['filter_1'] = []
+    filtered_sample['filter_1'] = []
     filtered_sample['filter_2'] = []
 
     # apply additional detectability criteria
@@ -259,6 +259,14 @@ def run_slsim(tuple):
 
         # if kwargs_params['kwargs_lens'][0]['theta_E'] < kwargs_params['kwargs_lens_light'][0][
         #     'R_sersic'] and lens_mag < survey_params['large_lens_mag_max']:
+        #     filter_1 += 1
+        #     if filter_1 <= num_samples:
+        #         filtered_sample['filter_1'].append(candidate)
+        #     continue
+
+        # 1. extended source magnification
+        # extended_source_magnification = candidate.extended_source_magnification()
+        # if extended_source_magnification < survey_params['magnification']:
         #     filter_1 += 1
         #     if filter_1 <= num_samples:
         #         filtered_sample['filter_1'].append(candidate)
@@ -308,7 +316,7 @@ def run_slsim(tuple):
     if debugging: print(f'Run {run}: {len(detectable_gglenses)} detectable lens(es)')
 
     # save information about which lenses got filtered out
-    # filtered_sample['num_filter_1'] = filter_1
+    filtered_sample['num_filter_1'] = filter_1
     filtered_sample['num_filter_2'] = filter_2
     util.pickle(os.path.join(output_dir, f'filtered_sample_{run}_sca{sca_id}.pkl'), filtered_sample)
 

@@ -15,24 +15,30 @@ from mejiro.helpers import color
 from mejiro.lenses.strong_lens import StrongLens
 from mejiro.utils import util
 
+
 module_path = os.path.dirname(mejiro.__file__)
 plt.style.use(f'{module_path}/mplstyle/science.mplstyle')
 
 
-def get_detectable_lenses(pipeline_dir, limit=None, with_subhalos=False):
+def count_detectable_lenses(dir):
+    lens_pickles = glob(dir + '/**/detectable_lens_*.pkl')
+    return len(lens_pickles)
+
+
+def get_detectable_lenses(pipeline_dir, limit=None, with_subhalos=False, suppress_output=True):
     lens_list = []
 
     if with_subhalos:
         pickles = glob(os.path.join(pipeline_dir, '02', '**', 'lens_with_subhalos_*.pkl'))
         if limit is not None:
             pickles = np.random.choice(pickles, limit)
-        for pickle in tqdm(pickles):
+        for pickle in tqdm(pickles, disable=suppress_output):
             lens_list.append(util.unpickle(pickle))
     else:
         pickles = glob(os.path.join(pipeline_dir, '01', '01_hlwas_sim_detectable_lenses_sca*.pkl'))
         if limit is not None:
             pickles = np.random.choice(pickles, limit)
-        for pickle in tqdm(pickles):
+        for pickle in tqdm(pickles, disable=suppress_output):
             lens_list.extend(util.unpickle(pickle))
 
     assert len(lens_list) != 0, f'No pickled lenses found. Check {pipeline_dir}.'

@@ -20,7 +20,7 @@ def main(config):
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
     from mejiro.utils import util
-    from mejiro.helpers import survey_sim
+    from mejiro.lenses import lens_util
     from mejiro.instruments.roman import Roman
     roman = Roman()
 
@@ -60,7 +60,7 @@ def main(config):
         pipeline_dir = f'{config.machine.pipeline_dir}_dev'
     else:
         pipeline_dir = config.machine.pipeline_dir
-    lens_list = survey_sim.collect_all_detectable_lenses(os.path.join(pipeline_dir, '01'), suppress_output=False)
+    lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, suppress_output=False)
     print(f'Collected {len(lens_list)} candidate lens(es).')
     filtered_lenses = []
     num_lenses = 0
