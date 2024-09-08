@@ -21,7 +21,7 @@ def main(config):
     # enable use of local packages
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
-    from mejiro.helpers import survey_sim
+    from mejiro.lenses import lens_util
     from mejiro.utils import util
     from mejiro.instruments.roman import Roman
 
@@ -29,12 +29,12 @@ def main(config):
     debugging = True
     script_config = {
         'image_radius': 0.1,  # arcsec
-        'num_lenses': 10,
-        'num_positions': 5,
+        'num_lenses': 20,
+        'num_positions': 20,
         'rng': galsim.UniformDeviate(42)
     }
     subhalo_params = {
-        'masses': np.logspace(6, 12, 7),
+        'masses': np.logspace(6, 10, 5),
         'concentration': 6,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -42,30 +42,36 @@ def main(config):
     }
     imaging_params = {
         'band': 'F106',
-        'scene_size': 5,  # arcsec
-        'oversample': 5,
+        'scene_size': 5.1,  # arcsec
+        'oversample': 1,
         'exposure_time': 146
     }
     positions = [
-        # ('01', (2048, 2048)),
-        # ('02', (2048, 2048)),
-        # ('03', (2048, 2048)),
+        ('01', (2048, 2048)),
+        ('02', (2048, 2048)),
+        ('03', (2048, 2048)),
         ('04', (2048, 2048)),
-        # ('05', (2048, 2048)),
-        # ('06', (2048, 2048)),
-        # ('07', (2048, 2048)),
-        # ('08', (2048, 2048)),
-        # ('09', (2048, 2048)),
-        # ('10', (2048, 2048)),
-        # ('11', (2048, 2048)),
-        # ('12', (2048, 2048)),
-        # ('13', (2048, 2048)),
-        # ('14', (2048, 2048)),
-        # ('15', (2048, 2048)),
-        # ('16', (2048, 2048)),
-        # ('17', (2048, 2048)),
-        # ('18', (2048, 2048))
+        ('05', (2048, 2048)),
+        ('06', (2048, 2048)),
+        ('07', (2048, 2048)),
+        ('08', (2048, 2048)),
+        ('09', (2048, 2048)),
+        ('10', (2048, 2048)),
+        ('11', (2048, 2048)),
+        ('12', (2048, 2048)),
+        ('13', (2048, 2048)),
+        ('14', (2048, 2048)),
+        ('15', (2048, 2048)),
+        ('16', (2048, 2048)),
+        ('17', (2048, 2048)),
+        ('18', (2048, 2048))
     ]
+    # positions = []
+    # for i in range(1, 19):
+    #     sca = str(i).zfill(2)
+    #     coords = Roman().divide_up_sca(4)
+    #     for coord in coords:
+    #         positions.append((sca, coord))
 
     # set up directories for script output
     save_dir = os.path.join(config.machine.data_dir, 'output', 'lowest_detectable_subhalo_mass')
@@ -80,8 +86,8 @@ def main(config):
         pipeline_dir = f'{config.machine.pipeline_dir}_dev'
     else:
         pipeline_dir = config.machine.pipeline_dir
-    lens_list = survey_sim.collect_all_detectable_lenses(os.path.join(pipeline_dir, '01'), suppress_output=False)
-    lens_list = [lens for lens in lens_list if lens.snr > 50 and lens.snr != np.inf]
+    lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, suppress_output=False)
+    lens_list = [lens for lens in lens_list if lens.snr > 100]
     num_lenses = script_config['num_lenses']
     print(f'Collected {len(lens_list)} lens(es) and processing {num_lenses}.')
     lens_list = lens_list[:num_lenses]
