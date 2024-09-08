@@ -7,7 +7,6 @@ import galsim
 import pandas as pd
 
 import mejiro
-from mejiro.helpers import psf
 from mejiro.instruments.instrument_base import InstrumentBase
 
 
@@ -75,6 +74,7 @@ class Roman(InstrumentBase):
         # get PSF
         detector = kwargs['sca']
         detector_position = kwargs['sca_position']
+        from mejiro.helpers import psf
         self.psf = psf.get_webbpsf_psf(synthetic_image.band, detector, detector_position, synthetic_image.oversample,
                                        check_cache=True, psf_cache_dir='/data/bwedig/mejiro/cached_psfs',
                                        suppress_output=suppress_output)
@@ -83,16 +83,17 @@ class Roman(InstrumentBase):
         # convolve with PSF
         convolved = galsim.Convolve([interp, self.psf])
 
-        # draw image
+        # draw image at the native pixel scale
         output_num_pix = math.floor(synthetic_image.num_pix / synthetic_image.oversample)
         im = galsim.ImageF(output_num_pix, output_num_pix, scale=synthetic_image.native_pixel_scale)
         im.setOrigin(0, 0)
         image = convolved.drawImage(im)
 
+        # NB from here on out, the image is at the native pixel scale, i.e., the image is NOT oversampled
+
         # add sky background
         if sky_background:
-            bkgs = self.get_sky_bkgs(synthetic_image.band, exposure_time, num_pix=output_num_pix,
-                                     oversample=synthetic_image.native_pixel_scale)
+            bkgs = self.get_sky_bkgs(synthetic_image.band, exposure_time, num_pix=output_num_pix, oversample=1)
             bkg = bkgs[synthetic_image.band]
             image += bkg
 
