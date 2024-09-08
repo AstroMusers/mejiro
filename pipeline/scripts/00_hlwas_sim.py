@@ -203,6 +203,7 @@ def run_slsim(tuple):
                                               side=survey_params['snr_side'],
                                               oversample=survey_params['snr_oversample'],
                                               exposure_time=pipeline_params['exposure_time'],
+                                              add_subhalos=survey_params['snr_add_subhalos'],
                                               debugging=False,
                                               psf_cache_dir=psf_cache_dir)
             if snr is None:
@@ -273,6 +274,7 @@ def run_slsim(tuple):
                                                                 side=survey_params['snr_side'],
                                                                 oversample=survey_params['snr_oversample'],
                                                                 exposure_time=pipeline_params['exposure_time'],
+                                                                add_subhalos=survey_params['snr_add_subhalos'],
                                                                 debugging=debugging,
                                                                 debug_dir=debug_dir,
                                                                 psf_cache_dir=psf_cache_dir)
