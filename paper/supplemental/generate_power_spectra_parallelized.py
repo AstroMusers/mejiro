@@ -1,4 +1,5 @@
 import datetime
+import json
 import multiprocessing
 import os
 import sys
@@ -50,11 +51,15 @@ def get_large(lens, subhalo_params):
 
 
 def get_med(lens, subhalo_params):
-    return _get_subhalos(lens, subhalo_params, log_mlow=7.5, log_mhigh=9., cone_factor=4)
+    return _get_subhalos(lens, subhalo_params, log_mlow=8., log_mhigh=9., cone_factor=4)
+
+
+def get_smed(lens, subhalo_params):
+    return _get_subhalos(lens, subhalo_params, log_mlow=7., log_mhigh=8., cone_factor=6)
 
 
 def get_small(lens, subhalo_params):
-    return _get_subhalos(lens, subhalo_params, log_mlow=6., log_mhigh=7.5, cone_factor=6)
+    return _get_subhalos(lens, subhalo_params, log_mlow=6., log_mhigh=7., cone_factor=6)
 
 
 def _get_subhalos(lens, subhalo_params, log_mlow, log_mhigh, cone_factor):
@@ -81,7 +86,9 @@ def main(config):
     # enable use of local packages
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
-    from mejiro.helpers import survey_sim, psf
+    import mejiro
+    from mejiro.lenses import lens_util
+    from mejiro.helpers import psf
     from mejiro.utils import util
 
     # script configuration options
@@ -153,13 +160,13 @@ def main(config):
 
     # collect lenses
     print(f'Collecting lenses...')
-    lens_list = survey_sim.collect_all_detectable_lenses(os.path.join(pipeline_dir, '01'), suppress_output=False)
+    lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, suppress_output=False)
     print(f'Collected {len(lens_list)} candidate lens(es).')
     filtered_lenses = []
     num_lenses = 0
     for lens in lens_list:
         if lens.snr > snr_threshold and lens.get_einstein_radius() > einstein_radius_threshold and np.log10(
-                lens.main_halo_mass) > log_m_host_threshold and lens.snr != np.inf:
+                lens.main_halo_mass) > log_m_host_threshold:
             filtered_lenses.append(lens)
             num_lenses += 1
         if limit is not None and num_lenses >= limit:
@@ -321,6 +328,28 @@ def generate_power_spectra(tuple):
             print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
         plt.close()
 
+    # smed subhalos
+    smed = get_smed(lens, subhalo_params)
+    if smed is None: sys.exit(0)
+
+    subhalo_lens = deepcopy(lens)
+    subhalo_lens.add_subhalos(smed)
+    subhalo_kappa = subhalo_lens.get_subhalo_kappa(num_pix, side)
+    array = subhalo_lens.get_array(num_pix, side, control_band)
+    image_x, image_y = subhalo_lens.get_image_positions()
+
+    if plot_figures:
+        plt.imshow(np.log10(array), alpha=0.75, cmap='inferno')
+        plt.imshow(subhalo_kappa, alpha=0.25, cmap='binary')
+        plt.plot(image_x, image_y, 'go', ms=10, markeredgewidth=2, fillstyle='none')
+        plt.axis('off')
+        plt.title(f'{lens.uid}: Small Population ({len(smed.halos)} subhalo(es))')
+        try:
+            plt.savefig(os.path.join(image_save_dir, f'02_{lens.uid}_smed_run{run}.png'))
+        except Exception as e:
+            print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
+        plt.close()
+
     # small subhalos
     small = get_small(lens, subhalo_params)
     if small is None: sys.exit(0)
@@ -338,7 +367,7 @@ def generate_power_spectra(tuple):
         plt.axis('off')
         plt.title(f'{lens.uid}: Small Population ({len(small.halos)} subhalo(es))')
         try:
-            plt.savefig(os.path.join(image_save_dir, f'02_{lens.uid}_small_run{run}.png'))
+            plt.savefig(os.path.join(image_save_dir, f'03_{lens.uid}_small_run{run}.png'))
         except Exception as e:
             print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
         plt.close()
@@ -346,54 +375,64 @@ def generate_power_spectra(tuple):
     # ---------------------BUILD WDM/MDM/CDM POPULATIONS---------------------
     wdm = deepcopy(large)
     mdm = wdm.join(med)
-    cdm = mdm.join(small)
+    sdm = mdm.join(smed)
+    cdm = sdm.join(small)
 
     util.pickle(os.path.join(save_dir, f'wdm_realization_{lens.uid}_run{run}.pkl'), wdm)
     util.pickle(os.path.join(save_dir, f'mdm_realization_{lens.uid}_run{run}.pkl'), mdm)
+    util.pickle(os.path.join(save_dir, f'sdm_realization_{lens.uid}_run{run}.pkl'), sdm)
     util.pickle(os.path.join(save_dir, f'cdm_realization_{lens.uid}_run{run}.pkl'), cdm)
 
     wdm_lens = deepcopy(lens)
     mdm_lens = deepcopy(lens)
+    sdm_lens = deepcopy(lens)
     cdm_lens = deepcopy(lens)
 
     wdm_lens.add_subhalos(wdm)
     mdm_lens.add_subhalos(mdm)
+    sdm_lens.add_subhalos(sdm)
     cdm_lens.add_subhalos(cdm)
 
     wdm_kappa = wdm_lens.get_subhalo_kappa(num_pix, side)
     mdm_kappa = mdm_lens.get_subhalo_kappa(num_pix, side)
+    sdm_kappa = sdm_lens.get_subhalo_kappa(num_pix, side)
     cdm_kappa = cdm_lens.get_subhalo_kappa(num_pix, side)
     np.save(os.path.join(save_dir, f'im_kappa_wdm_{lens.uid}_run{run}.npy'), wdm_kappa)
     np.save(os.path.join(save_dir, f'im_kappa_mdm_{lens.uid}_run{run}.npy'), mdm_kappa)
+    np.save(os.path.join(save_dir, f'im_kappa_sdm_{lens.uid}_run{run}.npy'), sdm_kappa)
     np.save(os.path.join(save_dir, f'im_kappa_cdm_{lens.uid}_run{run}.npy'), cdm_kappa)
 
     ps_kappa_wdm, kappa_r = power_spectrum_1d(wdm_kappa)
     ps_kappa_mdm, _ = power_spectrum_1d(mdm_kappa)
+    ps_kappa_sdm, _ = power_spectrum_1d(sdm_kappa)
     ps_kappa_cdm, _ = power_spectrum_1d(cdm_kappa)
     np.save(os.path.join(save_dir, 'kappa_r.npy'), kappa_r)
     np.save(os.path.join(save_dir, f'ps_kappa_wdm_{lens.uid}_run{run}.npy'), ps_kappa_wdm)
     np.save(os.path.join(save_dir, f'ps_kappa_mdm_{lens.uid}_run{run}.npy'), ps_kappa_mdm)
+    np.save(os.path.join(save_dir, f'ps_kappa_sdm_{lens.uid}_run{run}.npy'), ps_kappa_sdm)
     np.save(os.path.join(save_dir, f'ps_kappa_cdm_{lens.uid}_run{run}.npy'), ps_kappa_cdm)
 
     vmin = 0
-    vmax = np.max([wdm_kappa, mdm_kappa, cdm_kappa])
+    vmax = np.max([wdm_kappa, mdm_kappa, sdm_kappa, cdm_kappa])
 
     if plot_figures:
-        _, ax = plt.subplots(1, 3, figsize=(12, 4), constrained_layout=True)
+        _, ax = plt.subplots(1, 4, figsize=(16, 4), constrained_layout=True)
         ax[0].imshow(wdm_kappa, cmap='binary', vmin=vmin, vmax=vmax)
         ax[1].imshow(mdm_kappa, cmap='binary', vmin=vmin, vmax=vmax)
-        ax[2].imshow(cdm_kappa, cmap='binary', vmin=vmin, vmax=vmax)
+        ax[2].imshow(sdm_kappa, cmap='binary', vmin=vmin, vmax=vmax)
+        ax[3].imshow(cdm_kappa, cmap='binary', vmin=vmin, vmax=vmax)
 
         ax[0].set_title('WDM')
         ax[1].set_title('MDM')
-        ax[2].set_title('CDM')
+        ax[2].set_title('SDM')
+        ax[3].set_title('CDM')
 
         for a in ax:
             a.axis('off')
             a.plot(image_x, image_y, 'go', ms=10, markeredgewidth=2, fillstyle='none')
 
         plt.suptitle(f'{lens.uid}: Convergence Maps and Image Positions')
-        image_save_path = os.path.join(image_save_dir, f'03_{lens.uid}_convergence_maps_run{run}.png')
+        image_save_path = os.path.join(image_save_dir, f'04_{lens.uid}_convergence_maps_run{run}.png')
         try:
             plt.savefig(image_save_path)
         except Exception as e:
@@ -403,28 +442,30 @@ def generate_power_spectra(tuple):
     # ---------------------GENERATE SYNTHETIC IMAGES---------------------
     _, _, wdm_array = wdm_lens.get_array(num_pix * oversample, side, control_band, return_pieces=True)
     _, _, mdm_array = mdm_lens.get_array(num_pix * oversample, side, control_band, return_pieces=True)
+    _, _, sdm_array = sdm_lens.get_array(num_pix * oversample, side, control_band, return_pieces=True)
     _, _, cdm_array = cdm_lens.get_array(num_pix * oversample, side, control_band, return_pieces=True)
-    # wdm_array = wdm_lens.get_array(num_pix * oversample, side, control_band)
-    # mdm_array = mdm_lens.get_array(num_pix * oversample, side, control_band)
-    # cdm_array = cdm_lens.get_array(num_pix * oversample, side, control_band)
 
     wdm_residual = wdm_array - cdm_array
     mdm_residual = mdm_array - cdm_array
-    min = np.min([wdm_residual, mdm_residual])
-    max = np.max([wdm_residual, mdm_residual])
+    sdm_residual = sdm_array - cdm_array
+    min = np.min([wdm_residual, mdm_residual, sdm_residual])
+    max = np.max([wdm_residual, mdm_residual, sdm_residual])
     vmax = np.max([np.abs(min), np.abs(max)])
 
     if plot_figures:
-        _, ax = plt.subplots(2, 3, figsize=(10, 7), constrained_layout=True)
+        _, ax = plt.subplots(2, 4, figsize=(14, 7), constrained_layout=True)
         ax[0, 0].imshow(wdm_array)
         ax[0, 1].imshow(mdm_array)
-        ax[0, 2].imshow(cdm_array)
+        ax[0, 2].imshow(sdm_array)
+        ax[0, 3].imshow(cdm_array)
         ax[1, 0].imshow(wdm_residual, cmap='bwr', vmin=-vmax, vmax=vmax)
         ax[1, 1].imshow(mdm_residual, cmap='bwr', vmin=-vmax, vmax=vmax)
+        ax[1, 2].imshow(sdm_residual, cmap='bwr', vmin=-vmax, vmax=vmax)
 
         ax[0, 0].set_title('WDM')
         ax[0, 1].set_title('MDM')
-        ax[0, 2].set_title('CDM')
+        ax[0, 2].set_title('SDM')
+        ax[0, 3].set_title('CDM')
 
         for a in ax.flatten():
             a.axis('off')
@@ -439,11 +480,13 @@ def generate_power_spectra(tuple):
 
     wdm_ps, r = power_spectrum_1d(wdm_array)
     mdm_ps, _ = power_spectrum_1d(mdm_array)
+    sdm_ps, _ = power_spectrum_1d(sdm_array)
     cdm_ps, _ = power_spectrum_1d(cdm_array)
 
     if plot_figures:
         plt.plot(r, wdm_ps - cdm_ps, label='WDM')
         plt.plot(r, mdm_ps - cdm_ps, label='MDM')
+        plt.plot(r, sdm_ps - cdm_ps, label='SDM')
         plt.xscale('log')
         plt.title(f'{lens.uid}: Synthetic Image Power Spectra Residuals Varying Subhalo Population')
         plt.legend()
@@ -463,28 +506,35 @@ def generate_power_spectra(tuple):
                                        exposure_time, snr_pixel_threshold)
     mdm_exposure = get_masked_exposure(mdm_lens, mdm_array, control_band, subhalos_psf_kernel, num_pix, oversample,
                                        exposure_time, snr_pixel_threshold)
+    sdm_exposure = get_masked_exposure(sdm_lens, sdm_array, control_band, subhalos_psf_kernel, num_pix, oversample,
+                                       exposure_time, snr_pixel_threshold)
     cdm_exposure = get_masked_exposure(cdm_lens, cdm_array, control_band, subhalos_psf_kernel, num_pix, oversample,
                                        exposure_time, snr_pixel_threshold)
     np.save(os.path.join(save_dir, f'im_wdm_{lens.uid}_run{run}.npy'), wdm_exposure)
     np.save(os.path.join(save_dir, f'im_mdm_{lens.uid}_run{run}.npy'), mdm_exposure)
+    np.save(os.path.join(save_dir, f'im_sdm_{lens.uid}_run{run}.npy'), sdm_exposure)
     np.save(os.path.join(save_dir, f'im_cdm_{lens.uid}_run{run}.npy'), cdm_exposure)
 
     wdm_residual = cdm_exposure - wdm_exposure
     mdm_residual = cdm_exposure - mdm_exposure
-    min = np.min([wdm_residual, mdm_residual])
-    max = np.max([wdm_residual, mdm_residual])
+    sdm_residual = cdm_exposure - sdm_exposure
+    min = np.min([wdm_residual, mdm_residual, sdm_residual])
+    max = np.max([wdm_residual, mdm_residual, sdm_residual])
     vmax = np.max([np.abs(min), np.abs(max)])
 
     if plot_figures:
-        _, ax = plt.subplots(2, 3, figsize=(10, 7), constrained_layout=True)
+        _, ax = plt.subplots(2, 4, figsize=(14, 7), constrained_layout=True)
         ax[0, 0].imshow(wdm_exposure)
         ax[0, 1].imshow(mdm_exposure)
-        ax[0, 2].imshow(cdm_exposure)
+        ax[0, 2].imshow(sdm_exposure)
+        ax[0, 3].imshow(cdm_exposure)
         ax[1, 0].imshow(wdm_residual, cmap='bwr', vmin=-vmax, vmax=vmax)
         ax[1, 1].imshow(mdm_residual, cmap='bwr', vmin=-vmax, vmax=vmax)
+        ax[1, 2].imshow(sdm_residual, cmap='bwr', vmin=-vmax, vmax=vmax)
         ax[0, 0].set_title('WDM')
         ax[0, 1].set_title('MDM')
-        ax[0, 2].set_title('CDM')
+        ax[0, 2].set_title('SDM')
+        ax[0, 3].set_title('CDM')
         for a in ax.flatten():
             a.axis('off')
         plt.suptitle(f'{lens.uid}: Exposures Varying Subhalo Population')
@@ -497,6 +547,7 @@ def generate_power_spectra(tuple):
 
     wdm_ps, r = power_spectrum_1d(wdm_exposure)
     mdm_ps, _ = power_spectrum_1d(mdm_exposure)
+    sdm_ps, _ = power_spectrum_1d(sdm_exposure)
     cdm_ps, _ = power_spectrum_1d(cdm_exposure)
 
     # save r; should be same for all, since same size (num_pix, num_pix)
@@ -510,12 +561,15 @@ def generate_power_spectra(tuple):
 
     res_ps_wdm = cdm_ps - wdm_ps
     res_ps_mdm = cdm_ps - mdm_ps
+    res_ps_sdm = cdm_ps - sdm_ps
     np.save(os.path.join(save_dir, f'res_ps_wdm_{lens.uid}_run{run}.npy'), res_ps_wdm)
     np.save(os.path.join(save_dir, f'res_ps_mdm_{lens.uid}_run{run}.npy'), res_ps_mdm)
+    np.save(os.path.join(save_dir, f'res_ps_sdm_{lens.uid}_run{run}.npy'), res_ps_sdm)
 
     if plot_figures:
         plt.plot(r, res_ps_wdm, label='WDM')
         plt.plot(r, res_ps_mdm, label='MDM')
+        plt.plot(r, res_ps_sdm, label='SDM')
         plt.xscale('log')
         plt.title(f'{lens.uid}: Exposure Power Spectra Residuals Varying Subhalo Population')
         plt.legend()
@@ -652,6 +706,7 @@ def generate_power_spectra(tuple):
         plt.plot(r, res_ps_pos_3)
         plt.plot(r, res_ps_wdm, label='WDM')
         plt.plot(r, res_ps_mdm, label='MDM')
+        plt.plot(r, res_ps_sdm, label='SDM')
         plt.xscale('log')
         plt.title(f'{lens.uid}: Comparing Power Spectra Residuals')
         plt.legend()
