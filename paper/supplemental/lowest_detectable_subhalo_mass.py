@@ -243,25 +243,25 @@ def run(tuple):
 
                 # save image
                 # if i % 100 == 0:
-                try:
-                    _, ax = plt.subplots(1, 3, figsize=(15, 5))
-                    residual = exposure.exposure - exposure_no_subhalo.exposure
-                    vmax = np.max(np.abs(residual))
-                    if vmax == 0.: vmax = 0.1
-                    synth.set_native_coords()
-                    coords_x, coords_y = synth.coords_native.map_coord2pix(halo_x, halo_y)
-                    ax[0].imshow(exposure_no_subhalo.exposure)
-                    ax[0].set_title(f'SNR: {lens.snr:.2f}')
-                    ax[1].imshow(exposure.exposure)
-                    ax[1].scatter(coords_x, coords_y, c='r', s=10)
-                    ax[1].set_title(f'{m200:.2e}')
-                    ax[2].imshow(residual, cmap='bwr', vmin=-vmax, vmax=vmax)
-                    ax[2].set_title(r'$\chi^2=$ ' + f'{chi_square:.2f}')
-                    plt.title(f'{lens.uid}, {exposure.exposure.shape}')
-                    plt.savefig(os.path.join(image_save_dir, f'{lens.uid}_{execution_key}.png'))
-                    plt.close()
-                except Exception as e:
-                    print(e)
+                # try:
+                #     _, ax = plt.subplots(1, 3, figsize=(15, 5))
+                #     residual = exposure.exposure - exposure_no_subhalo.exposure
+                #     vmax = np.max(np.abs(residual))
+                #     if vmax == 0.: vmax = 0.1
+                #     synth.set_native_coords()
+                #     coords_x, coords_y = synth.coords_native.map_coord2pix(halo_x, halo_y)
+                #     ax[0].imshow(exposure_no_subhalo.exposure)
+                #     ax[0].set_title(f'SNR: {lens.snr:.2f}')
+                #     ax[1].imshow(exposure.exposure)
+                #     ax[1].scatter(coords_x, coords_y, c='r', s=10)
+                #     ax[1].set_title(f'{m200:.2e}')
+                #     ax[2].imshow(residual, cmap='bwr', vmin=-vmax, vmax=vmax)
+                #     ax[2].set_title(r'$\chi^2=$ ' + f'{chi_square:.2f}')
+                #     plt.title(f'{lens.uid}, {exposure.exposure.shape}')
+                #     plt.savefig(os.path.join(image_save_dir, f'{lens.uid}_{execution_key}.png'))
+                #     plt.close()
+                # except Exception as e:
+                #     print(e)
 
             results[position_key][mass_key] = chi_square_list
 
