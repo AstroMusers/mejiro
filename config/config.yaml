@@ -34,7 +34,7 @@ survey:
   # - zodi_multiplier: 1.5  # multiplied with minimum zodiacal light
 
 pipeline:
-  - debugging: False  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
+  - debugging: True  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
   - limit: None  # None
   # scene params
   - num_pix: 97  # 51  # 96
