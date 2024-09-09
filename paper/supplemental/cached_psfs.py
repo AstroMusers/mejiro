@@ -27,16 +27,16 @@ def main(config):
     util.create_directory_if_not_exists(save_dir)
 
     # oversamples = [1, 3, 5]
-    oversamples = [5]
+    oversamples = [1]
     # bands = ['F106', 'F129', 'F158', 'F184']
-    bands = ['F106', 'F129']
+    bands = ['F106']
     # detectors = [4, 1, 9, 17]
     # detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
     # detectors = [1, 2, 4, 5]
     # detector_positions = [(2048, 2048), (2048, 2048), (2048, 2048), (2048, 2048)]
     detectors = list(range(1, 19))
     # detector_positions = [(2048, 2048)] * 18
-    detector_positions = Roman().divide_up_sca(2)
+    detector_positions = Roman().divide_up_sca(4)
 
     for oversample in oversamples:
         for band in bands:
