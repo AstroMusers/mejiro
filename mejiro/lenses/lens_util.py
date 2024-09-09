@@ -212,15 +212,18 @@ def get_sample(pipeline_dir, index, band=None, model=True, model_stretch=2, mode
     if model:
         model_dir = pipeline_dir + '/03'
         files = glob(model_dir + f'/**/array_{str(index).zfill(8)}_*.npy')
-        assert len(files) == 4, f'Array files for StrongLens {index} not found in {model_dir}.'
+        assert len(files) != 0, f'Synthetic image files for StrongLens {index} not found in {model_dir}.'
     else:
         image_dir = pipeline_dir + '/04'
         files = glob(image_dir + f'/**/galsim_{str(index).zfill(8)}_*.npy')
-        assert len(files) == 4, f'Array files for StrongLens {index} not found in {image_dir}.'
+        assert len(files) != 0, f'Exposure files for StrongLens {index} not found in {image_dir}.'
 
     f106 = [np.load(i) for i in files if 'F106' in i][0]
     f129 = [np.load(i) for i in files if 'F129' in i][0]
-    f158 = [np.load(i) for i in files if 'F158' in i][0]
+    try:
+        f158 = [np.load(i) for i in files if 'F158' in i][0]
+    except:
+        f158 = None
     f184 = [np.load(i) for i in files if 'F184' in i][0]
     rgb_model = color.get_rgb(f106, f129, f184, minimum=None, stretch=model_stretch, Q=model_Q)
 
