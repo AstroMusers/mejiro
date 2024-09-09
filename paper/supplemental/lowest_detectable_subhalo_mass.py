@@ -29,12 +29,12 @@ def main(config):
     debugging = True
     script_config = {
         'image_radius': 0.1,  # arcsec
-        'num_lenses': 20,
-        'num_positions': 20,
+        'num_lenses': 1,
+        'num_positions': 10,
         'rng': galsim.UniformDeviate(42)
     }
     subhalo_params = {
-        'masses': np.logspace(6, 10, 5),
+        'masses': np.linspace(3.5e8, 5.5e8, 10),  # np.logspace(6, 12, 7)
         'concentration': 6,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -42,36 +42,37 @@ def main(config):
     }
     imaging_params = {
         'band': 'F106',
-        'scene_size': 5.1,  # arcsec
-        'oversample': 1,
+        'scene_size': 5,  # arcsec
+        'oversample': 5,
         'exposure_time': 146
     }
-    positions = [
-        ('01', (2048, 2048)),
-        ('02', (2048, 2048)),
-        ('03', (2048, 2048)),
-        ('04', (2048, 2048)),
-        ('05', (2048, 2048)),
-        ('06', (2048, 2048)),
-        ('07', (2048, 2048)),
-        ('08', (2048, 2048)),
-        ('09', (2048, 2048)),
-        ('10', (2048, 2048)),
-        ('11', (2048, 2048)),
-        ('12', (2048, 2048)),
-        ('13', (2048, 2048)),
-        ('14', (2048, 2048)),
-        ('15', (2048, 2048)),
-        ('16', (2048, 2048)),
-        ('17', (2048, 2048)),
-        ('18', (2048, 2048))
-    ]
-    # positions = []
-    # for i in range(1, 19):
-    #     sca = str(i).zfill(2)
-    #     coords = Roman().divide_up_sca(4)
-    #     for coord in coords:
-    #         positions.append((sca, coord))
+    # positions = [
+    #     ('01', (2048, 2048)),
+    #     ('02', (2048, 2048)),
+    #     ('03', (2048, 2048)),
+    #     ('04', (2048, 2048)),
+    #     ('05', (2048, 2048)),
+    #     ('06', (2048, 2048)),
+    #     ('07', (2048, 2048)),
+    #     ('08', (2048, 2048)),
+    #     ('09', (2048, 2048)),
+    #     ('10', (2048, 2048)),
+    #     ('11', (2048, 2048)),
+    #     ('12', (2048, 2048)),
+    #     ('13', (2048, 2048)),
+    #     ('14', (2048, 2048)),
+    #     ('15', (2048, 2048)),
+    #     ('16', (2048, 2048)),
+    #     ('17', (2048, 2048)),
+    #     ('18', (2048, 2048))
+    # ]
+    positions = []
+    for i in range(1, 19):
+        sca = str(i).zfill(2)
+        coords = Roman().divide_up_sca(4)
+        for coord in coords:
+            positions.append((sca, coord))
+    print(f'Processing {len(positions)} positions.')
 
     # set up directories for script output
     save_dir = os.path.join(config.machine.data_dir, 'output', 'lowest_detectable_subhalo_mass')
@@ -158,16 +159,18 @@ def run(tuple):
     for sca, sca_position in positions:
         sca = int(sca)
         position_key = f'{sca}_{sca_position[0]}_{sca_position[1]}'
-        # print(position_key)
+        print(' ' + position_key)
         results[position_key] = {}
         for m200 in tqdm(masses):
             mass_key = f'{int(m200)}'
             results[position_key][mass_key] = []
+            print('     ' + mass_key)
 
             Rs_angle, alpha_Rs = lens.lens_cosmo.nfw_physical2angle(M=m200, c=concentration)
             chi_square_list = []
             for i in range(num_positions):
                 execution_key = f'{position_key}_{mass_key}_{str(i).zfill(8)}'
+                print('         ' + execution_key)
 
                 rand_idx = np.random.randint(0, num_images)  # pick a random image position
                 halo_x = image_x[rand_idx]
