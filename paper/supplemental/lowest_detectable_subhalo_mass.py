@@ -34,7 +34,7 @@ def main(config):
         'rng': galsim.UniformDeviate(42)
     }
     subhalo_params = {
-        'masses': np.linspace(3.5e8, 5.5e8, 10),  # np.logspace(6, 12, 7)
+        'masses': np.linspace(1e8, 1e9, 40),  # np.logspace(6, 12, 7)
         'concentration': 6,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -139,7 +139,7 @@ def run(tuple):
     from mejiro.exposure import Exposure
 
     # unpack tuple
-    (run, lens, roman, script_config, imaging_params, subhalo_params, positions, save_dir, image_save_dir,
+    (_, lens, roman, script_config, imaging_params, subhalo_params, positions, save_dir, image_save_dir,
      debugging) = tuple
     image_radius = script_config['image_radius']
     num_positions = script_config['num_positions']
@@ -155,22 +155,23 @@ def run(tuple):
     image_x, image_y = lens.get_image_positions(pixel_coordinates=False)
     num_images = len(image_x)
 
+    run = 0
     results = {}
-    for sca, sca_position in positions:
+    for sca, sca_position in tqdm(positions):
         sca = int(sca)
         position_key = f'{sca}_{sca_position[0]}_{sca_position[1]}'
-        print(' ' + position_key)
+        # print(' ' + position_key)
         results[position_key] = {}
-        for m200 in tqdm(masses):
+        for m200 in tqdm(masses, disable=True):
             mass_key = f'{int(m200)}'
             results[position_key][mass_key] = []
-            print('     ' + mass_key)
+            # print('     ' + mass_key)
 
             Rs_angle, alpha_Rs = lens.lens_cosmo.nfw_physical2angle(M=m200, c=concentration)
             chi_square_list = []
             for i in range(num_positions):
                 execution_key = f'{position_key}_{mass_key}_{str(i).zfill(8)}'
-                print('         ' + execution_key)
+                # print('         ' + execution_key)
 
                 rand_idx = np.random.randint(0, num_images)  # pick a random image position
                 halo_x = image_x[rand_idx]
@@ -245,26 +246,27 @@ def run(tuple):
                 assert chi_square >= 0.
 
                 # save image
-                # if i % 100 == 0:
-                # try:
-                #     _, ax = plt.subplots(1, 3, figsize=(15, 5))
-                #     residual = exposure.exposure - exposure_no_subhalo.exposure
-                #     vmax = np.max(np.abs(residual))
-                #     if vmax == 0.: vmax = 0.1
-                #     synth.set_native_coords()
-                #     coords_x, coords_y = synth.coords_native.map_coord2pix(halo_x, halo_y)
-                #     ax[0].imshow(exposure_no_subhalo.exposure)
-                #     ax[0].set_title(f'SNR: {lens.snr:.2f}')
-                #     ax[1].imshow(exposure.exposure)
-                #     ax[1].scatter(coords_x, coords_y, c='r', s=10)
-                #     ax[1].set_title(f'{m200:.2e}')
-                #     ax[2].imshow(residual, cmap='bwr', vmin=-vmax, vmax=vmax)
-                #     ax[2].set_title(r'$\chi^2=$ ' + f'{chi_square:.2f}')
-                #     plt.title(f'{lens.uid}, {exposure.exposure.shape}')
-                #     plt.savefig(os.path.join(image_save_dir, f'{lens.uid}_{execution_key}.png'))
-                #     plt.close()
-                # except Exception as e:
-                #     print(e)
+                if run % 50 == 0:
+                    try:
+                        _, ax = plt.subplots(1, 3, figsize=(15, 5))
+                        residual = exposure.exposure - exposure_no_subhalo.exposure
+                        vmax = np.max(np.abs(residual))
+                        if vmax == 0.: vmax = 0.1
+                        synth.set_native_coords()
+                        coords_x, coords_y = synth.coords_native.map_coord2pix(halo_x, halo_y)
+                        ax[0].imshow(exposure_no_subhalo.exposure)
+                        ax[0].set_title(f'SNR: {lens.snr:.2f}')
+                        ax[1].imshow(exposure.exposure)
+                        ax[1].scatter(coords_x, coords_y, c='r', s=10)
+                        ax[1].set_title(f'{m200:.2e}')
+                        ax[2].imshow(residual, cmap='bwr', vmin=-vmax, vmax=vmax)
+                        ax[2].set_title(r'$\chi^2=$ ' + f'{chi_square:.2f}')
+                        plt.title(f'{lens.uid}, {exposure.exposure.shape}')
+                        plt.savefig(os.path.join(image_save_dir, f'{lens.uid}_{execution_key}.png'))
+                        plt.close()
+                    except Exception as e:
+                        print(e)
+                run += 1
 
             results[position_key][mass_key] = chi_square_list
 
