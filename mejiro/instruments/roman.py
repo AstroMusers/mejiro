@@ -238,16 +238,15 @@ class Roman(InstrumentBase):
         return self.zp_dict[sca][band.upper()]
 
     def divide_up_sca(self, sides):
-        assert sides % 2 == 0, "For now, sides must be even"
-
-        num_centers = sides ** 2
-        piece = int(self.pixels_per_axis / num_centers)
-
+        sub_array_size = self.pixels_per_axis / sides
         centers = []
-        for i in range(num_centers):
-            for j in range(num_centers):
-                if i % 2 != 0 and j % 2 != 0:
-                    centers.append((piece * i, piece * j))
+
+        for i in range(sides):
+            for j in range(sides):
+                center_x = int(round((i + 0.5) * sub_array_size))
+                center_y = int(round((j + 0.5) * sub_array_size))
+                centers.append((center_x, center_y))
+        
         return centers
 
     @staticmethod
