@@ -1,3 +1,25 @@
+import numpy as np
+
+
+def get_zeropoint_magnitude(wavelength, response, effective_area=4.5 * 1e4):
+    '''
+    see Section 6.1 of [this paper](https://www.aanda.org/articles/aa/full_html/2022/06/aa42897-21/aa42897-21.html) by the Euclid collaboration for explanation of this function
+
+    Roman's collecting area (4.5 m^2) retrieved 16 August 2024 from https://roman-docs.stsci.edu/roman-instruments-home/wfi-imaging-mode-user-guide/introduction-to-wfi/wfi-quick-reference
+    '''
+    # effective area in cm^2
+
+    # assert that wavelength values are evenly spaced
+    assert np.allclose(np.diff(wavelength), np.diff(wavelength)[0])
+
+    dv = np.diff(wavelength)[0]
+    integral = 0
+    for wl, resp in zip(wavelength, response):
+        integral += (dv * (1 / wl) * resp)
+
+    return 8.9 + (2.5 * np.log10(((effective_area * 1e-23) / (6.602 * 1e-27)) * integral))
+
+
 def mjy_to_counts(array, band):
     conversion_factor = get_mjy_to_counts_factor(band)
     return array * conversion_factor
