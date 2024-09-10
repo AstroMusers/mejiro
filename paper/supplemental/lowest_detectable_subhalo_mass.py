@@ -29,12 +29,12 @@ def main(config):
     debugging = True
     script_config = {
         'image_radius': 0.1,  # arcsec
-        'num_lenses': 1,
-        'num_positions': 10,
+        'num_lenses': 2,
+        'num_positions': 1,
         'rng': galsim.UniformDeviate(42)
     }
     subhalo_params = {
-        'masses': np.linspace(1e8, 1e9, 40),  # np.logspace(6, 12, 7)
+        'masses': np.logspace(8.8, 9, 25),  # 
         'concentration': 6,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -42,9 +42,9 @@ def main(config):
     }
     imaging_params = {
         'band': 'F106',
-        'scene_size': 5,  # arcsec
-        'oversample': 5,
-        'exposure_time': 146
+        'scene_size': 5.1,  # arcsec
+        'oversample': 1,
+        'exposure_time': 100000
     }
     # positions = [
     #     ('01', (2048, 2048)),
@@ -91,7 +91,9 @@ def main(config):
     lens_list = [lens for lens in lens_list if lens.snr > 100]
     num_lenses = script_config['num_lenses']
     print(f'Collected {len(lens_list)} lens(es) and processing {num_lenses}.')
-    lens_list = lens_list[:num_lenses]
+    # lens_list = np.random.choice(lens_list, num_lenses)
+    lens_list = [lens for lens in lens_list if lens.uid == '00001023' or lens.uid == '00000478']
+    print(f'Processing lens(es): {[lens.uid for lens in lens_list]}')
 
     print(f'Generating subhalos...')
     for lens in tqdm(lens_list):
@@ -241,9 +243,10 @@ def run(tuple):
                                     suppress_output=True)
 
                 # calculate chi square
-                chi_square = stats.chi_square(observed=exposure.exposure, expected=exposure_no_subhalo.exposure)
+                chi_square = stats.chi_square(exposure.exposure, exposure_no_subhalo.exposure)
                 chi_square_list.append(chi_square)
-                assert chi_square >= 0.
+                assert chi_square >= 0., print(np.min(exposure.exposure), np.min(exposure_no_subhalo.exposure))
+                # print(f'chi square: {chi_square}')
 
                 # save image
                 if run % 50 == 0:
