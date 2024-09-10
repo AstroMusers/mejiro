@@ -36,7 +36,7 @@ def main(config):
     # detector_positions = [(2048, 2048), (2048, 2048), (2048, 2048), (2048, 2048)]
     detectors = list(range(1, 19))
     # detector_positions = [(2048, 2048)] * 18
-    detector_positions = Roman().divide_up_sca(4)
+    detector_positions = Roman().divide_up_sca(2)
 
     for oversample in oversamples:
         for band in bands:
