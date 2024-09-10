@@ -25,6 +25,8 @@ class Roman(InstrumentBase):
 
         # load SCA-specific zeropoints
         self.zp_dict = json.load(open(os.path.join(module_path, 'data', 'roman_zeropoint_magnitudes.json')))
+        self.min_zodi_dict = json.load(open(os.path.join(module_path, 'data', 'roman_minimum_zodiacal_light.json')))
+        self.thermal_bkg_dict = json.load(open(os.path.join(module_path, 'data', 'roman_thermal_background.json')))
 
         # ---------------------CONSTANTS---------------------
         self.pixel_scale = 0.11  # arcsec/pixel
@@ -32,7 +34,7 @@ class Roman(InstrumentBase):
         self.psf_jitter = 0.012  # arcsec per axis
         self.pixels_per_axis = 4088
         self.total_pixels_per_axis = 4096
-        self.thermal_backgrounds = {
+        self.thermal_bkg = {
             'F062': 0.003,
             'F087': 0.003,
             'F106': 0.003,
@@ -93,7 +95,7 @@ class Roman(InstrumentBase):
 
         # add sky background
         if sky_background:
-            bkgs = self.get_sky_bkgs(synthetic_image.band, exposure_time, num_pix=output_num_pix, oversample=1)
+            bkgs = self.get_sky_bkgs(synthetic_image.band, detector, exposure_time, num_pix=output_num_pix, oversample=1)
             bkg = bkgs[synthetic_image.band]
             image += bkg
 
@@ -150,7 +152,7 @@ class Roman(InstrumentBase):
         else:
             return image
 
-    def get_sky_bkgs(self, bands, exposure_time, num_pix, oversample):
+    def get_sky_bkgs(self, bands, sca, exposure_time, num_pix, oversample):
         # was only one band provided as a string? or a list of bands?
         single_band = False
         if not isinstance(bands, list):
@@ -163,7 +165,7 @@ class Roman(InstrumentBase):
             sky_image = galsim.ImageF(num_pix, num_pix)
 
             # get minimum zodiacal light in this band in counts/pixel/sec
-            sky_level = self.get_min_zodi(band)
+            sky_level = self.get_min_zodi(band, sca)
 
             # "For observations at high galactic latitudes, the Zodi intensity is typically ~1.5x the minimum" (https://roman.gsfc.nasa.gov/science/WFI_technical.html)
             sky_level *= 1.5
@@ -172,7 +174,7 @@ class Roman(InstrumentBase):
             sky_level *= (1. + galsim.roman.stray_light_fraction)
 
             # get thermal background in this band in counts/pixel/sec
-            thermal_bkg = self.get_thermal_bkg(band)
+            thermal_bkg = self.get_thermal_bkg(band, sca)
 
             # combine the two backgrounds (still counts/pixel/sec)
             sky_image += sky_level
@@ -218,17 +220,13 @@ class Roman(InstrumentBase):
         """
         return self.psf_fwhm[band.upper()]
 
-    def get_thermal_bkg(self, band):
-        """
-        Return internal thermal background in given band in counts/sec/pixel
-        """
-        return self.thermal_backgrounds[band.upper()]
+    def get_thermal_bkg(self, band, sca):
+        sca = Roman.get_sca_string(sca)
+        return self.thermal_bkg_dict[sca][band.upper()]
 
-    def get_min_zodi(self, band):
-        """
-        Return minimum zodiacal light level in given band in counts/pixel/sec (count rate per pixel)
-        """
-        return self.min_zodi[band.upper()]
+    def get_min_zodi(self, band, sca):
+        sca = Roman.get_sca_string(sca)
+        return self.min_zodi_dict[sca][band.upper()]
 
     def get_zeropoint_magnitude(self, band, sca=1):
         """
