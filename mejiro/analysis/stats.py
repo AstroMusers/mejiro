@@ -2,9 +2,15 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 
-def chi_square(observed, expected):
-    array = ((observed - expected) ** 2) / expected
-    return np.nan_to_num(array, copy=False).sum().sum()
+def chi_square(a, b):
+    assert a.shape == b.shape, 'Arrays must have the same shape'
+
+    chi2 = 0
+    for i, j in zip(a, b):
+        for k, l in zip(i, j):
+            chi2 += (k - l) ** 2 / np.sqrt(l)
+    
+    return chi2
 
 
 def chi2_distance(A, B):
