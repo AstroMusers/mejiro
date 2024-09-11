@@ -358,6 +358,7 @@ def run_slsim(tuple):
             'lensed_source_mags': lensed_source_mags,
             'deflector_stellar_mass': gglens.deflector_stellar_mass(),
             'deflector_velocity_dispersion': gglens.deflector_velocity_dispersion(),
+            'magnification': gglens.extended_source_magnification(),
             'snr': snr,
             'masked_snr_array': masked_snr_array,
             'sca': sca_id

@@ -142,6 +142,7 @@ def slsim_lens_to_mejiro(slsim_lens, bands, cosmo, snr=None, uid=None, z_source_
                       lensed_source_mags=lensed_source_mags,
                       lens_stellar_mass=slsim_lens.deflector_stellar_mass(),
                       lens_vel_disp=slsim_lens.deflector_velocity_dispersion(),
+                      magnification=slsim_lens.extended_source_magnification(),
                       snr=snr,
                       uid=uid,
                       sca=sca)
@@ -157,6 +158,7 @@ def unpickle_lens(pickle_path, uid):
     lensed_source_mags = unpickled['lensed_source_mags']
     lens_stellar_mass = unpickled['deflector_stellar_mass']
     lens_vel_disp = unpickled['deflector_velocity_dispersion']
+    magnification = unpickled['magnification']
     snr = unpickled['snr']
     masked_snr_array = unpickled['masked_snr_array']
     sca = unpickled['sca']
@@ -168,6 +170,7 @@ def unpickle_lens(pickle_path, uid):
                       lensed_source_mags=lensed_source_mags,
                       lens_stellar_mass=lens_stellar_mass,
                       lens_vel_disp=lens_vel_disp,
+                      magnification=magnification,
                       snr=snr,
                       masked_snr_array=masked_snr_array,
                       uid=uid,
