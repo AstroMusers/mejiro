@@ -26,8 +26,7 @@ def main(config):
     save_dir = os.path.join(config.machine.data_dir, 'cached_psfs')
     util.create_directory_if_not_exists(save_dir)
 
-    # oversamples = [1, 3, 5]
-    oversamples = [1, 5]
+    oversamples = [1, 3, 5]
     # bands = ['F106', 'F129', 'F158', 'F184']
     bands = ['F106']
     # detectors = [4, 1, 9, 17]
@@ -36,7 +35,7 @@ def main(config):
     # detector_positions = [(2048, 2048), (2048, 2048), (2048, 2048), (2048, 2048)]
     detectors = list(range(1, 19))
     # detector_positions = [(2048, 2048)] * 18
-    detector_positions = Roman().divide_up_sca(4)
+    detector_positions = Roman().divide_up_sca(3)
 
     for oversample in oversamples:
         for band in bands:

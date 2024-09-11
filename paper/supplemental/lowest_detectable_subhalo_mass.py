@@ -29,12 +29,12 @@ def main(config):
     debugging = True
     script_config = {
         'image_radius': 0.1,  # arcsec
-        'num_lenses': 2,
-        'num_positions': 1,
+        'num_lenses': 100,
+        'num_positions': 5,
         'rng': galsim.UniformDeviate(42)
     }
     subhalo_params = {
-        'masses': np.logspace(8.8, 9, 25),  # 
+        'masses': np.logspace(7, 10, 20),  # 
         'concentration': 6,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -44,7 +44,7 @@ def main(config):
         'band': 'F106',
         'scene_size': 5.1,  # arcsec
         'oversample': 1,
-        'exposure_time': 100000
+        'exposure_time': 146000
     }
     # positions = [
     #     ('01', (2048, 2048)),
@@ -88,18 +88,19 @@ def main(config):
     else:
         pipeline_dir = config.machine.pipeline_dir
     lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, suppress_output=False)
-    lens_list = [lens for lens in lens_list if lens.snr > 100]
+    lens_list = [lens for lens in lens_list if lens.snr > 25 and lens.snr < 100]
     num_lenses = script_config['num_lenses']
     print(f'Collected {len(lens_list)} lens(es) and processing {num_lenses}.')
+    lens_list = lens_list[:num_lenses]
     # lens_list = np.random.choice(lens_list, num_lenses)
-    lens_list = [lens for lens in lens_list if lens.uid == '00001023' or lens.uid == '00000478']
+    # lens_list = [lens for lens in lens_list if lens.uid == '00001023' or lens.uid == '00000478']
     print(f'Processing lens(es): {[lens.uid for lens in lens_list]}')
 
-    print(f'Generating subhalos...')
-    for lens in tqdm(lens_list):
-        realization = lens.generate_cdm_subhalos()
-        lens.add_subhalos(realization)
-    print(f'Generated subhalos for {len(lens_list)} lens(es).')
+    # print(f'Generating subhalos...')
+    # for lens in tqdm(lens_list):
+    #     realization = lens.generate_cdm_subhalos()
+    #     lens.add_subhalos(realization)
+    # print(f'Generated subhalos for {len(lens_list)} lens(es).')
 
     roman = Roman()
     tuple_list = [
@@ -245,7 +246,7 @@ def run(tuple):
                 # calculate chi square
                 chi_square = stats.chi_square(exposure.exposure, exposure_no_subhalo.exposure)
                 chi_square_list.append(chi_square)
-                assert chi_square >= 0., print(np.min(exposure.exposure), np.min(exposure_no_subhalo.exposure))
+                assert chi_square >= 0., print(f'{lens_no_subhalo.uid}: {chi_square=}')
                 # print(f'chi square: {chi_square}')
 
                 # save image
