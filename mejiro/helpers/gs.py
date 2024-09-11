@@ -70,7 +70,7 @@ def get_images(lens, arrays, bands, sca_zp_dict=None, input_size=96, output_size
         sca_zp_dict = roman_params.zp_dict[f'SCA{str(detector).zfill(2)}']
 
     # calculate sky backgrounds for each band
-    bkgs = get_sky_bkgs(bands, exposure_time, num_pix=input_size, oversample=1)
+    bkgs = get_sky_bkgs(bands, detector, exposure_time, num_pix=input_size, oversample=1)
 
     # generate the PSFs I'll need for each unique band
     psf_kernels = {}
@@ -256,7 +256,7 @@ def convolve(interp, galsim_psf, input_size):
     return convolved.drawImage(im)
 
 
-def get_sky_bkgs(bands, exposure_time, num_pix, oversample):
+def get_sky_bkgs(bands, detector, exposure_time, num_pix, oversample):
     # was only one band provided as a string? or a list of bands?
     single_band = False
     if not isinstance(bands, list):
@@ -269,7 +269,7 @@ def get_sky_bkgs(bands, exposure_time, num_pix, oversample):
         sky_image = galsim.ImageF(num_pix, num_pix)
 
         # get minimum zodiacal light in this band in counts/pixel/sec
-        sky_level = roman_params.get_min_zodi(band)
+        sky_level = roman_params.get_min_zodi(band, detector)
 
         # "For observations at high galactic latitudes, the Zodi intensity is typically ~1.5x the minimum" (https://roman.gsfc.nasa.gov/science/WFI_technical.html)
         sky_level *= 1.5
@@ -278,7 +278,7 @@ def get_sky_bkgs(bands, exposure_time, num_pix, oversample):
         sky_level *= (1. + galsim.roman.stray_light_fraction)
 
         # get thermal background in this band in counts/pixel/sec
-        thermal_bkg = roman_params.get_thermal_bkg(band)
+        thermal_bkg = roman_params.get_thermal_bkg(band, detector)
 
         # combine the two backgrounds (still counts/pixel/sec)
         sky_image += sky_level
