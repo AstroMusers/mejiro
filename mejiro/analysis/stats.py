@@ -10,7 +10,7 @@ def chi_square(a, b):
         for k, l in zip(i, j):
             chi2 += (k - l) ** 2 / np.sqrt(l)
     
-    return chi2
+    return np.nan_to_num(chi2, copy=False)
 
 
 def chi2_distance(A, B):
