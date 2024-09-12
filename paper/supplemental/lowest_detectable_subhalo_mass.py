@@ -28,13 +28,13 @@ def main(config):
     # script configuration options
     debugging = True
     script_config = {
-        'image_radius': 0.1,  # arcsec
+        'image_radius': 0.01,  # arcsec
         'num_lenses': 100,
-        'num_positions': 5,
+        'num_positions': 1,
         'rng': galsim.UniformDeviate(42)
     }
     subhalo_params = {
-        'masses': np.logspace(7, 10, 20),  # 
+        'masses': np.logspace(8, 10, 50),  # 
         'concentration': 6,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -46,26 +46,6 @@ def main(config):
         'oversample': 1,
         'exposure_time': 146000
     }
-    # positions = [
-    #     ('01', (2048, 2048)),
-    #     ('02', (2048, 2048)),
-    #     ('03', (2048, 2048)),
-    #     ('04', (2048, 2048)),
-    #     ('05', (2048, 2048)),
-    #     ('06', (2048, 2048)),
-    #     ('07', (2048, 2048)),
-    #     ('08', (2048, 2048)),
-    #     ('09', (2048, 2048)),
-    #     ('10', (2048, 2048)),
-    #     ('11', (2048, 2048)),
-    #     ('12', (2048, 2048)),
-    #     ('13', (2048, 2048)),
-    #     ('14', (2048, 2048)),
-    #     ('15', (2048, 2048)),
-    #     ('16', (2048, 2048)),
-    #     ('17', (2048, 2048)),
-    #     ('18', (2048, 2048))
-    # ]
     positions = []
     for i in range(1, 19):
         sca = str(i).zfill(2)
@@ -165,20 +145,49 @@ def run(tuple):
         position_key = f'{sca}_{sca_position[0]}_{sca_position[1]}'
         # print(' ' + position_key)
         results[position_key] = {}
+
+        # get image with no subhalo
+        lens_no_subhalo = deepcopy(lens)
+        synth_no_subhalo = SyntheticImage(lens_no_subhalo, 
+                                            roman, 
+                                            band=band, 
+                                            arcsec=scene_size,
+                                            oversample=oversample, 
+                                            sca=sca, 
+                                            sca_position=sca_position,
+                                            debugging=False)
+        exposure_no_subhalo = Exposure(synth_no_subhalo, 
+                                        exposure_time=exposure_time, 
+                                        rng=rng, 
+                                        sca=sca,
+                                        sca_position=sca_position, 
+                                        return_noise=True, 
+                                        suppress_output=True)
+
+        # get noise
+        poisson_noise = exposure_no_subhalo.poisson_noise
+        dark_noise = exposure_no_subhalo.dark_noise
+        read_noise = exposure_no_subhalo.read_noise
+
         for m200 in tqdm(masses, disable=True):
             mass_key = f'{int(m200)}'
             results[position_key][mass_key] = []
             # print('     ' + mass_key)
 
+            # compute subhalo parameters
             Rs_angle, alpha_Rs = lens.lens_cosmo.nfw_physical2angle(M=m200, c=concentration)
+
             chi_square_list = []
             for i in range(num_positions):
                 execution_key = f'{position_key}_{mass_key}_{str(i).zfill(8)}'
                 # print('         ' + execution_key)
 
                 rand_idx = np.random.randint(0, num_images)  # pick a random image position
-                halo_x = image_x[rand_idx]
-                halo_y = image_y[rand_idx]
+                # TODO temp
+                halo_x = image_x[0]
+                halo_y = image_y[0]
+                # halo_x = image_x[rand_idx]
+                # halo_y = image_y[rand_idx]
 
                 # get a random point within a small disk around the image
                 r = image_radius * np.sqrt(np.random.random_sample())
@@ -198,29 +207,6 @@ def run(tuple):
                     'center_y': center_y,
                     'r_trunc': 5 * Rs_angle
                 }
-
-                # get image with no subhalo
-                lens_no_subhalo = deepcopy(lens)
-                synth_no_subhalo = SyntheticImage(lens_no_subhalo, 
-                                                  roman, 
-                                                  band=band, 
-                                                  arcsec=scene_size,
-                                                  oversample=oversample, 
-                                                  sca=sca, 
-                                                  sca_position=sca_position,
-                                                  debugging=False)
-                exposure_no_subhalo = Exposure(synth_no_subhalo, 
-                                               exposure_time=exposure_time, 
-                                               rng=rng, 
-                                               sca=sca,
-                                               sca_position=sca_position, 
-                                               return_noise=True, 
-                                               suppress_output=True)
-
-                # get noise
-                poisson_noise = exposure_no_subhalo.poisson_noise
-                dark_noise = exposure_no_subhalo.dark_noise
-                read_noise = exposure_no_subhalo.read_noise
 
                 # get image with subhalo
                 lens_with_subhalo = deepcopy(lens)
