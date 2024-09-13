@@ -205,7 +205,7 @@ def plot_projected_mass(lens):
     return ax.imshow(kappa_subs, vmin=-0.1, vmax=0.1, cmap='bwr')
 
 
-def get_sample(pipeline_dir, index, band=None, model=True, model_stretch=2, model_Q=3):
+def get_sample(pipeline_dir, index, band=None, rgb_bands=['F184', 'F129', 'F106'], model=True, model_stretch=2, model_Q=3):
     # get lens
     lens_dir = pipeline_dir + '/03'
     lens_path = glob(lens_dir + f'/**/lens_{str(index).zfill(8)}.pkl')
@@ -221,14 +221,10 @@ def get_sample(pipeline_dir, index, band=None, model=True, model_stretch=2, mode
         files = glob(image_dir + f'/**/galsim_{str(index).zfill(8)}_*.npy')
         assert len(files) != 0, f'Exposure files for StrongLens {index} not found in {image_dir}.'
 
-    f106 = [np.load(i) for i in files if 'F106' in i][0]
-    f129 = [np.load(i) for i in files if 'F129' in i][0]
-    try:
-        f158 = [np.load(i) for i in files if 'F158' in i][0]
-    except:
-        f158 = None
-    f184 = [np.load(i) for i in files if 'F184' in i][0]
-    rgb_model = color.get_rgb(f106, f129, f184, minimum=None, stretch=model_stretch, Q=model_Q)
+    r = [np.load(i) for i in files if rgb_bands[0] in i][0]
+    g = [np.load(i) for i in files if rgb_bands[1] in i][0]
+    b = [np.load(i) for i in files if rgb_bands[2] in i][0]
+    rgb_model = color.get_rgb(r, g, b, minimum=None, stretch=model_stretch, Q=model_Q)
 
     # get rgb image
     color_dir = pipeline_dir + '/05'
@@ -236,16 +232,8 @@ def get_sample(pipeline_dir, index, band=None, model=True, model_stretch=2, mode
     assert len(image_path) == 1, f'Color image for StrongLens {index} not found in {color_dir}.'
     rgb_image = np.load(image_path[0])
 
-    if band is None:
-        return lens, rgb_model, rgb_image
-    elif band.lower() == 'f106':
-        return lens, f106, rgb_image
-    elif band.lower() == 'f129':
-        return lens, f129, rgb_image
-    elif band.lower() == 'f158':
-        return lens, f158, rgb_image
-    elif band.lower() == 'f184':
-        return lens, f184, rgb_image
+    # TODO should be able to do something with the band arg
+    return lens, rgb_model, rgb_image
 
 
 def update_kwargs_magnitude(old_kwargs, new_magnitude):
