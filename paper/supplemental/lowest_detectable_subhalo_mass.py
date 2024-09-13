@@ -26,7 +26,7 @@ def main(config):
     from mejiro.instruments.roman import Roman
 
     # script configuration options
-    debugging = True
+    debugging = False
     script_config = {
         'image_radius': 0.01,  # arcsec
         'num_lenses': 100,
@@ -34,14 +34,14 @@ def main(config):
         'rng': galsim.UniformDeviate(42)
     }
     subhalo_params = {
-        'masses': np.logspace(8, 10, 50),  # 
+        'masses': np.logspace(8, 10, 100),  # 
         'concentration': 6,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
         'los_normalization': 0.
     }
     imaging_params = {
-        'band': 'F106',
+        'band': 'F184',
         'scene_size': 5.1,  # arcsec
         'oversample': 1,
         'exposure_time': 146000
@@ -55,7 +55,7 @@ def main(config):
     print(f'Processing {len(positions)} positions.')
 
     # set up directories for script output
-    save_dir = os.path.join(config.machine.data_dir, 'output', 'lowest_detectable_subhalo_mass')
+    save_dir = os.path.join(config.machine.data_dir, 'output', 'lowest_detectable_subhalo_mass_dev')
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
     image_save_dir = os.path.join(save_dir, 'images')
@@ -236,7 +236,7 @@ def run(tuple):
                 # print(f'chi square: {chi_square}')
 
                 # save image
-                if run % 50 == 0:
+                if run % 10000 == 0:
                     try:
                         _, ax = plt.subplots(1, 3, figsize=(15, 5))
                         residual = exposure.exposure - exposure_no_subhalo.exposure
