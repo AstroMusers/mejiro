@@ -5,10 +5,13 @@ from scipy.optimize import curve_fit
 def chi_square(a, b):
     assert a.shape == b.shape, 'Arrays must have the same shape'
 
+    if a.ndim != 1:
+        a = a.flatten()
+        b = b.flatten()
+
     chi2 = 0
     for i, j in zip(a, b):
-        for k, l in zip(i, j):
-            chi2 += ((k - l) ** 2) / l
+        chi2 += ((i - j) ** 2) / j
     
     return np.nan_to_num(chi2, copy=False)
 
