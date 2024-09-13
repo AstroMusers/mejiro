@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from lenstronomy.Util.correlation import power_spectrum_1d
 from tqdm import tqdm
+from scipy.stats import chi2
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -26,24 +27,25 @@ def main(config):
     from mejiro.instruments.roman import Roman
 
     # script configuration options
-    debugging = False
+    debugging = True
     script_config = {
+        'snr_quantile': 0.75,
         'image_radius': 0.01,  # arcsec
-        'num_lenses': 100,
+        'num_lenses': None,
         'num_positions': 1,
         'rng': galsim.UniformDeviate(42)
     }
     subhalo_params = {
-        'masses': np.logspace(8, 10, 100),  # 
+        'masses': np.logspace(7, 11, 100),  # 
         'concentration': 6,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
         'los_normalization': 0.
     }
     imaging_params = {
-        'band': 'F184',
+        'band': 'F087',
         'scene_size': 5.1,  # arcsec
-        'oversample': 1,
+        'oversample': 1,  # TODO TEMP
         'exposure_time': 146000
     }
     positions = []
@@ -62,20 +64,25 @@ def main(config):
     os.makedirs(image_save_dir, exist_ok=True)
 
     # collect lenses
-    print(f'Collecting lenses...')
     if debugging:
         pipeline_dir = f'{config.machine.pipeline_dir}_dev'
     else:
         pipeline_dir = config.machine.pipeline_dir
+    print(f'Collecting lenses from {pipeline_dir}')
     lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, suppress_output=False)
-    lens_list = [lens for lens in lens_list if lens.snr > 25 and lens.snr < 100]
+    lens_list = [lens for lens in lens_list if lens.snr > 50 and lens.get_einstein_radius() > 0.5]
     num_lenses = script_config['num_lenses']
     print(f'Collected {len(lens_list)} lens(es) and processing {num_lenses}.')
-    lens_list = lens_list[:num_lenses]
+    if num_lenses is not None:
+        repeats = int(np.ceil(num_lenses / len(lens_list)))
+        print(f'Repeating lenses {repeats} times...')
+        lens_list *= repeats
+        lens_list = lens_list[:num_lenses]
     # lens_list = np.random.choice(lens_list, num_lenses)
     # lens_list = [lens for lens in lens_list if lens.uid == '00001023' or lens.uid == '00000478']
-    print(f'Processing lens(es): {[lens.uid for lens in lens_list]}')
+    # print(f'Processing lens(es): {[lens.uid for lens in lens_list]}')
 
+    # TODO TEMP
     # print(f'Generating subhalos...')
     # for lens in tqdm(lens_list):
     #     realization = lens.generate_cdm_subhalos()
@@ -155,6 +162,7 @@ def run(tuple):
                                             oversample=oversample, 
                                             sca=sca, 
                                             sca_position=sca_position,
+                                            pieces=True,
                                             debugging=False)
         exposure_no_subhalo = Exposure(synth_no_subhalo, 
                                         exposure_time=exposure_time, 
@@ -163,11 +171,30 @@ def run(tuple):
                                         sca_position=sca_position, 
                                         return_noise=True, 
                                         suppress_output=True)
+        
+        # get pieces
+        # lens_exposure = exposure_no_subhalo.lens_exposure
+        source_exposure = exposure_no_subhalo.source_exposure
 
         # get noise
         poisson_noise = exposure_no_subhalo.poisson_noise
         dark_noise = exposure_no_subhalo.dark_noise
         read_noise = exposure_no_subhalo.read_noise
+        # noise = poisson_noise.array + dark_noise.array + read_noise.array
+
+        # calculate SNR in each pixel
+        snr_array = np.nan_to_num(source_exposure / np.sqrt(exposure_no_subhalo.exposure))
+
+        # build SNR mask
+        snr_threshold = np.quantile(snr_array, script_config['snr_quantile'])
+        masked_snr_array = np.ma.masked_where(snr_array <= snr_threshold, snr_array)
+        mask = np.ma.getmask(masked_snr_array)
+        masked_exposure_no_subhalo = np.ma.masked_array(exposure_no_subhalo.exposure, mask=mask)
+
+        # initialize chi2 rv
+        pixels_unmasked = np.ma.count(masked_snr_array)
+        dof = pixels_unmasked - 3
+        rv = chi2(dof)
 
         for m200 in tqdm(masses, disable=True):
             mass_key = f'{int(m200)}'
@@ -228,12 +255,14 @@ def run(tuple):
                                     dark_noise=dark_noise, 
                                     read_noise=read_noise,
                                     suppress_output=True)
+                
+                # mask image with subhalo
+                masked_exposure_with_subhalo = np.ma.masked_array(exposure.exposure, mask=mask)
 
                 # calculate chi square
-                chi_square = stats.chi_square(exposure.exposure, exposure_no_subhalo.exposure)
+                chi_square = stats.chi_square(np.ma.compressed(masked_exposure_with_subhalo), np.ma.compressed(masked_exposure_no_subhalo))
                 chi_square_list.append(chi_square)
                 assert chi_square >= 0., print(f'{lens_no_subhalo.uid}: {chi_square=}')
-                # print(f'chi square: {chi_square}')
 
                 # save image
                 if run % 10000 == 0:
@@ -244,9 +273,9 @@ def run(tuple):
                         if vmax == 0.: vmax = 0.1
                         synth.set_native_coords()
                         coords_x, coords_y = synth.coords_native.map_coord2pix(halo_x, halo_y)
-                        ax[0].imshow(exposure_no_subhalo.exposure)
+                        ax[0].imshow(masked_exposure_no_subhalo)
                         ax[0].set_title(f'SNR: {lens.snr:.2f}')
-                        ax[1].imshow(exposure.exposure)
+                        ax[1].imshow(masked_exposure_with_subhalo)
                         ax[1].scatter(coords_x, coords_y, c='r', s=10)
                         ax[1].set_title(f'{m200:.2e}')
                         ax[2].imshow(residual, cmap='bwr', vmin=-vmax, vmax=vmax)
@@ -258,7 +287,9 @@ def run(tuple):
                         print(e)
                 run += 1
 
-            results[position_key][mass_key] = chi_square_list
+            # convert chi2 to p-value
+            pvals = [rv.sf(chi) for chi in chi_square_list]
+            results[position_key][mass_key] = pvals
 
     util.pickle(os.path.join(save_dir, f'results_{lens.uid}.pkl'), results)
 

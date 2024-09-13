@@ -10,17 +10,17 @@ survey:
   - total_population: True
   - scas: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]  # 
   - deflector_cut_band: F129
-  - deflector_cut_band_max: 30
+  - deflector_cut_band_max: 25
   - deflector_z_min: 0.01
-  - deflector_z_max: 3.
+  - deflector_z_max: 2.
   - source_cut_band: F129
-  - source_cut_band_max: 30
+  - source_cut_band_max: 22
   - source_z_min: 0.01
-  - source_z_max: 7.
+  - source_z_max: 5.
   - min_image_separation: 0.3  # arcseconds
   - max_image_separation: 10.  # arcseconds
   - mag_arc_limit_band: F129
-  - mag_arc_limit: 30  # this takes pressure off of SNR criterion, so set as high as possible without missing anything
+  - mag_arc_limit: 21  # this takes pressure off of SNR criterion, so set as high as possible without missing anything
   - large_lens_mag_max: 12  # 14  # for Einstein radius and Sersic radius criterion
   - large_lens_band: F129  # for Einstein radius and Sersic radius criterion
   - magnification: 3
@@ -51,8 +51,8 @@ pipeline:
   - r_tidal: 0.5  # see Section 3.1 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract 
   - sigma_sub: 0.055  # see Section 6.3 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract 
   # imaging params
-  - bands: [ F106, F129, F184 ]  # [F106, F129, F158, F184]
-  - rgb_bands: [ F184, F129, F106 ]  # in RGB order
+  - bands: [ F062, F087, F106 ]  # [F106, F129, F158, F184]
+  - rgb_bands: [ F106, F087, F062 ]  # in RGB order
   - rgb_stretch: 2
   - rgb_q: 3
   - exposure_time: 146  # 146
