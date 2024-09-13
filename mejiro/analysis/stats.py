@@ -8,7 +8,7 @@ def chi_square(a, b):
     chi2 = 0
     for i, j in zip(a, b):
         for k, l in zip(i, j):
-            chi2 += (k - l) ** 2 / np.sqrt(l)
+            chi2 += ((k - l) ** 2) / l
     
     return np.nan_to_num(chi2, copy=False)
 
