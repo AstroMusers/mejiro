@@ -30,13 +30,13 @@ def main(config):
     debugging = True
     script_config = {
         'snr_quantile': 0.75,
-        'image_radius': 0.1,  # arcsec
-        'num_lenses': 500,
+        'image_radius': 0.01,  # arcsec
+        'num_lenses': 24,
         'num_positions': 1,
         'rng': galsim.UniformDeviate(42)
     }
     subhalo_params = {
-        'masses': np.logspace(7, 8, 100),  # 
+        'masses': np.linspace(6, 8, 25),  # 
         'concentration': 6,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -51,7 +51,7 @@ def main(config):
     positions = []
     for i in range(1, 19):
         sca = str(i).zfill(2)
-        coords = Roman().divide_up_sca(4)
+        coords = Roman().divide_up_sca(5)
         for coord in coords:
             positions.append((sca, coord))
     print(f'Processing {len(positions)} positions.')
