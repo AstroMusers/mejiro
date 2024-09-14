@@ -104,42 +104,76 @@ class Roman(InstrumentBase):
             image.replaceNegative(0.)
 
             # Poisson noise
-            if 'poisson_noise' in kwargs:
-                image += kwargs['poisson_noise']
-            else:
+            if 'poisson_noise' not in kwargs:
                 before = deepcopy(image)
                 image.addNoise(galsim.PoissonNoise(rng))
                 poisson_noise = image - before
-            image.quantize()
-
+                image.quantize()
+            elif type(kwargs['poisson_noise']) is galsim.Image:
+                image += kwargs['poisson_noise']
+                image.quantize()
+            elif type(kwargs['poisson_noise']) is bool:
+                poisson_noise = None
+                pass
+            
             # reciprocity failure
-            galsim.roman.addReciprocityFailure(image, exptime=exposure_time)
+            if 'reciprocity_failure' not in kwargs:
+                before = deepcopy(image)
+                galsim.roman.addReciprocityFailure(image, exptime=exposure_time)
+                reciprocity_failure = image - before
+            elif type(kwargs['reciprocity_failure']) is galsim.Image:
+                image += kwargs['reciprocity_failure']
+            elif type(kwargs['reciprocity_failure']) is bool:
+                reciprocity_failure = None
+                pass                
 
             # dark current
-            if 'dark_noise' in kwargs:
-                image += kwargs['dark_noise']
-            else:
+            if 'dark_noise' not in kwargs:
                 before = deepcopy(image)
                 total_dark_current = galsim.roman.dark_current
                 image.addNoise(galsim.DeviateNoise(galsim.PoissonDeviate(rng, total_dark_current)))
                 dark_noise = image - before
+            elif type(kwargs['dark_noise']) is galsim.Image:
+                image += kwargs['dark_noise']
+            elif type(kwargs['dark_noise']) is bool:
+                dark_noise = None
+                pass
 
             # skip persistence
 
             # nonlinearity
-            galsim.roman.applyNonlinearity(image)
+            if 'nonlinearity' not in kwargs:
+                before = deepcopy(image)
+                galsim.roman.applyNonlinearity(image)
+                nonlinearity = image - before
+            elif type(kwargs['nonlinearity']) is galsim.Image:
+                image += kwargs['nonlinearity']
+            elif type(kwargs['nonlinearity']) is bool:
+                nonlinearity = None
+                pass
 
             # IPC
-            galsim.roman.applyIPC(image)
+            if 'ipc' not in kwargs:
+                before = deepcopy(image)
+                galsim.roman.applyIPC(image)
+                ipc = image - before
+            elif type(kwargs['ipc']) is galsim.Image:
+                image += kwargs['ipc']
+            elif type(kwargs['ipc']) is bool:
+                ipc = None
+                pass
 
             # read noise
-            if 'read_noise' in kwargs:
-                image += kwargs['read_noise']
-            else:
+            if 'read_noise' not in kwargs:
                 before = deepcopy(image)
                 read_noise_sigma = galsim.roman.read_noise
                 image.addNoise(galsim.GaussianNoise(rng, sigma=read_noise_sigma))
                 read_noise = image - before
+            elif type(kwargs['read_noise']) is galsim.Image:
+                image += kwargs['read_noise']
+            elif type(kwargs['read_noise']) is bool:
+                read_noise = None
+                pass
 
             # gain
             image /= galsim.roman.gain
@@ -148,7 +182,7 @@ class Roman(InstrumentBase):
             image.quantize()
 
         if detector_effects and 'return_noise' in kwargs and kwargs['return_noise']:
-            return image, poisson_noise, dark_noise, read_noise
+            return image, poisson_noise, reciprocity_failure, dark_noise, nonlinearity, ipc, read_noise
         else:
             return image
 

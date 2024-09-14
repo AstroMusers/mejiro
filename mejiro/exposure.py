@@ -1,4 +1,5 @@
 import galsim
+import numpy as np
 
 from mejiro.utils import util
 
@@ -31,10 +32,11 @@ class Exposure:
                                                      scale=self.synthetic_image.pixel_scale,
                                                      flux=self.total_flux_cps * self.exposure_time)
 
-        tuple = self.synthetic_image.instrument.get_exposure(self.synthetic_image, self.interp_total, self.rng,
+        tuple = self.synthetic_image.instrument.get_exposure(self.synthetic_image, 
+                                                             self.interp_total, self.rng,
                                                              self.exposure_time, **kwargs)
         if 'return_noise' in kwargs and kwargs['return_noise']:
-            self.image, self.poisson_noise, self.dark_noise, self.read_noise = tuple
+            self.image, self.poisson_noise, self.reciprocity_failure, self.dark_noise, self.nonlinearity, self.ipc, self.read_noise = tuple
         else:
             self.image = tuple
         final = self.image.array
@@ -46,6 +48,8 @@ class Exposure:
         final = util.center_crop_image(final, (output_num_pix, output_num_pix))
 
         # set exposure
+        if np.any(final < 0):
+            raise ValueError('Negative pixel values in final image')
         self.exposure = final
 
         if self.synthetic_image.pieces:
