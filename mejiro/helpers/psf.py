@@ -46,6 +46,13 @@ def kernel_to_galsim_interpolated_image(kernel, oversample, pixel_scale=0.11):
     return galsim.InterpolatedImage(psf_image)
 
 
+def interpolated_image_to_kernel(interpolated_image, oversample):
+    side = interpolated_image.image.array.shape[0]
+    im = galsim.ImageF(int(side / oversample), int(side / oversample), scale=0.11)
+    im.setOrigin(0, 0)
+    return interpolated_image.drawImage(im).array
+
+
 # def get_gaussian_psf(fwhm, oversample, pixel_scale=0.11):
 #     from lenstronomy.Data.psf import PSF
 
