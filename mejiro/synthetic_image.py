@@ -71,6 +71,7 @@ class SyntheticImage:
     def _convert_magnitudes_to_lenstronomy_amps(self):
         # TODO this is also awful
         if self.instrument.name == 'Roman':
+            assert 'sca' in self.kwargs, 'SCA must be provided for Roman'
             self.magnitude_zero_point = self.instrument.get_zeropoint_magnitude(self.band, self.kwargs['sca'])
         elif self.instrument.name == 'HWO':
             self.magnitude_zero_point = self.instrument.get_zeropoint_magnitude(self.band)
@@ -93,9 +94,22 @@ class SyntheticImage:
         elif self.instrument.name == 'HWO':
             self.native_pixel_scale = self.instrument.get_pixel_scale(self.band)
 
+        # validation for oversample
+        self.oversample = int(self.oversample)
+        assert self.oversample >= 1, 'Oversampling factor must be greater than 1'
+        assert self.oversample % 2 == 1, 'Oversampling factor must be an odd integer'
+
+        # make sure that final image will have odd number of pixels on a side
+        self.native_num_pix = np.ceil(self.arcsec / self.native_pixel_scale).astype(int)
+        if self.native_num_pix % 2 == 0:
+            self.native_num_pix += 1
+
         self.pixel_scale = self.native_pixel_scale / self.oversample
-        self.num_pix = np.ceil(self.arcsec / self.pixel_scale).astype(int)
-        self.arcsec = self.num_pix * self.pixel_scale
+        self.num_pix = int(self.native_num_pix * self.oversample)
+
+        # finally, adjust arcseconds (may differ from user-provided input)
+        self.arcsec = self.native_num_pix * self.native_pixel_scale
+        
         if self.debugging: print(
             f'Computing on pixel grid of size {self.num_pix}x{self.num_pix} ({self.arcsec}\"x{self.arcsec}\") with pixel scale {self.pixel_scale} arcsec/pixel (natively {self.native_pixel_scale} arcsec/pixel oversampled by factor {self.oversample})')
 
