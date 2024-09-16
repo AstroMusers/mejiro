@@ -33,15 +33,15 @@ def main(config):
     # script configuration options
     debugging = True
     script_config = {
-        'snr_quantile': 0.75,
-        'image_radius': 0.1,  # arcsec
-        'num_lenses': None,
-        'num_positions': 5,
+        'snr_quantile': 0.95,
+        'image_radius': 0.01,  # arcsec
+        'num_lenses': 24,  # None
+        'num_positions': 1,
         'rng': galsim.UniformDeviate(42)
     }
     subhalo_params = {
-        'masses': np.linspace(1e7, 1e9, 100),  # 
-        'concentration': 6,
+        'masses': np.logspace(8, 11, 100),  # 
+        'concentration': 10,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
         'los_normalization': 0.
@@ -50,12 +50,12 @@ def main(config):
         'band': 'F087',
         'scene_size': 5.61,  # arcsec
         'oversample': 1,  # TODO TEMP
-        'exposure_time': 14600000
+        'exposure_time': 14600
     }
     positions = []
     for i in range(1, 19):
         sca = str(i).zfill(2)
-        coords = Roman().divide_up_sca(1)
+        coords = Roman().divide_up_sca(2)
         for coord in coords:
             positions.append((sca, coord))
     print(f'Processing {len(positions)} positions.')
@@ -75,7 +75,7 @@ def main(config):
     print(f'Collecting lenses from {pipeline_dir}')
     lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, suppress_output=False)
     og_count = len(lens_list)
-    lens_list = [lens for lens in lens_list if lens.snr > 50 and lens.get_einstein_radius() > 0.5]
+    lens_list = [lens for lens in lens_list if lens.snr > 50]
     num_lenses = script_config['num_lenses']
     if num_lenses is not None:
         repeats = int(np.ceil(num_lenses / len(lens_list)))
@@ -154,7 +154,12 @@ def run(tuple):
 
     # solve for image positions
     image_x, image_y = lens.get_image_positions(pixel_coordinates=False)
-    num_images = len(image_x)
+    
+    # find the more distant image from the central bright lensing galaxy
+    image_distance = np.sqrt(image_x**2 + image_y**2)
+    more_distant_image_index = np.argmax(image_distance)
+    halo_x = image_x[more_distant_image_index]
+    halo_y = image_y[more_distant_image_index]
 
     run = 0
     results = {}
@@ -185,7 +190,8 @@ def run(tuple):
                                         nonlinearity=False,
                                         ipc=False,
                                         suppress_output=True)
-        except:
+        except Exception as e:
+            print(f'Failed to generate exposure for StrongLens {lens.uid}: {e}')
             return
         
         # get pieces
@@ -204,9 +210,9 @@ def run(tuple):
         snr_array = np.nan_to_num(source_exposure / np.sqrt(exposure_no_subhalo.exposure))
 
         # build SNR mask
-        # snr_threshold = np.quantile(snr_array, script_config['snr_quantile'])
-        # masked_snr_array = np.ma.masked_where(snr_array <= snr_threshold, snr_array)
-        masked_snr_array = util.center_crop_image(lens.masked_snr_array, snr_array.shape)
+        snr_threshold = np.quantile(snr_array, script_config['snr_quantile'])
+        masked_snr_array = np.ma.masked_where(snr_array <= snr_threshold, snr_array)
+        # masked_snr_array = util.center_crop_image(lens.masked_snr_array, snr_array.shape)
         mask = np.ma.getmask(masked_snr_array)
         masked_exposure_no_subhalo = np.ma.masked_array(exposure_no_subhalo.exposure, mask=mask)
 
@@ -222,61 +228,56 @@ def run(tuple):
             # print('     ' + mass_key)
 
             # compute subhalo parameters
-            # Rs_angle, alpha_Rs = lens.lens_cosmo.nfw_physical2angle(M=m200, c=concentration)
+            Rs_angle, alpha_Rs = lens.lens_cosmo.nfw_physical2angle(M=m200, c=concentration)
 
             chi_square_list = []
             for i in range(num_positions):
                 execution_key = f'{position_key}_{mass_key}_{str(i).zfill(8)}'
                 # print('         ' + execution_key)
 
-                rand_idx = np.random.randint(0, num_images)  # pick a random image position
-                # TODO temp
-                halo_x = image_x[0]
-                halo_y = image_y[0]
-                # halo_x = image_x[rand_idx]
-                # halo_y = image_y[rand_idx]
-
                 # get a random point within a small disk around the image
-                r = image_radius * np.sqrt(np.random.random_sample())
-                theta = 2 * np.pi * np.random.random_sample()
-                delta_x, delta_y = util.polar_to_cartesian(r, theta)
+                # r = image_radius * np.sqrt(np.random.random_sample())
+                # theta = 2 * np.pi * np.random.random_sample()
+                # delta_x, delta_y = util.polar_to_cartesian(r, theta)
 
                 # set subhalo position
-                center_x = halo_x + delta_x
-                center_y = halo_y + delta_y
+                # center_x = halo_x + delta_x
+                # center_y = halo_y + delta_y
+                center_x = halo_x
+                center_y = halo_y
 
                 # build subhalo parameters
-                # subhalo_type = 'TNFW'
-                # kwargs_subhalo = {
-                #     'alpha_Rs': alpha_Rs,
-                #     'Rs': Rs_angle,
-                #     'center_x': center_x,
-                #     'center_y': center_y,
-                #     'r_trunc': 5 * Rs_angle
-                # }
-                pyhalo_lens_cosmo = LensCosmo(lens.z_lens, lens.z_source)
-                astropy_class = pyhalo_lens_cosmo.cosmo
-                c_model, kwargs_concentration_model = preset_concentration_models('DIEMERJOYCE19')
-                kwargs_concentration_model['scatter'] = False
-                kwargs_concentration_model['cosmo'] = astropy_class
-                concentration_model = c_model(**kwargs_concentration_model)
-                truncation_model = None
-                kwargs_halo_model = {'truncation_model': truncation_model, 
-                                    'concentration_model': concentration_model,
-                                    'kwargs_density_profile': {}}
-                single_halo = SingleHalo(halo_mass=m200, 
-                                        x=center_x, y=center_y, 
-                                        mdef='NFW', 
-                                        z=lens.z_lens, zlens=lens.z_lens, zsource=lens.z_source,
-                                        subhalo_flag=True, 
-                                        kwargs_halo_model=kwargs_halo_model, 
-                                        astropy_instance=lens.cosmo,
-                                        lens_cosmo=pyhalo_lens_cosmo)
+                subhalo_type = 'TNFW'
+                kwargs_subhalo = {
+                    'alpha_Rs': alpha_Rs,
+                    'Rs': Rs_angle,
+                    'center_x': center_x,
+                    'center_y': center_y,
+                    'r_trunc': 5 * Rs_angle
+                }
+                # pyhalo_lens_cosmo = LensCosmo(lens.z_lens, lens.z_source)
+                # astropy_class = pyhalo_lens_cosmo.cosmo
+                # c_model, kwargs_concentration_model = preset_concentration_models('DIEMERJOYCE19')
+                # kwargs_concentration_model['scatter'] = False
+                # kwargs_concentration_model['cosmo'] = astropy_class
+                # concentration_model = c_model(**kwargs_concentration_model)
+                # truncation_model = None
+                # kwargs_halo_model = {'truncation_model': truncation_model, 
+                #                     'concentration_model': concentration_model,
+                #                     'kwargs_density_profile': {}}
+                # single_halo = SingleHalo(halo_mass=m200, 
+                #                         x=center_x, y=center_y, 
+                #                         mdef='NFW', 
+                #                         z=lens.z_lens, zlens=lens.z_lens, zsource=lens.z_source,
+                #                         subhalo_flag=True, 
+                #                         kwargs_halo_model=kwargs_halo_model, 
+                #                         astropy_instance=lens.cosmo,
+                #                         lens_cosmo=pyhalo_lens_cosmo)
 
                 # get image with subhalo
                 lens_with_subhalo = deepcopy(lens)
-                # lens_with_subhalo.add_subhalo(subhalo_type, kwargs_subhalo)
-                lens_with_subhalo.add_subhalos(single_halo)
+                lens_with_subhalo.add_subhalo(subhalo_type, kwargs_subhalo)
+                # lens_with_subhalo.add_subhalos(single_halo)
                 synth = SyntheticImage(lens_with_subhalo, 
                                        roman, 
                                        band=band, 
