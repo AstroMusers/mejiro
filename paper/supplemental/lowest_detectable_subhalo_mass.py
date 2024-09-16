@@ -13,6 +13,10 @@ import numpy as np
 from lenstronomy.Util.correlation import power_spectrum_1d
 from tqdm import tqdm
 from scipy.stats import chi2
+from pyHalo.single_realization import SingleHalo
+from pyHalo.Halos.lens_cosmo import LensCosmo
+from pyHalo.concentration_models import preset_concentration_models
+from pyHalo.truncation_models import truncation_models
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -30,13 +34,13 @@ def main(config):
     debugging = True
     script_config = {
         'snr_quantile': 0.75,
-        'image_radius': 0.01,  # arcsec
-        'num_lenses': 24,
-        'num_positions': 1,
+        'image_radius': 0.1,  # arcsec
+        'num_lenses': None,
+        'num_positions': 5,
         'rng': galsim.UniformDeviate(42)
     }
     subhalo_params = {
-        'masses': np.linspace(6, 8, 25),  # 
+        'masses': np.linspace(1e7, 1e9, 100),  # 
         'concentration': 6,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -45,13 +49,13 @@ def main(config):
     imaging_params = {
         'band': 'F087',
         'scene_size': 5.61,  # arcsec
-        'oversample': 5,  # TODO TEMP
-        'exposure_time': 146000000
+        'oversample': 1,  # TODO TEMP
+        'exposure_time': 14600000
     }
     positions = []
     for i in range(1, 19):
         sca = str(i).zfill(2)
-        coords = Roman().divide_up_sca(5)
+        coords = Roman().divide_up_sca(1)
         for coord in coords:
             positions.append((sca, coord))
     print(f'Processing {len(positions)} positions.')
@@ -80,7 +84,7 @@ def main(config):
         lens_list = lens_list[:num_lenses]
     print(f'Processing {len(lens_list)} lens(es) of {og_count}')
     # lens_list = np.random.choice(lens_list, num_lenses)
-    lens_list = [lens for lens in lens_list if lens.uid != '00000019' and lens.uid != '00000040']
+    # lens_list = [lens for lens in lens_list if lens.uid != '00000019' and lens.uid != '00000040']
     # lens_list = [lens for lens in lens_list if lens.uid == '00000040']
     # print(f'Processing lens(es): {[lens.uid for lens in lens_list]}')
 
@@ -133,6 +137,7 @@ def run(tuple):
     from mejiro.utils import util
     from mejiro.synthetic_image import SyntheticImage
     from mejiro.exposure import Exposure
+    from mejiro.plots import plot_util
 
     # unpack tuple
     (_, lens, roman, script_config, imaging_params, subhalo_params, positions, save_dir, image_save_dir,
@@ -217,7 +222,7 @@ def run(tuple):
             # print('     ' + mass_key)
 
             # compute subhalo parameters
-            Rs_angle, alpha_Rs = lens.lens_cosmo.nfw_physical2angle(M=m200, c=concentration)
+            # Rs_angle, alpha_Rs = lens.lens_cosmo.nfw_physical2angle(M=m200, c=concentration)
 
             chi_square_list = []
             for i in range(num_positions):
@@ -241,18 +246,37 @@ def run(tuple):
                 center_y = halo_y + delta_y
 
                 # build subhalo parameters
-                subhalo_type = 'TNFW'
-                kwargs_subhalo = {
-                    'alpha_Rs': alpha_Rs,
-                    'Rs': Rs_angle,
-                    'center_x': center_x,
-                    'center_y': center_y,
-                    'r_trunc': 5 * Rs_angle
-                }
+                # subhalo_type = 'TNFW'
+                # kwargs_subhalo = {
+                #     'alpha_Rs': alpha_Rs,
+                #     'Rs': Rs_angle,
+                #     'center_x': center_x,
+                #     'center_y': center_y,
+                #     'r_trunc': 5 * Rs_angle
+                # }
+                pyhalo_lens_cosmo = LensCosmo(lens.z_lens, lens.z_source)
+                astropy_class = pyhalo_lens_cosmo.cosmo
+                c_model, kwargs_concentration_model = preset_concentration_models('DIEMERJOYCE19')
+                kwargs_concentration_model['scatter'] = False
+                kwargs_concentration_model['cosmo'] = astropy_class
+                concentration_model = c_model(**kwargs_concentration_model)
+                truncation_model = None
+                kwargs_halo_model = {'truncation_model': truncation_model, 
+                                    'concentration_model': concentration_model,
+                                    'kwargs_density_profile': {}}
+                single_halo = SingleHalo(halo_mass=m200, 
+                                        x=center_x, y=center_y, 
+                                        mdef='NFW', 
+                                        z=lens.z_lens, zlens=lens.z_lens, zsource=lens.z_source,
+                                        subhalo_flag=True, 
+                                        kwargs_halo_model=kwargs_halo_model, 
+                                        astropy_instance=lens.cosmo,
+                                        lens_cosmo=pyhalo_lens_cosmo)
 
                 # get image with subhalo
                 lens_with_subhalo = deepcopy(lens)
-                lens_with_subhalo.add_subhalo(subhalo_type, kwargs_subhalo)
+                # lens_with_subhalo.add_subhalo(subhalo_type, kwargs_subhalo)
+                lens_with_subhalo.add_subhalos(single_halo)
                 synth = SyntheticImage(lens_with_subhalo, 
                                        roman, 
                                        band=band, 
@@ -304,8 +328,8 @@ def run(tuple):
                 if run == idx_to_save:
                     try:
                         _, ax = plt.subplots(2, 3, figsize=(15, 10))
-                        residual = exposure.exposure - exposure_no_subhalo.exposure
-                        vmax = np.max(np.abs(residual))
+                        residual = masked_exposure_with_subhalo - masked_exposure_no_subhalo
+                        vmax = plot_util.get_limit(residual)
                         if vmax == 0.: vmax = 0.1
                         synth.set_native_coords()
                         coords_x, coords_y = synth.coords_native.map_coord2pix(halo_x, halo_y)
@@ -320,7 +344,7 @@ def run(tuple):
                         ax[0,2].set_title(r'$\chi^2=$ ' + f'{chi_square:.2f}, ' + r'$\chi_{3\sigma}^2=$ ' + f'{threshold_chi2:.2f}')
 
                         synth_residual = synth.image - synth_no_subhalo.image
-                        vmax_synth = np.max(np.abs(synth_residual))
+                        vmax_synth = plot_util.get_limit(synth_residual)
                         ax10 = ax[1,0].imshow(synth_residual, cmap='bwr', vmin=-vmax_synth, vmax=vmax_synth)
                         ax11 = ax[1,1].imshow(exposure.exposure)
                         ax12 = ax[1,2].imshow(snr_array)
