@@ -3,18 +3,16 @@ import pytest
 from mejiro.instruments.roman import Roman
 
 
-@pytest.fixture
-def roman():
-    return Roman()
-
-
 def test_init():
-    assert roman.name == 'roman'
+    roman = Roman()
+    assert roman.name == 'Roman'
     assert roman.pixel_scale == 0.11
     assert roman.pixels_per_axis == 4088
 
 
 def test_get_sca_string():
+    roman = Roman()
+
     # test ints
     assert roman.get_sca_string(1) == 'SCA01'
     assert roman.get_sca_string(10) == 'SCA10'
@@ -33,6 +31,8 @@ def test_get_sca_string():
 
 
 def test_get_sca_int():
+    roman = Roman()
+
     # test ints
     assert roman.get_sca_int(1) == 1
     assert roman.get_sca_int(10) == 10
@@ -51,6 +51,8 @@ def test_get_sca_int():
 
 
 def test_translate_band():
+    roman = Roman()
+
     # test valid bands
     assert roman.translate_band('F062') == 'F062'
     assert roman.translate_band('F087') == 'F087'

@@ -285,27 +285,32 @@ class Roman(InstrumentBase):
     def get_sca_string(sca):
         if type(sca) is int:
             return f'SCA{str(sca).zfill(2)}'
-        else:
-            sca_id = str()
-
-        # might provide int 1 or string 01 or string SCA01
-        if type(sca_id) is int:
-            return f'SCA{str(sca_id).zfill(2)}'
-        else:
+        elif type(sca) is float:
+            return f'SCA{str(int(sca)).zfill(2)}'
+        elif type(sca) is str:
+            # might provide int 1 or string 01 or string SCA01
             if sca.startswith('SCA'):
-                return sca
+                    end = sca[3:]
+                    # TODO check that `end` is valid, e.g., not SCA01X
+                    return f'SCA{str(int(end)).zfill(2)}'
             else:
-                sca = f'SCA{sca_id}'
+                return f'SCA{str(int(sca)).zfill(2)}'
+        else:
+            raise ValueError(f"SCA {sca} not recognized. Must be int, float, or str.")
 
     @staticmethod
     def get_sca_int(sca):
         if type(sca) is int:
             return sca
-        else:
+        if type(sca) is float:
+            return int(sca)
+        elif type(sca) is str:
             if sca.startswith('SCA'):
                 return int(sca[3:])
             else:
                 return int(sca)
+        else:
+            raise ValueError(f"SCA {sca} not recognized. Must be int, float, or str.")
 
     # TODO consider making all methods which might call this one methods on the class that only call this method if a flag on the class (e.g., override) is False. this way, scripts can instantiate Roman() with override=True and then avoid running this method every single time
     @staticmethod
@@ -332,5 +337,6 @@ class Roman(InstrumentBase):
         for band, possible_names in options_dict.items():
             if input in possible_names:
                 return band
-            else:
-                raise ValueError(f"Band {input} not recognized. Valid bands (and aliases) are {options_dict}.")
+        
+        # if haven't returned yet, alias wasn't found
+        raise ValueError(f"Band {input} not recognized. Valid bands (and aliases) are {options_dict}.")  
