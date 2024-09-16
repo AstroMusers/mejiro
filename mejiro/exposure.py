@@ -36,7 +36,10 @@ class Exposure:
                                                              self.interp_total, self.rng,
                                                              self.exposure_time, **kwargs)
         if 'return_noise' in kwargs and kwargs['return_noise']:
-            self.image, self.poisson_noise, self.reciprocity_failure, self.dark_noise, self.nonlinearity, self.ipc, self.read_noise = tuple
+            if self.synthetic_image.instrument.name == 'Roman':
+                self.image, self.poisson_noise, self.reciprocity_failure, self.dark_noise, self.nonlinearity, self.ipc, self.read_noise = tuple
+            elif self.synthetic_image.instrument.name == 'HWO':
+                self.image, self.poisson_noise, self.dark_noise, self.read_noise = tuple
         else:
             self.image = tuple
         final = self.image.array

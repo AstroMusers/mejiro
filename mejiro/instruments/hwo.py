@@ -1,4 +1,5 @@
 import math
+from copy import deepcopy
 
 import galsim
 import numpy as np
@@ -42,14 +43,16 @@ class HWO(InstrumentBase):
         self._set_pixel_scale()
         self._set_psf_fwhm()
 
-    def get_exposure(self, synthetic_image, interp, rng, exposure_time):
+    def get_exposure(self, synthetic_image, interp, rng, exposure_time, sky_background=True, detector_effects=True, **kwargs):
+        suppress_output = kwargs['suppress_output'] if 'suppress_output' in kwargs else True
+
         # get PSF
-        self.psf_fwhm = self.get_psf_fwhm(self.synthetic_image.band)
-        print(f'PSF FWHM: {self.psf_fwhm}')
+        self.psf_fwhm = self.get_psf_fwhm(synthetic_image.band)
+        if not suppress_output: print(f'PSF FWHM: {self.psf_fwhm}')
         # self.psf = psf.get_gaussian_psf(self.psf_fwhm, self.synthetic_image.oversample,
         # pixel_scale=self.synthetic_image.native_pixel_scale)
         self.psf = psf.get_gaussian_psf(self.psf_fwhm)
-        self.psf_image = self.psf.drawImage(scale=self.synthetic_image.pixel_scale)
+        self.psf_image = self.psf.drawImage(scale=synthetic_image.pixel_scale)
 
         # convolve with PSF
         convolved = galsim.Convolve([interp, self.psf])
@@ -60,32 +63,72 @@ class HWO(InstrumentBase):
         im.setOrigin(0, 0)
         image = convolved.drawImage(im)
 
-        # quantize, since integer number of photo-electrons are being created
-        image.quantize()
+        # NB from here on out, the image is at the native pixel scale, i.e., the image is NOT oversampled
 
         # add sky background
-        sky_level = None
-        # TODO remember to use output_num_pix
+        if sky_background:
+            min_zodi_cps = 0.2
+            sky_bkg_cps = min_zodi_cps * 1.5
 
-        # add Poisson noise due to arrival times of photons from signal and sky
-        poisson_noise = galsim.PoissonNoise(rng)
-        image.addNoise(poisson_noise)
+            # build Image
+            sky_image = galsim.ImageF(output_num_pix, output_num_pix)
+            sky_image += sky_bkg_cps
 
-        # add dark current
-        dark_current = self.get_dark_current(self.synthetic_image.band)
-        dark_noise = galsim.DeviateNoise(galsim.PoissonDeviate(rng, dark_current))
-        image.addNoise(dark_noise)
+            # convert to counts/pixel
+            sky_image *= exposure_time
 
-        # add read noise
-        read_noise_sigma = self.get_read_noise(self.synthetic_image.band)
-        read_noise = galsim.GaussianNoise(rng, sigma=read_noise_sigma)
-        image.addNoise(read_noise)
+            image += sky_image
+        
+        if detector_effects:
+            image.replaceNegative(0.)
+
+            # add Poisson noise due to arrival times of photons from signal and sky
+            if 'poisson_noise' not in kwargs:
+                before = deepcopy(image)
+                image.addNoise(galsim.PoissonNoise(rng))
+                poisson_noise = image - before
+                image.quantize()
+            elif type(kwargs['poisson_noise']) is galsim.Image:
+                image += kwargs['poisson_noise']
+                image.quantize()
+            elif type(kwargs['poisson_noise']) is bool:
+                poisson_noise = None
+                pass
+
+            # dark current
+            if 'dark_noise' not in kwargs:
+                before = deepcopy(image)
+                total_dark_current = self.get_dark_current(synthetic_image.band)
+                image.addNoise(galsim.DeviateNoise(galsim.PoissonDeviate(rng, total_dark_current)))
+                dark_noise = image - before
+            elif type(kwargs['dark_noise']) is galsim.Image:
+                image += kwargs['dark_noise']
+            elif type(kwargs['dark_noise']) is bool:
+                dark_noise = None
+                pass
+
+            # read noise
+            if 'read_noise' not in kwargs:
+                before = deepcopy(image)
+                read_noise_sigma = self.get_read_noise(synthetic_image.band)
+                image.addNoise(galsim.GaussianNoise(rng, sigma=read_noise_sigma))
+                read_noise = image - before
+            elif type(kwargs['read_noise']) is galsim.Image:
+                image += kwargs['read_noise']
+            elif type(kwargs['read_noise']) is bool:
+                read_noise = None
+                pass
 
         # gain
         image /= self.gain
 
         # quantize, since analog-to-digital conversion gives integers
         image.quantize()
+
+        if detector_effects and 'return_noise' in kwargs and kwargs['return_noise']:
+            return image, poisson_noise, dark_noise, read_noise
+        else:
+            return image
 
     @staticmethod
     def validate_instrument_config(config):
