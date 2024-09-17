@@ -77,17 +77,21 @@ class Roman(InstrumentBase):
         detector = kwargs['sca']
         detector_position = kwargs['sca_position']
         from mejiro.helpers import psf
-        self.psf = psf.get_webbpsf_psf(synthetic_image.band, detector, detector_position, synthetic_image.oversample,
-                                       check_cache=True, psf_cache_dir='/data/bwedig/mejiro/cached_psfs',
+        self.psf = psf.get_webbpsf_psf(band=synthetic_image.band, 
+                                       detector=detector, 
+                                       detector_position=detector_position, 
+                                       oversample=synthetic_image.oversample,
+                                       num_pix=synthetic_image.native_num_pix,  # NB WebbPSF wants the native pixel size
+                                       check_cache=True, 
+                                       psf_cache_dir='/data/bwedig/mejiro/cached_psfs',
                                        suppress_output=suppress_output)
         # self.psf_image = self.psf.drawImage(scale=synthetic_image.pixel_scale)  # TODO FIX
 
         # convolve with PSF
-        convolved = galsim.Convolve([interp, self.psf])
+        convolved = galsim.Convolve(interp, self.psf)
 
         # draw image at the native pixel scale
-        output_num_pix = math.floor(synthetic_image.num_pix / synthetic_image.oversample)
-        im = galsim.ImageF(output_num_pix, output_num_pix, scale=synthetic_image.native_pixel_scale)
+        im = galsim.ImageF(synthetic_image.native_num_pix, synthetic_image.native_num_pix, scale=synthetic_image.native_pixel_scale)
         im.setOrigin(0, 0)
         image = convolved.drawImage(im)
 
@@ -95,9 +99,12 @@ class Roman(InstrumentBase):
 
         # add sky background
         if sky_background:
-            bkgs = self.get_sky_bkgs(synthetic_image.band, detector, exposure_time, num_pix=output_num_pix, oversample=1)
+            bkgs = self.get_sky_bkgs(synthetic_image.band, detector, exposure_time, num_pix=synthetic_image.native_num_pix, oversample=1)
             bkg = bkgs[synthetic_image.band]
             image += bkg
+        
+        # integer number of photons are being detected, so quantize
+        image.quantize()
 
         # add detector effects
         if detector_effects:
