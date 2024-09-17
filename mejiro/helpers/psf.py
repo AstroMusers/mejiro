@@ -11,8 +11,7 @@ from mejiro.helpers import gs
 from mejiro.utils import util
 
 
-def get_webbpsf_psf(band, detector, detector_position, oversample, check_cache=False, psf_cache_dir=None,
-                    suppress_output=True):
+def get_webbpsf_psf(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None, suppress_output=True):
     # first, check if it exists in the cache
     if check_cache:
         if psf_cache_dir is None:
@@ -20,7 +19,7 @@ def get_webbpsf_psf(band, detector, detector_position, oversample, check_cache=F
             module_path = os.path.dirname(mejiro.__file__)
             psf_cache_dir = os.path.join(module_path, 'data', 'cached_psfs')
         psf_path = glob(os.path.join(psf_cache_dir,
-                                     f'{band}_{detector}_{detector_position[0]}_{detector_position[1]}_{oversample}.pkl'))
+                                     f'{get_psf_id_string(band, detector, detector_position, oversample, num_pix)}.pkl'))
         if len(psf_path) == 1:
             if not suppress_output: print(f'Loading cached PSF: {psf_path[0]}')
             return util.unpickle(psf_path[0])
@@ -35,7 +34,7 @@ def get_webbpsf_psf(band, detector, detector_position, oversample, check_cache=F
     wfi.detector_position = detector_position
 
     # generate PSF in WebbPSF
-    psf = wfi.calc_psf(oversample=oversample)
+    psf = wfi.calc_psf(fov_pixels=num_pix, oversample=oversample)
 
     return kernel_to_galsim_interpolated_image(psf[0].data, oversample, pixel_scale=wfi.pixelscale)
 
@@ -85,8 +84,8 @@ def get_kwargs_psf(kernel, oversample):
     }
 
 
-def get_psf_id_string(band, detector, detector_position, oversample):
-    return f'{band}_{detector}_{detector_position[0]}_{detector_position[1]}_{oversample}'
+def get_psf_id_string(band, detector, detector_position, oversample, num_pix):
+    return f'{band}_{detector}_{detector_position[0]}_{detector_position[1]}_{oversample}_{num_pix}'
 
 
 def load_cached_psf(psf_id_string, psf_cache_dir=None, suppress_output=True):
