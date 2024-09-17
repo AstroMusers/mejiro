@@ -13,6 +13,22 @@ from PIL import Image
 from omegaconf import OmegaConf
 
 
+def make_grid(side_length, num_points):
+    # Define the range and number of points for each axis
+    x_min, x_max, x_points = -side_length / 2, side_length / 2, num_points
+    y_min, y_max, y_points = -side_length / 2, side_length / 2, num_points
+
+    # Generate evenly spaced points for each axis
+    x = np.linspace(x_min, x_max, x_points)
+    y = np.linspace(y_min, y_max, y_points)
+
+    # Create a 2D grid of points
+    X, Y = np.meshgrid(x, y)
+
+    # Stack the coordinates to get a grid of (x, y) pairs
+    return np.column_stack([X.ravel(), Y.ravel()])
+
+
 def write_execution_time(time, script_name, filepath):
     """
     Write the execution time of a script to a file.
