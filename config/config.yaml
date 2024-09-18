@@ -37,10 +37,10 @@ pipeline:
   - debugging: True  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
   - limit: None  # None
   # scene params
-  - num_pix: 97  # 51  # 96
-  - side: 10.67  # 5.61  # 10.56
+  - num_pix: 97  # 97  # 51  # 96
+  - side: 10.67  # 10.67  # 5.61  # 10.56
   - final_pixel_side: 90  # 45
-  - grid_oversample: 5
+  - grid_oversample: 1
   - num_samples: 100000  # 100000
   - max_scene_size: 10.  # 10.01
   # subhalo params

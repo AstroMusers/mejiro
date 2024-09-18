@@ -75,7 +75,7 @@ def get_images(lens, arrays, bands, sca_zp_dict=None, input_size=96, output_size
     # generate the PSFs I'll need for each unique band
     psf_kernels = {}
     for band in bands:
-        psf_kernels[band] = psf.get_webbpsf_psf(band, detector, detector_pos, psf_oversample, check_cache,
+        psf_kernels[band] = psf.get_webbpsf_psf(band, detector, detector_pos, psf_oversample, input_size, check_cache,
                                                 psf_cache_dir, suppress_output)
 
     results = []
