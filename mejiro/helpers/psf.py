@@ -12,6 +12,15 @@ from mejiro.helpers import gs
 from mejiro.utils import util
 
 
+def get_webbpsf_psf_from_string(psf_id_string):
+    band, detector, detector_position_0, detector_position_1, oversample, num_pix = psf_id_string.split('_')
+    detector = int(detector)
+    detector_position = (int(detector_position_0), int(detector_position_1))
+    oversample = int(oversample)
+    num_pix = int(num_pix)
+    return get_webbpsf_psf(band, detector, detector_position, oversample, num_pix)
+
+
 def get_webbpsf_psf(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None, suppress_output=True):
     # first, check if it exists in the cache
     if check_cache:
