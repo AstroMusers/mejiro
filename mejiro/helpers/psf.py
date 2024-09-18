@@ -25,7 +25,7 @@ def get_webbpsf_psf(band, detector, detector_position, oversample, num_pix, chec
             if not suppress_output: print(f'Loading cached PSF: {psf_path[0]}')
             return util.unpickle(psf_path[0])
         else:
-            warnings.warn(
+            print(
                 f'PSF {band} SCA{str(detector).zfill(2)} {detector_position} {oversample} {num_pix} not found in cache {psf_cache_dir}')
 
     # set PSF parameters
