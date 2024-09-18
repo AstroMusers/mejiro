@@ -40,7 +40,7 @@ def main(config):
         'rng': galsim.UniformDeviate(42)
     }
     subhalo_params = {
-        'masses': np.logspace(8, 11, 100),  # 
+        'masses': np.logspace(9, 12, 10),  # 
         'concentration': 10,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -48,7 +48,7 @@ def main(config):
     }
     imaging_params = {
         'band': 'F087',
-        'scene_size': 5.61,  # arcsec
+        'scene_size': 5,  # arcsec
         'oversample': 1,  # TODO TEMP
         'exposure_time': 14600
     }
@@ -152,6 +152,9 @@ def run(tuple):
     masses = subhalo_params['masses']
     concentration = subhalo_params['concentration']
 
+    # initialize lists
+    detectable_halos = []
+
     # solve for image positions
     image_x, image_y = lens.get_image_positions(pixel_coordinates=False)
     
@@ -228,7 +231,7 @@ def run(tuple):
             # print('     ' + mass_key)
 
             # compute subhalo parameters
-            Rs_angle, alpha_Rs = lens.lens_cosmo.nfw_physical2angle(M=m200, c=concentration)
+            # Rs_angle, alpha_Rs = lens.lens_cosmo.nfw_physical2angle(M=m200, c=concentration)
 
             chi_square_list = []
             for i in range(num_positions):
@@ -247,37 +250,38 @@ def run(tuple):
                 center_y = halo_y
 
                 # build subhalo parameters
-                subhalo_type = 'TNFW'
-                kwargs_subhalo = {
-                    'alpha_Rs': alpha_Rs,
-                    'Rs': Rs_angle,
-                    'center_x': center_x,
-                    'center_y': center_y,
-                    'r_trunc': 5 * Rs_angle
-                }
-                # pyhalo_lens_cosmo = LensCosmo(lens.z_lens, lens.z_source)
-                # astropy_class = pyhalo_lens_cosmo.cosmo
-                # c_model, kwargs_concentration_model = preset_concentration_models('DIEMERJOYCE19')
-                # kwargs_concentration_model['scatter'] = False
-                # kwargs_concentration_model['cosmo'] = astropy_class
-                # concentration_model = c_model(**kwargs_concentration_model)
-                # truncation_model = None
-                # kwargs_halo_model = {'truncation_model': truncation_model, 
-                #                     'concentration_model': concentration_model,
-                #                     'kwargs_density_profile': {}}
-                # single_halo = SingleHalo(halo_mass=m200, 
-                #                         x=center_x, y=center_y, 
-                #                         mdef='NFW', 
-                #                         z=lens.z_lens, zlens=lens.z_lens, zsource=lens.z_source,
-                #                         subhalo_flag=True, 
-                #                         kwargs_halo_model=kwargs_halo_model, 
-                #                         astropy_instance=lens.cosmo,
-                #                         lens_cosmo=pyhalo_lens_cosmo)
+                # subhalo_type = 'TNFW'
+                # kwargs_subhalo = {
+                #     'alpha_Rs': alpha_Rs,
+                #     'Rs': Rs_angle,
+                #     'center_x': center_x,
+                #     'center_y': center_y,
+                #     'r_trunc': 5 * Rs_angle
+                # }
+                pyhalo_lens_cosmo = LensCosmo(lens.z_lens, lens.z_source)
+                astropy_class = pyhalo_lens_cosmo.cosmo
+                c_model, kwargs_concentration_model = preset_concentration_models('DIEMERJOYCE19')
+                kwargs_concentration_model['scatter'] = False
+                kwargs_concentration_model['cosmo'] = astropy_class
+                concentration_model = c_model(**kwargs_concentration_model)
+                truncation_model = None
+                kwargs_halo_model = {'truncation_model': truncation_model, 
+                                    'concentration_model': concentration_model,
+                                    'kwargs_density_profile': {}}
+                single_halo = SingleHalo(halo_mass=m200, 
+                                        x=center_x, y=center_y, 
+                                        mdef='NFW', 
+                                        z=lens.z_lens, zlens=lens.z_lens, zsource=lens.z_source,
+                                        subhalo_flag=True, 
+                                        kwargs_halo_model=kwargs_halo_model, 
+                                        astropy_instance=lens.cosmo,
+                                        lens_cosmo=pyhalo_lens_cosmo)
+                c = single_halo.halos[0].c
 
                 # get image with subhalo
                 lens_with_subhalo = deepcopy(lens)
-                lens_with_subhalo.add_subhalo(subhalo_type, kwargs_subhalo)
-                # lens_with_subhalo.add_subhalos(single_halo)
+                # lens_with_subhalo.add_subhalo(subhalo_type, kwargs_subhalo)
+                lens_with_subhalo.add_subhalos(single_halo)
                 synth = SyntheticImage(lens_with_subhalo, 
                                        roman, 
                                        band=band, 
@@ -324,6 +328,10 @@ def run(tuple):
                         print(e)
                     return
                 chi_square_list.append(chi_square)
+
+                # if detectable, save subhalo params
+                if chi_square > threshold_chi2:
+                    detectable_halos.append((lens.z_lens, m200, c))
 
                 # save image
                 if run == idx_to_save:
@@ -373,6 +381,7 @@ def run(tuple):
             results[position_key][mass_key] = pvals
 
     util.pickle(os.path.join(save_dir, f'results_{lens.uid}.pkl'), results)
+    util.pickle(os.path.join(save_dir, f'detectable_halos_{lens.uid}.pkl'), detectable_halos)
 
 
 if __name__ == '__main__':
