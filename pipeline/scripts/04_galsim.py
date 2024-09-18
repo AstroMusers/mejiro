@@ -168,7 +168,7 @@ def get_image(input):
 
     # determine detector and position
     detector = int(sca)
-    possible_detector_positions = Roman().divide_up_sca(3)
+    possible_detector_positions = Roman().divide_up_sca(4)
     detector_pos = random.choice(possible_detector_positions)
 
     gs_results = gs.get_images(lens,
