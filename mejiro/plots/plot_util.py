@@ -11,6 +11,10 @@ def normalize(array):
     return array / np.linalg.norm(array)
 
 
+def weights(data):
+    return 1 / len(data) * np.ones(len(data))
+
+
 def get_residual_list(array_list):
     last_array = array_list[-1]
     residual_list = [(last_array - i) for i in array_list]
