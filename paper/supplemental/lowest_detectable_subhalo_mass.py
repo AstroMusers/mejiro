@@ -40,7 +40,7 @@ def main(config):
         'rng': galsim.UniformDeviate(42)
     }
     subhalo_params = {
-        'masses': np.logspace(9, 12, 250),  # 
+        'masses': np.linspace(1e9, 1e11, 25),  # 
         'concentration': 10,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -55,7 +55,7 @@ def main(config):
     positions = []
     for i in range(1, 19):
         sca = str(i).zfill(2)
-        coords = Roman().divide_up_sca(4)
+        coords = Roman().divide_up_sca(3)
         for coord in coords:
             positions.append((sca, coord))
     print(f'Processing {len(positions)} positions.')
