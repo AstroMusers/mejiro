@@ -25,6 +25,24 @@ def count_detectable_lenses(dir):
     return len(lens_pickles)
 
 
+# TODO finish
+# def get_lens_by_uid(uid, pipeline_dir, with_subhalos=False):
+#     if type(uid) is int or type(uid) is float:
+#         uid = str(uid).zfill(8)
+
+#     pickles = []
+#     if with_subhalos:
+#         pickles = glob(os.path.join(pipeline_dir, '02', '**', f'lens_with_subhalos_{uid}.pkl'))
+#     else:
+#         detectable_lenses = get_detectable_lenses(pipeline_dir, with_subhalos=False, suppress_output=True)
+#         for lens in detectable_lenses:
+#             if lens.uid == uid:
+#                 return lens
+
+
+#     assert len(lens_list) != 0, f'No pickled lenses found. Check {pipeline_dir}.'
+
+
 def get_detectable_lenses(pipeline_dir, limit=None, with_subhalos=False, suppress_output=True):
     lens_list = []
 
