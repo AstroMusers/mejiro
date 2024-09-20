@@ -13,6 +13,15 @@ from PIL import Image
 from omegaconf import OmegaConf
 
 
+def all_arrays_equal(iterator):
+    iterator = iter(iterator)
+    try:
+        first = next(iterator)
+    except StopIteration:
+        return True
+    return all(np.array_equal(first, x) for x in iterator)
+
+
 def make_grid(side_length, num_points):
     # Define the range and number of points for each axis
     x_min, x_max, x_points = -side_length / 2, side_length / 2, num_points
