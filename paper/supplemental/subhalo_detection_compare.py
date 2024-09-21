@@ -27,8 +27,7 @@ def main(config):
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
     from mejiro.lenses import lens_util
-    from mejiro.utils import util
-    from mejiro.instruments.roman import Roman
+    from mejiro.utils import roman_util, util
 
     # script configuration options
     debugging = True
@@ -55,7 +54,7 @@ def main(config):
     positions = [(2, (2044, 2044))]
     # for i in range(1, 19):
     #     sca = str(i).zfill(2)
-    #     coords = Roman().divide_up_sca(3)
+    #     coords = roman_util.divide_up_sca(3)
     #     for coord in coords:
     #         positions.append((sca, coord))
     print(f'Processing {len(positions)} positions.')

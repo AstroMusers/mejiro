@@ -16,9 +16,8 @@ def main(config):
     # enable use of local packages
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
-    from mejiro.utils import util
+    from mejiro.utils import roman_util, util
     from mejiro.helpers import psf
-    from mejiro.instruments.roman import Roman
 
     machine = HydraConfig.get().runtime.choices.machine
     if machine == 'hpc':
@@ -42,8 +41,8 @@ def main(config):
     # detector_positions = [(2048, 2048)] * 18
     # detector_positions = []
     # for i in range(4):
-    #     detector_positions.extend(Roman().divide_up_sca(i + 1))
-    detector_positions = Roman().divide_up_sca(3)
+    #     detector_positions.extend(roman_util.divide_up_sca(i + 1))
+    detector_positions = roman_util.divide_up_sca(3)
     num_pixes = [97]
 
     # determine which PSFs need to be generated

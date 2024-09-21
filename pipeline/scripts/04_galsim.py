@@ -137,8 +137,7 @@ def main(config):
 
 def get_image(input):
     from mejiro.helpers import gs
-    from mejiro.utils import util
-    from mejiro.instruments.roman import Roman
+    from mejiro.utils import roman_util, util
 
     # unpack tuple
     (uid, sca, pipeline_params, sca_zp_dict, input_dir, output_dir, psf_cache_dir) = input
@@ -168,7 +167,7 @@ def get_image(input):
 
     # determine detector and position
     detector = int(sca)
-    possible_detector_positions = Roman().divide_up_sca(4)
+    possible_detector_positions = roman_util.divide_up_sca(4)
     detector_pos = random.choice(possible_detector_positions)
 
     gs_results = gs.get_images(lens,

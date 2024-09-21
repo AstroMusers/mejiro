@@ -19,10 +19,8 @@ def main(config):
     # enable use of local packages
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
-    from mejiro.utils import util
+    from mejiro.utils import roman_util, util
     from mejiro.lenses import lens_util
-    from mejiro.instruments.roman import Roman
-    roman = Roman()
 
     # script configuration options
     debugging = False
@@ -30,7 +28,7 @@ def main(config):
         'num_lenses': 100,  # 1000
         'rng': galsim.UniformDeviate(42),
         'detectors': list(range(1, 19)),
-        'detector_positions': roman.divide_up_sca(4)
+        'detector_positions': roman_util.divide_up_sca(4)
     }
     subhalo_params = {
         'log_mlow': 6,
