@@ -5,15 +5,17 @@ class InstrumentBase(ABC):
 
     def __init__(
             self,
-            name
+            name,
+            bands,
+            engines
     ):
         self.name = name
+        self.bands = bands
+        self.engines = engines
 
-    # TODO enforce bands an attribute
-
-    # @abstractmethod
-    # def get_pixel_scale(self, band):
-    #     pass
+    @abstractmethod
+    def get_pixel_scale(self, band):
+        pass
 
     @abstractmethod
     def validate_instrument_config(self, config):

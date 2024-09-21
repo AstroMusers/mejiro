@@ -1,6 +1,7 @@
 import json
 import math
 import os
+import warnings
 from copy import deepcopy
 
 import galsim
@@ -8,15 +9,20 @@ import pandas as pd
 
 import mejiro
 from mejiro.instruments.instrument_base import InstrumentBase
+from mejiro.utils import roman_util
 
 
 class Roman(InstrumentBase):
 
     def __init__(self):
         name = 'Roman'
+        bands = ['F062', 'F087', 'F106', 'F129', 'F158', 'F184', 'F213', 'F146']
+        engines = ['galsim', 'pandeia', 'romanisim']
 
         super().__init__(
-            name
+            name,
+            bands,
+            engines
         )
 
         module_path = os.path.dirname(mejiro.__file__)
@@ -29,7 +35,7 @@ class Roman(InstrumentBase):
         self.thermal_bkg_dict = json.load(open(os.path.join(module_path, 'data', 'roman_thermal_background.json')))
 
         # ---------------------CONSTANTS---------------------
-        self.pixel_scale = 0.11  # arcsec/pixel
+        self.pixel_scale = 0.11  # arcsec per pixel
         self.diameter = 2.4  # m
         self.psf_jitter = 0.012  # arcsec per axis
         self.pixels_per_axis = 4088
@@ -68,6 +74,18 @@ class Roman(InstrumentBase):
     def validate_instrument_config(config):
         # TODO implement this
         pass
+
+    def get_pixel_scale(self, band=None):
+        """
+        Returns the pixel scale for Roman's WFI.
+
+        Parameters:
+        band (optional): The specific band for which to get the pixel scale. For Roman's WFI, the pixel scale is the same across all bands.
+
+        Returns:
+        float: The pixel scale in arcseconds per pixel.
+        """
+        return self.pixel_scale
 
     def get_exposure(self, synthetic_image, interp, rng, exposure_time, sky_background=True, detector_effects=True,
                      **kwargs):
@@ -232,17 +250,13 @@ class Roman(InstrumentBase):
         return bkgs
 
     def get_filter_centers(self):
-        roman_filters = ['F062', 'F087', 'F106', 'F129', 'F158', 'F184', 'F213', 'F146']
-        fields = [f'WFI_Filter_{filter}_Center' for filter in roman_filters]
+        fields = [f'WFI_Filter_{band}_Center' for band in self.bands]
 
-        dict = {}
-        for roman_filter, field in zip(roman_filters, fields):
-            dict[roman_filter] = float(self.df.loc[self.df['Name'] == field]['Value'].to_string(index=False))
+        filter_centers = {}
+        for band, field in zip(self.bands, fields):
+            filter_centers[band] = float(self.df.loc[self.df['Name'] == field]['Value'].to_string(index=False))
 
-        return dict
-
-    def get_pixel_scale(self):
-        return float(self.df.loc[self.df['Name'] == 'WFI_Pixel_Scale']['Value'].to_string(index=False))
+        return filter_centers
 
     def get_min_max_wavelength(self, band):
         range = self.df.loc[self.df['Name'] == f'WFI_Filter_{band.upper()}_Wavelength_Range']['Value'].to_string(
@@ -262,21 +276,21 @@ class Roman(InstrumentBase):
         return self.psf_fwhm[band.upper()]
 
     def get_thermal_bkg(self, band, sca):
-        sca = Roman.get_sca_string(sca)
+        sca = roman_util.get_sca_string(sca)
         return self.thermal_bkg_dict[sca][band.upper()]
 
     def get_min_zodi(self, band, sca):
-        sca = Roman.get_sca_string(sca)
+        sca = roman_util.get_sca_string(sca)
         return self.min_zodi_dict[sca][band.upper()]
 
     def get_zeropoint_magnitude(self, band, sca=1):
         """
         Return AB zeropoint in given band for the given SCA
         """
-        sca = Roman.get_sca_string(sca)
+        sca = roman_util.get_sca_string(sca)
         return self.zp_dict[sca][band.upper()]
 
-    def divide_up_sca(self, sides):
+    def divide_up_sca(self, sides):  # TODO move to utils.roman_utils
         sub_array_size = self.pixels_per_axis / sides
         centers = []
 
@@ -287,63 +301,3 @@ class Roman(InstrumentBase):
                 centers.append((center_x, center_y))
         
         return centers
-
-    @staticmethod
-    def get_sca_string(sca):
-        if type(sca) is int:
-            return f'SCA{str(sca).zfill(2)}'
-        elif type(sca) is float:
-            return f'SCA{str(int(sca)).zfill(2)}'
-        elif type(sca) is str:
-            # might provide int 1 or string 01 or string SCA01
-            if sca.startswith('SCA'):
-                    end = sca[3:]
-                    # TODO check that `end` is valid, e.g., not SCA01X
-                    return f'SCA{str(int(end)).zfill(2)}'
-            else:
-                return f'SCA{str(int(sca)).zfill(2)}'
-        else:
-            raise ValueError(f"SCA {sca} not recognized. Must be int, float, or str.")
-
-    @staticmethod
-    def get_sca_int(sca):
-        if type(sca) is int:
-            return sca
-        if type(sca) is float:
-            return int(sca)
-        elif type(sca) is str:
-            if sca.startswith('SCA'):
-                return int(sca[3:])
-            else:
-                return int(sca)
-        else:
-            raise ValueError(f"SCA {sca} not recognized. Must be int, float, or str.")
-
-    # TODO consider making all methods which might call this one methods on the class that only call this method if a flag on the class (e.g., override) is False. this way, scripts can instantiate Roman() with override=True and then avoid running this method every single time
-    @staticmethod
-    def translate_band(input):
-        # some folks are referring to Roman filters using the corresponding ground-based filters (r, z, Y, etc.)
-        options_dict = {
-            'F062': ['F062', 'R', 'R062'],
-            'F087': ['F087', 'Z', 'Z087'],
-            'F106': ['F106', 'Y', 'Y106'],
-            'F129': ['F129', 'J', 'J129'],
-            'F158': ['F158', 'H', 'H158'],
-            'F184': ['F184', 'H/K'],
-            'F146': ['F146', 'WIDE', 'W146'],
-            'F213': ['F213', 'KS', 'K213']
-        }
-
-        # check if input is already a valid band
-        if input in options_dict.keys():
-            return input
-
-        # capitalize and remove spaces
-        input = input.upper().replace(' ', '')
-
-        for band, possible_names in options_dict.items():
-            if input in possible_names:
-                return band
-        
-        # if haven't returned yet, alias wasn't found
-        raise ValueError(f"Band {input} not recognized. Valid bands (and aliases) are {options_dict}.")  

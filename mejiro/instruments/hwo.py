@@ -15,9 +15,13 @@ class HWO(InstrumentBase):
 
     def __init__(self, aperture=10.):
         name = 'HWO'
+        bands = ['FUV', 'NUV', 'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K']
+        engines = ['galsim']
 
         super().__init__(
-            name
+            name,
+            bands,
+            engines
         )
 
         # TODO eventually work with their ordereddict and astropy quantity stuff
@@ -28,7 +32,6 @@ class HWO(InstrumentBase):
         self.dark_current = [0.0005, 0.0005, 0.001, 0.001, 0.001, 0.001, 0.001, 0.002, 0.002, 0.002]
         self.read_noise = [3., 3., 3., 3., 3., 3., 3., 4., 4., 4.]
         self.pivotwave = np.array([155., 228., 360., 440., 550., 640., 790., 1260., 1600., 2220.])
-        self.bands = ['FUV', 'NUV', 'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K']
         self.ab_zeropoint = [35548., 24166., 15305., 12523., 10018., 8609., 6975., 4373., 3444., 2482.]
         self.aperture_correction = [1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]
         self.bandpass_r = [5., 5., 5., 5., 5., 5., 5., 5., 5., 5.]
@@ -130,8 +133,7 @@ class HWO(InstrumentBase):
         else:
             return image
 
-    @staticmethod
-    def validate_instrument_config(config):
+    def validate_instrument_config(self, config):
         # TODO implement this
         pass
 
