@@ -8,28 +8,70 @@ from lenstronomy.Util import util as len_util
 
 
 class SyntheticImage:
-    def __init__(self, strong_lens, instrument, band, arcsec, oversample=1, pieces=False, debugging=True, **kwargs):
-        # TODO assert band is valid for instrument
-        # assert band in instrument.get_bands()
+    def __init__(self, strong_lens, instrument, band, arcsec, oversample=1, pieces=False, verbose=True, instrument_params={}):
+        # assert band is valid for instrument
+        assert band in instrument.bands, f'Band "{band}" not valid for instrument {instrument.name}'
+
+        # default instrument params if none
+        if not instrument_params:
+            self.instrument_params = instrument.default_params()
 
         self.strong_lens = strong_lens
         self.instrument = instrument
         self.band = band
-        self.arcsec = arcsec
-        self.oversample = oversample
-        self.kwargs = kwargs
-        self.debugging = debugging
+        self.verbose = verbose
         self.pieces = pieces
+        self.instrument_params = instrument_params
 
-        # calculate surface brightness
+        self._set_up_pixel_grid(arcsec, oversample)
         self._calculate_surface_brightness(pieces=pieces)
 
-        if self.debugging: print(
+        if self.verbose: print(
             f'Initialized SyntheticImage for StrongLens {self.strong_lens.uid} by {self.instrument.name} in {self.band} band')
 
-    def _calculate_surface_brightness(self, pieces=False, kwargs_psf=None):
-        self._set_up_pixel_grid()
 
+    def _set_up_pixel_grid(self, arcsec, oversample):
+        # validation for oversample
+        self.oversample = int(oversample)
+        assert self.oversample >= 1, 'Oversampling factor must be greater than 1'
+        assert self.oversample % 2 == 1, 'Oversampling factor must be an odd integer'
+
+        # "native" refers to the final output, as opposed to the oversampled grid that the intermediary calculations are performed on for better accuracy
+        self.native_pixel_scale = self.instrument.get_pixel_scale(self.band)
+        self.native_num_pix = np.ceil(arcsec / self.native_pixel_scale).astype(int)
+
+        # make sure that final image will have odd number of pixels on a side
+        if self.native_num_pix % 2 == 0:
+            self.native_num_pix += 1
+
+        # these parameters are for the oversampled grid
+        self.pixel_scale = self.native_pixel_scale / self.oversample
+        self.num_pix = self.native_num_pix * self.oversample
+
+        # finally, adjust arcseconds (may differ from user-provided input)
+        self.arcsec = self.native_num_pix * self.native_pixel_scale
+        
+        if self.verbose: print(
+            f'Computing on pixel grid of size {self.num_pix}x{self.num_pix} ({self.arcsec}\"x{self.arcsec}\") with pixel scale {self.pixel_scale} arcsec/pixel (natively {self.native_pixel_scale} arcsec/pixel oversampled by factor {self.oversample})')
+
+        _, _, self.ra_at_xy_0, self.dec_at_xy_0, _, _, self.Mpix2coord, self.Mcoord2pix = (
+            len_util.make_grid_with_coordtransform(
+                numPix=self.num_pix,
+                deltapix=self.pixel_scale,
+                subgrid_res=1,
+                left_lower=False,
+                inverse=False))
+
+        kwargs_pixel = {'nx': self.num_pix, 'ny': self.num_pix,  # number of pixels per axis
+                        'ra_at_xy_0': self.ra_at_xy_0,
+                        'dec_at_xy_0': self.dec_at_xy_0,
+                        'transform_pix2angle': self.Mpix2coord}
+
+        self.pixel_grid = PixelGrid(**kwargs_pixel)
+        self.coords = Coordinates(self.Mpix2coord, self.ra_at_xy_0, self.dec_at_xy_0)
+
+
+    def _calculate_surface_brightness(self, pieces=False, kwargs_psf=None):
         # define PSF, e.g. kwargs_psf = {'psf_type': 'NONE'}, {'psf_type': 'GAUSSIAN', 'fwhm': psf_fwhm}
         if kwargs_psf is None:
             kwargs_psf = {'psf_type': 'NONE'}
@@ -65,14 +107,23 @@ class SyntheticImage:
 
         if pieces:
             self.lens_surface_brightness = image_model.lens_surface_brightness(kwargs_lens_light_amp)
-            self.source_surface_brightness = image_model.source_surface_brightness(kwargs_source_amp,
-                                                                                   self.strong_lens.kwargs_lens)
+            self.source_surface_brightness = image_model.source_surface_brightness(kwargs_source_amp, self.strong_lens.kwargs_lens)
+            
+        # set fluxes in counts per second
+        self.lens_flux_cps = self.strong_lens.get_lens_flux_cps(self.band, self.magnitude_zero_point)
+        self.source_flux_cps = self.strong_lens.get_source_flux_cps(self.band, self.magnitude_zero_point)
+        self.total_flux_cps = self.lens_flux_cps + self.source_flux_cps
+
 
     def _convert_magnitudes_to_lenstronomy_amps(self):
-        # TODO this is also awful
         if self.instrument.name == 'Roman':
-            assert 'sca' in self.kwargs, 'SCA must be provided for Roman'
-            self.magnitude_zero_point = self.instrument.get_zeropoint_magnitude(self.band, self.kwargs['sca'])
+            if 'detector' not in self.instrument_params.keys():
+                self.instrument_params['detector'] = 1
+                # TODO warn that it's been defaulted
+            else:
+                # TODO validate
+                pass
+            self.magnitude_zero_point = self.instrument.get_zeropoint_magnitude(self.band, self.instrument_params['detector'])
         elif self.instrument.name == 'HWO':
             self.magnitude_zero_point = self.instrument.get_zeropoint_magnitude(self.band)
 
@@ -87,47 +138,6 @@ class SyntheticImage:
         self.strong_lens.kwargs_lens_light_amp_dict[self.band] = kwargs_lens_light_amp[0]
         self.strong_lens.kwargs_source_amp_dict[self.band] = kwargs_source_amp[0]
 
-    def _set_up_pixel_grid(self):
-        # TODO this is awful
-        if self.instrument.name == 'Roman':
-            self.native_pixel_scale = self.instrument.pixel_scale
-        elif self.instrument.name == 'HWO':
-            self.native_pixel_scale = self.instrument.get_pixel_scale(self.band)
-
-        # validation for oversample
-        self.oversample = int(self.oversample)
-        assert self.oversample >= 1, 'Oversampling factor must be greater than 1'
-        assert self.oversample % 2 == 1, 'Oversampling factor must be an odd integer'
-
-        # make sure that final image will have odd number of pixels on a side
-        self.native_num_pix = np.ceil(self.arcsec / self.native_pixel_scale).astype(int)
-        if self.native_num_pix % 2 == 0:
-            self.native_num_pix += 1
-
-        self.pixel_scale = self.native_pixel_scale / self.oversample
-        self.num_pix = int(self.native_num_pix * self.oversample)
-
-        # finally, adjust arcseconds (may differ from user-provided input)
-        self.arcsec = self.native_num_pix * self.native_pixel_scale
-        
-        if self.debugging: print(
-            f'Computing on pixel grid of size {self.num_pix}x{self.num_pix} ({self.arcsec}\"x{self.arcsec}\") with pixel scale {self.pixel_scale} arcsec/pixel (natively {self.native_pixel_scale} arcsec/pixel oversampled by factor {self.oversample})')
-
-        _, _, self.ra_at_xy_0, self.dec_at_xy_0, _, _, self.Mpix2coord, self.Mcoord2pix = (
-            len_util.make_grid_with_coordtransform(
-                numPix=self.num_pix,
-                deltapix=self.pixel_scale,
-                subgrid_res=1,
-                left_lower=False,
-                inverse=False))
-
-        kwargs_pixel = {'nx': self.num_pix, 'ny': self.num_pix,  # number of pixels per axis
-                        'ra_at_xy_0': self.ra_at_xy_0,
-                        'dec_at_xy_0': self.dec_at_xy_0,
-                        'transform_pix2angle': self.Mpix2coord}
-
-        self.pixel_grid = PixelGrid(**kwargs_pixel)
-        self.coords = Coordinates(self.Mpix2coord, self.ra_at_xy_0, self.dec_at_xy_0)
 
     def set_native_coords(self):
         _, _, self.ra_at_xy_0_native, self.dec_at_xy_0_native, _, _, self.Mpix2coord_native, self.Mcoord2pix_native = (

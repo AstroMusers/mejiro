@@ -13,7 +13,6 @@ def test_set_up_pixel_grid():
     synthetic_image = SyntheticImage(strong_lens=strong_lens, 
                                      instrument=instrument, 
                                      band='F129', 
-                                     sca=1,
                                      arcsec=4.95,
                                      oversample=1)  # 4.95 / 0.11 = 45 so expect 4 pixels, then 4.95 arcsec
     assert synthetic_image.arcsec == 4.95
@@ -22,7 +21,6 @@ def test_set_up_pixel_grid():
     synthetic_image = SyntheticImage(strong_lens=strong_lens, 
                                      instrument=instrument, 
                                      band='F129', 
-                                     sca=1,
                                      arcsec=5.0,
                                      oversample=1)  # 5 / 0.11 = 45.45 so expect 46 pixels, then 47 so odd, then 5.17 arcsec
     assert synthetic_image.arcsec == 5.17
@@ -32,7 +30,6 @@ def test_set_up_pixel_grid():
     synthetic_image = SyntheticImage(strong_lens=strong_lens, 
                                     instrument=instrument, 
                                     band='F129', 
-                                    sca=1,
                                     arcsec=4.95,
                                     oversample=3)
     assert synthetic_image.arcsec == 4.95
@@ -41,7 +38,6 @@ def test_set_up_pixel_grid():
     synthetic_image = SyntheticImage(strong_lens=strong_lens, 
                                     instrument=instrument, 
                                     band='F129', 
-                                    sca=1,
                                     arcsec=5.0,
                                     oversample=3)
     assert synthetic_image.arcsec == 5.17
@@ -52,7 +48,6 @@ def test_set_up_pixel_grid():
         synthetic_image = SyntheticImage(strong_lens=strong_lens, 
                                          instrument=instrument, 
                                          band='F129', 
-                                         sca=1,
                                          arcsec=5.0,
                                          oversample=2)  # even oversampling should raise an error
         
@@ -60,7 +55,6 @@ def test_set_up_pixel_grid():
         synthetic_image = SyntheticImage(strong_lens=strong_lens, 
                                          instrument=instrument, 
                                          band='F129', 
-                                         sca=1,
                                          arcsec=5.0,
                                          oversample=0.1)
         

@@ -6,42 +6,30 @@ from mejiro.utils import util
 
 class Exposure:
 
-    def __init__(self, synthetic_image, exposure_time, rng=None, **kwargs):
+    def __init__(self, synthetic_image, exposure_time, engine='galsim', engine_params=None, psf=None, verbose=True, **kwargs):
         self.synthetic_image = synthetic_image
         self.exposure_time = exposure_time
+        self.verbose = verbose
 
-        # TODO validate instrument config
-        # self.instrument.validate_instrument_config(config)
-        # self.config = config
+        if engine == 'galsim':
+            from mejiro.engines import galsim_engine
 
-        # set GalSim random number generator
-        if rng is not None:
-            self.rng = rng
-        else:
-            self.rng = galsim.UniformDeviate(42)
-
-        # total flux cps
-        self.lens_flux_cps = self.synthetic_image.strong_lens.get_lens_flux_cps(self.synthetic_image.band,
-                                                                                self.synthetic_image.magnitude_zero_point)
-        self.source_flux_cps = self.synthetic_image.strong_lens.get_source_flux_cps(self.synthetic_image.band,
-                                                                                    self.synthetic_image.magnitude_zero_point)
-        self.total_flux_cps = self.lens_flux_cps + self.source_flux_cps
-
-        # create interpolated image
-        self.interp_total = galsim.InterpolatedImage(galsim.Image(self.synthetic_image.image, xmin=0, ymin=0),
-                                                     scale=self.synthetic_image.pixel_scale,
-                                                     flux=self.total_flux_cps * self.exposure_time)
-
-        tuple = self.synthetic_image.instrument.get_exposure(self.synthetic_image, 
-                                                             self.interp_total, self.rng,
-                                                             self.exposure_time, **kwargs)
-        if 'return_noise' in kwargs and kwargs['return_noise']:
             if self.synthetic_image.instrument.name == 'Roman':
-                self.image, self.poisson_noise, self.reciprocity_failure, self.dark_noise, self.nonlinearity, self.ipc, self.read_noise = tuple
+                self.image, self.psf, self.poisson_noise, self.reciprocity_failure, self.dark_noise, self.nonlinearity, self.ipc, self.read_noise = galsim_engine.get_roman_exposure(synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
+
             elif self.synthetic_image.instrument.name == 'HWO':
-                self.image, self.poisson_noise, self.dark_noise, self.read_noise = tuple
+                raise NotImplementedError('HWO engine not yet implemented')
+                # self.image, self.psf, self.poisson_noise, self.dark_noise, self.read_noise = galsim_engine.get_hwo_exposure(synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
+
+        elif engine == 'pandeia':
+            raise NotImplementedError('Pandeia engine not yet implemented')
+            # TODO mejiro.engines import pandeia_engine
+        elif engine == 'romanisim':
+            raise NotImplementedError('romanisim engine not yet implemented')
+            # TODO mejiro.engines import romanisim_engine
         else:
-            self.image = tuple
+            raise ValueError(f'Engine "{engine}" not recognized')
+
         final = self.image.array
 
         # crop off edge effects (e.g., IPC)
@@ -84,3 +72,12 @@ class Exposure:
             self.source_exposure = source
         else:
             self.lens_exposure, self.source_exposure = None, None
+
+    @property
+    def get_exposure_time(self):
+        return self.exposure_time
+    
+    @property
+    def get_exposure(self):
+        return self.exposure
+    
