@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import warnings
 from glob import glob
 
@@ -134,6 +135,28 @@ def get_roman_psf_from_id(psf_id, check_cache=True, psf_cache_dir=None, verbose=
     return get_roman_psf(band, detector, detector_position, oversample, num_pix, check_cache, psf_cache_dir, verbose, **calc_psf_kwargs)
 
 
+def cache_psf(id_string, psf_cache_dir, verbose=True):
+    """
+    Save a PSF to the provided directory.
+
+    Parameters
+    ----------
+    id_string : str
+        The PSF identifier string.
+    psf_cache_dir : str
+        The directory where cached PSFs are stored.
+    """
+    psf_path = os.path.join(psf_cache_dir, f'{id_string}.npy')
+    if os.path.exists(psf_path):
+        if verbose:
+            print(f'PSF {id_string} already cached to {psf_path}')
+    else:
+        psf = get_roman_psf_from_id(id_string, check_cache=False, verbose=verbose)
+        np.save(psf_path, psf)
+        if verbose:
+            print(f'Cached PSF to {psf_path}')
+
+
 def _check_cache(id_string, psf_cache_dir, verbose):
     """
     Check if a PSF exists in the provided cache directory. If found, load and return it. Otherwise, return None.
@@ -158,18 +181,14 @@ def _check_cache(id_string, psf_cache_dir, verbose):
         module_path = os.path.dirname(mejiro.__file__)
         psf_cache_dir = os.path.join(module_path, 'data', 'cached_psfs')
 
-    psf_path = glob(os.path.join(psf_cache_dir, f'{id_string}.pkl'))
+    psf_path = glob(os.path.join(psf_cache_dir, f'{id_string}.npy'))
     if len(psf_path) == 1:
         if verbose:
             print(f'Loading cached PSF: {psf_path[0]}')
-        return util.unpickle(psf_path[0])
+        return np.load(psf_path[0])
     else:
         band, detector, detector_position, oversample, num_pix = get_params_from_psf_id(id_string)
         warnings.warn(
             f'PSF {band} SCA{str(detector).zfill(2)} {detector_position} {oversample} {num_pix} not found in cache {psf_cache_dir}')
         return None
-    
-
-# TODO cache psf method
-# def cache_psf(id_string, psf_cache_dir):
     
