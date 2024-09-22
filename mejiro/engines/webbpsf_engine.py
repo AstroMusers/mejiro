@@ -48,7 +48,7 @@ def get_roman_psf(band, detector, detector_position, oversample, num_pix, check_
     # set PSF parameters
     wfi = WFI()
     wfi.filter = band.upper()
-    wfi.detector = roman_util.detector_int_to_sca(detector)
+    wfi.detector = roman_util.get_sca_string(detector)
     wfi.detector_position = detector_position
     wfi.options['output_mode'] = 'oversampled'
 
