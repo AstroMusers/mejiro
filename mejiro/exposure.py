@@ -18,8 +18,7 @@ class Exposure:
                 self.image, self.psf, self.poisson_noise, self.reciprocity_failure, self.dark_noise, self.nonlinearity, self.ipc, self.read_noise = galsim_engine.get_roman_exposure(synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
 
             elif self.synthetic_image.instrument.name == 'HWO':
-                raise NotImplementedError('HWO engine not yet implemented')
-                # self.image, self.psf, self.poisson_noise, self.dark_noise, self.read_noise = galsim_engine.get_hwo_exposure(synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
+                self.image, self.psf, self.poisson_noise, self.dark_noise, self.read_noise = galsim_engine.get_hwo_exposure(synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
 
         elif engine == 'pandeia':
             raise NotImplementedError('Pandeia engine not yet implemented')

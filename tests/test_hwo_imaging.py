@@ -22,7 +22,7 @@ def test_hwo_imaging():
                                      verbose=False)
     
     exposure = Exposure(synthetic_image, 
-                        exposure_time=exposure_time)
+                        exposure_time=exposure_time, verbose=False)
     
     assert synthetic_image.pixel_scale == 0.04
     assert synthetic_image.native_pixel_scale == 0.04
@@ -49,7 +49,7 @@ def test_hwo_oversampled_imaging():
                                      verbose=False)
     
     exposure = Exposure(synthetic_image, 
-                        exposure_time=exposure_time)
+                        exposure_time=exposure_time, verbose=False)
     
     assert synthetic_image.pixel_scale == 0.008
     assert synthetic_image.native_pixel_scale == 0.04

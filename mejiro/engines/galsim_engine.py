@@ -19,6 +19,17 @@ def default_roman_engine_params():
     }
 
 
+def default_hwo_engine_params():
+    return {
+        'rng': galsim.UniformDeviate(),
+        'sky_background': True,
+        'detector_effects': True,
+        'poisson_noise': True,
+        'dark_noise': True,
+        'read_noise': True,
+    }
+
+
 def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=default_roman_engine_params(), verbose=False, **kwargs):
     # get detector and detector position
     detector = synthetic_image.instrument_params['detector']
@@ -152,7 +163,7 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
         # gain
         image /= galsim.roman.gain
 
-        # quantize
+        # quantize, since analog-to-digital conversion gives integers
         image.quantize()
 
     return image, psf, poisson_noise, reciprocity_failure, dark_noise, nonlinearity, ipc, read_noise
@@ -193,6 +204,100 @@ def get_roman_sky_background(instrument, bands, sca, exposure_time, num_pix, ove
         bkgs[band] = sky_image
 
     return bkgs
+
+
+def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=default_hwo_engine_params(), verbose=False, **kwargs):
+    # validate engine params and set defaults
+    if engine_params is None:
+        engine_params = default_hwo_engine_params()
+    else:
+        engine_params = _validate_hwo_engine_params(engine_params)
+
+    # create interpolated image
+    total_interp = galsim.InterpolatedImage(galsim.Image(synthetic_image.image, xmin=0, ymin=0), 
+                                            scale=synthetic_image.pixel_scale, 
+                                            flux=synthetic_image.total_flux_cps * exposure_time)
+
+    # get PSF
+    if psf is None:
+        psf_interp = get_gaussian_psf(synthetic_image.instrument.get_psf_fwhm(synthetic_image.band))
+        psf = psf_interp.drawImage(nx=synthetic_image.native_num_pix, ny=synthetic_image.native_num_pix, scale=synthetic_image.native_pixel_scale)
+
+    # convolve with PSF
+    convolved = galsim.Convolve(total_interp, psf_interp)
+
+    # draw image at the native pixel scale
+    im = galsim.ImageF(synthetic_image.native_num_pix, synthetic_image.native_num_pix, scale=synthetic_image.native_pixel_scale)
+    im.setOrigin(0, 0)
+    image = convolved.drawImage(im)
+
+    # NB from here on out, the image is at the native pixel scale, i.e., the image is NOT oversampled
+
+    # add sky background
+    if engine_params['sky_background']:
+        min_zodi_cps = 0.2
+        sky_bkg_cps = min_zodi_cps * 1.5
+
+        # build Image
+        sky_image = galsim.ImageF(synthetic_image.native_num_pix, synthetic_image.native_num_pix)
+        sky_image.setOrigin(0, 0)
+        sky_image += sky_bkg_cps
+
+        # convert to counts/pixel
+        sky_image *= exposure_time
+
+        image += sky_image
+
+    # integer number of photons are being detected, so quantize
+    image.quantize()
+    
+    if engine_params['detector_effects']:
+        image.replaceNegative(0.)
+
+        # Poisson noise
+        if type(engine_params['poisson_noise']) is galsim.Image:
+            image += engine_params['poisson_noise']
+            image.quantize()
+        elif type(engine_params['poisson_noise']) is bool:
+            if engine_params['poisson_noise']:
+                before = deepcopy(image)
+                image.addNoise(galsim.PoissonNoise(engine_params['rng']))
+                poisson_noise = image - before
+                image.quantize()
+            else:
+                poisson_noise = None
+
+        # dark current
+        if type(engine_params['dark_noise']) is galsim.Image:
+            image += engine_params['dark_noise']
+        elif type(engine_params['dark_noise']) is bool:
+            if engine_params['dark_noise']:
+                before = deepcopy(image)
+                total_dark_current = synthetic_image.instrument.get_dark_current(synthetic_image.band) * exposure_time
+                image.addNoise(galsim.DeviateNoise(galsim.PoissonDeviate(engine_params['rng'], total_dark_current)))
+                dark_noise = image - before
+            else:
+                dark_noise = None
+
+        # read noise
+        if type(engine_params['read_noise']) is galsim.Image:
+            image += engine_params['read_noise']
+        elif type(engine_params['read_noise']) is bool:
+            if engine_params['read_noise']:
+                before = deepcopy(image)
+                read_noise_sigma = synthetic_image.instrument.get_read_noise(synthetic_image.band)
+                image.addNoise(galsim.GaussianNoise(engine_params['rng'], sigma=read_noise_sigma))
+                read_noise = image - before
+            else:
+                read_noise = None
+
+    # gain
+    image /= synthetic_image.instrument.gain
+
+    # quantize, since analog-to-digital conversion gives integers
+    image.quantize()
+
+    return image, psf, poisson_noise, dark_noise, read_noise
 
 
 def get_gaussian_psf(fwhm, flux=1.):
@@ -258,6 +363,46 @@ def _validate_roman_engine_params(engine_params):
         pass
     if 'read_noise' not in engine_params.keys():
         engine_params['read_noise'] = default_roman_engine_params()['read_noise']
+        # TODO logging to inform user of default
+    else:
+        # TODO validate
+        pass
+    return engine_params
+
+
+def _validate_hwo_engine_params(engine_params):
+    if 'rng' not in engine_params.keys():
+        engine_params['rng'] = default_hwo_engine_params()['rng']  # TODO is this necessary? doesn't GalSim do this?
+        # TODO logging to inform user of default
+    else:
+        # TODO validate
+        pass
+    if 'sky_background' not in engine_params.keys():
+        engine_params['sky_background'] = default_hwo_engine_params()['sky_background']
+        # TODO logging to inform user of default
+    else:
+        # TODO validate
+        pass
+    if 'detector_effects' not in engine_params.keys():
+        engine_params['detector_effects'] = default_hwo_engine_params()['detector_effects']
+        # TODO logging to inform user of default
+    else:
+        # TODO validate
+        pass
+    if 'poisson_noise' not in engine_params.keys():
+        engine_params['poisson_noise'] = default_hwo_engine_params()['poisson_noise']
+        # TODO logging to inform user of default
+    else:
+        # TODO validate
+        pass
+    if 'dark_noise' not in engine_params.keys():
+        engine_params['dark_noise'] = default_hwo_engine_params()['dark_noise']
+        # TODO logging to inform user of default
+    else:
+        # TODO validate
+        pass
+    if 'read_noise' not in engine_params.keys():
+        engine_params['read_noise'] = default_hwo_engine_params()['read_noise']
         # TODO logging to inform user of default
     else:
         # TODO validate
