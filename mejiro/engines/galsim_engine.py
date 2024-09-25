@@ -35,6 +35,9 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
     detector = synthetic_image.instrument_params['detector']
     detector_position = synthetic_image.instrument_params['detector_position']
 
+    # get optional kwargs
+    gsparams_kwargs = kwargs.get('gsparams_kwargs', {})
+
     # validate engine params and set defaults
     if engine_params is None:
         engine_params = default_roman_engine_params()
@@ -66,7 +69,7 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
     psf_interp = galsim.InterpolatedImage(galsim.Image(psf, scale=synthetic_image.pixel_scale))
 
     # convolve with PSF
-    convolved = galsim.Convolve(total_interp, psf_interp)
+    convolved = galsim.Convolve(total_interp, psf_interp, gsparams=galsim.GSParams(**gsparams_kwargs))
 
     # draw image at the native pixel scale
     im = galsim.ImageF(synthetic_image.native_num_pix, synthetic_image.native_num_pix, scale=synthetic_image.native_pixel_scale)
@@ -165,6 +168,13 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
 
         # quantize, since analog-to-digital conversion gives integers
         image.quantize()
+    else:
+        poisson_noise = None
+        reciprocity_failure = None
+        dark_noise = None
+        nonlinearity = None
+        ipc = None
+        read_noise = None
 
     return image, psf, poisson_noise, reciprocity_failure, dark_noise, nonlinearity, ipc, read_noise
 
