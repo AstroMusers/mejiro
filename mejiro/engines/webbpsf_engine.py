@@ -8,7 +8,7 @@ from webbpsf.roman import WFI
 from mejiro.utils import roman_util, util
 
 
-def get_roman_psf(band, detector, detector_position, oversample, num_pix, check_cache=True, psf_cache_dir=None, verbose=False, **calc_psf_kwargs):
+def get_roman_psf(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None, verbose=False, **calc_psf_kwargs):
     """
     Generate a Roman WFI PSF using WebbPSF.
 
@@ -38,10 +38,10 @@ def get_roman_psf(band, detector, detector_position, oversample, num_pix, check_
     np.ndarray
         The PSF kernel.
     """
-    psf_id = get_psf_id(band, detector, detector_position, oversample, num_pix)
-
     # first, check if it exists in the cache
     if check_cache:
+        assert psf_cache_dir is not None, 'Must provide a PSF cache directory if checking the cache'
+        psf_id = get_psf_id(band, detector, detector_position, oversample, num_pix)
         cached_psf = _check_cache(psf_id, psf_cache_dir, verbose)
         if cached_psf is not None:
             return cached_psf
@@ -57,8 +57,6 @@ def get_roman_psf(band, detector, detector_position, oversample, num_pix, check_
     psf = wfi.calc_psf(fov_pixels=num_pix, oversample=oversample, **calc_psf_kwargs)
 
     return psf['OVERSAMP'].data
-
-# kernel_to_galsim_interpolated_image(psf[0].data, oversample, pixel_scale=wfi.pixelscale)
 
 
 def get_psf_id(band, detector, detector_position, oversample, num_pix):
