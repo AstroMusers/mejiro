@@ -11,7 +11,7 @@ def test_band(band):
     roman = Roman()
     lens = SampleStrongLens()
     scene_size = 5  # arcsec
-    oversample = 1
+    oversample = 5
     exposure_time = 146
     instrument_params = {
         'detector': 1,
@@ -32,12 +32,12 @@ def test_band(band):
                         psf_cache_dir='test_data',
                         verbose=False)
     
-    assert synthetic_image.pixel_scale == 0.11
+    assert synthetic_image.pixel_scale == 0.022
     assert synthetic_image.native_pixel_scale == 0.11
-    assert synthetic_image.num_pix == 47
+    assert synthetic_image.num_pix == 235
     assert synthetic_image.native_num_pix == 47
     assert synthetic_image.arcsec == 5.17
-    assert synthetic_image.image.shape == (47, 47)
+    assert synthetic_image.image.shape == (235, 235)
 
     # TODO checks on the images    
     

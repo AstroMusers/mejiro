@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 from lenstronomy.Data.coord_transforms import Coordinates
 from lenstronomy.Data.pixel_grid import PixelGrid
 from lenstronomy.Data.psf import PSF
@@ -36,6 +37,8 @@ class SyntheticImage:
         self.oversample = int(oversample)
         assert self.oversample >= 1, 'Oversampling factor must be greater than 1'
         assert self.oversample % 2 == 1, 'Oversampling factor must be an odd integer'
+        if oversample < 5:
+            warnings.warn('Oversampling factor less than 5 may not be sufficient for accurate results, especially when convolving with a non-trivial PSF')
 
         # "native" refers to the final output, as opposed to the oversampled grid that the intermediary calculations are performed on for better accuracy
         self.native_pixel_scale = self.instrument.get_pixel_scale(self.band)

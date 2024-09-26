@@ -13,12 +13,13 @@ def test_hwo_imaging():
     oversample = 1
     exposure_time = 1000
 
-    synthetic_image = SyntheticImage(strong_lens=lens, 
-                                     instrument=hwo, 
-                                     band=band, 
-                                     arcsec=scene_size, 
-                                     oversample=oversample,
-                                     verbose=False)
+    with pytest.warns(UserWarning):
+        synthetic_image = SyntheticImage(strong_lens=lens, 
+                                        instrument=hwo, 
+                                        band=band, 
+                                        arcsec=scene_size, 
+                                        oversample=oversample,
+                                        verbose=False)
     
     exposure = Exposure(synthetic_image, 
                         exposure_time=exposure_time, 
@@ -43,11 +44,11 @@ def test_hwo_oversampled_imaging():
     exposure_time = 1000
 
     synthetic_image = SyntheticImage(strong_lens=lens, 
-                                     instrument=hwo, 
-                                     band=band, 
-                                     arcsec=scene_size, 
-                                     oversample=oversample,
-                                     verbose=False)
+                                    instrument=hwo, 
+                                    band=band, 
+                                    arcsec=scene_size, 
+                                    oversample=oversample,
+                                    verbose=False)
     
     exposure = Exposure(synthetic_image, 
                         exposure_time=exposure_time, 
@@ -68,7 +69,7 @@ def test_hwo_sky_background_off():
     lens = SampleStrongLens()
     band = 'J'
     scene_size = 5  # arcsec
-    oversample = 1
+    oversample = 5
     exposure_time = 1000
 
     synthetic_image = SyntheticImage(strong_lens=lens, 
@@ -95,7 +96,7 @@ def test_hwo_all_detector_effects_off():
     lens = SampleStrongLens()
     band = 'J'
     scene_size = 5  # arcsec
-    oversample = 1
+    oversample = 5
     exposure_time = 1000
 
     synthetic_image = SyntheticImage(strong_lens=lens, 
@@ -122,7 +123,7 @@ def test_hwo_poisson_noise_off():
     lens = SampleStrongLens()
     band = 'J'
     scene_size = 5  # arcsec
-    oversample = 1
+    oversample = 5
     exposure_time = 1000
 
     synthetic_image = SyntheticImage(strong_lens=lens, 
@@ -149,7 +150,7 @@ def test_hwo_dark_noise_off():
     lens = SampleStrongLens()
     band = 'J'
     scene_size = 5  # arcsec
-    oversample = 1
+    oversample = 5
     exposure_time = 1000
 
     synthetic_image = SyntheticImage(strong_lens=lens, 
@@ -176,7 +177,7 @@ def test_hwo_read_noise_off():
     lens = SampleStrongLens()
     band = 'J'
     scene_size = 5  # arcsec
-    oversample = 1
+    oversample = 5
     exposure_time = 1000
 
     synthetic_image = SyntheticImage(strong_lens=lens, 

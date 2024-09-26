@@ -13,40 +13,6 @@ def test_roman_imaging():
     lens = SampleStrongLens()
     band = 'F129'
     scene_size = 5  # arcsec
-    oversample = 1
-    exposure_time = 146
-
-    synthetic_image = SyntheticImage(strong_lens=lens, 
-                                     instrument=roman, 
-                                     band=band, 
-                                     arcsec=scene_size, 
-                                     oversample=oversample, 
-                                     verbose=False)
-    
-    exposure = Exposure(synthetic_image, 
-                        exposure_time=exposure_time, 
-                        check_cache=True,
-                        psf_cache_dir='test_data',
-                        verbose=False)
-    
-    assert synthetic_image.pixel_scale == 0.11
-    assert synthetic_image.native_pixel_scale == 0.11
-    assert synthetic_image.num_pix == 47
-    assert synthetic_image.native_num_pix == 47
-    assert synthetic_image.arcsec == 5.17
-    assert synthetic_image.image.shape == (47, 47)
-
-    # TODO checks on the images
-    
-
-def test_roman_oversampled_imaging():
-    """
-    Oversample the image by an odd factor -- another common use case
-    """
-    roman = Roman()
-    lens = SampleStrongLens()
-    band = 'F129'
-    scene_size = 5  # arcsec
     oversample = 5
     exposure_time = 146
 
@@ -81,7 +47,7 @@ def test_roman_generate_psf():
     lens = SampleStrongLens()
     band = 'F129'
     scene_size = 5  # arcsec
-    oversample = 1
+    oversample = 5
     exposure_time = 146
     instrument_params = {
         'detector': 1,
@@ -109,7 +75,7 @@ def test_roman_cached_psf():
     lens = SampleStrongLens()
     band = 'F129'
     scene_size = 5  # arcsec
-    oversample = 1
+    oversample = 5
     exposure_time = 146
 
     synthetic_image = SyntheticImage(strong_lens=lens, 
@@ -120,7 +86,7 @@ def test_roman_cached_psf():
                                      verbose=False)
     
     import numpy as np
-    psf = np.load('test_data/F129_1_2048_2048_1_47.npy')
+    psf = np.load('test_data/F129_1_2048_2048_5_101.npy')
     
     exposure = Exposure(synthetic_image, 
                         exposure_time=exposure_time, 
@@ -135,7 +101,7 @@ def test_roman_sky_background_off():
     lens = SampleStrongLens()
     band = 'F129'
     scene_size = 5  # arcsec
-    oversample = 1
+    oversample = 5
     exposure_time = 146
 
     synthetic_image = SyntheticImage(strong_lens=lens, 
@@ -164,7 +130,7 @@ def test_roman_all_detector_effects_off():
     lens = SampleStrongLens()
     band = 'F129'
     scene_size = 5  # arcsec
-    oversample = 1
+    oversample = 5
     exposure_time = 146
 
     synthetic_image = SyntheticImage(strong_lens=lens, 
@@ -193,7 +159,7 @@ def test_roman_poisson_noise_off():
     lens = SampleStrongLens()
     band = 'F129'
     scene_size = 5  # arcsec
-    oversample = 1
+    oversample = 5
     exposure_time = 146
 
     synthetic_image = SyntheticImage(strong_lens=lens, 
@@ -222,7 +188,7 @@ def test_roman_reciprocity_failure_off():
     lens = SampleStrongLens()
     band = 'F129'
     scene_size = 5  # arcsec
-    oversample = 1
+    oversample = 5
     exposure_time = 146
 
     synthetic_image = SyntheticImage(strong_lens=lens, 
@@ -251,7 +217,7 @@ def test_roman_dark_noise_off():
     lens = SampleStrongLens()
     band = 'F129'
     scene_size = 5  # arcsec
-    oversample = 1
+    oversample = 5
     exposure_time = 146
 
     synthetic_image = SyntheticImage(strong_lens=lens, 
@@ -280,7 +246,7 @@ def test_roman_nonlinearity_off():
     lens = SampleStrongLens()
     band = 'F129'
     scene_size = 5  # arcsec
-    oversample = 1
+    oversample = 5
     exposure_time = 146
 
     synthetic_image = SyntheticImage(strong_lens=lens, 
@@ -309,7 +275,7 @@ def test_roman_ipc_off():
     lens = SampleStrongLens()
     band = 'F129'
     scene_size = 5  # arcsec
-    oversample = 1
+    oversample = 5
     exposure_time = 146
 
     synthetic_image = SyntheticImage(strong_lens=lens, 
@@ -338,7 +304,7 @@ def test_roman_read_noise_off():
     lens = SampleStrongLens()
     band = 'F129'
     scene_size = 5  # arcsec
-    oversample = 1
+    oversample = 5
     exposure_time = 146
 
     synthetic_image = SyntheticImage(strong_lens=lens, 
