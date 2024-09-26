@@ -217,6 +217,9 @@ def get_roman_sky_background(instrument, bands, sca, exposure_time, num_pix, ove
 
 
 def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=default_hwo_engine_params(), verbose=False, **kwargs):
+    # get optional kwargs
+    gsparams_kwargs = kwargs.get('gsparams_kwargs', {})
+
     # validate engine params and set defaults
     if engine_params is None:
         engine_params = default_hwo_engine_params()
@@ -234,7 +237,7 @@ def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=def
         psf = psf_interp.drawImage(nx=synthetic_image.native_num_pix, ny=synthetic_image.native_num_pix, scale=synthetic_image.native_pixel_scale)
 
     # convolve with PSF
-    convolved = galsim.Convolve(total_interp, psf_interp)
+    convolved = galsim.Convolve(total_interp, psf_interp, gsparams=galsim.GSParams(**gsparams_kwargs))
 
     # draw image at the native pixel scale
     im = galsim.ImageF(synthetic_image.native_num_pix, synthetic_image.native_num_pix, scale=synthetic_image.native_pixel_scale)
@@ -301,11 +304,15 @@ def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=def
             else:
                 read_noise = None
 
-    # gain
-    image /= synthetic_image.instrument.gain
+        # gain
+        image /= synthetic_image.instrument.gain
 
-    # quantize, since analog-to-digital conversion gives integers
-    image.quantize()
+        # quantize, since analog-to-digital conversion gives integers
+        image.quantize()
+    else:
+        poisson_noise = None
+        dark_noise = None
+        read_noise = None
 
     return image, psf, poisson_noise, dark_noise, read_noise
 
