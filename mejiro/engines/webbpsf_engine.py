@@ -143,6 +143,12 @@ def cache_psf(id_string, psf_cache_dir, verbose=True):
         The PSF identifier string.
     psf_cache_dir : str
         The directory where cached PSFs are stored.
+    verbose : bool, optional
+        If True, print messages about the caching process. Default is True.
+
+    Returns
+    -------
+    None
     """
     psf_path = os.path.join(psf_cache_dir, f'{id_string}.npy')
     if os.path.exists(psf_path):
