@@ -46,7 +46,7 @@ class HWO(InstrumentBase):
         self._set_pixel_scale()
         self._set_psf_fwhm()
 
-    def validate_instrument_config(self, config):
+    def validate_instrument_params(self, params):
         # TODO implement this
         pass
 
@@ -134,3 +134,7 @@ class HWO(InstrumentBase):
     @staticmethod
     def default_params():
         return {}
+    
+    @staticmethod
+    def validate_instrument_params(params):
+        pass
