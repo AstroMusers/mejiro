@@ -133,7 +133,7 @@ class Roman(InstrumentBase):
     def default_params():
         return {
             'detector': 1,
-            'detector_position': (2044, 2044)
+            'detector_position': (2048, 2048)
         }
     
     @staticmethod
@@ -141,7 +141,18 @@ class Roman(InstrumentBase):
         if 'detector' in params:
             detector = roman_util.get_sca_int(params['detector'])
             assert detector in range(1, 19), 'Detector number must be an integer between 1 and 18.'
+        else:
+            default_detector = Roman.default_params()['detector']
+            warnings.warn(f'No detector number provided. Defaulting to detector {default_detector}.')
+            params['detector'] = default_detector
 
         if 'detector_position' in params:
             assert isinstance(params['detector_position'], tuple) and len(params['detector_position']) == 2 and all(isinstance(x, int) for x in params['detector_position']), 'The detector_position parameter must be an (x,y) coordinate tuple.'
             assert params['detector_position'][0] in range(4, 4092 + 1) and params['detector_position'][1] in range(4, 4092 + 1), 'Choose a valid pixel position on the range 4-4092.'
+        else:
+            default_detector_position = Roman.default_params()['detector_position']
+            warnings.warn(f'No detector position provided. Defaulting to {default_detector_position}')
+            params['detector_position'] = default_detector_position
+
+        return params
+    

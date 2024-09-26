@@ -137,4 +137,4 @@ class HWO(InstrumentBase):
     
     @staticmethod
     def validate_instrument_params(params):
-        pass
+        return params

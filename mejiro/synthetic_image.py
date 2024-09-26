@@ -12,16 +12,17 @@ class SyntheticImage:
         # assert band is valid for instrument
         assert band in instrument.bands, f'Band "{band}" not valid for instrument {instrument.name}'
 
-        # default instrument params if none
+        # default instrument params if none, else validate
         if not instrument_params:
             self.instrument_params = instrument.default_params()
+        else:
+            self.instrument_params = instrument.validate_instrument_params(instrument_params)
 
         self.strong_lens = strong_lens
         self.instrument = instrument
         self.band = band
         self.verbose = verbose
         self.pieces = pieces
-        self.instrument_params = instrument_params
 
         self._set_up_pixel_grid(arcsec, oversample)
         self._calculate_surface_brightness(pieces=pieces)
@@ -117,12 +118,6 @@ class SyntheticImage:
 
     def _convert_magnitudes_to_lenstronomy_amps(self):
         if self.instrument.name == 'Roman':
-            if 'detector' not in self.instrument_params.keys():
-                self.instrument_params['detector'] = 1
-                # TODO warn that it's been defaulted
-            else:
-                # TODO validate
-                pass
             self.magnitude_zero_point = self.instrument.get_zeropoint_magnitude(self.band, self.instrument_params['detector'])
         elif self.instrument.name == 'HWO':
             self.magnitude_zero_point = self.instrument.get_zeropoint_magnitude(self.band)
