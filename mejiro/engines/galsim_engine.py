@@ -61,7 +61,7 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
                                         detector=detector, 
                                         detector_position=detector_position, 
                                         oversample=synthetic_image.oversample,
-                                        num_pix=synthetic_image.native_num_pix,  # NB WebbPSF wants the native pixel size
+                                        num_pix=101,  # NB WebbPSF wants the native pixel size
                                         check_cache=check_cache, 
                                         psf_cache_dir=psf_cache_dir,
                                         verbose=verbose,

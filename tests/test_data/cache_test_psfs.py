@@ -14,7 +14,7 @@ def main(config):
     bands = ['F062', 'F087', 'F106', 'F129', 'F146', 'F158', 'F184', 'F213']
 
     for band in bands:
-        psf_id = webbpsf_engine.get_psf_id(band, 1, (2048, 2048), 1, 47)
+        psf_id = webbpsf_engine.get_psf_id(band, 1, (2048, 2048), 5, 101)
         webbpsf_engine.cache_psf(psf_id, '')
 
 
