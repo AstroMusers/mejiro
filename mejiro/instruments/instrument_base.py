@@ -22,7 +22,7 @@ class InstrumentBase(ABC):
     #     pass
 
     @abstractmethod
-    def validate_instrument_config(self, config):
+    def validate_instrument_params(params):
         pass
 
     @abstractmethod
