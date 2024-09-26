@@ -7,7 +7,6 @@ from mejiro.lenses.test import SampleStrongLens
 
 def test_hwo_imaging():
     hwo = HWO()
-
     lens = SampleStrongLens()
     band = 'J'
     scene_size = 5  # arcsec
@@ -22,7 +21,8 @@ def test_hwo_imaging():
                                      verbose=False)
     
     exposure = Exposure(synthetic_image, 
-                        exposure_time=exposure_time, verbose=False)
+                        exposure_time=exposure_time, 
+                        verbose=False)
     
     assert synthetic_image.pixel_scale == 0.04
     assert synthetic_image.native_pixel_scale == 0.04
@@ -30,11 +30,12 @@ def test_hwo_imaging():
     assert synthetic_image.native_num_pix == 125
     assert synthetic_image.arcsec == 5.0
     assert synthetic_image.image.shape == (125, 125)
+
+    # TODO checks on the images
     
 
 def test_hwo_oversampled_imaging():
     hwo = HWO()
-
     lens = SampleStrongLens()
     band = 'J'
     scene_size = 5  # arcsec
@@ -49,7 +50,8 @@ def test_hwo_oversampled_imaging():
                                      verbose=False)
     
     exposure = Exposure(synthetic_image, 
-                        exposure_time=exposure_time, verbose=False)
+                        exposure_time=exposure_time, 
+                        verbose=False)
     
     assert synthetic_image.pixel_scale == 0.008
     assert synthetic_image.native_pixel_scale == 0.04
@@ -57,4 +59,140 @@ def test_hwo_oversampled_imaging():
     assert synthetic_image.native_num_pix == 125
     assert synthetic_image.arcsec == 5.0
     assert synthetic_image.image.shape == (625, 625)
+
+    # TODO checks on the images
     
+
+def test_hwo_sky_background_off():
+    hwo = HWO()
+    lens = SampleStrongLens()
+    band = 'J'
+    scene_size = 5  # arcsec
+    oversample = 1
+    exposure_time = 1000
+
+    synthetic_image = SyntheticImage(strong_lens=lens, 
+                                     instrument=hwo, 
+                                     band=band, 
+                                     arcsec=scene_size, 
+                                     oversample=oversample, 
+                                     verbose=False)
+    
+    engine_params = {
+        'sky_background': False
+    }
+    
+    exposure = Exposure(synthetic_image, 
+                        exposure_time=exposure_time, 
+                        engine_params=engine_params,
+                        verbose=False)
+    
+    # TODO checks on the images
+
+
+def test_hwo_all_detector_effects_off():
+    hwo = HWO()
+    lens = SampleStrongLens()
+    band = 'J'
+    scene_size = 5  # arcsec
+    oversample = 1
+    exposure_time = 1000
+
+    synthetic_image = SyntheticImage(strong_lens=lens, 
+                                     instrument=hwo, 
+                                     band=band, 
+                                     arcsec=scene_size, 
+                                     oversample=oversample, 
+                                     verbose=False)
+    
+    engine_params = {
+        'detector_effects': False
+    }
+    
+    exposure = Exposure(synthetic_image, 
+                        exposure_time=exposure_time, 
+                        engine_params=engine_params,
+                        verbose=False)
+    
+    # TODO checks on the images
+
+
+def test_hwo_poisson_noise_off():
+    hwo = HWO()
+    lens = SampleStrongLens()
+    band = 'J'
+    scene_size = 5  # arcsec
+    oversample = 1
+    exposure_time = 1000
+
+    synthetic_image = SyntheticImage(strong_lens=lens, 
+                                     instrument=hwo, 
+                                     band=band, 
+                                     arcsec=scene_size, 
+                                     oversample=oversample, 
+                                     verbose=False)
+    
+    engine_params = {
+        'poisson_noise': False
+    }
+    
+    exposure = Exposure(synthetic_image, 
+                        exposure_time=exposure_time, 
+                        engine_params=engine_params,
+                        verbose=False)
+    
+    # TODO checks on the images
+
+
+def test_hwo_dark_noise_off():
+    hwo = HWO()
+    lens = SampleStrongLens()
+    band = 'J'
+    scene_size = 5  # arcsec
+    oversample = 1
+    exposure_time = 1000
+
+    synthetic_image = SyntheticImage(strong_lens=lens, 
+                                     instrument=hwo, 
+                                     band=band, 
+                                     arcsec=scene_size, 
+                                     oversample=oversample, 
+                                     verbose=False)
+    
+    engine_params = {
+        'dark_noise': False
+    }
+    
+    exposure = Exposure(synthetic_image, 
+                        exposure_time=exposure_time, 
+                        engine_params=engine_params,
+                        verbose=False)
+    
+    # TODO checks on the images
+
+
+def test_hwo_read_noise_off():
+    hwo = HWO()
+    lens = SampleStrongLens()
+    band = 'J'
+    scene_size = 5  # arcsec
+    oversample = 1
+    exposure_time = 1000
+
+    synthetic_image = SyntheticImage(strong_lens=lens, 
+                                     instrument=hwo, 
+                                     band=band, 
+                                     arcsec=scene_size, 
+                                     oversample=oversample, 
+                                     verbose=False)
+    
+    engine_params = {
+        'read_noise': False
+    }
+    
+    exposure = Exposure(synthetic_image, 
+                        exposure_time=exposure_time, 
+                        engine_params=engine_params,
+                        verbose=False)
+    
+    # TODO checks on the images
