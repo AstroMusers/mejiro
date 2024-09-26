@@ -6,6 +6,9 @@
 .nfs*
 # config/config.yaml
 
+# docs
+docs/build
+
 # pytest
 .pytest_cache/
 

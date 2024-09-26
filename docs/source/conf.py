@@ -4,6 +4,8 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../..'))
 
+import mejiro
+
 # -- Project information
 
 project = 'mejiro'
@@ -36,7 +38,7 @@ intersphinx_disabled_domains = ['std']
 templates_path = ['_templates']
 
 # https://stackoverflow.com/questions/67485175/docstrings-are-not-included-in-read-the-docs-sphinx-build/67486947#67486947
-autodoc_mock_imports = ['numpy', 'pandas', 'PIL', 'astropy', 'omegaconf']
+# autodoc_mock_imports = ['numpy', 'pandas', 'PIL', 'astropy', 'omegaconf']
 
 # -- Options for HTML output
 
