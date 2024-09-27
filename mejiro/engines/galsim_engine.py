@@ -1,6 +1,7 @@
 import galsim
 import galsim.roman  # NB not automatically imported with `import galsim`
 import numpy as np
+import warnings
 from copy import deepcopy
 
 from mejiro.utils import roman_util
@@ -171,7 +172,9 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
         image.quantize()
 
         # if any unphysical negative pixels exists due to how GalSim adds Poisson noise, set them to zero
-        image.replaceNegative(0.)
+        if np.any(image.array < 0):
+            warnings.warn('Negative pixel values in final image')
+            image.replaceNegative(0.)
     else:
         poisson_noise = None
         reciprocity_failure = None
@@ -315,7 +318,9 @@ def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=def
         image.quantize()
 
         # if any unphysical negative pixels exists due to how GalSim adds Poisson noise, set them to zero
-        image.replaceNegative(0.)
+        if np.any(image.array < 0):
+            warnings.warn('Negative pixel values in final image')
+            image.replaceNegative(0.)
     else:
         poisson_noise = None
         dark_noise = None
