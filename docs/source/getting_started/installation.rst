@@ -21,13 +21,13 @@ Install ``SLSim``:
     cd slsim
     pip install -e .
 
-To generate PSFs with ``WebbPSF``, follow the instructions `here <https://webbpsf.readthedocs.io/en/latest/installation.html>` to download the required data files and set environment variables.
+To generate PSFs with ``WebbPSF``, follow the instructions `here <https://webbpsf.readthedocs.io/en/latest/installation.html>`_ to download the required data files and set environment variables.
 
 Optional setup: Pandeia
 ========================
 
 Install Pandeia (v3.1) by following the
-instructions `here <https://outerspace.stsci.edu/display/PEN/Pandeia+Engine+Installation>`.
+instructions `here <https://outerspace.stsci.edu/display/PEN/Pandeia+Engine+Installation>`_.
 
 First-time setup
 ****************
