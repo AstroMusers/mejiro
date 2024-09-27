@@ -5,6 +5,7 @@ Utilities
     :members:
     :undoc-members:
     :show-inheritance:
+    
 .. automodule:: mejiro.utils.util
     :members:
     :undoc-members:

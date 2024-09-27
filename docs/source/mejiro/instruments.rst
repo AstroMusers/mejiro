@@ -10,10 +10,12 @@ Instruments
     :members:
     :undoc-members:
     :show-inheritance:
+
 .. automodule:: mejiro.instruments.roman
     :members:
     :undoc-members:
     :show-inheritance:
+    
 .. automodule:: mejiro.instruments.hwo
     :members:
     :undoc-members:

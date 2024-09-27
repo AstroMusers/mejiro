@@ -13,7 +13,7 @@ mejiro documentation
    getting_started/tutorials.rst
    
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 4
    :caption: Documentation   
 
    mejiro/analysis.rst

@@ -5,6 +5,7 @@ Analysis
     :members:
     :undoc-members:
     :show-inheritance:
+    
 .. automodule:: mejiro.analysis.stats
     :members:
     :undoc-members:
