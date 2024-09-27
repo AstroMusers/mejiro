@@ -5,7 +5,7 @@ from glob import glob
 
 from webbpsf.roman import WFI
 
-from mejiro.utils import roman_util, util
+from mejiro.utils import roman_util
 
 
 def get_roman_psf(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None, verbose=False, **calc_psf_kwargs):

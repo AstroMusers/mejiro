@@ -1,5 +1,5 @@
 Utilities
-=========
+#########
 
 .. automodule:: mejiro.utils.roman_util
     :members:

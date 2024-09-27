@@ -1,5 +1,5 @@
 Analysis
-========
+########
 
 .. automodule:: mejiro.analysis.regions
     :members:

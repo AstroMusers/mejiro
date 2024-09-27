@@ -1,5 +1,3 @@
-import numpy as np
-
 def divide_up_sca(sides):
     """
     Divides the SCA into a grid of sub-arrays and calculates the center coordinates of each sub-array.
