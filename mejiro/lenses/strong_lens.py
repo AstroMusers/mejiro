@@ -373,7 +373,7 @@ class StrongLens:
         # define numerics
         kwargs_numerics = {
             'supersampling_factor': 1,  # TODO should figure out how to set this optimally
-            'supersampling_convolution': True
+            "point_source_supersampling_factor": 1,
         }
 
         # convert from physical to lensing units if necessary e.g. sigma_v specified instead of theta_E

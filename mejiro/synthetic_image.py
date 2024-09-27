@@ -112,11 +112,6 @@ class SyntheticImage:
         if pieces:
             self.lens_surface_brightness = image_model.lens_surface_brightness(kwargs_lens_light_amp)
             self.source_surface_brightness = image_model.source_surface_brightness(kwargs_source_amp, self.strong_lens.kwargs_lens)
-            
-        # set fluxes in counts per second
-        self.lens_flux_cps = self.strong_lens.get_lens_flux_cps(self.band, self.magnitude_zero_point)
-        self.source_flux_cps = self.strong_lens.get_source_flux_cps(self.band, self.magnitude_zero_point)
-        self.total_flux_cps = self.lens_flux_cps + self.source_flux_cps
 
 
     def _convert_magnitudes_to_lenstronomy_amps(self):

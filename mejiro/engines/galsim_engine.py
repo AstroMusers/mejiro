@@ -1,5 +1,6 @@
 import galsim
 import galsim.roman  # NB not automatically imported with `import galsim`
+import numpy as np
 from copy import deepcopy
 
 from mejiro.utils import roman_util
@@ -47,7 +48,7 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
     # create interpolated image
     total_interp = galsim.InterpolatedImage(galsim.Image(synthetic_image.image, xmin=0, ymin=0), 
                                             scale=synthetic_image.pixel_scale, 
-                                            flux=synthetic_image.total_flux_cps * exposure_time)
+                                            flux=np.sum(synthetic_image.image) * exposure_time)
 
     # get PSF
     if psf is None:
@@ -168,6 +169,9 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
 
         # quantize, since analog-to-digital conversion gives integers
         image.quantize()
+
+        # if any unphysical negative pixels exists due to how GalSim adds Poisson noise, set them to zero
+        image.replaceNegative(0.)
     else:
         poisson_noise = None
         reciprocity_failure = None
@@ -229,7 +233,7 @@ def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=def
     # create interpolated image
     total_interp = galsim.InterpolatedImage(galsim.Image(synthetic_image.image, xmin=0, ymin=0), 
                                             scale=synthetic_image.pixel_scale, 
-                                            flux=synthetic_image.total_flux_cps * exposure_time)
+                                            flux=np.sum(synthetic_image.image) * exposure_time)
 
     # get PSF
     if psf is None:
@@ -309,6 +313,9 @@ def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=def
 
         # quantize, since analog-to-digital conversion gives integers
         image.quantize()
+
+        # if any unphysical negative pixels exists due to how GalSim adds Poisson noise, set them to zero
+        image.replaceNegative(0.)
     else:
         poisson_noise = None
         dark_noise = None
