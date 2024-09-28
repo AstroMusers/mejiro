@@ -29,6 +29,9 @@ def main(config):
     rgb_bands = pipeline_params['rgb_bands']
     assert len(rgb_bands) == 3, 'rgb_bands must be a list of 3 bands'
 
+    # set nice level
+    os.nice(pipeline_params['nice'])
+
     # directories to read from
     if debugging:
         input_parent_dir = os.path.join(f'{config.machine.pipeline_dir}_dev', '04')

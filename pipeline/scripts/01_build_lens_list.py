@@ -25,6 +25,9 @@ def main(config):
     limit = pipeline_params['limit']
     scas = survey_params['scas']
 
+    # set nice level
+    os.nice(pipeline_params['nice'])
+
     if debugging:
         input_dir = os.path.join(f'{config.machine.pipeline_dir}_dev', '00')
         output_dir = os.path.join(f'{config.machine.pipeline_dir}_dev', '01')

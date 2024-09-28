@@ -29,6 +29,9 @@ def main(config):
     debugging = pipeline_params['debugging']
     limit = pipeline_params['limit']
 
+    # set nice level
+    os.nice(pipeline_params['nice'])
+
     # directories to get pickled lenses (with subhalos) from
     if debugging:
         input_parent_dir = os.path.join(f'{config.machine.pipeline_dir}_dev', '02')

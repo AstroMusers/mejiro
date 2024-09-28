@@ -32,6 +32,9 @@ def main(config):
     pipeline_params = util.hydra_to_dict(config.pipeline)
     survey_params = util.hydra_to_dict(config.survey)
     debugging = pipeline_params['debugging']
+    
+    # set nice level
+    os.nice(pipeline_params['nice'])
 
     # set up output directory
     if debugging:

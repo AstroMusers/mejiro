@@ -26,6 +26,9 @@ def main(config):
     pipeline_params = util.hydra_to_dict(config.pipeline)
     debugging = pipeline_params['debugging']
 
+    # set nice level
+    os.nice(pipeline_params['nice'])
+
     # set up input and output directories
     if debugging:
         input_dir = os.path.join(f'{config.machine.pipeline_dir}_dev', '01')
