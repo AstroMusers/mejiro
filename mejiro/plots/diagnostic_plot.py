@@ -37,8 +37,11 @@ def snr_plot(total, lens, source, noise, snr_array, masked_snr_array, snr_list, 
     ax[1][2].set_title('Masked SNR Array')
 
     plt.suptitle(f'SNR: {np.max(snr_list)}')
-    plt.savefig(f'{debug_dir}/snr/snr_check_{id(total)}.png')
-    plt.close()
+    try:
+        plt.savefig(f'{debug_dir}/snr/snr_check_{id(total)}.png')
+        plt.close()
+    except:
+        print('Could not save SNR plot')
 
 
 def power_spectrum_check(array_list, lenses, titles, save_path, oversampled):

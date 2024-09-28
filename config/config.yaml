@@ -7,10 +7,10 @@ defaults:
 survey:
   - runs: 108
   - area: 0.5
-  - total_population: False
+  - total_population: True
   - scas: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]  # 
   - deflector_cut_band: F129
-  - deflector_cut_band_max: 28
+  - deflector_cut_band_max: 24
   - deflector_z_min: 0.01
   - deflector_z_max: 2.
   - source_cut_band: F129
@@ -28,10 +28,10 @@ survey:
   - snr_add_subhalos: False
   - snr_exposure_time: 146
   - snr_band: F129
-  - snr_threshold: 50
+  - snr_threshold: 20
   - snr_num_pix: 90  # 45  # 70
   - snr_side: 9.9  # 4.95  # 7.7
-  - snr_oversample: 1
+  - snr_oversample: 5
   # - zodi_multiplier: 1.5  # multiplied with minimum zodiacal light
 
 pipeline:

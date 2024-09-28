@@ -75,7 +75,7 @@ def get_images(lens, arrays, bands, sca_zp_dict=None, input_size=96, output_size
     # generate the PSFs I'll need for each unique band
     psf_kernels = {}
     for band in bands:
-        psf_kernels[band] = psf.get_webbpsf_psf(band, detector, detector_pos, psf_oversample, input_size, check_cache,
+        psf_kernels[band] = psf.get_webbpsf_psf(band, detector, detector_pos, psf_oversample, 101, check_cache,
                                                 psf_cache_dir, suppress_output)
 
     results = []
@@ -121,7 +121,7 @@ def _calculate_image(array, band, grid_oversample, psf_kernels, bkgs, input_size
                      rng, detector_effects=True, sky_background=True):
     # get interpolated image
     interp = InterpolatedImage(Image(array, xmin=0, ymin=0), scale=0.11 / grid_oversample,
-                               flux=flux_cps * exposure_time)
+                               flux=np.sum(array) * exposure_time)
 
     # convolve image with PSF
     psf_kernel = psf_kernels[band]
