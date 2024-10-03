@@ -4,6 +4,7 @@ from glob import glob
 
 import astropy.io.fits as pyfits
 import galsim
+import webbpsf
 from galsim import roman
 from tqdm import tqdm
 from webbpsf.roman import WFI
@@ -123,14 +124,22 @@ def detector_int_to_sca(detector):
     # TODO handle a few more cases
 
 
-def get_psf_kernel(band, detector, detector_position, oversample=5, fov_arcsec=None, save=None):
+def get_psf_kernel(band, detector, detector_position, oversample=5, fov_arcsec=None, save=None, measure_fwhm=False, return_radial_profile=False):
     wfi = WFI()
     wfi.filter = band.upper()
     wfi.detector = detector_int_to_sca(detector)
     wfi.detector_position = detector_position
     psf = wfi.calc_psf(oversample=oversample, fov_arcsec=fov_arcsec)
+
+    if measure_fwhm:
+        fwhm = webbpsf.measure_fwhm(psf, ext=0)  # ext=0 is oversampled "OVERSAMP"
+        if return_radial_profile:
+            return psf[0].data, fwhm, webbpsf.radial_profile(psf)
+        return psf[0].data, fwhm
+        
     if save is not None:
         psf.writeto(save, overwrite=True)
+
     return psf[0].data
 
 
