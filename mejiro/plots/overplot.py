@@ -10,16 +10,14 @@ def text_boxes(ax, text_list, alpha=0.5):
                   verticalalignment='top', bbox=props)
 
 
-def source_position(ax, lens, coords, linewidth=2, alpha=1, color='y'):
+def source_position(ax, lens, coords, alpha=1, color='y', size=100):
     source_x, source_y = lens.get_source_pixel_coords(coords)
-    return ax.scatter(source_x, source_y, edgecolor=color, facecolor='none', s=150, label='Source position',
-                      linewidth=linewidth, alpha=alpha)
+    return ax.plot(source_x, source_y, marker='o', color=color, markersize=size, label='Source position', alpha=alpha)
 
 
-def lens_position(ax, lens, coords, linewidth=2, alpha=1, color='r'):
+def lens_position(ax, lens, coords, alpha=1, color='r', size=100):
     lens_x, lens_y = lens.get_lens_pixel_coords(coords)
-    return ax.scatter(lens_x, lens_y, edgecolor=color, facecolor='none', s=150, label='Lens position',
-                      linewidth=linewidth, alpha=alpha)
+    return ax.plot(lens_x, lens_y, marker='o', color=color, markersize=size, label='Lens position', alpha=alpha)
 
 
 def caustics(ax, lens, coords, num_pix, delta_pix=0.11, linewidth=2, alpha=1, color='g'):
