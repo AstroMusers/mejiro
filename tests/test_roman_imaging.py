@@ -23,18 +23,26 @@ def test_roman_imaging():
                                      oversample=oversample, 
                                      verbose=False)
     
-    exposure = Exposure(synthetic_image, 
-                        exposure_time=exposure_time, 
-                        check_cache=True,
-                        psf_cache_dir='test_data',
-                        verbose=False)
-    
+    assert synthetic_image.image is not None
+    assert synthetic_image.lens_surface_brightness is None
+    assert synthetic_image.source_surface_brightness is None
+
     assert synthetic_image.pixel_scale == 0.022
     assert synthetic_image.native_pixel_scale == 0.11
     assert synthetic_image.num_pix == 235
     assert synthetic_image.native_num_pix == 47
     assert synthetic_image.arcsec == 5.17
     assert synthetic_image.image.shape == (235, 235)
+    
+    exposure = Exposure(synthetic_image, 
+                        exposure_time=exposure_time, 
+                        check_cache=True,
+                        psf_cache_dir='test_data',
+                        verbose=False)
+    
+    assert exposure.exposure is not None
+    assert exposure.lens_exposure is None
+    assert exposure.source_exposure is None
 
     # TODO checks on the images
 
@@ -325,4 +333,36 @@ def test_roman_read_noise_off():
                         psf_cache_dir='test_data',
                         verbose=False)
     
+    # TODO checks on the images
+
+def test_roman_pieces():
+    roman = Roman()
+    lens = SampleStrongLens()
+    band = 'F129'
+    scene_size = 5  # arcsec
+    oversample = 5
+    exposure_time = 146
+
+    synthetic_image = SyntheticImage(strong_lens=lens, 
+                                     instrument=roman, 
+                                     band=band, 
+                                     arcsec=scene_size, 
+                                     oversample=oversample, 
+                                     pieces=True,
+                                     verbose=False)
+
+    assert synthetic_image.image is not None
+    assert synthetic_image.lens_surface_brightness is not None
+    assert synthetic_image.source_surface_brightness is not None
+    
+    exposure = Exposure(synthetic_image, 
+                        exposure_time=exposure_time, 
+                        check_cache=True,
+                        psf_cache_dir='test_data',
+                        verbose=False)
+    
+    assert exposure.exposure is not None
+    assert exposure.lens_exposure is not None
+    assert exposure.source_exposure is not None
+
     # TODO checks on the images

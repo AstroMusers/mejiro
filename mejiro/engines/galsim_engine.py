@@ -183,7 +183,28 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
         ipc = None
         read_noise = None
 
-    return image, psf, poisson_noise, reciprocity_failure, dark_noise, nonlinearity, ipc, read_noise
+    if synthetic_image.pieces:
+        lens_image = get_piece(synthetic_image.lens_surface_brightness, synthetic_image.pixel_scale, synthetic_image.native_pixel_scale, synthetic_image.native_num_pix, exposure_time, psf_interp, gsparams_kwargs)
+        source_image = get_piece(synthetic_image.source_surface_brightness, synthetic_image.pixel_scale, synthetic_image.native_pixel_scale, synthetic_image.native_num_pix, exposure_time, psf_interp, gsparams_kwargs)
+        results = image, lens_image, source_image
+    else:
+        results = image
+
+    return results, psf, poisson_noise, reciprocity_failure, dark_noise, nonlinearity, ipc, read_noise
+
+
+def get_piece(surface_brightness, pixel_scale, native_pixel_scale, native_num_pix, exposure_time, psf_interp, gsparams_kwargs):
+    interp = galsim.InterpolatedImage(galsim.Image(surface_brightness, xmin=0, ymin=0), scale=pixel_scale, flux=np.sum(surface_brightness) * exposure_time)
+
+    convolved = galsim.Convolve(interp, psf_interp, gsparams=galsim.GSParams(**gsparams_kwargs))
+
+    im = galsim.ImageF(native_num_pix, native_num_pix, scale=native_pixel_scale)
+    im.setOrigin(0, 0)   
+    image = convolved.drawImage(im)
+    image.replaceNegative(0.)
+    image.quantize()
+
+    return image
 
 
 def get_roman_sky_background(instrument, bands, sca, exposure_time, num_pix, oversample):
@@ -326,7 +347,14 @@ def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=def
         dark_noise = None
         read_noise = None
 
-    return image, psf, poisson_noise, dark_noise, read_noise
+    if synthetic_image.pieces:
+        lens_image = get_piece(synthetic_image.lens_surface_brightness, synthetic_image.pixel_scale, synthetic_image.native_pixel_scale, synthetic_image.native_num_pix, exposure_time, psf_interp, gsparams_kwargs)
+        source_image = get_piece(synthetic_image.source_surface_brightness, synthetic_image.pixel_scale, synthetic_image.native_pixel_scale, synthetic_image.native_num_pix, exposure_time, psf_interp, gsparams_kwargs)
+        results = image, lens_image, source_image
+    else:
+        results = image
+
+    return results, psf, poisson_noise, dark_noise, read_noise
 
 
 def get_gaussian_psf(fwhm, flux=1.):

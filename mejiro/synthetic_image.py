@@ -83,7 +83,7 @@ class SyntheticImage:
 
         # define numerics
         kwargs_numerics = {
-            'supersampling_factor': 1,  # TODO should figure out how to set this optimally
+            'supersampling_factor': 1,
             'supersampling_convolution': True
         }
 
@@ -112,6 +112,8 @@ class SyntheticImage:
         if pieces:
             self.lens_surface_brightness = image_model.lens_surface_brightness(kwargs_lens_light_amp)
             self.source_surface_brightness = image_model.source_surface_brightness(kwargs_source_amp, self.strong_lens.kwargs_lens)
+        else:
+            self.lens_surface_brightness, self.source_surface_brightness = None, None
 
 
     def _convert_magnitudes_to_lenstronomy_amps(self):

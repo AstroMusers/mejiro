@@ -15,10 +15,10 @@ class Exposure:
             from mejiro.engines import galsim_engine
 
             if self.synthetic_image.instrument.name == 'Roman':
-                self.image, self.psf, self.poisson_noise, self.reciprocity_failure, self.dark_noise, self.nonlinearity, self.ipc, self.read_noise = galsim_engine.get_roman_exposure(synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
+                results, self.psf, self.poisson_noise, self.reciprocity_failure, self.dark_noise, self.nonlinearity, self.ipc, self.read_noise = galsim_engine.get_roman_exposure(synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
 
             elif self.synthetic_image.instrument.name == 'HWO':
-                self.image, self.psf, self.poisson_noise, self.dark_noise, self.read_noise = galsim_engine.get_hwo_exposure(synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
+                results, self.psf, self.poisson_noise, self.dark_noise, self.read_noise = galsim_engine.get_hwo_exposure(synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
 
         elif engine == 'pandeia':
             raise NotImplementedError('Pandeia engine not yet implemented')
@@ -29,48 +29,36 @@ class Exposure:
         else:
             raise ValueError(f'Engine "{engine}" not recognized')
 
-        final = self.image.array
-
-        # crop off edge effects (e.g., IPC)
-        final_num_pix = final.shape[0]
-        assert final_num_pix % 2 != 0, 'Final image has even number of pixels'
-        output_num_pix = final_num_pix - 3
-        final = util.center_crop_image(final, (output_num_pix, output_num_pix))
-
-        # set exposure
-        if np.any(final < 0):
+        if self.synthetic_image.pieces:
+            image, lens_image, source_image = results
+        else:
+            image = results
+            self.lens_exposure, self.source_exposure = None, None
+        
+        exposure = image.array
+        Exposure.crop_edge_effects(exposure) # crop off edge effects (e.g., IPC)
+        if np.any(exposure < 0):
             raise ValueError('Negative pixel values in final image')
-        self.exposure = final
+        self.exposure = exposure
 
         if self.synthetic_image.pieces:
-            self.lens_interp = galsim.InterpolatedImage(
-                galsim.Image(self.synthetic_image.lens_surface_brightness, xmin=0, ymin=0),
-                scale=self.synthetic_image.pixel_scale,
-                flux=self.lens_flux_cps * self.exposure_time)
-            self.source_interp = galsim.InterpolatedImage(
-                galsim.Image(self.synthetic_image.source_surface_brightness, xmin=0, ymin=0),
-                scale=self.synthetic_image.pixel_scale,
-                flux=self.source_flux_cps * self.exposure_time)
-            self.lens_image = self.synthetic_image.instrument.get_exposure(self.synthetic_image, self.lens_interp,
-                                                                           self.rng, self.exposure_time,
-                                                                           sky_background=False, detector_effects=False,
-                                                                           **kwargs)
-            self.source_image = self.synthetic_image.instrument.get_exposure(self.synthetic_image, self.source_interp,
-                                                                             self.rng, self.exposure_time,
-                                                                             sky_background=False,
-                                                                             detector_effects=False, **kwargs)
-            lens = self.lens_image.array
-            source = self.source_image.array
-
-            # crop off edge effects (e.g., IPC)
-            lens = util.center_crop_image(lens, (output_num_pix, output_num_pix))
-            source = util.center_crop_image(source, (output_num_pix, output_num_pix))
-
-            # set exposures
-            self.lens_exposure = lens
-            self.source_exposure = source
-        else:
-            self.lens_exposure, self.source_exposure = None, None
+            lens_exposure = lens_image.array
+            source_exposure = source_image.array
+            Exposure.crop_edge_effects(lens_exposure)
+            Exposure.crop_edge_effects(source_exposure)
+            if np.any(lens_exposure < 0):
+                raise ValueError('Negative pixel values in lens image')
+            if np.any(source_exposure < 0):
+                raise ValueError('Negative pixel values in source image')
+            self.lens_exposure = lens_exposure
+            self.source_exposure = source_exposure
+            
+    @staticmethod
+    def crop_edge_effects(image):
+        num_pix = image.shape[0]
+        assert num_pix % 2 != 0, 'Image has even number of pixels'
+        output_num_pix = num_pix - 3
+        return util.center_crop_image(image, (output_num_pix, output_num_pix))
 
     @property
     def get_exposure_time(self):
@@ -79,4 +67,12 @@ class Exposure:
     @property
     def get_exposure(self):
         return self.exposure
+    
+    @property
+    def get_lens_exposure(self):
+        return self.lens_exposure
+    
+    @property
+    def get_source_exposure(self):
+        return self.source_exposure
     
