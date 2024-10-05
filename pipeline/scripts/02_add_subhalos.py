@@ -63,6 +63,15 @@ def main(config):
         output_dir = os.path.join(output_parent_dir, f'sca{sca_id}')
         for lens in lens_list:
             tuple_list.append((lens, pipeline_params, output_dir))
+    
+    # implement limit if one exists
+    if pipeline_params['limit'] is not None:
+        limit = pipeline_params['limit']
+        if limit > count:
+            limit = count
+        tuple_list = tuple_list[:limit]
+        count = limit
+        print(f'Limiting to {limit} lens(es)')
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
