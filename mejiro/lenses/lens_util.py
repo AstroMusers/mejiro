@@ -242,7 +242,7 @@ def get_sample(pipeline_dir, index, band=None, rgb_bands=['F184', 'F129', 'F106'
     r = [np.load(i) for i in files if rgb_bands[0] in i][0]
     g = [np.load(i) for i in files if rgb_bands[1] in i][0]
     b = [np.load(i) for i in files if rgb_bands[2] in i][0]
-    rgb_model = color.get_rgb(r, g, b, minimum=None, stretch=model_stretch, Q=model_Q)
+    rgb_model = color.get_rgb(b, g, r, minimum=None, stretch=model_stretch, Q=model_Q)
 
     # get rgb image
     color_dir = pipeline_dir + '/05'
