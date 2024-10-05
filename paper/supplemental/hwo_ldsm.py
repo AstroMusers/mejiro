@@ -8,15 +8,9 @@ from multiprocessing import Pool
 
 import galsim
 import hydra
-import matplotlib.pyplot as plt
 import numpy as np
-from lenstronomy.Util.correlation import power_spectrum_1d
-from tqdm import tqdm
 from scipy.stats import chi2
-from pyHalo.single_realization import SingleHalo
-from pyHalo.Halos.lens_cosmo import LensCosmo
-from pyHalo.concentration_models import preset_concentration_models
-from pyHalo.truncation_models import truncation_models
+from tqdm import tqdm
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -26,7 +20,6 @@ def main(config):
     # enable use of local packages
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
-    from mejiro.lenses import lens_util
     from mejiro.utils import util
     from mejiro.instruments.hwo import HWO
     from mejiro.lenses.test import SampleStrongLens
@@ -50,7 +43,7 @@ def main(config):
     imaging_params = {
         'band': 'J',
         'scene_size': 5,  # arcsec
-        'oversample': 1,  
+        'oversample': 1,
         'exposure_time': 10000
     }
 
@@ -97,7 +90,7 @@ def main(config):
     hwo = HWO()
     tuple_list = [
         (
-        run, lens, hwo, script_config, imaging_params, subhalo_params, save_dir, image_save_dir)
+            run, lens, hwo, script_config, imaging_params, subhalo_params, save_dir, image_save_dir)
         for
         run, lens in enumerate(lens_list)]
 
@@ -132,7 +125,6 @@ def run(tuple):
     from mejiro.utils import util
     from mejiro.synthetic_image import SyntheticImage
     from mejiro.exposure import Exposure
-    from mejiro.plots import plot_util
 
     # unpack tuple
     (_, lens, hwo, script_config, imaging_params, subhalo_params, save_dir, image_save_dir) = tuple
@@ -148,7 +140,8 @@ def run(tuple):
 
     # get image without subhalo
     synth_no_subhalo = SyntheticImage(lens, hwo, band, arcsec=scene_size, oversample=oversample)
-    exposure_no_subhalo = Exposure(synth_no_subhalo, exposure_time=exposure_time, rng=rng, detector_effects=True, sky_background=True, return_noise=True)
+    exposure_no_subhalo = Exposure(synth_no_subhalo, exposure_time=exposure_time, rng=rng, detector_effects=True,
+                                   sky_background=True, return_noise=True)
 
     run = 0
     chi2_array = np.empty((num_grid_points, num_grid_points))
@@ -157,7 +150,8 @@ def run(tuple):
         # compute subhalo parameters
         Rs_angle, alpha_Rs = lens.lens_cosmo.nfw_physical2angle(M=mass, c=concentration)
 
-        for i, (halo_x, halo_y) in tqdm(enumerate(util.make_grid(scene_size, num_grid_points)), total=num_grid_points ** 2, leave=False):
+        for i, (halo_x, halo_y) in tqdm(enumerate(util.make_grid(scene_size, num_grid_points)),
+                                        total=num_grid_points ** 2, leave=False):
             # build subhalo parameters
             subhalo_type = 'TNFW'
             kwargs_subhalo = {
@@ -170,8 +164,12 @@ def run(tuple):
 
             lens_with_subhalo = deepcopy(lens)
             lens_with_subhalo.add_subhalo(subhalo_type, kwargs_subhalo)
-            synth = SyntheticImage(lens_with_subhalo, hwo, band=band, arcsec=scene_size, oversample=oversample, debugging=False)
-            exposure = Exposure(synth, exposure_time=exposure_time, rng=rng, poisson_noise=exposure_no_subhalo.poisson_noise, dark_noise=exposure_no_subhalo.dark_noise, read_noise=exposure_no_subhalo.read_noise, suppress_output=True)
+            synth = SyntheticImage(lens_with_subhalo, hwo, band=band, arcsec=scene_size, oversample=oversample,
+                                   debugging=False)
+            exposure = Exposure(synth, exposure_time=exposure_time, rng=rng,
+                                poisson_noise=exposure_no_subhalo.poisson_noise,
+                                dark_noise=exposure_no_subhalo.dark_noise, read_noise=exposure_no_subhalo.read_noise,
+                                suppress_output=True)
 
             # build mask based on synthetic image with subhalo
             synth_residual = synth.image - synth_no_subhalo.image
@@ -179,17 +177,18 @@ def run(tuple):
             masked_synth_residual = np.ma.masked_where(np.abs(synth_residual) < mask_threshold, synth_residual)
             masked_synth_residual = util.center_crop_image(masked_synth_residual, exposure.exposure.shape)
             mask = np.ma.getmask(masked_synth_residual)
-            
+
             # mask images
             masked_exposure_no_subhalo = np.ma.masked_array(exposure_no_subhalo.exposure, mask=mask)
             masked_exposure_with_subhalo = np.ma.masked_array(exposure.exposure, mask=mask)
 
             # calculate chi square between masked images
-            chi_square = stats.chi_square(np.ma.compressed(masked_exposure_with_subhalo), np.ma.compressed(masked_exposure_no_subhalo))
+            chi_square = stats.chi_square(np.ma.compressed(masked_exposure_with_subhalo),
+                                          np.ma.compressed(masked_exposure_no_subhalo))
 
             # populate chi2_array for this mass which chi2s across the grid
             chi2_array[i // num_grid_points, i % num_grid_points] = chi_square
-        
+
         chi2_array_list.append(chi2_array)
         chi2_array = np.empty((num_grid_points, num_grid_points))
 
@@ -206,7 +205,7 @@ def run(tuple):
                 pval = rv.sf(chi2_val)
                 if pval < 0.001:
                     ldsm[i, j] = mass
-                    break    
+                    break
 
     np.save(os.path.join(save_dir, f'ldsm_hwo_{lens.uid}.npy'), ldsm)
 

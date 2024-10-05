@@ -14,8 +14,6 @@ from mejiro.helpers import gs
 from mejiro.helpers.roman_params import RomanParameters
 from mejiro.lenses import lens_util
 from mejiro.plots import diagnostic_plot
-from mejiro.utils import util
-
 
 # get Roman params
 module_path = os.path.dirname(mejiro.__file__)
@@ -25,7 +23,8 @@ roman_params = RomanParameters(csv_path)
 
 # TODO a(n imperfect) lens subtraction option?
 def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), num_pix=45, side=4.95, oversample=1,
-            exposure_time=146, add_subhalos=True, return_snr_list=False, debugging=False, debug_dir=None, psf_cache_dir=None):
+            exposure_time=146, add_subhalos=True, return_snr_list=False, debugging=False, debug_dir=None,
+            psf_cache_dir=None):
     if debugging: assert debug_dir is not None, 'Debugging is enabled but no debug directory is provided.'
 
     if type(detector) is str:

@@ -10,13 +10,11 @@ import galsim
 import hydra
 import matplotlib.pyplot as plt
 import numpy as np
-from lenstronomy.Util.correlation import power_spectrum_1d
-from tqdm import tqdm
-from scipy.stats import chi2
-from pyHalo.single_realization import SingleHalo
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.concentration_models import preset_concentration_models
-from pyHalo.truncation_models import truncation_models
+from pyHalo.single_realization import SingleHalo
+from scipy.stats import chi2
+from tqdm import tqdm
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -27,7 +25,7 @@ def main(config):
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
     from mejiro.lenses import lens_util
-    from mejiro.utils import roman_util, util
+    from mejiro.utils import util
 
     # script configuration options
     debugging = True
@@ -101,7 +99,8 @@ def main(config):
     roman = Roman()
     tuple_list = [
         (
-        run, lens, roman, script_config, imaging_params, subhalo_params, positions, save_dir, image_save_dir, idx_to_save[run])
+            run, lens, roman, script_config, imaging_params, subhalo_params, positions, save_dir, image_save_dir,
+            idx_to_save[run])
         for
         run, lens in enumerate(lens_list)]
 
@@ -136,7 +135,6 @@ def run(tuple):
     from mejiro.utils import util
     from mejiro.synthetic_image import SyntheticImage
     from mejiro.exposure import Exposure
-    from mejiro.plots import plot_util
 
     # unpack tuple
     (_, lens, roman, script_config, imaging_params, subhalo_params, positions, save_dir, image_save_dir,
@@ -156,9 +154,9 @@ def run(tuple):
 
     # solve for image positions
     image_x, image_y = lens.get_image_positions(pixel_coordinates=False)
-    
+
     # find the more distant image from the central bright lensing galaxy
-    image_distance = np.sqrt(image_x**2 + image_y**2)
+    image_distance = np.sqrt(image_x ** 2 + image_y ** 2)
     more_distant_image_index = np.argmax(image_distance)
     halo_x = image_x[more_distant_image_index]
     halo_y = image_y[more_distant_image_index]
@@ -173,29 +171,29 @@ def run(tuple):
 
         # get image with no subhalo
         lens_no_subhalo = deepcopy(lens)
-        synth_no_subhalo = SyntheticImage(lens_no_subhalo, 
-                                            roman, 
-                                            band=band, 
-                                            arcsec=scene_size,
-                                            oversample=oversample, 
-                                            sca=sca, 
-                                            pieces=True,
-                                            debugging=False)
+        synth_no_subhalo = SyntheticImage(lens_no_subhalo,
+                                          roman,
+                                          band=band,
+                                          arcsec=scene_size,
+                                          oversample=oversample,
+                                          sca=sca,
+                                          pieces=True,
+                                          debugging=False)
         try:
-            exposure_no_subhalo = Exposure(synth_no_subhalo, 
-                                        exposure_time=exposure_time, 
-                                        rng=rng, 
-                                        sca=sca,
-                                        sca_position=sca_position, 
-                                        return_noise=True, 
-                                        reciprocity_failure=False,
-                                        nonlinearity=False,
-                                        ipc=False,
-                                        suppress_output=True)
+            exposure_no_subhalo = Exposure(synth_no_subhalo,
+                                           exposure_time=exposure_time,
+                                           rng=rng,
+                                           sca=sca,
+                                           sca_position=sca_position,
+                                           return_noise=True,
+                                           reciprocity_failure=False,
+                                           nonlinearity=False,
+                                           ipc=False,
+                                           suppress_output=True)
         except Exception as e:
             print(f'Failed to generate exposure for StrongLens {lens.uid}: {e}')
             return
-        
+
         # get pieces
         # lens_exposure = exposure_no_subhalo.lens_exposure
         source_exposure = exposure_no_subhalo.source_exposure
@@ -264,52 +262,53 @@ def run(tuple):
                 kwargs_concentration_model['cosmo'] = astropy_class
                 concentration_model = c_model(**kwargs_concentration_model)
                 truncation_model = None
-                kwargs_halo_model = {'truncation_model': truncation_model, 
-                                    'concentration_model': concentration_model,
-                                    'kwargs_density_profile': {}}
-                single_halo = SingleHalo(halo_mass=m200, 
-                                        x=center_x, y=center_y, 
-                                        mdef='NFW', 
-                                        z=lens.z_lens, zlens=lens.z_lens, zsource=lens.z_source,
-                                        subhalo_flag=True, 
-                                        kwargs_halo_model=kwargs_halo_model, 
-                                        astropy_instance=lens.cosmo,
-                                        lens_cosmo=pyhalo_lens_cosmo)
+                kwargs_halo_model = {'truncation_model': truncation_model,
+                                     'concentration_model': concentration_model,
+                                     'kwargs_density_profile': {}}
+                single_halo = SingleHalo(halo_mass=m200,
+                                         x=center_x, y=center_y,
+                                         mdef='NFW',
+                                         z=lens.z_lens, zlens=lens.z_lens, zsource=lens.z_source,
+                                         subhalo_flag=True,
+                                         kwargs_halo_model=kwargs_halo_model,
+                                         astropy_instance=lens.cosmo,
+                                         lens_cosmo=pyhalo_lens_cosmo)
                 c = single_halo.halos[0].c
 
                 # get image with subhalo
                 lens_with_subhalo = deepcopy(lens)
                 # lens_with_subhalo.add_subhalo(subhalo_type, kwargs_subhalo)
                 lens_with_subhalo.add_subhalos(single_halo)
-                synth = SyntheticImage(lens_with_subhalo, 
-                                       roman, 
-                                       band=band, 
-                                       arcsec=scene_size, 
+                synth = SyntheticImage(lens_with_subhalo,
+                                       roman,
+                                       band=band,
+                                       arcsec=scene_size,
                                        oversample=oversample,
-                                       sca=sca, 
-                                       sca_position=sca_position, 
+                                       sca=sca,
+                                       sca_position=sca_position,
                                        debugging=False)
                 try:
-                    exposure = Exposure(synth, 
-                                    exposure_time=exposure_time, 
-                                    rng=rng, 
-                                    sca=sca, 
-                                    sca_position=sca_position,
-                                    poisson_noise=poisson_noise, 
-                                    reciprocity_failure=False,
-                                    dark_noise=dark_noise, 
-                                    nonlinearity=False,
-                                    ipc=False,
-                                    read_noise=read_noise,
-                                    suppress_output=True)
+                    exposure = Exposure(synth,
+                                        exposure_time=exposure_time,
+                                        rng=rng,
+                                        sca=sca,
+                                        sca_position=sca_position,
+                                        poisson_noise=poisson_noise,
+                                        reciprocity_failure=False,
+                                        dark_noise=dark_noise,
+                                        nonlinearity=False,
+                                        ipc=False,
+                                        read_noise=read_noise,
+                                        suppress_output=True)
                 except:
                     return
-                
+
                 # mask image with subhalo
                 masked_exposure_with_subhalo = np.ma.masked_array(exposure.exposure, mask=mask)
 
                 # calculate chi square
-                chi_square = stats.chi_square(np.ma.compressed(masked_exposure_with_subhalo), np.ma.compressed(masked_exposure_no_subhalo))
+                chi_square = stats.chi_square(np.ma.compressed(masked_exposure_with_subhalo),
+                                              np.ma.compressed(masked_exposure_no_subhalo))
 
                 if chi_square < 0.:
                     print(f'{lens_no_subhalo.uid}: {chi_square=}')
@@ -318,7 +317,8 @@ def run(tuple):
                         ax0 = ax[0].imshow(masked_exposure_no_subhalo)
                         ax[0].set_title(f'No Subhalo ({np.sum(masked_exposure_no_subhalo < 0)} negative element(s))')
                         ax1 = ax[1].imshow(masked_exposure_with_subhalo)
-                        ax[1].set_title(f'With Subhalo ({np.sum(masked_exposure_with_subhalo < 0)} negative element(s))')
+                        ax[1].set_title(
+                            f'With Subhalo ({np.sum(masked_exposure_with_subhalo < 0)} negative element(s))')
                         plt.colorbar(ax0, ax=ax[0])
                         plt.colorbar(ax1, ax=ax[1])
                         plt.savefig(os.path.join(image_save_dir, f'negative_chi2_{lens.uid}_{execution_key}.png'))

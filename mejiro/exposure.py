@@ -1,4 +1,3 @@
-import galsim
 import numpy as np
 
 from mejiro.utils import util
@@ -6,7 +5,8 @@ from mejiro.utils import util
 
 class Exposure:
 
-    def __init__(self, synthetic_image, exposure_time, engine='galsim', engine_params=None, psf=None, verbose=True, **kwargs):
+    def __init__(self, synthetic_image, exposure_time, engine='galsim', engine_params=None, psf=None, verbose=True,
+                 **kwargs):
         self.synthetic_image = synthetic_image
         self.exposure_time = exposure_time
         self.verbose = verbose
@@ -15,10 +15,12 @@ class Exposure:
             from mejiro.engines import galsim_engine
 
             if self.synthetic_image.instrument.name == 'Roman':
-                results, self.psf, self.poisson_noise, self.reciprocity_failure, self.dark_noise, self.nonlinearity, self.ipc, self.read_noise = galsim_engine.get_roman_exposure(synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
+                results, self.psf, self.poisson_noise, self.reciprocity_failure, self.dark_noise, self.nonlinearity, self.ipc, self.read_noise = galsim_engine.get_roman_exposure(
+                    synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
 
             elif self.synthetic_image.instrument.name == 'HWO':
-                results, self.psf, self.poisson_noise, self.dark_noise, self.read_noise = galsim_engine.get_hwo_exposure(synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
+                results, self.psf, self.poisson_noise, self.dark_noise, self.read_noise = galsim_engine.get_hwo_exposure(
+                    synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
 
         elif engine == 'pandeia':
             raise NotImplementedError('Pandeia engine not yet implemented')
@@ -34,9 +36,9 @@ class Exposure:
         else:
             image = results
             self.lens_exposure, self.source_exposure = None, None
-        
+
         exposure = image.array
-        Exposure.crop_edge_effects(exposure) # crop off edge effects (e.g., IPC)
+        Exposure.crop_edge_effects(exposure)  # crop off edge effects (e.g., IPC)
         if np.any(exposure < 0):
             raise ValueError('Negative pixel values in final image')
         self.exposure = exposure
@@ -52,7 +54,7 @@ class Exposure:
                 raise ValueError('Negative pixel values in source image')
             self.lens_exposure = lens_exposure
             self.source_exposure = source_exposure
-            
+
     @staticmethod
     def crop_edge_effects(image):
         num_pix = image.shape[0]
@@ -63,16 +65,15 @@ class Exposure:
     @property
     def get_exposure_time(self):
         return self.exposure_time
-    
+
     @property
     def get_exposure(self):
         return self.exposure
-    
+
     @property
     def get_lens_exposure(self):
         return self.lens_exposure
-    
+
     @property
     def get_source_exposure(self):
         return self.source_exposure
-    

@@ -1,14 +1,15 @@
 import os
-import numpy as np
 import warnings
 from glob import glob
 
+import numpy as np
 from webbpsf.roman import WFI
 
 from mejiro.utils import roman_util
 
 
-def get_roman_psf(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None, verbose=False, **calc_psf_kwargs):
+def get_roman_psf(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None,
+                  verbose=False, **calc_psf_kwargs):
     """
     Generate a Roman WFI PSF using WebbPSF.
 
@@ -130,7 +131,8 @@ def get_roman_psf_from_id(psf_id, check_cache=True, psf_cache_dir=None, verbose=
         The PSF kernel.
     """
     band, detector, detector_position, oversample, num_pix = get_params_from_psf_id(psf_id)
-    return get_roman_psf(band, detector, detector_position, oversample, num_pix, check_cache, psf_cache_dir, verbose, **calc_psf_kwargs)
+    return get_roman_psf(band, detector, detector_position, oversample, num_pix, check_cache, psf_cache_dir, verbose,
+                         **calc_psf_kwargs)
 
 
 def cache_psf(id_string, psf_cache_dir, verbose=True):
@@ -195,4 +197,3 @@ def _check_cache(id_string, psf_cache_dir, verbose):
         warnings.warn(
             f'PSF {band} SCA{str(detector).zfill(2)} {detector_position} {oversample} {num_pix} not found in cache {psf_cache_dir}')
         return None
-    

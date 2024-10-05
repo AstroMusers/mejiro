@@ -60,6 +60,3 @@ def test_validate_instrument_params():
     }
     with pytest.raises(AssertionError, match='Choose a valid pixel position on the range 4-4092.'):
         roman.validate_instrument_params(invalid_position_values_params)
-
-    
-    

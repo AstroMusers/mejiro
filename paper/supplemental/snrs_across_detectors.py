@@ -199,7 +199,7 @@ def run_process(tuple):
             lens_exposure = exposure.lens_exposure
             source_exposure = exposure.source_exposure
             noise = total_exposure - (
-                        lens_exposure + source_exposure)  # NB neither lens or source has sky background to detector effects added
+                    lens_exposure + source_exposure)  # NB neither lens or source has sky background to detector effects added
 
             # plt.imshow(source_exposure)
             # plt.colorbar()

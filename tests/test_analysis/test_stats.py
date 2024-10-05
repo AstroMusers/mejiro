@@ -1,7 +1,8 @@
-import pytest
 import numpy as np
+import pytest
 
 from mejiro.analysis import stats
+
 
 def test_chi_square():
     a = np.array([1, 2, 3])

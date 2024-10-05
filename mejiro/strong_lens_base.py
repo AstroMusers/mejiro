@@ -9,7 +9,7 @@ class StrongLensBase(ABC):
             kwargs_params,
             lens_mags,
             source_mags
-            ):
+    ):
         self.kwargs_model = kwargs_model
         self.kwargs_params = kwargs_params
         self.lens_mags = lens_mags
@@ -18,7 +18,6 @@ class StrongLensBase(ABC):
         # TODO parse kwargs_model and kwargs_params
 
         # TODO set kwargs_lens, kwargs_lens_light, kwargs_source, kwargs_ps
-
 
     @abstractmethod
     def get_lens_mag(self, band):
@@ -35,4 +34,3 @@ class StrongLensBase(ABC):
         # TODO docstring
         # TODO theta_E may not be a key, so if it doesn't exist, compute it
         return self.kwargs_lens[0]['theta_E']
-    

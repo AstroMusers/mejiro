@@ -1,5 +1,6 @@
-import numpy as np
 import warnings
+
+import numpy as np
 from lenstronomy.Data.coord_transforms import Coordinates
 from lenstronomy.Data.pixel_grid import PixelGrid
 from lenstronomy.Data.psf import PSF
@@ -9,7 +10,8 @@ from lenstronomy.Util import util as len_util
 
 
 class SyntheticImage:
-    def __init__(self, strong_lens, instrument, band, arcsec, oversample=1, pieces=False, verbose=True, instrument_params={}):
+    def __init__(self, strong_lens, instrument, band, arcsec, oversample=1, pieces=False, verbose=True,
+                 instrument_params={}):
         # assert band is valid for instrument
         assert band in instrument.bands, f'Band "{band}" not valid for instrument {instrument.name}'
 
@@ -31,14 +33,14 @@ class SyntheticImage:
         if self.verbose: print(
             f'Initialized SyntheticImage for StrongLens {self.strong_lens.uid} by {self.instrument.name} in {self.band} band')
 
-
     def _set_up_pixel_grid(self, arcsec, oversample):
         # validation for oversample
         self.oversample = int(oversample)
         assert self.oversample >= 1, 'Oversampling factor must be greater than 1'
         assert self.oversample % 2 == 1, 'Oversampling factor must be an odd integer'
         if oversample < 5:
-            warnings.warn('Oversampling factor less than 5 may not be sufficient for accurate results, especially when convolving with a non-trivial PSF')
+            warnings.warn(
+                'Oversampling factor less than 5 may not be sufficient for accurate results, especially when convolving with a non-trivial PSF')
 
         # "native" refers to the final output, as opposed to the oversampled grid that the intermediary calculations are performed on for better accuracy
         self.native_pixel_scale = self.instrument.get_pixel_scale(self.band)
@@ -54,7 +56,7 @@ class SyntheticImage:
 
         # finally, adjust arcseconds (may differ from user-provided input)
         self.arcsec = self.native_num_pix * self.native_pixel_scale
-        
+
         if self.verbose: print(
             f'Computing on pixel grid of size {self.num_pix}x{self.num_pix} ({self.arcsec}\"x{self.arcsec}\") with pixel scale {self.pixel_scale} arcsec/pixel (natively {self.native_pixel_scale} arcsec/pixel oversampled by factor {self.oversample})')
 
@@ -73,7 +75,6 @@ class SyntheticImage:
 
         self.pixel_grid = PixelGrid(**kwargs_pixel)
         self.coords = Coordinates(self.Mpix2coord, self.ra_at_xy_0, self.dec_at_xy_0)
-
 
     def _calculate_surface_brightness(self, pieces=False, kwargs_psf=None):
         # define PSF, e.g. kwargs_psf = {'psf_type': 'NONE'}, {'psf_type': 'GAUSSIAN', 'fwhm': psf_fwhm}
@@ -111,14 +112,15 @@ class SyntheticImage:
 
         if pieces:
             self.lens_surface_brightness = image_model.lens_surface_brightness(kwargs_lens_light_amp)
-            self.source_surface_brightness = image_model.source_surface_brightness(kwargs_source_amp, self.strong_lens.kwargs_lens)
+            self.source_surface_brightness = image_model.source_surface_brightness(kwargs_source_amp,
+                                                                                   self.strong_lens.kwargs_lens)
         else:
             self.lens_surface_brightness, self.source_surface_brightness = None, None
 
-
     def _convert_magnitudes_to_lenstronomy_amps(self):
         if self.instrument.name == 'Roman':
-            self.magnitude_zero_point = self.instrument.get_zeropoint_magnitude(self.band, self.instrument_params['detector'])
+            self.magnitude_zero_point = self.instrument.get_zeropoint_magnitude(self.band,
+                                                                                self.instrument_params['detector'])
         elif self.instrument.name == 'HWO':
             self.magnitude_zero_point = self.instrument.get_zeropoint_magnitude(self.band)
 
@@ -132,7 +134,6 @@ class SyntheticImage:
 
         self.strong_lens.kwargs_lens_light_amp_dict[self.band] = kwargs_lens_light_amp[0]
         self.strong_lens.kwargs_source_amp_dict[self.band] = kwargs_source_amp[0]
-
 
     def set_native_coords(self):
         _, _, self.ra_at_xy_0_native, self.dec_at_xy_0_native, _, _, self.Mpix2coord_native, self.Mcoord2pix_native = (

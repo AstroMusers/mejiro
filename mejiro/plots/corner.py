@@ -1,8 +1,6 @@
 import corner
 import numpy as np
 
-from mejiro.lenses import lens_util
-
 
 def source_galaxies(lens_list, band, quantiles=[0.16, 0.5, 0.84]):
     snr = [l.snr for l in lens_list]
