@@ -49,7 +49,7 @@ class Roman(InstrumentBase):
             'F184': 0.155,
             'F213': 4.38,
             'F146': 1.03
-        }  # retrieved 31 July 2024 from https://roman.gsfc.nasa.gov/science/WFI_technical.html
+        }  # retrieved 31 July 2024 from https://roman.gsfc.nasa.gov/science/WFI_technical.html, information dated 03 June 2024
         self.min_zodi = {
             'F062': 0.25,
             'F087': 0.251,
@@ -59,7 +59,7 @@ class Roman(InstrumentBase):
             'F184': 0.141,
             'F213': 0.118,
             'F146': 0.781
-        }  # retrieved 31 July 2024 from https://roman.gsfc.nasa.gov/science/WFI_technical.html
+        }  # retrieved 31 July 2024 from https://roman.gsfc.nasa.gov/science/WFI_technical.html, information dated 03 June 2024
         self.psf_fwhm = {
             'F062': 0.058,
             'F087': 0.073,
