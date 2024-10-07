@@ -63,7 +63,7 @@ def main(config):
         output_dir = os.path.join(output_parent_dir, f'sca{sca_id}')
         for lens in lens_list:
             tuple_list.append((lens, pipeline_params, output_dir))
-    
+
     # implement limit if one exists
     if pipeline_params['limit'] is not None:
         limit = pipeline_params['limit']

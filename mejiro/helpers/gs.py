@@ -86,7 +86,7 @@ def get_images(lens, arrays, bands, sca_zp_dict=None, input_size=96, output_size
 
         final_array = _calculate_image(array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size,
                                        total_flux_cps, exposure_time, rng, detector_effects=detector_effects,
-                                            sky_background=sky_background)
+                                       sky_background=sky_background)
 
         results.append(final_array)
 

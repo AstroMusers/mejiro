@@ -1,10 +1,7 @@
 import json
-import math
 import os
 import warnings
-from copy import deepcopy
 
-import galsim
 import pandas as pd
 
 import mejiro
@@ -70,7 +67,6 @@ class Roman(InstrumentBase):
             'F213': 0.169,
             'F146': 0.105
         }  # retrieved 25 June 2024 from https://outerspace.stsci.edu/pages/viewpage.action?spaceKey=ISWG&title=Roman+WFI+and+Observatory+Performance
-            
 
     def get_pixel_scale(self, band=None):
         """
@@ -135,7 +131,7 @@ class Roman(InstrumentBase):
             'detector': 1,
             'detector_position': (2048, 2048)
         }
-    
+
     @staticmethod
     def validate_instrument_params(params):
         if 'detector' in params:
@@ -147,12 +143,14 @@ class Roman(InstrumentBase):
             params['detector'] = default_detector
 
         if 'detector_position' in params:
-            assert isinstance(params['detector_position'], tuple) and len(params['detector_position']) == 2 and all(isinstance(x, int) for x in params['detector_position']), 'The detector_position parameter must be an (x,y) coordinate tuple.'
-            assert params['detector_position'][0] in range(4, 4092 + 1) and params['detector_position'][1] in range(4, 4092 + 1), 'Choose a valid pixel position on the range 4-4092.'
+            assert isinstance(params['detector_position'], tuple) and len(params['detector_position']) == 2 and all(
+                isinstance(x, int) for x in
+                params['detector_position']), 'The detector_position parameter must be an (x,y) coordinate tuple.'
+            assert params['detector_position'][0] in range(4, 4092 + 1) and params['detector_position'][1] in range(4,
+                                                                                                                    4092 + 1), 'Choose a valid pixel position on the range 4-4092.'
         else:
             default_detector_position = Roman.default_params()['detector_position']
             warnings.warn(f'No detector position provided. Defaulting to {default_detector_position}')
             params['detector_position'] = default_detector_position
 
         return params
-    

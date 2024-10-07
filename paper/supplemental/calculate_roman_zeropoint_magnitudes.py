@@ -4,7 +4,6 @@ import sys
 from glob import glob
 
 import hydra
-import numpy as np
 import speclite.filters
 from tqdm import tqdm
 

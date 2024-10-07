@@ -28,7 +28,7 @@ def divide_up_sca(sides):
             center_x = int(round((i + 0.5) * sub_array_size))
             center_y = int(round((j + 0.5) * sub_array_size))
             centers.append((center_x, center_y))
-    
+
     return centers
 
 
@@ -62,9 +62,9 @@ def get_sca_string(sca):
     elif type(sca) is str:
         # might provide int 1 or string 01 or string SCA01
         if sca.startswith('SCA'):
-                end = sca[3:]
-                # TODO check that `end` is valid, e.g., not SCA01X
-                return f'SCA{str(int(end)).zfill(2)}'
+            end = sca[3:]
+            # TODO check that `end` is valid, e.g., not SCA01X
+            return f'SCA{str(int(end)).zfill(2)}'
         else:
             return f'SCA{str(int(sca)).zfill(2)}'
     else:
@@ -103,6 +103,7 @@ def get_sca_int(sca):
             return int(sca)
     else:
         raise ValueError(f"SCA {sca} not recognized. Must be int, float, or str.")
+
 
 # TODO consider making all methods which might call this one methods on the class that only call this method if a flag on the class (e.g., override) is False. this way, scripts can instantiate Roman() with override=True and then avoid running this method every single time
 def translate_band(input):
@@ -162,7 +163,6 @@ def translate_band(input):
     for band, possible_names in options_dict.items():
         if input in possible_names:
             return band
-    
+
     # if haven't returned yet, alias wasn't found
-    raise ValueError(f"Band {input} not recognized. Valid bands (and aliases) are {options_dict}.") 
- 
+    raise ValueError(f"Band {input} not recognized. Valid bands (and aliases) are {options_dict}.")

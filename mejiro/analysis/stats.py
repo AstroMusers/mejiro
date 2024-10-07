@@ -2,12 +2,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 
-import numpy as np
-from scipy.optimize import curve_fit
-
-
 def chi_square(a, b):
-    
     """
     Compute the chi-square statistic between two arrays.
 
@@ -44,7 +39,7 @@ def chi_square(a, b):
     chi2 = 0
     for i, j in zip(a, b):
         chi2 += ((i - j) ** 2) / j
-    
+
     return chi2
 
 
@@ -87,6 +82,7 @@ def linear_fit_through_origin(x, y):
     c : float
         Slope of the fitted line.
     """
+
     def fit_func(x, c):
         return c * x
 

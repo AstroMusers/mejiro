@@ -1,10 +1,5 @@
-import math
-from copy import deepcopy
-
-import galsim
 import numpy as np
 
-from mejiro.helpers import psf
 from mejiro.instruments.instrument_base import InstrumentBase
 
 
@@ -130,11 +125,11 @@ class HWO(InstrumentBase):
             raise ValueError(f"Band {band} not in {bands}")
 
         return bands.index(band)
-    
+
     @staticmethod
     def default_params():
         return {}
-    
+
     @staticmethod
     def validate_instrument_params(params):
         return params

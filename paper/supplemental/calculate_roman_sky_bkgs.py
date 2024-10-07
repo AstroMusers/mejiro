@@ -1,15 +1,12 @@
 import json
 import os
 import sys
-from glob import glob
 
 import hydra
-import numpy as np
 import speclite.filters
-from tqdm import tqdm
+from lenstronomy.Util import data_util
 from slsim.Observations.roman_speclite import configure_roman_filters
 from slsim.Observations.roman_speclite import filter_names
-from lenstronomy.Util import data_util
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -30,15 +27,16 @@ def main(config):
     original_zeropoints = {}
     for filter in og_roman_filters:
         original_zeropoints[filter.name[-4:]] = convert.get_zeropoint_magnitude(filter.wavelength, filter.response)
-    
+
     # get zodiacal light and thermal background values from Roman Technical Specification
     roman = Roman()
     min_zodi_counts = roman.min_zodi
     thermal_bkg_counts = roman.thermal_bkg
-    
+
     # convert sky backgrounds to magnitudes using original Roman Technical Specifications filter response curves
     min_zodi_mags = {key: data_util.cps2magnitude(v, original_zeropoints[key]) for key, v in min_zodi_counts.items()}
-    thermal_bkg_mags = {key: data_util.cps2magnitude(v, original_zeropoints[key]) for key, v in thermal_bkg_counts.items()}
+    thermal_bkg_mags = {key: data_util.cps2magnitude(v, original_zeropoints[key]) for key, v in
+                        thermal_bkg_counts.items()}
 
     # convert sky backgrounds from magnitudes to counts for each SCA using its zeropoint magnitude
     min_zodi_cps_dict = {}

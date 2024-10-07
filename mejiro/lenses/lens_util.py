@@ -15,7 +15,6 @@ from mejiro.helpers import color
 from mejiro.lenses.strong_lens import StrongLens
 from mejiro.utils import util
 
-
 module_path = os.path.dirname(mejiro.__file__)
 plt.style.use(f'{module_path}/mplstyle/science.mplstyle')
 
@@ -223,7 +222,8 @@ def plot_projected_mass(lens):
     return ax.imshow(kappa_subs, vmin=-0.1, vmax=0.1, cmap='bwr')
 
 
-def get_sample(pipeline_dir, index, band=None, rgb_bands=['F184', 'F129', 'F106'], model=True, model_stretch=2, model_Q=3):
+def get_sample(pipeline_dir, index, band=None, rgb_bands=['F184', 'F129', 'F106'], model=True, model_stretch=2,
+               model_Q=3):
     # get lens
     lens_dir = pipeline_dir + '/03'
     lens_path = glob(lens_dir + f'/**/lens_{str(index).zfill(8)}.pkl')

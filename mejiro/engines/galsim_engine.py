@@ -1,8 +1,9 @@
+import warnings
+from copy import deepcopy
+
 import galsim
 import galsim.roman  # NB not automatically imported with `import galsim`
 import numpy as np
-import warnings
-from copy import deepcopy
 
 from mejiro.utils import roman_util
 
@@ -32,7 +33,8 @@ def default_hwo_engine_params():
     }
 
 
-def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=default_roman_engine_params(), verbose=False, **kwargs):
+def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=default_roman_engine_params(),
+                       verbose=False, **kwargs):
     # get detector and detector position
     detector = synthetic_image.instrument_params['detector']
     detector_position = synthetic_image.instrument_params['detector_position']
@@ -47,8 +49,8 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
         engine_params = _validate_roman_engine_params(engine_params)
 
     # create interpolated image
-    total_interp = galsim.InterpolatedImage(galsim.Image(synthetic_image.image, xmin=0, ymin=0), 
-                                            scale=synthetic_image.pixel_scale, 
+    total_interp = galsim.InterpolatedImage(galsim.Image(synthetic_image.image, xmin=0, ymin=0),
+                                            scale=synthetic_image.pixel_scale,
                                             flux=np.sum(synthetic_image.image) * exposure_time)
 
     # get PSF
@@ -59,22 +61,23 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
         psf_cache_dir = kwargs.get('psf_cache_dir', '/data/bwedig/mejiro/cached_psfs')
         calc_psf_kwargs = kwargs.get('calc_psf_kwargs', {})
 
-        psf = webbpsf_engine.get_roman_psf(band=synthetic_image.band, 
-                                        detector=detector, 
-                                        detector_position=detector_position, 
-                                        oversample=synthetic_image.oversample,
-                                        num_pix=101,  # NB WebbPSF wants the native pixel size
-                                        check_cache=check_cache, 
-                                        psf_cache_dir=psf_cache_dir,
-                                        verbose=verbose,
-                                        **calc_psf_kwargs)
+        psf = webbpsf_engine.get_roman_psf(band=synthetic_image.band,
+                                           detector=detector,
+                                           detector_position=detector_position,
+                                           oversample=synthetic_image.oversample,
+                                           num_pix=101,  # NB WebbPSF wants the native pixel size
+                                           check_cache=check_cache,
+                                           psf_cache_dir=psf_cache_dir,
+                                           verbose=verbose,
+                                           **calc_psf_kwargs)
     psf_interp = galsim.InterpolatedImage(galsim.Image(psf, scale=synthetic_image.pixel_scale))
 
     # convolve with PSF
     convolved = galsim.Convolve(total_interp, psf_interp, gsparams=galsim.GSParams(**gsparams_kwargs))
 
     # draw image at the native pixel scale
-    im = galsim.ImageF(synthetic_image.native_num_pix, synthetic_image.native_num_pix, scale=synthetic_image.native_pixel_scale)
+    im = galsim.ImageF(synthetic_image.native_num_pix, synthetic_image.native_num_pix,
+                       scale=synthetic_image.native_pixel_scale)
     im.setOrigin(0, 0)
     image = convolved.drawImage(im)
 
@@ -82,10 +85,11 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
 
     # add sky background
     if engine_params['sky_background']:
-        bkgs = get_roman_sky_background(synthetic_image.instrument, synthetic_image.band, detector, exposure_time, num_pix=synthetic_image.native_num_pix, oversample=1)
+        bkgs = get_roman_sky_background(synthetic_image.instrument, synthetic_image.band, detector, exposure_time,
+                                        num_pix=synthetic_image.native_num_pix, oversample=1)
         bkg = bkgs[synthetic_image.band]
         image += bkg
-    
+
     # integer number of photons are being detected, so quantize
     image.quantize()
 
@@ -105,7 +109,7 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
                 image.quantize()
             else:
                 poisson_noise = None
-        
+
         # reciprocity failure
         if type(engine_params['reciprocity_failure']) is galsim.Image:
             image += engine_params['reciprocity_failure']
@@ -184,8 +188,12 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
         read_noise = None
 
     if synthetic_image.pieces:
-        lens_image = get_piece(synthetic_image.lens_surface_brightness, synthetic_image.pixel_scale, synthetic_image.native_pixel_scale, synthetic_image.native_num_pix, exposure_time, psf_interp, gsparams_kwargs)
-        source_image = get_piece(synthetic_image.source_surface_brightness, synthetic_image.pixel_scale, synthetic_image.native_pixel_scale, synthetic_image.native_num_pix, exposure_time, psf_interp, gsparams_kwargs)
+        lens_image = get_piece(synthetic_image.lens_surface_brightness, synthetic_image.pixel_scale,
+                               synthetic_image.native_pixel_scale, synthetic_image.native_num_pix, exposure_time,
+                               psf_interp, gsparams_kwargs)
+        source_image = get_piece(synthetic_image.source_surface_brightness, synthetic_image.pixel_scale,
+                                 synthetic_image.native_pixel_scale, synthetic_image.native_num_pix, exposure_time,
+                                 psf_interp, gsparams_kwargs)
         results = image, lens_image, source_image
     else:
         results = image
@@ -193,13 +201,15 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
     return results, psf, poisson_noise, reciprocity_failure, dark_noise, nonlinearity, ipc, read_noise
 
 
-def get_piece(surface_brightness, pixel_scale, native_pixel_scale, native_num_pix, exposure_time, psf_interp, gsparams_kwargs):
-    interp = galsim.InterpolatedImage(galsim.Image(surface_brightness, xmin=0, ymin=0), scale=pixel_scale, flux=np.sum(surface_brightness) * exposure_time)
+def get_piece(surface_brightness, pixel_scale, native_pixel_scale, native_num_pix, exposure_time, psf_interp,
+              gsparams_kwargs):
+    interp = galsim.InterpolatedImage(galsim.Image(surface_brightness, xmin=0, ymin=0), scale=pixel_scale,
+                                      flux=np.sum(surface_brightness) * exposure_time)
 
     convolved = galsim.Convolve(interp, psf_interp, gsparams=galsim.GSParams(**gsparams_kwargs))
 
     im = galsim.ImageF(native_num_pix, native_num_pix, scale=native_pixel_scale)
-    im.setOrigin(0, 0)   
+    im.setOrigin(0, 0)
     image = convolved.drawImage(im)
     image.replaceNegative(0.)
     image.quantize()
@@ -225,7 +235,7 @@ def get_roman_sky_background(instrument, bands, sca, exposure_time, num_pix, ove
 
         # the stray light level is currently set in GalSim to a pessimistic 10% of sky level
         sky_level *= (1. + galsim.roman.stray_light_fraction)
-        
+
         # get thermal background in this band in counts/pixel/sec
         thermal_bkg = instrument.get_thermal_bkg(band, sca)
 
@@ -244,7 +254,8 @@ def get_roman_sky_background(instrument, bands, sca, exposure_time, num_pix, ove
     return bkgs
 
 
-def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=default_hwo_engine_params(), verbose=False, **kwargs):
+def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=default_hwo_engine_params(), verbose=False,
+                     **kwargs):
     # get optional kwargs
     gsparams_kwargs = kwargs.get('gsparams_kwargs', {})
 
@@ -255,20 +266,22 @@ def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=def
         engine_params = _validate_hwo_engine_params(engine_params)
 
     # create interpolated image
-    total_interp = galsim.InterpolatedImage(galsim.Image(synthetic_image.image, xmin=0, ymin=0), 
-                                            scale=synthetic_image.pixel_scale, 
+    total_interp = galsim.InterpolatedImage(galsim.Image(synthetic_image.image, xmin=0, ymin=0),
+                                            scale=synthetic_image.pixel_scale,
                                             flux=np.sum(synthetic_image.image) * exposure_time)
 
     # get PSF
     if psf is None:
         psf_interp = get_gaussian_psf(synthetic_image.instrument.get_psf_fwhm(synthetic_image.band))
-        psf = psf_interp.drawImage(nx=synthetic_image.native_num_pix, ny=synthetic_image.native_num_pix, scale=synthetic_image.native_pixel_scale)
+        psf = psf_interp.drawImage(nx=synthetic_image.native_num_pix, ny=synthetic_image.native_num_pix,
+                                   scale=synthetic_image.native_pixel_scale)
 
     # convolve with PSF
     convolved = galsim.Convolve(total_interp, psf_interp, gsparams=galsim.GSParams(**gsparams_kwargs))
 
     # draw image at the native pixel scale
-    im = galsim.ImageF(synthetic_image.native_num_pix, synthetic_image.native_num_pix, scale=synthetic_image.native_pixel_scale)
+    im = galsim.ImageF(synthetic_image.native_num_pix, synthetic_image.native_num_pix,
+                       scale=synthetic_image.native_pixel_scale)
     im.setOrigin(0, 0)
     image = convolved.drawImage(im)
 
@@ -291,7 +304,7 @@ def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=def
 
     # integer number of photons are being detected, so quantize
     image.quantize()
-    
+
     if engine_params['detector_effects']:
         image.replaceNegative(0.)
 
@@ -348,8 +361,12 @@ def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=def
         read_noise = None
 
     if synthetic_image.pieces:
-        lens_image = get_piece(synthetic_image.lens_surface_brightness, synthetic_image.pixel_scale, synthetic_image.native_pixel_scale, synthetic_image.native_num_pix, exposure_time, psf_interp, gsparams_kwargs)
-        source_image = get_piece(synthetic_image.source_surface_brightness, synthetic_image.pixel_scale, synthetic_image.native_pixel_scale, synthetic_image.native_num_pix, exposure_time, psf_interp, gsparams_kwargs)
+        lens_image = get_piece(synthetic_image.lens_surface_brightness, synthetic_image.pixel_scale,
+                               synthetic_image.native_pixel_scale, synthetic_image.native_num_pix, exposure_time,
+                               psf_interp, gsparams_kwargs)
+        source_image = get_piece(synthetic_image.source_surface_brightness, synthetic_image.pixel_scale,
+                                 synthetic_image.native_pixel_scale, synthetic_image.native_num_pix, exposure_time,
+                                 psf_interp, gsparams_kwargs)
         results = image, lens_image, source_image
     else:
         results = image
@@ -363,10 +380,10 @@ def get_gaussian_psf(fwhm, flux=1.):
 
 def get_roman_psf(band, detector, detector_position, pupil_bin=1):
     return galsim.roman.getPSF(SCA=detector,
-                        SCA_pos=galsim.PositionD(*detector_position),
-                        bandpass=None,
-                        wavelength=roman_util.translate_band(band),
-                        pupil_bin=pupil_bin)
+                               SCA_pos=galsim.PositionD(*detector_position),
+                               bandpass=None,
+                               wavelength=roman_util.translate_band(band),
+                               pupil_bin=pupil_bin)
 
 
 def _validate_roman_engine_params(engine_params):

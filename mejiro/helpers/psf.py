@@ -1,5 +1,4 @@
 import os
-import warnings
 from glob import glob
 
 import astropy.io.fits as pyfits
@@ -22,7 +21,8 @@ def get_webbpsf_psf_from_string(psf_id_string):
     return get_webbpsf_psf(band, detector, detector_position, oversample, num_pix)
 
 
-def get_webbpsf_psf(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None, suppress_output=True):
+def get_webbpsf_psf(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None,
+                    suppress_output=True):
     # first, check if it exists in the cache
     if check_cache:
         if psf_cache_dir is None:
@@ -124,7 +124,8 @@ def detector_int_to_sca(detector):
     # TODO handle a few more cases
 
 
-def get_psf_kernel(band, detector, detector_position, oversample=5, fov_arcsec=None, save=None, measure_fwhm=False, return_radial_profile=False):
+def get_psf_kernel(band, detector, detector_position, oversample=5, fov_arcsec=None, save=None, measure_fwhm=False,
+                   return_radial_profile=False):
     wfi = WFI()
     wfi.filter = band.upper()
     wfi.detector = detector_int_to_sca(detector)
@@ -136,7 +137,7 @@ def get_psf_kernel(band, detector, detector_position, oversample=5, fov_arcsec=N
         if return_radial_profile:
             return psf[0].data, fwhm, webbpsf.radial_profile(psf)
         return psf[0].data, fwhm
-        
+
     if save is not None:
         psf.writeto(save, overwrite=True)
 
