@@ -21,7 +21,7 @@ def get_webbpsf_psf_from_string(psf_id_string):
     return get_webbpsf_psf(band, detector, detector_position, oversample, num_pix)
 
 
-def get_webbpsf_psf(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None,
+def get_webbpsf_psf(band, detector, detector_position, oversample, num_pix=101, check_cache=False, psf_cache_dir=None,
                     suppress_output=True):
     # first, check if it exists in the cache
     if check_cache:
