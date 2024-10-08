@@ -32,8 +32,8 @@ def main(config):
     save_dir = os.path.join(config.machine.data_dir, 'cached_psfs')
     util.create_directory_if_not_exists(save_dir)
 
-    oversamples = [5]
-    bands = ['F087', 'F106', 'F129', 'F158', 'F184']
+    oversamples = [3]
+    bands = ['F087']  # , 'F106', 'F129', 'F158', 'F184'
     # bands = ['F129']
     # detectors = [4, 1, 9, 17]
     # detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
@@ -44,7 +44,7 @@ def main(config):
     # detector_positions = []
     # for i in range(4):
     #     detector_positions.extend(roman_util.divide_up_sca(i + 1))
-    detector_positions = roman_util.divide_up_sca(5)
+    detector_positions = roman_util.divide_up_sca(2)
     num_pixes = [101]
 
     # determine which PSFs need to be generated
