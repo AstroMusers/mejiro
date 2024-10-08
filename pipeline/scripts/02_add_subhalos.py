@@ -65,7 +65,7 @@ def main(config):
             tuple_list.append((lens, pipeline_params, output_dir))
 
     # implement limit if one exists
-    if pipeline_params['limit'] is not None:
+    if pipeline_params['limit'] != "None":  # TODO will need to be changed from string once yaml config implemented
         limit = pipeline_params['limit']
         if limit > count:
             limit = count
