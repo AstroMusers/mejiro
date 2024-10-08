@@ -23,9 +23,16 @@ def main(config):
         sys.path.append(config.machine.repo_dir)
     from mejiro.lenses import lens_util
     from mejiro.utils import roman_util, util
+    from mejiro.instruments.roman import Roman
+
+    # retrieve configuration parameters
+    pipeline_params = util.hydra_to_dict(config.pipeline)
+
+    # set nice level
+    os.nice(pipeline_params['nice'])
 
     # script configuration options
-    debugging = True
+    debugging = False
     script_config = {
         'snr_quantile': 0.95,
         'image_radius': 0.01,  # arcsec
@@ -34,8 +41,8 @@ def main(config):
         'rng': galsim.UniformDeviate(42)
     }
     subhalo_params = {
-        'masses': np.linspace(1e8, 1e11, 1000),  # 
-        'concentration': 24,
+        'masses': np.linspace(1e8, 1e11, 10),  # 
+        'concentration': 10,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
         'los_normalization': 0.
@@ -49,13 +56,13 @@ def main(config):
     positions = []
     for i in range(1, 19):
         sca = str(i).zfill(2)
-        coords = roman_util.divide_up_sca(4)
+        coords = roman_util.divide_up_sca(2)
         for coord in coords:
             positions.append((sca, coord))
     print(f'Processing {len(positions)} positions.')
 
     # set up directories for script output
-    save_dir = os.path.join(config.machine.data_dir, 'output', 'lowest_detectable_subhalo_mass_min')
+    save_dir = os.path.join(config.machine.data_dir, 'output', 'lowest_detectable_subhalo_mass_dev')
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
     image_save_dir = os.path.join(save_dir, 'images')
@@ -166,6 +173,10 @@ def run(tuple):
         sca = int(sca)
         position_key = f'{sca}_{sca_position[0]}_{sca_position[1]}'
         # print(' ' + position_key)
+        instrument_params = {
+            'detector': sca,
+            'detector_position': sca_position
+        }
         results[position_key] = {}
 
         # get image with no subhalo
@@ -175,20 +186,18 @@ def run(tuple):
                                           band=band,
                                           arcsec=scene_size,
                                           oversample=oversample,
-                                          sca=sca,
+                                          instrument_params=instrument_params,
                                           pieces=True,
-                                          debugging=False)
+                                          verbose=False)
         try:
             exposure_no_subhalo = Exposure(synth_no_subhalo,
                                            exposure_time=exposure_time,
                                            rng=rng,
-                                           sca=sca,
-                                           sca_position=sca_position,
                                            return_noise=True,
                                            reciprocity_failure=False,
                                            nonlinearity=False,
                                            ipc=False,
-                                           suppress_output=True)
+                                           verbose=False)
         except Exception as e:
             print(f'Failed to generate exposure for StrongLens {lens.uid}: {e}')
             return
@@ -284,22 +293,19 @@ def run(tuple):
                                        band=band,
                                        arcsec=scene_size,
                                        oversample=oversample,
-                                       sca=sca,
-                                       sca_position=sca_position,
-                                       debugging=False)
+                                       instrument_params=instrument_params,
+                                       verbose=False)
                 try:
                     exposure = Exposure(synth,
                                         exposure_time=exposure_time,
                                         rng=rng,
-                                        sca=sca,
-                                        sca_position=sca_position,
                                         poisson_noise=poisson_noise,
                                         reciprocity_failure=False,
                                         dark_noise=dark_noise,
                                         nonlinearity=False,
                                         ipc=False,
                                         read_noise=read_noise,
-                                        suppress_output=True)
+                                        verbose=False)
                 except:
                     return
 

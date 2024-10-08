@@ -32,7 +32,7 @@ def main(config):
     save_dir = os.path.join(config.machine.data_dir, 'cached_psfs')
     util.create_directory_if_not_exists(save_dir)
 
-    oversamples = [3]
+    oversamples = [1]
     bands = ['F087']  # , 'F106', 'F129', 'F158', 'F184'
     # bands = ['F129']
     # detectors = [4, 1, 9, 17]
