@@ -179,6 +179,7 @@ def unpickle_lens(pickle_path, uid):
     snr = unpickled['snr']
     masked_snr_array = unpickled['masked_snr_array']
     sca = unpickled['sca']
+    num_images = unpickled['num_images']
 
     return StrongLens(kwargs_model=kwargs_model,
                       kwargs_params=kwargs_params,
@@ -191,7 +192,8 @@ def unpickle_lens(pickle_path, uid):
                       snr=snr,
                       masked_snr_array=masked_snr_array,
                       uid=uid,
-                      sca=sca)
+                      sca=sca,
+                      num_images=num_images)
 
 
 # TODO check references and fix

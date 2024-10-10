@@ -225,7 +225,7 @@ def run_slsim(tuple):
             print(f'Number of exceptions: {num_exceptions}; {num_exceptions / len(snr_list) * 100:.2f}%')
 
         # TODO once get_regions issue(s) resolved, the following line should be reinstated
-        # assert len(total_lens_population) == len(snr_list), f'Lengths of total_lens_population ({len(total_lens_population)}) and snr_list ({len(snr_list)}) do not match.'
+        assert len(total_lens_population) == len(snr_list), f'Lengths of total_lens_population ({len(total_lens_population)}) and snr_list ({len(snr_list)}) do not match.'
 
         # save other params to CSV
         total_pop_csv = os.path.join(output_dir, f'total_pop_{run}_sca{sca_id}.csv')
@@ -321,7 +321,7 @@ def run_slsim(tuple):
     # save information about which lenses got filtered out
     filtered_sample['num_filter_1'] = filter_1
     filtered_sample['num_filter_2'] = filter_2
-    # util.pickle(os.path.join(output_dir, f'filtered_sample_{run}_sca{sca_id}.pkl'), filtered_sample)  # TODO temp: make this configurable
+    util.pickle(os.path.join(output_dir, f'filtered_sample_{run}_sca{sca_id}.pkl'), filtered_sample)  # TODO temp: make this configurable
 
     assert len(detectable_gglenses) == len(
         detectable_snr_list), f'Lengths of detectable_gglenses ({len(detectable_gglenses)}) and detectable_snr_list ({len(detectable_snr_list)}) do not match.'
@@ -364,6 +364,7 @@ def run_slsim(tuple):
             'magnification': gglens.extended_source_magnification(),
             'snr': snr,
             'masked_snr_array': masked_snr_array,
+            'num_images': len(gglens.point_source_image_positions()),
             'sca': sca_id
         }
 
