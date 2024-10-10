@@ -108,12 +108,14 @@ class SyntheticImage:
 
         self.image = image_model.image(kwargs_lens=self.strong_lens.kwargs_lens,
                                        kwargs_source=kwargs_source_amp,
-                                       kwargs_lens_light=kwargs_lens_light_amp)
+                                       kwargs_lens_light=kwargs_lens_light_amp,
+                                       unconvolved=True)
 
         if pieces:
-            self.lens_surface_brightness = image_model.lens_surface_brightness(kwargs_lens_light_amp)
+            self.lens_surface_brightness = image_model.lens_surface_brightness(kwargs_lens_light_amp, unconvolved=True)
             self.source_surface_brightness = image_model.source_surface_brightness(kwargs_source_amp,
-                                                                                   self.strong_lens.kwargs_lens)
+                                                                                   self.strong_lens.kwargs_lens,
+                                                                                   unconvolved=True)
         else:
             self.lens_surface_brightness, self.source_surface_brightness = None, None
 

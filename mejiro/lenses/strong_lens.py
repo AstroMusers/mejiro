@@ -398,11 +398,12 @@ class StrongLens:
 
         total_image = image_model.image(kwargs_lens=self.kwargs_lens,
                                         kwargs_source=kwargs_source_amp,
-                                        kwargs_lens_light=kwargs_lens_light_amp)
+                                        kwargs_lens_light=kwargs_lens_light_amp,
+                                        unconvolved=True)
 
         if return_pieces:
-            lens_surface_brightness = image_model.lens_surface_brightness(kwargs_lens_light_amp)
-            source_surface_brightness = image_model.source_surface_brightness(kwargs_source_amp, self.kwargs_lens)
+            lens_surface_brightness = image_model.lens_surface_brightness(kwargs_lens_light_amp, unconvolved=True)
+            source_surface_brightness = image_model.source_surface_brightness(kwargs_source_amp, self.kwargs_lens, unconvolved=True)
             return total_image, lens_surface_brightness, source_surface_brightness
         else:
             return total_image
