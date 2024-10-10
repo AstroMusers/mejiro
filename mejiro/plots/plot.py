@@ -67,35 +67,6 @@ def rgb_plot_grid(array_list, side, titles=False, save=None):
     plt.show()
 
 
-def _plot_grid(array_list, side, cmap='viridis', log10=True, title='', save=None, colorbar=False):
-    array_list = array_list[:side ** 2]
-    if colorbar:
-        vmin, vmax = plot_util.get_min_max(array_list)
-
-    f, ax = plt.subplots(nrows=side, ncols=side, figsize=(20, 20), gridspec_kw={'hspace': 0.02, 'wspace': 0.02})
-
-    for i, image in enumerate(array_list):
-        if log10:
-            image = np.log10(image)
-        if colorbar:
-            ax[i // side, i % side].imshow(image, cmap=cmap, vmin=vmin, vmax=vmax)
-        else:
-            ax[i // side, i % side].imshow(image, cmap=cmap)
-        ax[i // side, i % side].get_xaxis().set_visible(False)
-        ax[i // side, i % side].get_yaxis().set_visible(False)
-
-    plt.suptitle(title)
-
-    # TODO fix
-    # if colorbar:
-    #     plt.colorbar()
-
-    if save is not None:
-        plt.savefig(save)
-
-    plt.show()
-
-
 def plot_grid(array_list, side, cmap='viridis', log10=True, title='', save=None, colorbar=False, colorbar_label=None):
     fig = plt.figure(figsize=(20, 20))
 
@@ -124,8 +95,9 @@ def plot_grid(array_list, side, cmap='viridis', log10=True, title='', save=None,
 
     for i, ax in enumerate(grid):
         if log10:
-            array_list[i] = np.log10(array_list[i])
-        im = ax.imshow(array_list[i], cmap=cmap)
+            im = ax.imshow(np.log10(array_list[i]), cmap=cmap)
+        else:
+            im = ax.imshow(array_list[i], cmap=cmap)
 
     if colorbar:
         cbar = grid.cbar_axes[0].colorbar(im)
