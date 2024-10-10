@@ -7,22 +7,25 @@ from mejiro.lenses import lens_util
 from mejiro.plots import plot_util
 
 
-def snr_plot(total, lens, source, noise, snr_array, masked_snr_array, snr_list, debug_dir):
+def snr_plot(strong_lens, total, lens, source, noise, snr_array, masked_snr_array, snr_list, debug_dir):
     _, ax = plt.subplots(2, 3, figsize=(12, 8))
 
     # vmin, vmax = plot_util.get_min_max([total, lens, source, noise])
 
-    im00 = ax[0][0].imshow(total)  # , vmin=vmin, vmax=vmax
+    lens_mag = strong_lens.lens_mags['F129']
+    source_mag = strong_lens.source_mags['F129']
+
+    im00 = ax[0][0].imshow(np.log10(total))  # , vmin=vmin, vmax=vmax
     plt.colorbar(im00, ax=ax[0][0])
-    ax[0][0].set_title('Total Image')
+    ax[0][0].set_title('Total Image (log10)')
 
     im01 = ax[0][1].imshow(lens)
     plt.colorbar(im01, ax=ax[0][1])
-    ax[0][1].set_title('Lens')
+    ax[0][1].set_title('Lens (' + r'$m_\textrm{F129}=$' + f'{lens_mag:.2f})')
 
     im02 = ax[0][2].imshow(source)
     plt.colorbar(im02, ax=ax[0][2])
-    ax[0][2].set_title('Source')
+    ax[0][2].set_title('Source (' + r'$m_\textrm{F129}=$' + f'{source_mag:.2f})')
 
     im10 = ax[1][0].imshow(noise)
     plt.colorbar(im10, ax=ax[1][0])

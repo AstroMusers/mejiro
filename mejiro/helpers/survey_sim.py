@@ -32,18 +32,18 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), num_pi
 
     check_cache = False if psf_cache_dir is None else True
 
-    sample_lens = lens_util.slsim_lens_to_mejiro(gglens, bands=[band],
+    strong_lens = lens_util.slsim_lens_to_mejiro(gglens, bands=[band],
                                                  cosmo=default_cosmology.get())  # TODO pass in cosmology
 
     if add_subhalos:
-        realization = sample_lens.generate_cdm_subhalos()
-        sample_lens.add_subhalos(realization)
+        realization = strong_lens.generate_cdm_subhalos()
+        strong_lens.add_subhalos(realization)
 
     # generate synthetic images with lenstronomy
-    model, lens_sb, source_sb = sample_lens.get_array(num_pix * oversample, side, band, zp, return_pieces=True)
+    model, lens_sb, source_sb = strong_lens.get_array(num_pix * oversample, side, band, zp, return_pieces=True)
 
     # generate GalSim images
-    results, lenses, sources, _ = gs.get_images(sample_lens, [model], [band], {band: zp}, num_pix, num_pix, oversample,
+    results, lenses, sources, _ = gs.get_images(strong_lens, [model], [band], {band: zp}, num_pix, num_pix, oversample,
                                                 oversample,
                                                 lens_surface_brightness=[lens_sb],
                                                 source_surface_brightness=[source_sb], detector=detector,
@@ -94,7 +94,7 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), num_pi
 
     if len(snr_list) != 0:
         if debugging and np.max(snr_list) > 20:
-            diagnostic_plot.snr_plot(total, lens, source, noise, snr_array, masked_snr_array, snr_list, debug_dir)
+            diagnostic_plot.snr_plot(strong_lens, total, lens, source, noise, snr_array, masked_snr_array, snr_list, debug_dir)
 
     if return_snr_list:
         return snr_list, None, None, None
