@@ -129,31 +129,30 @@ def polar_to_cartesian(r, theta):
     return x, y
 
 
-def percent_change(a, b):
+def percent_change(old, new):
     """
-    Calculate the percentage change between two values.
+    Calculate the percent change between two values.
 
     Parameters
     ----------
-    a : float
-        The first value.
-    b : float
-        The second value.
+    old : float
+        The initial value.
+    new : float
+        The new value.
 
     Returns
     -------
     float
-        The percentage change between the two values.
+        The percent change from the old value to the new value.
 
     Examples
     --------
-    >>> percent_change(10, 20)
-    100.0
-
-    >>> percent_change(10, 15)
+    >>> percent_change(50, 75)
     50.0
+    >>> percent_change(100, 80)
+    -20.0
     """
-    return np.abs(a - b) / a * 100
+    return (new - old) / np.abs(old) * 100
 
 
 def percent_difference(a, b):
