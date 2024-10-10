@@ -70,6 +70,72 @@ class SampleStrongLens(StrongLens):
         super().__init__(kwargs_model=kwargs_model, kwargs_params=kwargs_params, lens_mags=lens_mags,
                          source_mags=source_mags, lens_stellar_mass=286796906929.3925, lens_vel_disp=295.97270864848,
                          snr=None, uid='SAMPLE')
+        
+
+class SampleStrongLens2(StrongLens):
+    def __init__(self):
+        kwargs_model = {'cosmo': default_cosmology.get(),
+                        'lens_light_model_list': ['SERSIC_ELLIPSE'],
+                        'lens_model_list': ['SIE', 'SHEAR', 'CONVERGENCE'],
+                        'lens_redshift_list': [0.2902115249535011,
+                                               0.2902115249535011,
+                                               0.2902115249535011],
+                        'source_light_model_list': ['SERSIC_ELLIPSE'],
+                        'source_redshift_list': [0.5876899931818929],
+                        'z_source': 0.5876899931818929,
+                        'z_source_convention': 5}
+
+        lens_mags = {
+            'F062': 21.9,
+            'F087': 21.7,
+            'F106': 21.5664222662219,
+            'F129': 21.269983557132853,
+            'F158': 21.1,
+            'F184': 21.00761457389914,
+            'F146': 21.1,
+            'F213': 20.9,
+            'J': 21.2}
+
+        source_mags = {
+            'F062': 22.9,
+            'F087': 22.7,
+            'F106': 2.434711611915137,
+            'F129': 22.121205893763328,
+            'F158': 22.9,
+            'F184': 21.542431041034558,
+            'F146': 22.0,
+            'F213': 21.4,
+            'J': 21.1}
+
+        kwargs_params = {'kwargs_lens': [{'center_x': -0.007876281728887604,
+                                          'center_y': 0.010633393703246008,
+                                          'e1': 0.004858808997848661,
+                                          'e2': 0.0075210751726143355,
+                                          'theta_E': 1.168082477232392},
+                                         {'dec_0': 0,
+                                          'gamma1': -0.03648819840013156,
+                                          'gamma2': -0.06511863424492038,
+                                          'ra_0': 0},
+                                         {'dec_0': 0, 'kappa': 0.06020941823541971, 'ra_0': 0}],
+                         'kwargs_lens_light': [{'R_sersic': 0.5300707454127908,
+                                                'center_x': -0.007876281728887604,
+                                                'center_y': 0.010633393703246008,
+                                                'e1': 0.023377277902774978,
+                                                'e2': 0.05349948216860632,
+                                                'magnitude': 17.5664222662219,
+                                                'n_sersic': 4.0}],
+                         'kwargs_ps': None,
+                         'kwargs_source': [{'R_sersic': 0.1651633078964498,
+                                            'center_x': 0.30298310338567075,
+                                            'center_y': -0.3505004565139597,
+                                            'e1': -0.06350855238708408,
+                                            'e2': -0.08420760408362458,
+                                            'magnitude': 21.434711611915137,
+                                            'n_sersic': 1.0}]}
+
+        super().__init__(kwargs_model=kwargs_model, kwargs_params=kwargs_params, lens_mags=lens_mags,
+                         source_mags=source_mags, lens_stellar_mass=286796906929.3925, lens_vel_disp=295.97270864848,
+                         snr=None, uid='SAMPLE')
 
 
 class OldSampleStrongLens(StrongLens):
