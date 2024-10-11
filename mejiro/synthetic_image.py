@@ -96,7 +96,7 @@ class SyntheticImage:
         self.strong_lens._set_classes()
 
         image_model = ImageModel(data_class=self.pixel_grid,
-                                 psf_class=psf_class,
+                                 psf_class=psf_class,  # TODO does this need to be passed in? I never want to convolve with a PSF at this stage
                                  lens_model_class=self.strong_lens.lens_model_class,
                                  source_model_class=self.strong_lens.source_model_class,
                                  lens_light_model_class=self.strong_lens.lens_light_model_class,
