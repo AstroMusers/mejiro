@@ -267,14 +267,6 @@ def run_slsim(tuple):
         #         filtered_sample['filter_1'].append(candidate)
         #     continue
 
-        # 1. extended source magnification
-        # extended_source_magnification = candidate.extended_source_magnification()
-        # if extended_source_magnification < survey_params['magnification']:
-        #     filter_1 += 1
-        #     if filter_1 <= num_samples:
-        #         filtered_sample['filter_1'].append(candidate)
-        #     continue
-
         # 2. SNR
         snr, masked_snr_array, snr_list, _ = survey_sim.get_snr(candidate,
                                                                 band=survey_params['snr_band'],
@@ -290,6 +282,14 @@ def run_slsim(tuple):
                                                                 debug_dir=debug_dir,
                                                                 psf_cache_dir=psf_cache_dir)
         if snr is None:
+            continue
+
+        # 1. extended source magnification
+        extended_source_magnification = candidate.extended_source_magnification()
+        if snr < 50 and extended_source_magnification < survey_params['magnification']:
+            filter_1 += 1
+            if filter_1 <= num_samples:
+                filtered_sample['filter_1'].append(candidate)
             continue
 
         # if debugging and k % 100 == 0:
