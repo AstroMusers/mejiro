@@ -412,10 +412,38 @@ def print_execution_time(start, stop, return_string=False):
     Execution time: 0:00:05
 
     """
-    execution_time = str(datetime.timedelta(seconds=round(stop - start)))
+    execution_time = calculate_execution_time(start, stop)
     print(f"Execution time: {execution_time}")
     if return_string:
         return execution_time
+    
+
+def calculate_execution_time(start, stop):
+    """
+    Calculate the execution time between two given timestamps.
+
+    Parameters
+    ----------
+    start : float
+        The start timestamp.
+    stop : float
+        The stop timestamp.
+
+    Returns
+    -------
+    str
+        The execution time in the format "H:MM:SS".
+
+    Examples
+    --------
+    >>> start = time.time()
+    >>> # Some code to measure execution time
+    >>> stop = time.time()
+    >>> calculate_execution_time(start, stop)
+    '0:00:05'
+
+    """
+    return str(datetime.timedelta(seconds=round(stop - start)))
 
 
 def pickle(path, thing):
