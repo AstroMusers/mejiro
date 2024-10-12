@@ -37,9 +37,18 @@ class Exposure:
                 results, self.psf, self.poisson_noise, self.dark_noise, self.read_noise = galsim_engine.get_hwo_exposure(
                     synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
 
+            else:
+                raise ValueError(f'Instrument "{self.synthetic_image.instrument.name}" not available for engine "{engine}." Available engines are {self.synthetic_image.instrument.engines}')  # TODO somehow make this a method so can be called for other engines
+
         elif engine == 'pandeia':
             raise NotImplementedError('Pandeia engine not yet implemented')
             # TODO mejiro.engines import pandeia_engine
+
+            # validate engine params and set defaults
+            if engine_params is None:
+                engine_params = pandeia_engine.default_roman_engine_params()
+            else:
+                engine_params = pandeia_engine.validate_roman_engine_params(engine_params)
         elif engine == 'romanisim':
             raise NotImplementedError('romanisim engine not yet implemented')
             # TODO mejiro.engines import romanisim_engine
