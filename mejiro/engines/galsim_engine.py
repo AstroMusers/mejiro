@@ -10,7 +10,7 @@ from mejiro.utils import roman_util
 
 def default_roman_engine_params():
     return {
-        'rng': galsim.UniformDeviate(),
+        'rng': galsim.UniformDeviate(42),
         'sky_background': True,
         'detector_effects': True,
         'poisson_noise': True,
@@ -41,12 +41,6 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
 
     # get optional kwargs
     gsparams_kwargs = kwargs.get('gsparams_kwargs', {})
-
-    # validate engine params and set defaults
-    if engine_params is None:
-        engine_params = default_roman_engine_params()
-    else:
-        engine_params = _validate_roman_engine_params(engine_params)
 
     # create interpolated image
     total_interp = galsim.InterpolatedImage(galsim.Image(synthetic_image.image, xmin=0, ymin=0),
@@ -259,12 +253,6 @@ def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=def
     # get optional kwargs
     gsparams_kwargs = kwargs.get('gsparams_kwargs', {})
 
-    # validate engine params and set defaults
-    if engine_params is None:
-        engine_params = default_hwo_engine_params()
-    else:
-        engine_params = _validate_hwo_engine_params(engine_params)
-
     # create interpolated image
     total_interp = galsim.InterpolatedImage(galsim.Image(synthetic_image.image, xmin=0, ymin=0),
                                             scale=synthetic_image.pixel_scale,
@@ -386,7 +374,7 @@ def get_roman_psf(band, detector, detector_position, pupil_bin=1):
                                pupil_bin=pupil_bin)
 
 
-def _validate_roman_engine_params(engine_params):
+def validate_roman_engine_params(engine_params):
     if 'rng' not in engine_params.keys():
         engine_params['rng'] = default_roman_engine_params()['rng']  # TODO is this necessary? doesn't GalSim do this?
         # TODO logging to inform user of default
@@ -444,7 +432,7 @@ def _validate_roman_engine_params(engine_params):
     return engine_params
 
 
-def _validate_hwo_engine_params(engine_params):
+def validate_hwo_engine_params(engine_params):
     if 'rng' not in engine_params.keys():
         engine_params['rng'] = default_hwo_engine_params()['rng']  # TODO is this necessary? doesn't GalSim do this?
         # TODO logging to inform user of default

@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 from mejiro.utils import util
 
@@ -7,6 +8,8 @@ class Exposure:
 
     def __init__(self, synthetic_image, exposure_time, engine='galsim', engine_params=None, psf=None, verbose=True,
                  **kwargs):
+        start = time.time()
+
         self.synthetic_image = synthetic_image
         self.exposure_time = exposure_time
         self.verbose = verbose
@@ -15,10 +18,22 @@ class Exposure:
             from mejiro.engines import galsim_engine
 
             if self.synthetic_image.instrument.name == 'Roman':
+                # validate engine params and set defaults
+                if engine_params is None:
+                    engine_params = galsim_engine.default_roman_engine_params()
+                else:
+                    engine_params = galsim_engine.validate_roman_engine_params(engine_params)
+
                 results, self.psf, self.poisson_noise, self.reciprocity_failure, self.dark_noise, self.nonlinearity, self.ipc, self.read_noise = galsim_engine.get_roman_exposure(
                     synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
 
             elif self.synthetic_image.instrument.name == 'HWO':
+                # validate engine params and set defaults
+                if engine_params is None:
+                    engine_params = galsim_engine.default_hwo_engine_params()
+                else:
+                    engine_params = galsim_engine.validate_hwo_engine_params(engine_params)
+
                 results, self.psf, self.poisson_noise, self.dark_noise, self.read_noise = galsim_engine.get_hwo_exposure(
                     synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
 
@@ -30,6 +45,9 @@ class Exposure:
             # TODO mejiro.engines import romanisim_engine
         else:
             raise ValueError(f'Engine "{engine}" not recognized')
+        
+        self.engine = engine
+        self.engine_params = engine_params
 
         if self.synthetic_image.pieces:
             image, lens_image, source_image = results
@@ -54,6 +72,11 @@ class Exposure:
                 raise ValueError('Negative pixel values in source image')
             self.lens_exposure = lens_exposure
             self.source_exposure = source_exposure
+        
+        end = time.time()
+        self.calc_time = end - start
+        if self.verbose:
+            print(f'Exposure calculation time: {util.calculate_execution_time(start, end)}')
 
     @staticmethod
     def crop_edge_effects(image):

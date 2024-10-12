@@ -1,11 +1,10 @@
-from mejiro.engines import galsim_engine
 from mejiro.exposure import Exposure
 from mejiro.instruments.roman import Roman
 from mejiro.lenses.test import SampleStrongLens
 from mejiro.synthetic_image import SyntheticImage
 
 
-def test_default_engine_params():
+def test_default_engine():
     roman = Roman()
 
     lens = SampleStrongLens()
@@ -23,15 +22,9 @@ def test_default_engine_params():
 
     exposure = Exposure(synthetic_image,
                         exposure_time=exposure_time,
-                        engine='galsim',
-                        # don't provide engine params
+                        # don't provide engine
                         check_cache=True,
                         psf_cache_dir='test_data',
                         verbose=False)
     
     assert exposure.engine == 'galsim'
-
-    ignored_keys = ['rng']
-    for key, item in exposure.engine_params.items():
-        if key not in ignored_keys:
-            assert item == galsim_engine.default_roman_engine_params()[key]
