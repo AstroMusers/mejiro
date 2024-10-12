@@ -364,7 +364,7 @@ def run_slsim(tuple):
             'magnification': gglens.extended_source_magnification(),
             'snr': snr,
             'masked_snr_array': masked_snr_array,
-            'num_images': len(gglens.point_source_image_positions()),
+            'num_images': len(gglens.point_source_image_positions()[0]),
             'sca': sca_id
         }
 
