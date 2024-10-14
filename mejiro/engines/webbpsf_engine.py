@@ -43,7 +43,7 @@ def get_roman_psf(band, detector, detector_position, oversample, num_pix, check_
     if check_cache:
         assert psf_cache_dir is not None, 'Must provide a PSF cache directory if checking the cache'
         psf_id = get_psf_id(band, detector, detector_position, oversample, num_pix)
-        cached_psf = _check_cache(psf_id, psf_cache_dir, verbose)
+        cached_psf = get_cached_psf(psf_id, psf_cache_dir, verbose)
         if cached_psf is not None:
             return cached_psf
 
@@ -163,7 +163,7 @@ def cache_psf(id_string, psf_cache_dir, verbose=True):
             print(f'Cached PSF to {psf_path}')
 
 
-def _check_cache(id_string, psf_cache_dir, verbose):
+def get_cached_psf(id_string, psf_cache_dir, verbose):
     """
     Check if a PSF exists in the provided cache directory. If found, load and return it. Otherwise, return None.
 
@@ -194,6 +194,7 @@ def _check_cache(id_string, psf_cache_dir, verbose):
         return np.load(psf_path[0])
     else:
         band, detector, detector_position, oversample, num_pix = get_params_from_psf_id(id_string)
-        warnings.warn(
-            f'PSF {band} SCA{str(detector).zfill(2)} {detector_position} {oversample} {num_pix} not found in cache {psf_cache_dir}')
+        warnings.warn(f'PSF {band} SCA{str(detector).zfill(2)} {detector_position} {oversample} {num_pix} not found in cache {psf_cache_dir}')  # TODO change to logging
+        if verbose:
+            print(f'PSF {band} SCA{str(detector).zfill(2)} {detector_position} {oversample} {num_pix} not found in cache {psf_cache_dir}')
         return None
