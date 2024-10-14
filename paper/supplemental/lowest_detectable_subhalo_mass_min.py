@@ -38,10 +38,11 @@ def main(config):
         'image_radius': 0.01,  # arcsec
         'num_lenses': None,  # None
         'num_positions': 1,
-        'rng': galsim.UniformDeviate(42)
+        'rng': galsim.UniformDeviate(42),
+        'psf_cache_dir': os.path.join(config.machine.data_dir, 'cached_psfs')
     }
     subhalo_params = {
-        'masses': np.linspace(1e8, 1e11, 10),  # 
+        'masses': np.linspace(1e8, 1e11, 1000),  # 
         'concentration': 10,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -50,13 +51,13 @@ def main(config):
     imaging_params = {
         'band': 'F087',
         'scene_size': 5,  # arcsec
-        'oversample': 1,  # TODO TEMP
+        'oversample': 5,  # TODO TEMP
         'exposure_time': 14600
     }
     positions = []
     for i in range(1, 19):
         sca = str(i).zfill(2)
-        coords = roman_util.divide_up_sca(2)
+        coords = roman_util.divide_up_sca(4)
         for coord in coords:
             positions.append((sca, coord))
     print(f'Processing {len(positions)} positions.')
@@ -74,7 +75,7 @@ def main(config):
     else:
         pipeline_dir = config.machine.pipeline_dir
     print(f'Collecting lenses from {pipeline_dir}')
-    lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, suppress_output=False)
+    lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, verbose=True)
     og_count = len(lens_list)
     lens_list = [lens for lens in lens_list if lens.snr > 50 and lens.get_einstein_radius() > 0.5]  #
     lens_list = sorted(lens_list, key=lambda x: x.snr, reverse=True)
@@ -141,6 +142,7 @@ def run(tuple):
     from mejiro.synthetic_image import SyntheticImage
     from mejiro.exposure import Exposure
     from mejiro.plots import plot_util
+    from mejiro.engines import webbpsf_engine
 
     # unpack tuple
     (_, lens, roman, script_config, imaging_params, subhalo_params, positions, save_dir, image_save_dir,
@@ -148,6 +150,7 @@ def run(tuple):
     image_radius = script_config['image_radius']
     num_positions = script_config['num_positions']
     rng = script_config['rng']
+    psf_cache_dir = script_config['psf_cache_dir']
     band = imaging_params['band']
     oversample = imaging_params['oversample']
     scene_size = imaging_params['scene_size']
@@ -179,6 +182,10 @@ def run(tuple):
         }
         results[position_key] = {}
 
+        # get PSF
+        psf_id = webbpsf_engine.get_psf_id(band, sca, sca_position, oversample, 101)
+        psf = webbpsf_engine.get_cached_psf(psf_id, psf_cache_dir, verbose=False)
+
         # get image with no subhalo
         lens_no_subhalo = deepcopy(lens)
         synth_no_subhalo = SyntheticImage(lens_no_subhalo,
@@ -190,13 +197,16 @@ def run(tuple):
                                           pieces=True,
                                           verbose=False)
         try:
+            engine_params = {
+                'rng': rng,
+                'reciprocity_failure': False,
+                'nonlinearity': False,
+                'ipc': False
+            }
             exposure_no_subhalo = Exposure(synth_no_subhalo,
                                            exposure_time=exposure_time,
-                                           rng=rng,
-                                           return_noise=True,
-                                           reciprocity_failure=False,
-                                           nonlinearity=False,
-                                           ipc=False,
+                                           engine_params=engine_params,
+                                           psf=psf,
                                            verbose=False)
         except Exception as e:
             print(f'Failed to generate exposure for StrongLens {lens.uid}: {e}')
@@ -230,7 +240,7 @@ def run(tuple):
         rv = chi2(dof)
         threshold_chi2 = rv.isf(0.001)
 
-        for m200 in tqdm(masses, disable=True):
+        for m200 in masses:
             mass_key = f'{int(m200)}'
             results[position_key][mass_key] = []
             # print('     ' + mass_key)
@@ -295,19 +305,25 @@ def run(tuple):
                                        oversample=oversample,
                                        instrument_params=instrument_params,
                                        verbose=False)
-                try:
-                    exposure = Exposure(synth,
-                                        exposure_time=exposure_time,
-                                        rng=rng,
-                                        poisson_noise=poisson_noise,
-                                        reciprocity_failure=False,
-                                        dark_noise=dark_noise,
-                                        nonlinearity=False,
-                                        ipc=False,
-                                        read_noise=read_noise,
-                                        verbose=False)
-                except:
-                    return
+                # try:
+                engine_params = {
+                    'rng': rng,
+                    'poisson_noise': poisson_noise,
+                    'reciprocity_failure': False,
+                    'dark_noise': dark_noise,
+                    'nonlinearity': False,
+                    'ipc': False,
+                    'read_noise': read_noise
+                }
+                exposure = Exposure(synth,
+                                    exposure_time=exposure_time,
+                                    engine_params=engine_params,
+                                    check_cache=True,
+                                    psf=psf,
+                                    verbose=False)
+                # except Exception as e:
+                #     print(f'Failed to generate exposure for StrongLens {lens.uid}: {e}')
+                #     return
 
                 # mask image with subhalo
                 masked_exposure_with_subhalo = np.ma.masked_array(exposure.exposure, mask=mask)
