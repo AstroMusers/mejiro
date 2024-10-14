@@ -93,7 +93,8 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
 
         # Poisson noise
         if type(engine_params['poisson_noise']) is galsim.Image:
-            image += engine_params['poisson_noise']
+            poisson_noise = engine_params['poisson_noise']
+            image += poisson_noise
             image.quantize()
         elif type(engine_params['poisson_noise']) is bool:
             if engine_params['poisson_noise']:
@@ -106,7 +107,8 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
 
         # reciprocity failure
         if type(engine_params['reciprocity_failure']) is galsim.Image:
-            image += engine_params['reciprocity_failure']
+            reciprocity_failure = engine_params['reciprocity_failure']
+            image += reciprocity_failure
         elif type(engine_params['reciprocity_failure']) is bool:
             if engine_params['reciprocity_failure']:
                 before = deepcopy(image)
@@ -117,7 +119,8 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
 
         # dark current
         if type(engine_params['dark_noise']) is galsim.Image:
-            image += engine_params['dark_noise']
+            dark_noise = engine_params['dark_noise']
+            image += dark_noise
         elif type(engine_params['dark_noise']) is bool:
             if engine_params['dark_noise']:
                 before = deepcopy(image)
@@ -131,7 +134,8 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
 
         # nonlinearity
         if type(engine_params['nonlinearity']) is galsim.Image:
-            image += engine_params['nonlinearity']
+            nonlinearity = engine_params['nonlinearity']
+            image += nonlinearity
         elif type(engine_params['nonlinearity']) is bool:
             if engine_params['nonlinearity']:
                 before = deepcopy(image)
@@ -142,7 +146,8 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
 
         # IPC
         if type(engine_params['ipc']) is galsim.Image:
-            image += engine_params['ipc']
+            ipc = engine_params['ipc']
+            image += ipc
         elif type(engine_params['ipc']) is bool:
             if engine_params['ipc']:
                 before = deepcopy(image)
@@ -153,7 +158,8 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
 
         # read noise
         if type(engine_params['read_noise']) is galsim.Image:
-            image += engine_params['read_noise']
+            read_noise = engine_params['read_noise']
+            image += read_noise
         elif type(engine_params['read_noise']) is bool:
             if engine_params['read_noise']:
                 before = deepcopy(image)
@@ -298,7 +304,8 @@ def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=def
 
         # Poisson noise
         if type(engine_params['poisson_noise']) is galsim.Image:
-            image += engine_params['poisson_noise']
+            poisson_noise = engine_params['poisson_noise']
+            image += poisson_noise
             image.quantize()
         elif type(engine_params['poisson_noise']) is bool:
             if engine_params['poisson_noise']:
@@ -311,7 +318,8 @@ def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=def
 
         # dark current
         if type(engine_params['dark_noise']) is galsim.Image:
-            image += engine_params['dark_noise']
+            dark_noise = engine_params['dark_noise']
+            image += dark_noise
         elif type(engine_params['dark_noise']) is bool:
             if engine_params['dark_noise']:
                 before = deepcopy(image)
@@ -323,7 +331,8 @@ def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=def
 
         # read noise
         if type(engine_params['read_noise']) is galsim.Image:
-            image += engine_params['read_noise']
+            read_noise = engine_params['read_noise']
+            image += read_noise
         elif type(engine_params['read_noise']) is bool:
             if engine_params['read_noise']:
                 before = deepcopy(image)
