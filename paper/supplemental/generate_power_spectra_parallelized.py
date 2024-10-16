@@ -24,9 +24,8 @@ def get_masked_exposure(lens, model, band, psf, num_pix, oversample, exposure_ti
     if type(psf) is np.ndarray:
         psf = psf_util.kernel_to_galsim_interpolated_image(psf, oversample)
 
-    total_flux_cps = lens.get_total_flux_cps(band)
     interp = InterpolatedImage(Image(model, xmin=0, ymin=0), scale=0.11 / oversample,
-                               flux=total_flux_cps * exposure_time)
+                               flux=np.sum(model) * exposure_time)
     image = gs.convolve(interp, psf, num_pix)
     final_array = image.array
 
@@ -94,7 +93,7 @@ def main(config):
     # script configuration options
     debugging = False
     require_alignment = False
-    limit = 100
+    limit = 1000
     snr_threshold = 50.
     snr_pixel_threshold = 1.
     einstein_radius_threshold = 0.
@@ -160,7 +159,7 @@ def main(config):
 
     # collect lenses
     print(f'Collecting lenses...')
-    lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, suppress_output=False)
+    lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, verbose=True)
     print(f'Collected {len(lens_list)} candidate lens(es).')
     filtered_lenses = []
     num_lenses = 0
@@ -191,7 +190,7 @@ def main(config):
     for band in bands:
         for detector, detector_position in position_control + positions:
             psf_id_strings.append(
-                psf.get_psf_id_string(band, detector, detector_position, imaging_params['oversample']))
+                psf.get_psf_id_string(band, detector, detector_position, imaging_params['oversample'], 101))
 
     for id_string in psf_id_strings:
         cached_psfs[id_string] = psf.load_cached_psf(id_string, psf_cache_dir, suppress_output=False)
@@ -499,7 +498,7 @@ def generate_power_spectra(tuple):
 
     # ---------------------GENERATE EXPOSURES VARYING SUBHALO POPULATION---------------------
     subhalos_psf_id_string = psf.get_psf_id_string(band=control_band, detector=position_control[0][0],
-                                                   detector_position=position_control[0][1], oversample=oversample)
+                                                   detector_position=position_control[0][1], oversample=oversample, num_pix=101)
     subhalos_psf_kernel = cached_psfs[subhalos_psf_id_string]
 
     wdm_exposure = get_masked_exposure(wdm_lens, wdm_array, control_band, subhalos_psf_kernel, num_pix, oversample,
@@ -585,7 +584,7 @@ def generate_power_spectra(tuple):
     position_exposures = []
     for detector, detector_position in position_control + positions:
         exposure = get_masked_exposure(cdm_lens, cdm_array, control_band, cached_psfs[
-            psf.get_psf_id_string(control_band, detector, detector_position, oversample)], num_pix, oversample,
+            psf.get_psf_id_string(control_band, detector, detector_position, oversample, 101)], num_pix, oversample,
                                        exposure_time, snr_pixel_threshold)
         position_exposures.append(exposure)
         np.save(os.path.join(save_dir, f'im_pos_{detector}_{lens.uid}_run{run}.npy'), exposure)
