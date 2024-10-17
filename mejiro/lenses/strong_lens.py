@@ -16,6 +16,7 @@ from lenstronomy.SimulationAPI.sim_api import SimAPI
 from lenstronomy.Util import data_util
 from lenstronomy.Util import util as len_util
 from pyHalo.preset_models import CDM
+from scipy.stats import truncnorm
 
 from mejiro.utils import util
 
@@ -57,7 +58,10 @@ class StrongLens:
             # self.main_halo_mass = self.lens_stellar_mass / (1 - self.f_dm)
 
             # https://iopscience.iop.org/article/10.1088/0004-637X/716/2/1579
-            self.main_halo_mass = self.lens_stellar_mass * 51 * (1 + self.z_lens) ** 0.9
+            # self.main_halo_mass = self.lens_stellar_mass * 51 * (1 + self.z_lens) ** 0.9
+            rv1 = truncnorm(a=-1, b=1, loc=51, scale=36)
+            rv2 = truncnorm(a=-1, b=1, loc=0.9, scale=1.8)
+            self.main_halo_mass = self.lens_stellar_mass * rv1.rvs() * (1 + self.z_lens) ** rv2.rvs()
         else:
             self.main_halo_mass = None
 
