@@ -119,6 +119,18 @@ def get_model(input):
     side = pipeline_params['side']
     grid_oversample = pipeline_params['grid_oversample']
     pieces = pipeline_params['pieces']
+    supersampling_factor = pipeline_params['supersampling_factor']
+    supersampling_compute_mode = pipeline_params['supersampling_compute_mode']
+    supersampling_radius = pipeline_params['supersampling_radius']
+
+    # build kwargs_numerics
+    radius = supersampling_radius / (0.11 / grid_oversample)  # convert radius from arcsec to pixels
+    supersampling_indices = util.create_centered_circle(N=num_pix * grid_oversample, radius=radius)
+    kwargs_numerics = {
+        'supersampling_factor': supersampling_factor,
+        'compute_mode': supersampling_compute_mode,
+        'supersampled_indexes': supersampling_indices
+    }
 
     # load the lens based on uid
     lens = util.unpickle(os.path.join(input_dir, f'lens_with_subhalos_{uid}.pkl'))
@@ -129,11 +141,11 @@ def get_model(input):
         zp = sca_zp_dict[band]
         if pieces:
             model, lens_surface_brightness, source_surface_brightness = lens.get_array(
-                num_pix=num_pix * grid_oversample, side=side, band=band, zp=zp, return_pieces=True)
+                num_pix=num_pix * grid_oversample, side=side, band=band, zp=zp, return_pieces=True, kwargs_numerics=kwargs_numerics)
             np.save(os.path.join(output_dir, f'array_{lens.uid}_lens_{band}'), lens_surface_brightness)
             np.save(os.path.join(output_dir, f'array_{lens.uid}_source_{band}'), source_surface_brightness)
         else:
-            model = lens.get_array(num_pix=num_pix * grid_oversample, side=side, band=band, zp=zp)
+            model = lens.get_array(num_pix=num_pix * grid_oversample, side=side, band=band, zp=zp, kwargs_numerics=kwargs_numerics)
         np.save(os.path.join(output_dir, f'array_{lens.uid}_{band}'), model)
 
     # pickle lens to save attributes updated by get_array()
