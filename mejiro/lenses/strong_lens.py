@@ -361,7 +361,7 @@ class StrongLens:
         # TODO inefficient for this to call both methods if neither is initialized
         return self.get_lens_flux_cps(band, zp=zp) + self.get_source_flux_cps(band, zp=zp)
 
-    def get_array(self, num_pix, side, band, zp=None, kwargs_psf=None, return_pieces=False):
+    def get_array(self, num_pix, side, band, zp=None, kwargs_psf=None, return_pieces=False, kwargs_numerics={'supersampling_factor': 3, 'compute_mode': 'regular'}):
         self.num_pix = num_pix
         self.side = side
         self.oversample_factor = round((0.11 * self.num_pix) / self.side)
@@ -371,12 +371,6 @@ class StrongLens:
         if kwargs_psf is None:
             kwargs_psf = {'psf_type': 'NONE'}
         psf_class = PSF(**kwargs_psf)
-
-        # define numerics
-        kwargs_numerics = {
-            'supersampling_factor': 1,  # TODO should figure out how to set this optimally
-            "point_source_supersampling_factor": 1,
-        }
 
         # convert from physical to lensing units if necessary e.g. sigma_v specified instead of theta_E
         if 'theta_E' not in self.kwargs_lens[0]:

@@ -13,6 +13,89 @@ from PIL import Image
 from omegaconf import OmegaConf
 
 
+def create_centered_box(N, box_size):
+    """
+    Create an NxN array with a centered box of True values.
+    Parameters
+    ----------
+    N : int
+        The size of the outer array. Must be an odd number.
+    box_size : int
+        The size of the centered box. Must be an odd number and less than or equal to N.
+    Returns
+    -------
+    numpy.ndarray
+        An NxN array with a centered box of True values and the rest False.
+    Raises
+    ------
+    ValueError
+        If N is not an odd number.
+        If box_size is not an odd number.
+        If box_size is greater than N.
+    """
+    if N % 2 == 0:
+        raise ValueError("N must be an odd number")
+    if box_size % 2 == 0:
+        raise ValueError("box_size must be an odd number")
+    if box_size > N:
+        raise ValueError("box_size must be less than or equal to N")
+    
+    # Create an NxN array of False
+    array = np.full((N, N), False, dtype=bool)
+    
+    # Find the coordinates of the centered inner box
+    center = N // 2
+    half_box_size = box_size // 2
+    
+    # Set the inner box to True
+    array[center-half_box_size:center+half_box_size+1, center-half_box_size:center+half_box_size+1] = True
+    
+    return array
+
+
+def create_centered_circle(N, radius):
+    """
+    Create an NxN boolean array with a centered circle of True values.
+    Parameters
+    ----------
+    N : int
+        The size of the NxN array. Must be an odd number.
+    radius : float
+        The radius of the circle. Must be a positive number and less than or equal to N//2.
+    Returns
+    -------
+    numpy.ndarray
+        An NxN boolean array with a centered circle of True values.
+    Raises
+    ------
+    ValueError
+        If N is not an odd number.
+        If radius is not a positive number.
+        If radius is greater than N//2.
+    """
+    if N % 2 == 0:
+        raise ValueError("N must be an odd number")
+    if radius <= 0:
+        raise ValueError("Radius must be a positive number")
+    if radius > N // 2:
+        raise ValueError("Radius must be less than or equal to N//2")
+    
+    # Create an NxN array of False
+    array = np.full((N, N), False, dtype=bool)
+    
+    # Find the center of the array
+    center = (N // 2, N // 2)
+    
+    # Set the circular region to True
+    for i in range(N):
+        for j in range(N):
+            # Calculate the distance from the center
+            if np.sqrt((i - center[0])**2 + (j - center[1])**2) <= radius:
+                array[i, j] = True
+    
+    return array
+
+
 def all_arrays_equal(iterator):
     iterator = iter(iterator)
     try:
