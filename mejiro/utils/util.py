@@ -78,7 +78,7 @@ def create_centered_circle(N, radius):
     if radius <= 0:
         raise ValueError("Radius must be a positive number")
     if radius > N // 2:
-        raise ValueError("Radius must be less than or equal to N//2")
+        raise ValueError(f"Radius ({radius:.2f})must be less than or equal to N//2 ({N // 2:.2f})")
     
     # Create an NxN array of False
     array = np.full((N, N), False, dtype=bool)
@@ -97,6 +97,19 @@ def create_centered_circle(N, radius):
 
 
 def all_arrays_equal(iterator):
+    """
+    Check if all arrays in an iterator are equal.
+
+    Parameters
+    ----------
+    iterator : iterable
+        An iterable containing arrays to be compared.
+
+    Returns
+    -------
+    bool
+        True if all arrays in the iterator are equal, False otherwise.
+    """
     iterator = iter(iterator)
     try:
         first = next(iterator)
@@ -106,6 +119,21 @@ def all_arrays_equal(iterator):
 
 
 def make_grid(side_length, num_points):
+    """
+    Generate a 2D grid of evenly spaced points within a square.
+
+    Parameters
+    ----------
+    side_length : float
+        The length of the sides of the square.
+    num_points : int
+        The number of points along each axis.
+
+    Returns
+    -------
+    numpy.ndarray
+        A 2D array of shape (num_points*num_points, 2) containing the (x, y) coordinates of the grid points.
+    """
     # Define the range and number of points for each axis
     x_min, x_max, x_points = -side_length / 2, side_length / 2, num_points
     y_min, y_max, y_points = -side_length / 2, side_length / 2, num_points
@@ -177,6 +205,22 @@ def rotate_array(array, angle, fillcolor='white'):
 def get_kwargs_cosmo(astropy_cosmo):
     """
     Get `kwargs_cosmo` for pyhalo from an Astropy cosmology object.
+
+    Parameters
+    ----------
+    astropy_cosmo : astropy.cosmology.Cosmology
+        An instance of an Astropy cosmology object.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the cosmological parameters:
+        - H0 : float
+            The Hubble constant at z=0 in km/s/Mpc.
+        - Ob0 : float
+            The density of baryonic matter in units of the critical density at z=0.
+        - Om0 : float
+            The density of non-relativistic matter in units of the critical density at z=0.
     """
     return {
         "H0": astropy_cosmo.H0.value,
@@ -186,12 +230,50 @@ def get_kwargs_cosmo(astropy_cosmo):
 
 
 def save_skypy_config(skypy_config, path):
+    """
+    Save the SkyPy configuration to a YAML file.
+
+    Parameters
+    ----------
+    skypy_config : dict
+        The SkyPy configuration dictionary to be saved.
+    path : str
+        The file path where the configuration will be saved.
+
+    Notes
+    -----
+    This function currently does not handle serialization of complex objects
+    such as numpy arrays. Future improvements should include handling such cases.
+    """
     # TODO needs to account for serializing e.g. numpy arrays, probably some similar code to deserialization method below
     with open(path, 'w') as file:
         yaml.dump(skypy_config, file)
 
 
 def load_skypy_config(path):
+    """
+    Load a SkyPy configuration file, ignoring unknown YAML tags.
+
+    This function reads a YAML file from the specified path and loads its content
+    into a Python dictionary. It uses a custom YAML loader that ignores any unknown
+    tags in the YAML file.
+
+    Parameters
+    ----------
+    path : str
+        The file path to the SkyPy configuration YAML file.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the loaded SkyPy configuration.
+
+    Notes
+    -----
+    This function uses a custom YAML loader (`SafeLoaderIgnoreUnknown`) that
+    ignores unknown tags in the YAML file. This can be useful when the YAML file
+    contains tags that are not recognized by the default YAML loader.
+    """
     class SafeLoaderIgnoreUnknown(yaml.SafeLoader):
         def ignore_unknown(self, node):
             return None
@@ -207,6 +289,23 @@ def load_skypy_config(path):
 
 
 def polar_to_cartesian(r, theta):
+    """
+    Convert polar coordinates to Cartesian coordinates.
+
+    Parameters
+    ----------
+    r : float
+        The radial distance from the origin.
+    theta : float
+        The angle in radians from the positive x-axis.
+
+    Returns
+    -------
+    x : float
+        The x-coordinate in Cartesian coordinates.
+    y : float
+        The y-coordinate in Cartesian coordinates.
+    """
     x = r * np.cos(theta)
     y = r * np.sin(theta)
     return x, y
