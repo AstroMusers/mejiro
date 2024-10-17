@@ -10,7 +10,7 @@ from lenstronomy.Util import util as len_util
 
 
 class SyntheticImage:
-    def __init__(self, strong_lens, instrument, band, arcsec, oversample=1, pieces=False, verbose=True,
+    def __init__(self, strong_lens, instrument, band, arcsec, oversample=5, kwargs_numerics={'supersampling_factor': 3, 'compute_mode': 'regular'}, pieces=False, verbose=True,
                  instrument_params={}):
         # assert band is valid for instrument
         assert band in instrument.bands, f'Band "{band}" not valid for instrument {instrument.name}'
@@ -28,7 +28,7 @@ class SyntheticImage:
         self.pieces = pieces
 
         self._set_up_pixel_grid(arcsec, oversample)
-        self._calculate_surface_brightness(pieces=pieces)
+        self._calculate_surface_brightness(kwargs_numerics, pieces)
 
         if self.verbose: print(
             f'Initialized SyntheticImage for StrongLens {self.strong_lens.uid} by {self.instrument.name} in {self.band} band')
@@ -76,17 +76,11 @@ class SyntheticImage:
         self.pixel_grid = PixelGrid(**kwargs_pixel)
         self.coords = Coordinates(self.Mpix2coord, self.ra_at_xy_0, self.dec_at_xy_0)
 
-    def _calculate_surface_brightness(self, pieces=False, kwargs_psf=None):
+    def _calculate_surface_brightness(self, kwargs_numerics, pieces=False, kwargs_psf=None):
         # define PSF, e.g. kwargs_psf = {'psf_type': 'NONE'}, {'psf_type': 'GAUSSIAN', 'fwhm': psf_fwhm}
         if kwargs_psf is None:
             kwargs_psf = {'psf_type': 'NONE'}
         psf_class = PSF(**kwargs_psf)
-
-        # define numerics
-        kwargs_numerics = {
-            'supersampling_factor': 1,
-            'supersampling_convolution': True
-        }
 
         # convert from physical to lensing units if necessary e.g. sigma_v specified instead of theta_E
         if 'theta_E' not in self.strong_lens.kwargs_lens[0]:

@@ -3,6 +3,48 @@ import pytest
 from mejiro.instruments.roman import Roman
 from mejiro.lenses.test import SampleStrongLens
 from mejiro.synthetic_image import SyntheticImage
+from mejiro.utils import util
+
+
+def test_kwargs_numerics():
+    strong_lens = SampleStrongLens()
+    instrument = Roman()
+
+    # no kwargs_numerics
+    synthetic_image = SyntheticImage(strong_lens=strong_lens,
+                                     instrument=instrument,
+                                     band='F129',
+                                     arcsec=4.95,
+                                     oversample=5,
+                                     verbose=False)
+    
+    # regular compute mode
+    kwargs_numerics = {
+        'supersampling_factor': 3, 
+        'compute_mode': 'regular'
+    }
+    synthetic_image = SyntheticImage(strong_lens=strong_lens,
+                                     instrument=instrument,
+                                     band='F129',
+                                     arcsec=4.95,
+                                     oversample=5,
+                                     kwargs_numerics=kwargs_numerics,
+                                     verbose=False)
+    
+    # adaptive compute mode
+    region = util.create_centered_circle(N=225, radius=100)
+    kwargs_numerics = {
+        'supersampling_factor': 3,
+        'compute_mode': 'adaptive',
+        'supersampled_indexes': region
+    }
+    synthetic_image = SyntheticImage(strong_lens=strong_lens,
+                                     instrument=instrument,
+                                     band='F129',
+                                     arcsec=4.95,
+                                     oversample=5,
+                                     kwargs_numerics=kwargs_numerics,
+                                     verbose=False)
 
 
 def test_set_up_pixel_grid():
