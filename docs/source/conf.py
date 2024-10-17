@@ -21,7 +21,8 @@ extensions = [
     'sphinx.ext.napoleon',  # for autodoc config
     'sphinx.ext.todo',
     'sphinx.ext.mathjax',  # autodocs with math
-    'sphinx.ext.autosectionlabel'
+    'sphinx.ext.autosectionlabel',
+    'sphinx.ext.viewcode'  # link to source code
 ]
 
 napoleon_google_docstring = False

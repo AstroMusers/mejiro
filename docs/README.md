@@ -1,0 +1,1 @@
+To build docs locally, from `docs/` run `sphinx-build -M html source build`
