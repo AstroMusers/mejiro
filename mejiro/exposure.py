@@ -75,8 +75,10 @@ class Exposure:
                 self.instrument_not_available_error(engine)
 
         elif engine == 'pandeia':
-            raise NotImplementedError('Pandeia engine not yet implemented')
-            # TODO mejiro.engines import pandeia_engine
+            # raise NotImplementedError('Pandeia engine not yet implemented')
+            from mejiro.engines import pandeia_engine
+
+            self.noise = np.zeros_like(self.synthetic_image.image)
 
             # validate engine params and set defaults
             if engine_params is None:
@@ -84,9 +86,12 @@ class Exposure:
             else:
                 engine_params = pandeia_engine.validate_roman_engine_params(engine_params)
 
+            # get exposure
+            results, self.psf, self.noise = pandeia_engine.get_roman_exposure(synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
+
         elif engine == 'romanisim':
             raise NotImplementedError('romanisim engine not yet implemented')
-            # TODO mejiro.engines import romanisim_engine
+            # TODO from mejiro.engines import romanisim_engine
 
         else:
             raise ValueError(f'Engine "{engine}" not recognized')
