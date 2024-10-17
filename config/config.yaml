@@ -35,7 +35,7 @@ survey:
   - snr_oversample: 5
   - snr_supersampling_factor: 3
   - snr_supersampling_compute_mode: adaptive  # regular
-  - snr_supersampling_radius: 3. # arcseconds
+  - snr_supersampling_radius: 2. # arcseconds
   # - zodi_multiplier: 1.5  # multiplied with minimum zodiacal light
 
 pipeline:
