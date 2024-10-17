@@ -121,7 +121,7 @@ def run_slsim(tuple):
     util.create_directory_if_not_exists(lens_output_dir)
 
     # set max recursion limit
-    sys.setrecursionlimit(survey_params['snr_num_pix'] ** 2)
+    sys.setrecursionlimit(survey_params['snr_input_num_pix'] ** 2)
 
     # load SkyPy config file
     cache_dir = os.path.join(module_path, 'data', f'cached_skypy_configs_{area}')
@@ -180,6 +180,15 @@ def run_slsim(tuple):
                        cosmo=cosmo)
     if debugging: print('Defined galaxy population')
 
+    # set kwargs_numerics for SNR calculation
+    radius = survey_params['snr_supersampling_radius'] / (0.11 / survey_params['snr_oversample'])  # convert radius from arcsec to pixels
+    supersampling_indices = util.create_centered_circle(N=survey_params['snr_input_num_pix'] * survey_params['snr_oversample'], radius=radius)
+    kwargs_numerics = {
+        'supersampling_factor': survey_params['snr_supersampling_factor'],
+        'compute_mode': survey_params['snr_supersampling_compute_mode'],
+        'supersampled_indexes': supersampling_indices
+    }
+
     # draw the total lens population
     if survey_params['total_population']:
         if debugging: print('Identifying lenses...')
@@ -202,10 +211,12 @@ def run_slsim(tuple):
                                               zp=sca_zp_dict[survey_params['snr_band']],
                                               detector=sca_id,
                                               detector_position=(2048, 2048),
-                                              num_pix=survey_params['snr_num_pix'],
+                                              input_num_pix=survey_params['snr_input_num_pix'],
+                                              output_num_pix=survey_params['snr_output_num_pix'],
                                               side=survey_params['snr_side'],
                                               oversample=survey_params['snr_oversample'],
                                               exposure_time=survey_params['snr_exposure_time'],
+                                              kwargs_numerics=kwargs_numerics,
                                               add_subhalos=survey_params['snr_add_subhalos'],
                                               debugging=False,
                                               psf_cache_dir=psf_cache_dir)
@@ -224,7 +235,6 @@ def run_slsim(tuple):
         if debugging:
             print(f'Number of exceptions: {num_exceptions}; {num_exceptions / len(snr_list) * 100:.2f}%')
 
-        # TODO once get_regions issue(s) resolved, the following line should be reinstated
         assert len(total_lens_population) == len(snr_list), f'Lengths of total_lens_population ({len(total_lens_population)}) and snr_list ({len(snr_list)}) do not match.'
 
         # save other params to CSV
@@ -267,29 +277,31 @@ def run_slsim(tuple):
         #         filtered_sample['filter_1'].append(candidate)
         #     continue
 
-        # 2. SNR
-        snr, masked_snr_array, snr_list, _ = survey_sim.get_snr(candidate,
-                                                                band=survey_params['snr_band'],
-                                                                zp=sca_zp_dict[survey_params['snr_band']],
-                                                                detector=sca_id,
-                                                                detector_position=(2048, 2048),
-                                                                num_pix=survey_params['snr_num_pix'],
-                                                                side=survey_params['snr_side'],
-                                                                oversample=survey_params['snr_oversample'],
-                                                                exposure_time=survey_params['snr_exposure_time'],
-                                                                add_subhalos=survey_params['snr_add_subhalos'],
-                                                                debugging=debugging,
-                                                                debug_dir=debug_dir,
-                                                                psf_cache_dir=psf_cache_dir)
-        if snr is None:
-            continue
-
         # 1. extended source magnification
         extended_source_magnification = candidate.extended_source_magnification()
         if snr < 50 and extended_source_magnification < survey_params['magnification']:
             filter_1 += 1
             if filter_1 <= num_samples:
                 filtered_sample['filter_1'].append(candidate)
+            continue
+
+        # 2. SNR
+        snr, masked_snr_array, snr_list, _ = survey_sim.get_snr(candidate,
+                                                                band=survey_params['snr_band'],
+                                                                zp=sca_zp_dict[survey_params['snr_band']],
+                                                                detector=sca_id,
+                                                                detector_position=(2048, 2048),
+                                                                input_num_pix=survey_params['snr_input_num_pix'],
+                                                                output_num_pix=survey_params['snr_output_num_pix'],
+                                                                side=survey_params['snr_side'],
+                                                                oversample=survey_params['snr_oversample'],
+                                                                exposure_time=survey_params['snr_exposure_time'],
+                                                                kwargs_numerics=kwargs_numerics,
+                                                                add_subhalos=survey_params['snr_add_subhalos'],
+                                                                debugging=debugging,
+                                                                debug_dir=debug_dir,
+                                                                psf_cache_dir=psf_cache_dir)
+        if snr is None:
             continue
 
         # if debugging and k % 100 == 0:

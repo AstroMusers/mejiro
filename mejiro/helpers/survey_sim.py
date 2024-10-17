@@ -22,8 +22,8 @@ roman_params = RomanParameters(csv_path)
 
 
 # TODO a(n imperfect) lens subtraction option?
-def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), num_pix=45, side=4.95, oversample=1,
-            exposure_time=146, add_subhalos=True, return_snr_list=False, debugging=False, debug_dir=None,
+def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), input_num_pix=51, output_num_pix=45, side=4.95, oversample=1,
+            exposure_time=146, add_subhalos=True, kwargs_numerics={'supersampling_factor': 3, 'compute_mode': 'regular'}, return_snr_list=False, debugging=False, debug_dir=None,
             psf_cache_dir=None):
     if debugging: assert debug_dir is not None, 'Debugging is enabled but no debug directory is provided.'
 
@@ -40,10 +40,10 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), num_pi
         strong_lens.add_subhalos(realization)
 
     # generate synthetic images with lenstronomy
-    model, lens_sb, source_sb = strong_lens.get_array(num_pix * oversample, side, band, zp, return_pieces=True)
+    model, lens_sb, source_sb = strong_lens.get_array(input_num_pix * oversample, side, band, zp, kwargs_numerics=kwargs_numerics, return_pieces=True)
 
     # generate GalSim images
-    results, lenses, sources, _ = gs.get_images(strong_lens, [model], [band], {band: zp}, num_pix, num_pix, oversample,
+    results, lenses, sources, _ = gs.get_images(strong_lens, [model], [band], {band: zp}, input_num_pix, output_num_pix, oversample,
                                                 oversample,
                                                 lens_surface_brightness=[lens_sb],
                                                 source_surface_brightness=[source_sb], detector=detector,

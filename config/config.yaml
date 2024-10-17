@@ -5,8 +5,8 @@ defaults:
   - override hydra/job_logging: disabled
 
 survey:
-  - runs: 378 # 144
-  - area: 0.5
+  - runs: 18 # 504
+  - area: 0.1
   - total_population: True
   - scas: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]  # 
   - deflector_cut_band: F129
@@ -16,7 +16,7 @@ survey:
   - source_cut_band: F129
   - source_cut_band_max: 27
   - source_z_min: 0.01
-  - source_z_max: 5.
+  - source_z_max: 6.
   - min_image_separation: 0.3  # arcseconds
   - max_image_separation: 10.  # arcseconds
   - mag_arc_limit_band: F129
@@ -29,22 +29,29 @@ survey:
   - snr_exposure_time: 146
   - snr_band: F129
   - snr_threshold: 20
-  - snr_num_pix: 90  # 45  # 70
-  - snr_side: 9.9  # 4.95  # 7.7
+  - snr_side: 10.67
+  - snr_input_num_pix: 97
+  - snr_output_num_pix: 91
   - snr_oversample: 5
+  - snr_supersampling_factor: 3
+  - snr_supersampling_compute_mode: adaptive  # regular
+  - snr_supersampling_radius: 3. # arcseconds
   # - zodi_multiplier: 1.5  # multiplied with minimum zodiacal light
 
 pipeline:
   - nice: 19
-  - debugging: False  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
+  - debugging: True  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
   - limit: None  # None
   # scene params
-  - num_pix: 97  # 97  # 51  # 96
   - side: 10.67  # 10.67  # 5.61  # 10.56
-  - final_pixel_side: 90  # 45
+  - num_pix: 97  # 97  # 51  # 96
+  - final_pixel_side: 91  # 45
   - grid_oversample: 5
   - num_samples: 100000  # 100000
-  - max_scene_size: 10.  # 10.01
+  - max_scene_size: 10.01
+  - supersampling_factor: 3
+  - supersampling_compute_mode: adaptive
+  - supersampling_radius: 5. # arcseconds
   # subhalo params
   - log_mlow: 6
   - log_mhigh: 10
