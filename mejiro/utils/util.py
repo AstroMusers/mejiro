@@ -16,16 +16,19 @@ from omegaconf import OmegaConf
 def create_centered_box(N, box_size):
     """
     Create an NxN array with a centered box of True values.
+    
     Parameters
     ----------
     N : int
         The size of the outer array. Must be an odd number.
     box_size : int
         The size of the centered box. Must be an odd number and less than or equal to N.
+
     Returns
     -------
     numpy.ndarray
         An NxN array with a centered box of True values and the rest False.
+
     Raises
     ------
     ValueError
@@ -56,16 +59,19 @@ def create_centered_box(N, box_size):
 def create_centered_circle(N, radius):
     """
     Create an NxN boolean array with a centered circle of True values.
+
     Parameters
     ----------
     N : int
         The size of the NxN array. Must be an odd number.
     radius : float
         The radius of the circle. Must be a positive number and less than or equal to N//2.
+        
     Returns
     -------
     numpy.ndarray
         An NxN boolean array with a centered circle of True values.
+
     Raises
     ------
     ValueError
@@ -214,7 +220,7 @@ def get_kwargs_cosmo(astropy_cosmo):
     Returns
     -------
     dict
-        A dictionary containing the cosmological parameters:
+        A dictionary containing the cosmological parameters
         - H0 : float
             The Hubble constant at z=0 in km/s/Mpc.
         - Ob0 : float
@@ -382,7 +388,7 @@ def combine_all_csvs(path, prefix="", filename=None):
     df_res : pandas.DataFrame
         The combined DataFrame containing all the CSV data.
 
-    Example:
+    Examples
     --------
     >>> combine_all_csvs('/path/to/csvs', 'combined.csv')
     Wrote combined CSV to combined.csv
