@@ -1,0 +1,67 @@
+import numpy as np
+from lenstronomy.SimulationAPI.ObservationConfig import HST, LSST, Roman, DES, Euclid
+from lenstronomy.SimulationAPI.sim_api import SimAPI
+
+from mejiro.utils import util
+
+
+def default_roman_engine_params():
+    return {
+        'kwargs_numerics': {
+            'supersampling_factor': 3,
+            'compute_mode': 'regular'
+        },
+        'noise': True
+    }
+
+
+def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=default_roman_engine_params(), verbose=False, **kwargs):
+    strong_lens = synthetic_image.strong_lens
+    band = synthetic_image.band
+
+    roman_obs_config = Roman.Roman(band=band, 
+                                   psf_type='PIXEL', 
+                                   survey_mode='wide_area')
+    roman_obs_config.obs['num_exposures'] = 1  # set number of exposures to 1 cf. 96
+    psf = None  # TODO get PSF
+
+    sim_api = SimAPI(numpix=synthetic_image.num_pix, 
+                   kwargs_single_band=roman_obs_config.kwargs_single_band(), 
+                   kwargs_model=strong_lens.kwargs_model)
+
+    imsim = sim_api.image_model_class(engine_params['kwargs_numerics'])
+
+    kwargs_lens = strong_lens.kwargs_lens
+    kwargs_lens_light = [strong_lens.kwargs_lens_light_amp_dict[band]]
+    kwargs_source = [strong_lens.kwargs_source_amp_dict[band]]
+
+    total_image = imsim.image(kwargs_lens, kwargs_source, kwargs_lens_light, None)
+
+    if engine_params['noise']:
+        noise = sim_api.noise_for_model(model=total_image)
+        total_image += noise
+
+    # if any unphysical negative pixels exist, set them to zero
+    total_image = util.replace_negatives_with_zeros(total_image)
+
+    if synthetic_image.pieces:
+        lens_surface_brightness = imsim.image(kwargs_lens, 
+                                              kwargs_source, 
+                                              kwargs_lens_light, 
+                                              None, 
+                                              source_add=False)
+        source_surface_brightness = imsim.image(kwargs_lens, 
+                                                kwargs_source, 
+                                                kwargs_lens_light, 
+                                                None, 
+                                                lens_light_add=False)
+        lens_surface_brightness = util.replace_negatives_with_zeros(lens_surface_brightness)
+        source_surface_brightness = util.replace_negatives_with_zeros(source_surface_brightness)
+        return total_image, lens_surface_brightness, source_surface_brightness, psf, noise
+    else:
+        return total_image, psf, noise
+    
+
+def validate_roman_engine_params(engine_params):
+    pass
+    

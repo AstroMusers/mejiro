@@ -33,8 +33,7 @@ def default_hwo_engine_params():
     }
 
 
-def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=default_roman_engine_params(),
-                       verbose=False, **kwargs):
+def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=default_roman_engine_params(), verbose=False, **kwargs):
     # get detector and detector position
     detector = synthetic_image.instrument_params['detector']
     detector_position = synthetic_image.instrument_params['detector_position']
@@ -175,7 +174,7 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
         # quantize, since analog-to-digital conversion gives integers
         image.quantize()
 
-        # if any unphysical negative pixels exists due to how GalSim adds Poisson noise, set them to zero
+        # if any unphysical negative pixels exist due to how GalSim adds Poisson noise, set them to zero
         if np.any(image.array < 0):
             warnings.warn('Negative pixel values in final image')
             image.replaceNegative(0.)
@@ -479,3 +478,7 @@ def validate_hwo_engine_params(engine_params):
         # TODO validate
         pass
     return engine_params
+
+
+def get_empty_image(num_pix, pixel_scale):
+    return galsim.ImageF(num_pix, num_pix, scale=pixel_scale)

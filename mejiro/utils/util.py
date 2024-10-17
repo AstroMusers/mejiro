@@ -3,6 +3,7 @@ import json
 import os
 import pickle as _pickle
 import shutil
+import warnings
 from collections import ChainMap
 from glob import glob
 
@@ -11,6 +12,31 @@ import pandas as pd
 import yaml
 from PIL import Image
 from omegaconf import OmegaConf
+
+
+def replace_negatives_with_zeros(array):
+    """
+    Replace negative values in the array with zeros.
+
+    Parameters
+    ----------
+    array : numpy.ndarray
+        Input array in which negative values will be replaced with zeros.
+
+    Returns
+    -------
+    numpy.ndarray
+        Array with negative values replaced by zeros.
+
+    Warns
+    -----
+    UserWarning
+        If any negative values are found and replaced in the array.
+    """
+    if np.any(array < 0):
+        array[array < 0] = 0
+        warnings.warn("Negative values in array have been replaced with zeros.")
+    return array
 
 
 def create_centered_box(N, box_size):
