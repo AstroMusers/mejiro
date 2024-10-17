@@ -21,7 +21,7 @@ def percentile(array, title='', cmap='binary', percentile=98, colorbar=False):
 
 
 def log10(array, title='', cmap='viridis', colorbar=False):
-    plt.imshow(np.log10(array), cmap=cmap)
+    plt.imshow(np.log10(array / np.max(array)), cmap=cmap)
     plt.title(title)
     if colorbar:
         plt.colorbar()
