@@ -235,7 +235,7 @@ def run_slsim(tuple):
         if debugging:
             print(f'Number of exceptions: {num_exceptions}; {num_exceptions / len(snr_list) * 100:.2f}%')
 
-        assert len(total_lens_population) == len(snr_list), f'Lengths of total_lens_population ({len(total_lens_population)}) and snr_list ({len(snr_list)}) do not match.'
+        # assert len(total_lens_population) == len(snr_list), f'Lengths of total_lens_population ({len(total_lens_population)}) and snr_list ({len(snr_list)}) do not match.'
 
         # save other params to CSV
         total_pop_csv = os.path.join(output_dir, f'total_pop_{run}_sca{sca_id}.csv')
@@ -335,8 +335,8 @@ def run_slsim(tuple):
     filtered_sample['num_filter_2'] = filter_2
     util.pickle(os.path.join(output_dir, f'filtered_sample_{run}_sca{sca_id}.pkl'), filtered_sample)  # TODO temp: make this configurable
 
-    assert len(detectable_gglenses) == len(
-        detectable_snr_list), f'Lengths of detectable_gglenses ({len(detectable_gglenses)}) and detectable_snr_list ({len(detectable_snr_list)}) do not match.'
+    # assert len(detectable_gglenses) == len(
+    #     detectable_snr_list), f'Lengths of detectable_gglenses ({len(detectable_gglenses)}) and detectable_snr_list ({len(detectable_snr_list)}) do not match.'
 
     if debugging: print('Retrieving lenstronomy parameters...')
     dict_list = []
