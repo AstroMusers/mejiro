@@ -23,9 +23,14 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
                                    psf_type='PIXEL', 
                                    survey_mode='wide_area')
     roman_obs_config.obs['num_exposures'] = 1  # set number of exposures to 1 cf. 96
-    psf = None  # TODO get PSF
+    roman_obs_config.obs['exposure_time'] = exposure_time
 
-    sim_api = SimAPI(numpix=synthetic_image.num_pix, 
+    if psf is None:
+        psf = roman_obs_config.obs['kernel_point_source']
+    else:
+        roman_obs_config.obs['kernel_point_source'] = psf
+
+    sim_api = SimAPI(numpix=synthetic_image.native_num_pix, 
                    kwargs_single_band=roman_obs_config.kwargs_single_band(), 
                    kwargs_model=strong_lens.kwargs_model)
 
@@ -41,8 +46,8 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
         noise = sim_api.noise_for_model(model=total_image)
         total_image += noise
 
-    # if any unphysical negative pixels exist, set them to zero
-    total_image = util.replace_negatives_with_zeros(total_image)
+    # if any unphysical negative pixels exist, set them to minimum value
+    total_image = util.replace_negatives(total_image, util.smallest_non_negative_element(total_image))
 
     if synthetic_image.pieces:
         lens_surface_brightness = imsim.image(kwargs_lens, 

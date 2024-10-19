@@ -132,7 +132,7 @@ class Exposure:
         end = time.time()
         self.calc_time = end - start
         if self.verbose:
-            print(f'Exposure calculation time: {util.calculate_execution_time(start, end)}')
+            print(f'Exposure calculation time with {self.engine} engine: {util.calculate_execution_time(start, end)}')
 
     def instrument_not_available_error(self, engine):
         raise ValueError(f'Instrument "{self.synthetic_image.instrument.name}" not available for engine "{engine}." Available engines are {self.synthetic_image.instrument.engines}')

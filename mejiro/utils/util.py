@@ -14,28 +14,32 @@ from PIL import Image
 from omegaconf import OmegaConf
 
 
-def replace_negatives_with_zeros(array):
+def smallest_non_negative_element(array):
     """
-    Replace negative values in the array with zeros.
+    Find the smallest non-negative element in a given array.
 
     Parameters
     ----------
     array : numpy.ndarray
-        Input array in which negative values will be replaced with zeros.
+        Input array containing numerical elements.
 
     Returns
     -------
-    numpy.ndarray
-        Array with negative values replaced by zeros.
-
-    Warns
-    -----
-    UserWarning
-        If any negative values are found and replaced in the array.
+    float or None
+        The smallest non-negative element in the array. If no non-negative 
+        elements are found, returns None.
     """
+    non_negative_elements = array[array >= 0]
+    if non_negative_elements.size > 0:
+        return np.min(non_negative_elements)
+    else:
+        return None
+
+
+def replace_negatives(array, replacement=0):
     if np.any(array < 0):
-        array[array < 0] = 0
-        warnings.warn("Negative values in array have been replaced with zeros.")
+        array[array < 0] = replacement
+        warnings.warn(f"Negative values in array have been replaced with {replacement}.")
     return array
 
 
