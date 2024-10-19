@@ -14,9 +14,7 @@ from mejiro.helpers.roman_params import RomanParameters
 
 def default_roman_engine_params():
     return {
-        'max_scene_size': 5.0,  # arcsec
-        'num_samples': 100,
-        'oversample_factor': 1,
+        'num_samples': 10000,
         'calculation': {
             'noise': {
                 'crs': True,
@@ -39,12 +37,12 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
     image = synthetic_image.image
     strong_lens = synthetic_image.strong_lens
     num_samples = engine_params['num_samples']
-    oversample_factor = engine_params['oversample_factor']
+    oversample_factor = synthetic_image.oversample
 
     calc = build_default_calc('roman', 'wfi', 'imaging')
 
     # set scene size settings
-    calc['configuration']['max_scene_size'] = engine_params['max_scene_size']
+    calc['configuration']['max_scene_size'] = synthetic_image.arcsec
 
     # set instrument
     calc['configuration']['instrument']['filter'] = synthetic_image.band.lower()
@@ -75,6 +73,7 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
     norm_wave = _get_norm_wave(band)
     if num_samples:
         calc, num_point_sources = _phonion_sample(calc, mag_array, synthetic_image, norm_wave, verbose)
+    # TODO pass in an engine param to choose between sampling and grid methods
     elif oversample_factor:
         calc, num_point_sources = _phonion_grid(calc, mag_array, synthetic_image, norm_wave, verbose)
     else:
@@ -232,8 +231,32 @@ def _get_norm_wave(band):
 
     
 def validate_roman_engine_params(engine_params):
-    pass
-
-    # make sure num_samples is int
-    # if not isinstance(num_samples, int):
-    #     num_samples = int(num_samples)
+    if 'num_samples' not in engine_params.keys():
+        engine_params['num_samples'] = default_roman_engine_params()['num_samples']  # TODO is this necessary? doesn't GalSim do this?
+        # TODO logging to inform user of default
+    else:
+        # TODO validate
+        pass
+    if 'calculation' not in engine_params.keys():
+        engine_params['calculation'] = default_roman_engine_params()['calculation']
+        # TODO logging to inform user of default
+    else:
+        if 'noise' not in engine_params['calculation'].keys():
+            engine_params['calculation']['noise'] = default_roman_engine_params()['calculation']['noise']
+            # TODO logging to inform user of default
+        else:
+            # TODO validate
+            pass
+        if 'effects' not in engine_params['calculation'].keys():
+            engine_params['calculation']['effects'] = default_roman_engine_params()['calculation']['effects']
+            # TODO logging to inform user of default
+        else:
+            # TODO validate
+            pass
+    if 'sky_background' not in engine_params.keys():
+        engine_params['sky_background'] = default_roman_engine_params()['sky_background']
+        # TODO logging to inform user of default
+    else:
+        # TODO validate
+        pass
+    return engine_params

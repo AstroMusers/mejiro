@@ -12,9 +12,9 @@ class Exposure:
 
         self.synthetic_image = synthetic_image
         self.exposure_time = exposure_time
+        self.engine = engine
         self.verbose = verbose
         self.noise = None
-        self.engine = engine
 
         if engine == 'galsim':
             from mejiro.engines import galsim_engine
@@ -39,6 +39,9 @@ class Exposure:
                 if self.nonlinearity is not None: self.noise += self.nonlinearity
                 if self.ipc is not None: self.noise += self.ipc
                 if self.read_noise is not None: self.noise += self.read_noise
+
+                # TODO it's confusing for all detector effects to be type galsim.Image and the noise attribute to be an ndarray, but for comparison across engines the noise should be an array and the detector effects should be Images so they can be passed in as engine params
+                self.noise = self.noise.array
             elif self.synthetic_image.instrument.name == 'HWO':
                 # validate engine params and set defaults
                 if engine_params is None:
@@ -78,8 +81,6 @@ class Exposure:
             # raise NotImplementedError('Pandeia engine not yet implemented')
             from mejiro.engines import pandeia_engine
 
-            self.noise = np.zeros_like(self.synthetic_image.image)
-
             # validate engine params and set defaults
             if engine_params is None:
                 engine_params = pandeia_engine.default_roman_engine_params()
@@ -88,6 +89,9 @@ class Exposure:
 
             # get exposure
             results, self.psf, self.noise = pandeia_engine.get_roman_exposure(synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
+
+            # TODO temporarily set noise to zeros until pandeia noise is implemented
+            self.noise = np.zeros_like(self.synthetic_image.image)
 
         elif engine == 'romanisim':
             raise NotImplementedError('romanisim engine not yet implemented')
