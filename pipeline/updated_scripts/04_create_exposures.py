@@ -168,6 +168,11 @@ def get_image(input):
     possible_detector_positions = divide_up_sca(5)
     detector_pos = random.choice(possible_detector_positions)
 
+    # Save attributes on StrongLens
+    lens.detector = detector
+    lens.detector_position = detector_pos
+    util.pickle(os.path.join(input_dir, f'lens_{uid}.pkl'), lens)
+
     gs_results = gs.get_images(lens,
                                arrays,
                                bands,
