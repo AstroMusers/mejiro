@@ -61,7 +61,9 @@ class StrongLens:
             # self.main_halo_mass = self.lens_stellar_mass * 51 * (1 + self.z_lens) ** 0.9
             rv1 = truncnorm(a=-1, b=1, loc=51, scale=36)
             rv2 = truncnorm(a=-1, b=1, loc=0.9, scale=1.8)
-            self.main_halo_mass = self.lens_stellar_mass * rv1.rvs() * (1 + self.z_lens) ** rv2.rvs()
+            self.mhm_param_1 = rv1.rvs()
+            self.mhm_param_2 = rv2.rvs()
+            self.main_halo_mass = self.lens_stellar_mass * self.mhm_param_1 * (1 + self.z_lens) ** self.mhm_param_2
         else:
             self.main_halo_mass = None
 
