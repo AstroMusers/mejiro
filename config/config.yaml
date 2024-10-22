@@ -5,8 +5,8 @@ defaults:
   - override hydra/job_logging: disabled
 
 survey:
-  - runs: 504 # 504
-  - area: 0.5
+  - runs: 18 # 504
+  - area: 0.1
   - total_population: True
   - scas: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]  # 
   - deflector_cut_band: F129
@@ -35,12 +35,12 @@ survey:
   - snr_oversample: 5
   - snr_supersampling_factor: 3
   - snr_supersampling_compute_mode: adaptive  # regular
-  - snr_supersampling_radius: 3. # arcseconds
+  - snr_adaptive_pad: 40  # number of pixels to pad radii of annular adaptive grid below and above minimum and maximum image positions
   # - zodi_multiplier: 1.5  # multiplied with minimum zodiacal light
 
 pipeline:
   - nice: 19
-  - debugging: True  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
+  - debugging: False  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
   - limit: None  # None
   # scene params
   - side: 10.67  # 10.67  # 5.61  # 10.56

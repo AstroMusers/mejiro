@@ -87,7 +87,7 @@ def main(config):
     # Define the number of processes
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - config.machine.headroom_cores
-    process_count -= 10  # Adjust this based on your resource constraints
+    process_count -= 8  # Adjust this based on your resource constraints
     if count < process_count:
         process_count = count
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
@@ -125,6 +125,8 @@ def get_model(input):
     assert lens.uid == uid, f'UID mismatch: {lens.uid} != {uid}'
 
     # build kwargs_numerics
+    lens.side = side  # TODO temporary workaround
+    lens.num_pix = num_pix * grid_oversample  # TODO temporary workaround
     supersampling_indices = lens.build_adaptive_grid(num_pix * grid_oversample, pad=25)
     kwargs_numerics = {
         'supersampling_factor': supersampling_factor,

@@ -9,17 +9,17 @@ handle_error() {
 set -e
 
 # execute Python scripts sequentially
-echo 'Simulating HLWAS to find detectable strong lenses...'
-python3 pipeline/updated_scripts/00_run_hlwas_simulation.py
-echo 'Identified detectable strong lenses.'
+# echo 'Simulating HLWAS to find detectable strong lenses...'
+# python3 pipeline/updated_scripts/00_run_hlwas_simulation.py
+# echo 'Identified detectable strong lenses.'
 
-echo 'Building lens list from SkyPy...'
-python3 pipeline/scripts/01_build_lens_list.py
-echo 'Built lens list.'
+# echo 'Building lens list from SkyPy...'
+# python3 pipeline/scripts/01_build_lens_list.py
+# echo 'Built lens list.'
 
-echo 'Adding subhalos with PyHalo...'
-python3 pipeline/updated_scripts/02_generate_subhalos.py
-echo 'Added subhalos.'
+# echo 'Adding subhalos with PyHalo...'
+# python3 pipeline/updated_scripts/02_generate_subhalos.py
+# echo 'Added subhalos.'
 
 echo 'Building models...'
 python3 pipeline/updated_scripts/03_create_synthetic_images.py

@@ -40,7 +40,15 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), input_
         strong_lens.add_subhalos(realization)
 
     # generate synthetic images with lenstronomy
-    model, lens_sb, source_sb = strong_lens.get_array(input_num_pix * oversample, side, band, zp, kwargs_numerics=kwargs_numerics, return_pieces=True)
+    lens.num_pix = input_num_pix * oversample  # TODO temporary workaround
+    lens.side = side  # TODO temporary workaround
+    supersampling_indices = lens.build_adaptive_grid(input_num_pix * oversample, pad=25)
+    kwargs_numerics_TEMP = {
+        'supersampling_factor': kwargs_numerics['supersampling_factor'],
+        'compute_mode': kwargs_numerics['compute_mode'],
+        'supersampled_indexes': supersampling_indices
+    }
+    model, lens_sb, source_sb = strong_lens.get_array(input_num_pix * oversample, side, band, zp, kwargs_numerics=kwargs_numerics_TEMP, return_pieces=True)
 
     # generate GalSim images
     results, lenses, sources, _ = gs.get_images(strong_lens, [model], [band], {band: zp}, input_num_pix, output_num_pix, oversample,
