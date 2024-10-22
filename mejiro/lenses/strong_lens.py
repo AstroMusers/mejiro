@@ -225,7 +225,7 @@ class StrongLens:
 
     def get_image_positions(self, pixel_coordinates=True):
         from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
-        source_x = self.kwargs_source_dict['F106']['center_x']
+        source_x = self.kwargs_source_dict['F106']['center_x']  # TODO this particular band may not always be defined, so just choose first one
         source_y = self.kwargs_source_dict['F106']['center_y']
         solver = LensEquationSolver(self.lens_model_class)
         image_x, image_y = solver.image_position_from_source(sourcePos_x=source_x, sourcePos_y=source_y,
@@ -366,6 +366,21 @@ class StrongLens:
     def get_total_flux_cps(self, band, zp=None):
         # TODO inefficient for this to call both methods if neither is initialized
         return self.get_lens_flux_cps(band, zp=zp) + self.get_source_flux_cps(band, zp=zp)
+    
+    def build_adaptive_grid(self, num_pix, pad=40):
+        image_positions = self.get_image_positions(pixel_coordinates=True)
+
+        image_radii = []
+        for x, y in zip(image_positions[0], image_positions[1]):
+            image_radii.append(np.sqrt((x - (num_pix // 2))**2 + (y - (num_pix // 2))**2))
+
+        x = np.linspace(-num_pix//2, num_pix//2, num_pix)
+        y = np.linspace(-num_pix//2, num_pix//2, num_pix)
+        X, Y = np.meshgrid(x, y)
+        distance = np.sqrt((X - (self.kwargs_lens[0]['center_x'] / 0.11))**2 + (Y - (self.kwargs_lens[0]['center_y'] / 0.11))**2)
+        
+        return (distance >= np.min(image_radii) - pad) & (distance <= np.max(image_radii) + pad)
+
 
     def get_array(self, num_pix, side, band, zp=None, kwargs_psf=None, return_pieces=False, kwargs_numerics={'supersampling_factor': 3, 'compute_mode': 'regular'}):
         self.num_pix = num_pix

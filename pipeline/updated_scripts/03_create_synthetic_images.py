@@ -122,8 +122,7 @@ def get_model(input):
     supersampling_radius = pipeline_params['supersampling_radius']
 
     # build kwargs_numerics
-    radius = supersampling_radius / (0.11 / grid_oversample)  # convert radius from arcsec to pixels
-    supersampling_indices = util.create_centered_circle(N=num_pix * grid_oversample, radius=radius)
+    supersampling_indices = lens.build_adaptive_grid(num_pix * grid_oversample, pad=25)
     kwargs_numerics = {
         'supersampling_factor': supersampling_factor,
         'compute_mode': supersampling_compute_mode,
