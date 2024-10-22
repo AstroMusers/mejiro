@@ -119,7 +119,10 @@ def get_model(input):
     pieces = pipeline_params['pieces']
     supersampling_factor = pipeline_params['supersampling_factor']
     supersampling_compute_mode = pipeline_params['supersampling_compute_mode']
-    supersampling_radius = pipeline_params['supersampling_radius']
+
+    # load the lens based on uid
+    lens = util.unpickle(os.path.join(input_dir, f'lens_with_subhalos_{uid}.pkl'))
+    assert lens.uid == uid, f'UID mismatch: {lens.uid} != {uid}'
 
     # build kwargs_numerics
     supersampling_indices = lens.build_adaptive_grid(num_pix * grid_oversample, pad=25)
@@ -128,10 +131,6 @@ def get_model(input):
         'compute_mode': supersampling_compute_mode,
         'supersampled_indexes': supersampling_indices
     }
-
-    # load the lens based on uid
-    lens = util.unpickle(os.path.join(input_dir, f'lens_with_subhalos_{uid}.pkl'))
-    assert lens.uid == uid, f'UID mismatch: {lens.uid} != {uid}'
 
     # generate lenstronomy model and save
     for band in bands:
