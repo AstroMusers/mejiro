@@ -180,15 +180,6 @@ def run_slsim(tuple):
                        cosmo=cosmo)
     if debugging: print('Defined galaxy population')
 
-    # set kwargs_numerics for SNR calculation
-    radius = survey_params['snr_supersampling_radius'] / (0.11 / survey_params['snr_oversample'])  # convert radius from arcsec to pixels
-    supersampling_indices = util.create_centered_circle(N=survey_params['snr_input_num_pix'] * survey_params['snr_oversample'], radius=radius)
-    kwargs_numerics = {
-        'supersampling_factor': survey_params['snr_supersampling_factor'],
-        'compute_mode': survey_params['snr_supersampling_compute_mode'],
-        'supersampled_indexes': supersampling_indices
-    }
-
     # draw the total lens population
     if survey_params['total_population']:
         if debugging: print('Identifying lenses...')
@@ -216,7 +207,6 @@ def run_slsim(tuple):
                                               side=survey_params['snr_side'],
                                               oversample=survey_params['snr_oversample'],
                                               exposure_time=survey_params['snr_exposure_time'],
-                                              kwargs_numerics=kwargs_numerics,
                                               add_subhalos=survey_params['snr_add_subhalos'],
                                               debugging=False,
                                               psf_cache_dir=psf_cache_dir)
@@ -296,7 +286,6 @@ def run_slsim(tuple):
                                                                 side=survey_params['snr_side'],
                                                                 oversample=survey_params['snr_oversample'],
                                                                 exposure_time=survey_params['snr_exposure_time'],
-                                                                kwargs_numerics=kwargs_numerics,
                                                                 add_subhalos=survey_params['snr_add_subhalos'],
                                                                 debugging=debugging,
                                                                 debug_dir=debug_dir,
