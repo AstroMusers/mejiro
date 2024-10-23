@@ -127,7 +127,12 @@ def get_model(input):
     # build kwargs_numerics
     lens.side = side  # TODO temporary workaround
     lens.num_pix = num_pix * grid_oversample  # TODO temporary workaround
-    supersampling_indices = lens.build_adaptive_grid(num_pix * grid_oversample, pad=25)
+    try:
+        supersampling_indices = lens.build_adaptive_grid(num_pix * grid_oversample, pad=25)
+    except Exception as e:
+        print(f'Error building adaptive grid for {lens.uid}: {e}')
+        supersampling_indices = util.create_centered_circle(num_pix * grid_oversample, 3. / (0.11 / 5))
+
     kwargs_numerics = {
         'supersampling_factor': supersampling_factor,
         'compute_mode': supersampling_compute_mode,
