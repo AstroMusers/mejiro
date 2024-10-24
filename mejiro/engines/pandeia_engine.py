@@ -28,7 +28,8 @@ def default_roman_engine_params():
                 'saturation': True  # NB only has an effect for bright (>19mag) sources
             }
         },
-        'sky_background': True
+        'background': 'minzodi',
+        'background_level': 'medium'  # 'benchmark', 'none
     }
 
 
@@ -56,12 +57,8 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
     calc['calculation'] = engine_params['calculation']
 
     # set Pandeia canned background
-    if engine_params['sky_background']:
-        # calc['background'] = bkg.get_jbt_bkg(suppress_output)
-        calc['background'] = 'minzodi'
-        calc['background_level'] = 'medium'  # 'benchmark'
-    else:
-        calc['background'] = 'none'
+    calc['background'] = engine_params['background']
+    calc['background_level'] = engine_params['background_level']
 
     # convert array from amp to counts/sec
     cps_array = _get_cps_array(strong_lens, image, num_samples, band, background=None)
@@ -252,10 +249,10 @@ def validate_roman_engine_params(engine_params):
         else:
             # TODO validate
             pass
-    if 'sky_background' not in engine_params.keys():
-        engine_params['sky_background'] = default_roman_engine_params()['sky_background']
-        # TODO logging to inform user of default
-    else:
-        # TODO validate
-        pass
+    # if 'sky_background' not in engine_params.keys():
+    #     engine_params['sky_background'] = default_roman_engine_params()['sky_background']
+    #     # TODO logging to inform user of default
+    # else:
+    #     # TODO validate
+    #     pass
     return engine_params
