@@ -5,8 +5,8 @@ defaults:
   - override hydra/job_logging: disabled
 
 survey:
-  - runs: 18 # 504
-  - area: 0.1
+  - runs: 504 # 504
+  - area: 0.5
   - total_population: True
   - scas: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]  # 
   - deflector_cut_band: F129
@@ -35,6 +35,7 @@ survey:
   - snr_oversample: 5
   - snr_supersampling_factor: 3
   - snr_supersampling_compute_mode: adaptive  # regular
+  - snr_supersampling_radius: 2.
   - snr_adaptive_pad: 40  # number of pixels to pad radii of annular adaptive grid below and above minimum and maximum image positions
   # - zodi_multiplier: 1.5  # multiplied with minimum zodiacal light
 
@@ -49,9 +50,9 @@ pipeline:
   - grid_oversample: 5
   - num_samples: 100000  # 100000
   - max_scene_size: 10.01
-  - supersampling_factor: 3
-  - supersampling_compute_mode: adaptive
-  - supersampling_radius: 5. # arcseconds
+  - supersampling_factor: 1
+  - supersampling_compute_mode: regular
+  - supersampling_radius: 3. # arcseconds
   # subhalo params
   - log_mlow: 6
   - log_mhigh: 10
