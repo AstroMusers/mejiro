@@ -13,18 +13,6 @@ from hydra.core.hydra_config import HydraConfig
 from tqdm import tqdm
 
 
-def divide_up_sca(sides):
-    num_centers = sides ** 2
-    piece = int(4088 / num_centers)
-
-    centers = []
-    for i in range(num_centers):
-        for j in range(num_centers):
-            if i % 2 != 0 and j % 2 != 0:
-                centers.append((piece * i, piece * j))
-    return centers
-
-
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
 def main(config):
     start = time.time()
@@ -151,7 +139,11 @@ def get_image(input):
     pieces = pipeline_params['pieces']
 
     # Load lens
-    lens = util.unpickle(os.path.join(input_dir, f'lens_{uid}.pkl'))
+    try:
+        lens = util.unpickle(os.path.join(input_dir, f'lens_{uid}.pkl'))
+    except Exception as e:
+        print(f'Error unpickling lens {uid}: {e}')
+        return 0
 
     # Load the appropriate arrays
     arrays = [np.load(f'{input_dir}/array_{lens.uid}_{band}.npy') for band in bands]
@@ -165,7 +157,7 @@ def get_image(input):
 
     # Determine detector and position
     detector = int(sca)
-    possible_detector_positions = divide_up_sca(5)
+    possible_detector_positions = roman_util.divide_up_sca(5)
     detector_pos = random.choice(possible_detector_positions)
 
     # Save attributes on StrongLens
