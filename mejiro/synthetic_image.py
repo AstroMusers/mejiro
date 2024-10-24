@@ -10,7 +10,7 @@ from lenstronomy.Util import util as len_util
 
 
 class SyntheticImage:
-    def __init__(self, strong_lens, instrument, band, arcsec, oversample=5, kwargs_numerics={'supersampling_factor': 3, 'compute_mode': 'regular'}, pieces=False, verbose=True,
+    def __init__(self, strong_lens, instrument, band, arcsec, oversample=5, kwargs_numerics={'supersampling_factor': 3, 'compute_mode': 'adaptive'}, pieces=False, verbose=True,
                  instrument_params={}):
         # assert band is valid for instrument
         assert band in instrument.bands, f'Band "{band}" not valid for instrument {instrument.name}'
@@ -28,10 +28,63 @@ class SyntheticImage:
         self.pieces = pieces
 
         self._set_up_pixel_grid(arcsec, oversample)
+
+        # build adaptive grid
+        if kwargs_numerics['compute_mode'] == 'adaptive' and 'supersampled_indexes' not in kwargs_numerics.keys():
+            self.supersampled_indexes = self.build_adaptive_grid(pad=40)
+            kwargs_numerics['supersampled_indexes'] = self.supersampled_indexes
+
+        if self.verbose: print(f'Computing with kwargs_numerics: {kwargs_numerics}')
+
         self._calculate_surface_brightness(kwargs_numerics, pieces)
 
         if self.verbose: print(
             f'Initialized SyntheticImage for StrongLens {self.strong_lens.uid} by {self.instrument.name} in {self.band} band')
+
+    def build_adaptive_grid(self, pad):
+        image_positions = self.get_image_positions()
+        if len(image_positions) == 0 or len(image_positions[0]) == 0 or len(image_positions[1]) == 0:
+            raise ValueError(f"Image positions are empty: {image_positions}")
+
+        image_radii = []
+        for x, y in zip(image_positions[0], image_positions[1]):
+            image_radii.append(np.sqrt((x - (self.num_pix // 2))**2 + (y - (self.num_pix // 2))**2))
+        
+        if len(image_radii) == 0:
+            raise ValueError(f"Image radii list is empty: {image_radii}")
+
+        x = np.linspace(-self.num_pix//2, self.num_pix//2, self.num_pix)
+        y = np.linspace(-self.num_pix//2, self.num_pix//2, self.num_pix)
+        X, Y = np.meshgrid(x, y)
+        distance = np.sqrt((X - (self.strong_lens.kwargs_lens[0]['center_x'] / self.pixel_scale))**2 + (Y - (self.strong_lens.kwargs_lens[0]['center_y'] / self.pixel_scale))**2)
+
+        min = np.min(image_radii) - pad
+        if min < 0:
+            min = 0
+        max = np.max(image_radii) + pad
+        if max > self.num_pix//2:
+            max = self.num_pix//2
+        
+        return (distance >= min) & (distance <= max)
+
+    def get_image_positions(self):
+        from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
+
+        try:
+            first_key = next(iter(self.strong_lens.kwargs_source_dict))  # get first key from source dict
+        except StopIteration:
+            raise ValueError("kwargs_source_dict is empty.")
+        
+        source_x = self.strong_lens.kwargs_source_dict[first_key]['center_x']
+        source_y = self.strong_lens.kwargs_source_dict[first_key]['center_y']
+
+        solver = LensEquationSolver(self.strong_lens.lens_model_class)
+        image_x, image_y = solver.image_position_from_source(sourcePos_x=source_x, sourcePos_y=source_y, kwargs_lens=self.strong_lens.kwargs_lens)
+        
+        if self.coords is None:
+            self._set_up_pixel_grid()
+
+        return self.coords.map_coord2pix(ra=image_x, dec=image_y)
 
     def _set_up_pixel_grid(self, arcsec, oversample):
         # validation for oversample
