@@ -407,7 +407,8 @@ class StrongLens:
     def build_adaptive_grid(self, num_pix, pad=40):
         image_positions = self.get_image_positions(pixel_coordinates=True)
         if len(image_positions) == 0 or len(image_positions[0]) == 0 or len(image_positions[1]) == 0:
-            raise ValueError(f"Image positions are empty: {image_positions}")
+            # raise ValueError(f"Image positions are empty: {image_positions}")
+            return None
 
         image_radii = []
         for x, y in zip(image_positions[0], image_positions[1]):

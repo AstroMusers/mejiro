@@ -43,6 +43,8 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), input_
     strong_lens.num_pix = input_num_pix * oversample  # TODO temporary workaround
     strong_lens.side = side  # TODO temporary workaround
     supersampling_indices = strong_lens.build_adaptive_grid(input_num_pix * oversample, pad=25)
+    if supersampling_indices is None:
+        return None, None, None, None
     kwargs_numerics_TEMP = {
         'supersampling_factor': kwargs_numerics['supersampling_factor'],
         'compute_mode': kwargs_numerics['compute_mode'],
