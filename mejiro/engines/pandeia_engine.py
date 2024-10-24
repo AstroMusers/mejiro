@@ -59,7 +59,7 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
     if engine_params['sky_background']:
         # calc['background'] = bkg.get_jbt_bkg(suppress_output)
         calc['background'] = 'minzodi'
-        calc['background_level'] = 'high'  # 'benchmark'
+        calc['background_level'] = 'medium'  # 'benchmark'
     else:
         calc['background'] = 'none'
 
@@ -67,7 +67,7 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
     cps_array = _get_cps_array(strong_lens, image, num_samples, band, background=None)
 
     # convert array from counts/sec to astronomical magnitude
-    mag_array = _convert_cps_to_magnitude(cps_array, band)
+    mag_array = _convert_cps_to_magnitude(cps_array, band, synthetic_image.magnitude_zero_point)
 
     # add point sources to Pandeia input
     norm_wave = _get_norm_wave(band)
@@ -171,19 +171,14 @@ def _get_cps_array(lens, array, num_samples, band, background):
     # so hasn't been defined yet...
     lens._set_classes()
 
-    # calculate flux in counts/sec of source and lens light. NB the total_flux attribute is a list with one element
-    lens_flux_cps = lens.lens_light_model_class.total_flux([lens.kwargs_lens_light_amp_dict[band]])[0]
-    source_flux_cps = lens.source_model_class.total_flux([lens.kwargs_source_amp_dict[band]])[0]
-
-    # if including sky background, account for it; NB it must be in units of counts/sec/pixel
-    bkg_cps = 0
-    if background is not None:
-        # calculate total flux due to background
-        bkg_cps = np.sum(background)
+    # # if including sky background, account for it; NB it must be in units of counts/sec/pixel
+    # bkg_cps = 0
+    # if background is not None:
+    #     # calculate total flux due to background
+    #     bkg_cps = np.sum(background)
 
     # get total flux so we know how bright to make each pixel (in counts/sec)
-    total_flux_cps = source_flux_cps + lens_flux_cps + bkg_cps
-    counts_per_pixel = total_flux_cps / num_samples
+    counts_per_pixel = np.sum(array) / num_samples
 
     # turn array into probability distribution function and sample from it
     flattened = normalized_array.flatten()
@@ -199,10 +194,13 @@ def _get_cps_array(lens, array, num_samples, band, background):
     return reconstructed_array
 
 
-def _convert_cps_to_magnitude(array, band):
-    lenstronomy_roman_config = Roman(band=band.upper(), psf_type='PIXEL',
-                                     survey_mode='wide_area').kwargs_single_band()  # band e.g. 'F106'
-    magnitude_zero_point = lenstronomy_roman_config.get('magnitude_zero_point')
+def _convert_cps_to_magnitude(array, band, zp):
+    if zp is None:
+        lenstronomy_roman_config = Roman(band=band.upper(), psf_type='PIXEL',
+                                        survey_mode='wide_area').kwargs_single_band()  # band e.g. 'F106'
+        magnitude_zero_point = lenstronomy_roman_config.get('magnitude_zero_point')
+    else:
+        magnitude_zero_point = zp
 
     i = 0
     mag_array = np.zeros(array.shape)
@@ -236,6 +234,7 @@ def validate_roman_engine_params(engine_params):
         # TODO logging to inform user of default
     else:
         # TODO validate
+        # TODO it doesn't like floats (e.g. 1e4), so make sure int
         pass
     if 'calculation' not in engine_params.keys():
         engine_params['calculation'] = default_roman_engine_params()['calculation']
