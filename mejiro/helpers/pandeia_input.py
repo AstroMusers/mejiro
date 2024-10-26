@@ -27,7 +27,7 @@ def build_pandeia_calc(array, lens, background=None, band='F106', max_scene_size
     calc['configuration']['instrument']['filter'] = band.lower()  # e.g. 'f106'
 
     # set detector
-    calc['configuration']['detector']['ma_table_name'] = 'hlwas_imaging'
+    # calc['configuration']['detector']['ma_table_name'] = 'hlwas_imaging'  # TODO this causes error sometimes? but build_default_calc sets it to this value, so having/not having this line should make no difference...
     calc['configuration']['detector'][
         'nresultants'] = 8  # resultant number 8 to achieve HLWAS total integration duration of 145.96 s; see https://roman-docs.stsci.edu/raug/astronomers-proposal-tool-apt/appendix/appendix-wfi-multiaccum-tables
 
