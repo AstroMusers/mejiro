@@ -60,7 +60,7 @@ def main(config):
 
     print(stips.__env__report__)
 
-    num_images = 18  # 18
+    num_images = 1  # 18
     num_detectors = 1
     detector_list = [f'SCA{str(i + 1).zfill(2)}' for i in range(num_detectors)]
     bands = ['F106', 'F129', 'F184']
@@ -75,7 +75,7 @@ def main(config):
                                      'roman_hlwas_single_detector.yml')
 
     # set output directory
-    output_dir = os.path.join(config.machine.data_dir, 'STIPS')
+    output_dir = os.path.join(config.machine.data_dir, 'STIPS_dev')
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
 
@@ -232,7 +232,8 @@ def run_stips(tuple):
         'background': 0.15,
         'observations_id': j,
         'exptime': exposure_time,
-        'offsets': [offset]
+        'offsets': [offset],
+        'psf_xbright_limit': 17
     }
 
     obm = ObservationModule(observation_parameters, out_prefix=f'{obs_prefix}', ra=obs_ra, dec=obs_dec,
