@@ -5,7 +5,7 @@ import os
 import sys
 import time
 from copy import deepcopy
-from multiprocessing import Pool
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import hydra
 import matplotlib.pyplot as plt
@@ -32,7 +32,6 @@ def get_masked_exposure(lens, model, band, psf, num_pix, oversample, exposure_ti
     util.center_crop_image(final_array, (90, 90))
 
     if mask:
-        # mask = np.ma.getmask(lens.masked_snr_array)
         data = lens.masked_snr_array.data
         strict_mask = np.ma.masked_where(data < snr_threshold, data)
         mask = np.ma.getmask(strict_mask)
@@ -70,7 +69,6 @@ def _get_subhalos(lens, subhalo_params, log_mlow, log_mhigh, cone_factor):
                    log_mhigh=log_mhigh,
                    log_m_host=np.log10(lens.main_halo_mass),
                    r_tidal=subhalo_params['r_tidal'],
-                   # cone_opening_angle_arcsec=lens.get_einstein_radius() * cone_factor,
                    cone_opening_angle_arcsec=5.,
                    LOS_normalization=subhalo_params['los_normalization'])
     except Exception as e:
@@ -82,7 +80,6 @@ def _get_subhalos(lens, subhalo_params, log_mlow, log_mhigh, cone_factor):
 def main(config):
     start = time.time()
 
-    # enable use of local packages
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
     import mejiro
@@ -90,16 +87,14 @@ def main(config):
     from mejiro.helpers import psf
     from mejiro.utils import util
 
-    # script configuration options
     debugging = False
     require_alignment = False
     limit = 100
     snr_threshold = 100.
     snr_pixel_threshold = 1.
     einstein_radius_threshold = 0.
-    log_m_host_threshold = 13.  # 13.3
+    log_m_host_threshold = 13.
 
-    # set subhalo and imaging params
     subhalo_params = {
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -113,7 +108,6 @@ def main(config):
         'exposure_time': 146,
     }
     bands = ['F106']
-    # bands = ['F106', 'F129', 'F158', 'F184']
     position_control = [
         ('2', (2048, 2048))
     ]
@@ -138,26 +132,21 @@ def main(config):
         ('18', (2048, 2048))
     ]
 
-    # set up directories for script output
     save_dir = os.path.join(config.machine.data_dir, 'output', 'power_spectra_parallelized')
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
     image_save_dir = os.path.join(save_dir, 'images')
     os.makedirs(image_save_dir, exist_ok=True)
 
-    # debugging? set pipeline dir accordingly
     pipeline_params = util.hydra_to_dict(config.pipeline)
-    # TODO set debugging here based on yaml file? or manually above?
     if debugging:
         pipeline_dir = f'{config.machine.pipeline_dir}_dev'
     else:
         pipeline_dir = config.machine.pipeline_dir
 
-    # get zeropoint magnitudes
     module_path = os.path.dirname(mejiro.__file__)
     zp_dict = json.load(open(os.path.join(module_path, 'data', 'roman_zeropoint_magnitudes.json')))
 
-    # collect lenses
     print(f'Collecting lenses...')
     lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, verbose=True)
     print(f'Collected {len(lens_list)} candidate lens(es).')
@@ -172,7 +161,6 @@ def main(config):
             break
     print(f'Collected {len(filtered_lenses)} lens(es).')
 
-    # repeat lenses up to limit
     lenses_to_process = []
     if limit is not None:
         repeats = int(np.ceil(limit / len(filtered_lenses)))
@@ -183,7 +171,6 @@ def main(config):
     for i, lens in enumerate(filtered_lenses):
         print(f'{i}: StrongLens {lens.uid}, {np.log10(lens.main_halo_mass):.2f}, {lens.snr:.2f}')
 
-    # read cached PSFs
     cached_psfs = {}
     psf_cache_dir = os.path.join(config.machine.data_dir, 'cached_psfs')
     psf_id_strings = []
@@ -200,7 +187,6 @@ def main(config):
          snr_pixel_threshold, save_dir, image_save_dir, debugging) for
         run, lens in enumerate(lenses_to_process)]
 
-    # split up the lenses into batches based on core count
     count = len(lenses_to_process)
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - config.machine.headroom_cores
@@ -209,15 +195,15 @@ def main(config):
         process_count = count
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
-    # batch
-    generator = util.batch_list(tuple_list, process_count)
-    batches = list(generator)
-
-    # process the batches
     print(f'Processing {len(tuple_list)} lens(es) that satisfy criteria')
-    for batch in tqdm(batches):
-        pool = Pool(processes=process_count)
-        pool.map(generate_power_spectra, batch)
+    
+    with ProcessPoolExecutor(max_workers=process_count) as executor:
+        futures = {executor.submit(generate_power_spectra, batch): batch for batch in tuple_list}
+        for future in tqdm(as_completed(futures), total=len(futures)):
+            try:
+                future.result()
+            except Exception as e:
+                print(f"Error encountered: {e}")
 
     stop = time.time()
     execution_time = str(datetime.timedelta(seconds=round(stop - start)))
