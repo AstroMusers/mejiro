@@ -124,33 +124,45 @@ def get_model(input):
     supersampling_radius = pipeline_params['supersampling_radius']
 
     # build kwargs_numerics
-    radius = supersampling_radius / (0.11 / grid_oversample)  # convert radius from arcsec to pixels
-    supersampling_indices = util.create_centered_circle(N=num_pix * grid_oversample, radius=radius)
-    kwargs_numerics = {
-        'supersampling_factor': supersampling_factor,
-        'compute_mode': supersampling_compute_mode,
-        'supersampled_indexes': supersampling_indices
-    }
+    try:
+        radius = supersampling_radius / (0.11 / grid_oversample)  # convert radius from arcsec to pixels
+        supersampling_indices = util.create_centered_circle(N=num_pix * grid_oversample, radius=radius)
+        kwargs_numerics = {
+            'supersampling_factor': supersampling_factor,
+            'compute_mode': supersampling_compute_mode,
+            'supersampled_indexes': supersampling_indices
+        }
+    except Exception as e:
+        print(f'Error building supersampling indices for {uid}: {e}')
+        kwargs_numerics = {'supersampling_factor': 3, 'compute_mode': 'regular'}
 
     # load the lens based on uid
     lens = util.unpickle(os.path.join(input_dir, f'lens_with_subhalos_{uid}.pkl'))
     assert lens.uid == uid, f'UID mismatch: {lens.uid} != {uid}'
 
     # generate lenstronomy model and save
-    for band in bands:
-        zp = sca_zp_dict[band]
-        if pieces:
-            model, lens_surface_brightness, source_surface_brightness = lens.get_array(
-                num_pix=num_pix * grid_oversample, side=side, band=band, zp=zp, return_pieces=True, kwargs_numerics=kwargs_numerics)
-            np.save(os.path.join(output_dir, f'array_{lens.uid}_lens_{band}'), lens_surface_brightness)
-            np.save(os.path.join(output_dir, f'array_{lens.uid}_source_{band}'), source_surface_brightness)
-        else:
-            model = lens.get_array(num_pix=num_pix * grid_oversample, side=side, band=band, zp=zp, kwargs_numerics=kwargs_numerics)
-        np.save(os.path.join(output_dir, f'array_{lens.uid}_{band}'), model)
+    try:
+        for band in bands:
+            zp = sca_zp_dict[band]
+            if pieces:
+                model, lens_surface_brightness, source_surface_brightness = lens.get_array(
+                    num_pix=num_pix * grid_oversample, side=side, band=band, zp=zp, return_pieces=True, kwargs_numerics=kwargs_numerics)
+                np.save(os.path.join(output_dir, f'array_{lens.uid}_lens_{band}'), lens_surface_brightness)
+                np.save(os.path.join(output_dir, f'array_{lens.uid}_source_{band}'), source_surface_brightness)
+            else:
+                model = lens.get_array(num_pix=num_pix * grid_oversample, side=side, band=band, zp=zp, kwargs_numerics=kwargs_numerics)
+            np.save(os.path.join(output_dir, f'array_{lens.uid}_{band}'), model)
+    except Exception as e:
+        print(f'Error generating model for {lens.uid}: {e}')
+        return
 
     # pickle lens to save attributes updated by get_array()
-    pickle_target_lens = os.path.join(output_dir, f'lens_{lens.uid}.pkl')
-    util.pickle(pickle_target_lens, lens)
+    try:
+        pickle_target_lens = os.path.join(output_dir, f'lens_{lens.uid}.pkl')
+        util.pickle(pickle_target_lens, lens)
+    except Exception as e:
+        print(f'Error pickling lens {lens.uid}: {e}')
+        return
 
 
 if __name__ == '__main__':

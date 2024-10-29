@@ -140,20 +140,28 @@ def get_model(input):
     }
 
     # generate lenstronomy model and save
-    for band in bands:
-        zp = sca_zp_dict[band]
-        if pieces:
-            model, lens_surface_brightness, source_surface_brightness = lens.get_array(
-                num_pix=num_pix * grid_oversample, side=side, band=band, zp=zp, return_pieces=True, kwargs_numerics=kwargs_numerics)
-            np.save(os.path.join(output_dir, f'array_{lens.uid}_lens_{band}'), lens_surface_brightness)
-            np.save(os.path.join(output_dir, f'array_{lens.uid}_source_{band}'), source_surface_brightness)
-        else:
-            model = lens.get_array(num_pix=num_pix * grid_oversample, side=side, band=band, zp=zp, kwargs_numerics=kwargs_numerics)
-        np.save(os.path.join(output_dir, f'array_{lens.uid}_{band}'), model)
+    try:
+        for band in bands:
+            zp = sca_zp_dict[band]
+            if pieces:
+                model, lens_surface_brightness, source_surface_brightness = lens.get_array(
+                    num_pix=num_pix * grid_oversample, side=side, band=band, zp=zp, return_pieces=True, kwargs_numerics=kwargs_numerics)
+                np.save(os.path.join(output_dir, f'array_{lens.uid}_lens_{band}'), lens_surface_brightness)
+                np.save(os.path.join(output_dir, f'array_{lens.uid}_source_{band}'), source_surface_brightness)
+            else:
+                model = lens.get_array(num_pix=num_pix * grid_oversample, side=side, band=band, zp=zp, kwargs_numerics=kwargs_numerics)
+            np.save(os.path.join(output_dir, f'array_{lens.uid}_{band}'), model)
+    except Exception as e:
+        print(f'Error generating model for {lens.uid}: {e}')
+        return
 
     # pickle lens to save attributes updated by get_array()
-    pickle_target_lens = os.path.join(output_dir, f'lens_{lens.uid}.pkl')
-    util.pickle(pickle_target_lens, lens)
+    try:
+        pickle_target_lens = os.path.join(output_dir, f'lens_{lens.uid}.pkl')
+        util.pickle(pickle_target_lens, lens)
+    except Exception as e:
+        print(f'Error pickling lens {lens.uid}: {e}')
+        return
 
 
 if __name__ == '__main__':
