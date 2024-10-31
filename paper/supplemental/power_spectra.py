@@ -89,11 +89,11 @@ def main(config):
 
     debugging = False
     require_alignment = False
-    limit = 100
+    limit = None
     snr_threshold = 100.
     snr_pixel_threshold = 1.
     einstein_radius_threshold = 0.
-    log_m_host_threshold = 13.
+    log_m_host_threshold = 13
 
     subhalo_params = {
         'r_tidal': 0.5,
@@ -167,8 +167,10 @@ def main(config):
         print(f'Repeating lenses {repeats} times...')
         lenses_to_process = filtered_lenses * repeats
         lenses_to_process = lenses_to_process[:limit]
+    else:
+        lenses_to_process = filtered_lenses
 
-    for i, lens in enumerate(filtered_lenses):
+    for i, lens in enumerate(lenses_to_process):
         print(f'{i}: StrongLens {lens.uid}, {np.log10(lens.main_halo_mass):.2f}, {lens.snr:.2f}')
 
     cached_psfs = {}
@@ -717,7 +719,7 @@ def generate_power_spectra(tuple):
             print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
         plt.close()
 
-    print(f'Finished lens {lens.uid}.')
+    # print(f'Finished lens {lens.uid}.')
 
 
 if __name__ == '__main__':
