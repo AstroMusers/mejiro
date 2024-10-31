@@ -32,8 +32,8 @@ def main(config):
     output_size = 45
     # grid_oversample_list = [1, 3, 5]  # 
     grid_oversample_list = [1]
-    # num_samples_list = [100, 1000, 10000, 100000, 1000000]  # 10000000
-    num_samples_list = [int(1e7), int(1e8), int(1e9)]
+    # num_samples_list = [100]  # , 1000, 10000, 100000, 1000000, 10000000
+    num_samples_list = [int(1e10), int(1e11), int(1e12), int(1e13), int(1e14)]
 
     # use test lens
     lens = SampleStrongLens()
@@ -79,8 +79,8 @@ def main(config):
             execution_time.append(stop - start)
             execution_time_x.append((grid_oversample, num_samples))
 
-        np.save(os.path.join(output_dir, f'execution_time_{grid_oversample}'), execution_time)
-        np.save(os.path.join(output_dir, f'execution_time_x_{grid_oversample}'), execution_time_x)
+        np.save(os.path.join(output_dir, f'execution_time_{grid_oversample}_last'), execution_time)
+        np.save(os.path.join(output_dir, f'execution_time_x_{grid_oversample}_last'), execution_time_x)
 
 
 if __name__ == '__main__':
