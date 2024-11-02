@@ -10,9 +10,6 @@ import galsim
 import hydra
 import matplotlib.pyplot as plt
 import numpy as np
-from pyHalo.Halos.lens_cosmo import LensCosmo
-from pyHalo.concentration_models import preset_concentration_models
-from pyHalo.single_realization import SingleHalo
 from scipy.stats import chi2
 from tqdm import tqdm
 
@@ -26,18 +23,26 @@ def main(config):
         sys.path.append(config.machine.repo_dir)
     from mejiro.lenses import lens_util
     from mejiro.utils import roman_util, util
+    from mejiro.instruments.roman import Roman
+
+    # retrieve configuration parameters
+    pipeline_params = util.hydra_to_dict(config.pipeline)
+
+    # set nice level
+    os.nice(pipeline_params['nice'])
 
     # script configuration options
-    debugging = True
+    debugging = False
     script_config = {
         'snr_quantile': 0.95,
         'image_radius': 0.01,  # arcsec
         'num_lenses': None,  # None
         'num_positions': 1,
-        'rng': galsim.UniformDeviate(42)
+        'rng': galsim.UniformDeviate(42),
+        'psf_cache_dir': os.path.join(config.machine.data_dir, 'cached_psfs')
     }
     subhalo_params = {
-        'masses': np.linspace(1e9, 1e11, 25),  # 
+        'masses': np.linspace(1e8, 1e11, 1000),  # 
         'concentration': 10,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -46,13 +51,13 @@ def main(config):
     imaging_params = {
         'band': 'F087',
         'scene_size': 5,  # arcsec
-        'oversample': 1,  # TODO TEMP
+        'oversample': 5,  # TODO TEMP
         'exposure_time': 14600
     }
     positions = []
     for i in range(1, 19):
         sca = str(i).zfill(2)
-        coords = roman_util.divide_up_sca(3)
+        coords = roman_util.divide_up_sca(4)
         for coord in coords:
             positions.append((sca, coord))
     print(f'Processing {len(positions)} positions.')
@@ -70,9 +75,10 @@ def main(config):
     else:
         pipeline_dir = config.machine.pipeline_dir
     print(f'Collecting lenses from {pipeline_dir}')
-    lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, suppress_output=False)
+    lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, verbose=True)
     og_count = len(lens_list)
-    lens_list = [lens for lens in lens_list if lens.snr > 50]
+    lens_list = [lens for lens in lens_list if lens.snr > 50 and lens.get_einstein_radius() > 0.5]  #
+    lens_list = sorted(lens_list, key=lambda x: x.snr, reverse=True)
     num_lenses = script_config['num_lenses']
     if num_lenses is not None:
         repeats = int(np.ceil(num_lenses / len(lens_list)))
@@ -136,6 +142,7 @@ def run(tuple):
     from mejiro.synthetic_image import SyntheticImage
     from mejiro.exposure import Exposure
     from mejiro.plots import plot_util
+    from mejiro.engines import webbpsf_engine
 
     # unpack tuple
     (_, lens, roman, script_config, imaging_params, subhalo_params, positions, save_dir, image_save_dir,
@@ -143,6 +150,7 @@ def run(tuple):
     image_radius = script_config['image_radius']
     num_positions = script_config['num_positions']
     rng = script_config['rng']
+    psf_cache_dir = script_config['psf_cache_dir']
     band = imaging_params['band']
     oversample = imaging_params['oversample']
     scene_size = imaging_params['scene_size']
@@ -152,6 +160,12 @@ def run(tuple):
 
     # initialize lists
     detectable_halos = []
+
+    # set kwargs_numerics
+    kwargs_numerics = {
+        'supersampling_factor': 3,
+        'compute_mode': 'adaptive',
+    }
 
     # solve for image positions
     image_x, image_y = lens.get_image_positions(pixel_coordinates=False)
@@ -168,7 +182,15 @@ def run(tuple):
         sca = int(sca)
         position_key = f'{sca}_{sca_position[0]}_{sca_position[1]}'
         # print(' ' + position_key)
+        instrument_params = {
+            'detector': sca,
+            'detector_position': sca_position
+        }
         results[position_key] = {}
+
+        # get PSF
+        psf_id = webbpsf_engine.get_psf_id(band, sca, sca_position, oversample, 101)
+        psf = webbpsf_engine.get_cached_psf(psf_id, psf_cache_dir, verbose=False)
 
         # get image with no subhalo
         lens_no_subhalo = deepcopy(lens)
@@ -177,20 +199,22 @@ def run(tuple):
                                           band=band,
                                           arcsec=scene_size,
                                           oversample=oversample,
-                                          sca=sca,
+                                          kwargs_numerics=kwargs_numerics,
+                                          instrument_params=instrument_params,
                                           pieces=True,
-                                          debugging=False)
+                                          verbose=verbose)
         try:
+            engine_params = {
+                'rng': rng,
+                'reciprocity_failure': False,
+                'nonlinearity': False,
+                'ipc': False
+            }
             exposure_no_subhalo = Exposure(synth_no_subhalo,
                                            exposure_time=exposure_time,
-                                           rng=rng,
-                                           sca=sca,
-                                           sca_position=sca_position,
-                                           return_noise=True,
-                                           reciprocity_failure=False,
-                                           nonlinearity=False,
-                                           ipc=False,
-                                           suppress_output=True)
+                                           engine_params=engine_params,
+                                           psf=psf,
+                                           verbose=verbose)
         except Exception as e:
             print(f'Failed to generate exposure for StrongLens {lens.uid}: {e}')
             return
@@ -223,13 +247,14 @@ def run(tuple):
         rv = chi2(dof)
         threshold_chi2 = rv.isf(0.001)
 
-        for m200 in tqdm(masses, disable=True):
+        for m200 in masses:
             mass_key = f'{int(m200)}'
             results[position_key][mass_key] = []
             # print('     ' + mass_key)
 
             # compute subhalo parameters
-            # Rs_angle, alpha_Rs = lens.lens_cosmo.nfw_physical2angle(M=m200, c=concentration)
+            Rs_angle, alpha_Rs = lens.lens_cosmo.nfw_physical2angle(M=m200, c=concentration)
+            c = concentration
 
             chi_square_list = []
             for i in range(num_positions):
@@ -248,61 +273,65 @@ def run(tuple):
                 center_y = halo_y
 
                 # build subhalo parameters
-                # subhalo_type = 'TNFW'
-                # kwargs_subhalo = {
-                #     'alpha_Rs': alpha_Rs,
-                #     'Rs': Rs_angle,
-                #     'center_x': center_x,
-                #     'center_y': center_y,
-                #     'r_trunc': 5 * Rs_angle
-                # }
-                pyhalo_lens_cosmo = LensCosmo(lens.z_lens, lens.z_source)
-                astropy_class = pyhalo_lens_cosmo.cosmo
-                c_model, kwargs_concentration_model = preset_concentration_models('DIEMERJOYCE19')
-                kwargs_concentration_model['scatter'] = False
-                kwargs_concentration_model['cosmo'] = astropy_class
-                concentration_model = c_model(**kwargs_concentration_model)
-                truncation_model = None
-                kwargs_halo_model = {'truncation_model': truncation_model,
-                                     'concentration_model': concentration_model,
-                                     'kwargs_density_profile': {}}
-                single_halo = SingleHalo(halo_mass=m200,
-                                         x=center_x, y=center_y,
-                                         mdef='NFW',
-                                         z=lens.z_lens, zlens=lens.z_lens, zsource=lens.z_source,
-                                         subhalo_flag=True,
-                                         kwargs_halo_model=kwargs_halo_model,
-                                         astropy_instance=lens.cosmo,
-                                         lens_cosmo=pyhalo_lens_cosmo)
-                c = single_halo.halos[0].c
+                subhalo_type = 'TNFW'
+                kwargs_subhalo = {
+                    'alpha_Rs': alpha_Rs,
+                    'Rs': Rs_angle,
+                    'center_x': center_x,
+                    'center_y': center_y,
+                    'r_trunc': 5 * Rs_angle
+                }
+                # pyhalo_lens_cosmo = LensCosmo(lens.z_lens, lens.z_source)
+                # astropy_class = pyhalo_lens_cosmo.cosmo
+                # c_model, kwargs_concentration_model = preset_concentration_models('DIEMERJOYCE19')
+                # kwargs_concentration_model['scatter'] = False
+                # kwargs_concentration_model['cosmo'] = astropy_class
+                # concentration_model = c_model(**kwargs_concentration_model)
+                # truncation_model = None
+                # kwargs_halo_model = {'truncation_model': truncation_model, 
+                #                     'concentration_model': concentration_model,
+                #                     'kwargs_density_profile': {}}
+                # single_halo = SingleHalo(halo_mass=m200, 
+                #                         x=center_x, y=center_y, 
+                #                         mdef='NFW', 
+                #                         z=lens.z_lens, zlens=lens.z_lens, zsource=lens.z_source,
+                #                         subhalo_flag=True, 
+                #                         kwargs_halo_model=kwargs_halo_model, 
+                #                         astropy_instance=lens.cosmo,
+                #                         lens_cosmo=pyhalo_lens_cosmo)
+                # c = single_halo.halos[0].c
 
                 # get image with subhalo
                 lens_with_subhalo = deepcopy(lens)
-                # lens_with_subhalo.add_subhalo(subhalo_type, kwargs_subhalo)
-                lens_with_subhalo.add_subhalos(single_halo)
+                lens_with_subhalo.add_subhalo(subhalo_type, kwargs_subhalo)
+                # lens_with_subhalo.add_subhalos(single_halo)
                 synth = SyntheticImage(lens_with_subhalo,
                                        roman,
                                        band=band,
                                        arcsec=scene_size,
                                        oversample=oversample,
-                                       sca=sca,
-                                       sca_position=sca_position,
-                                       debugging=False)
-                try:
-                    exposure = Exposure(synth,
-                                        exposure_time=exposure_time,
-                                        rng=rng,
-                                        sca=sca,
-                                        sca_position=sca_position,
-                                        poisson_noise=poisson_noise,
-                                        reciprocity_failure=False,
-                                        dark_noise=dark_noise,
-                                        nonlinearity=False,
-                                        ipc=False,
-                                        read_noise=read_noise,
-                                        suppress_output=True)
-                except:
-                    return
+                                       kwargs_numerics=kwargs_numerics,
+                                       instrument_params=instrument_params,
+                                       verbose=verbose)
+                # try:
+                engine_params = {
+                    'rng': rng,
+                    'poisson_noise': poisson_noise,
+                    'reciprocity_failure': False,
+                    'dark_noise': dark_noise,
+                    'nonlinearity': False,
+                    'ipc': False,
+                    'read_noise': read_noise
+                }
+                exposure = Exposure(synth,
+                                    exposure_time=exposure_time,
+                                    engine_params=engine_params,
+                                    check_cache=True,
+                                    psf=psf,
+                                    verbose=verbose)
+                # except Exception as e:
+                #     print(f'Failed to generate exposure for StrongLens {lens.uid}: {e}')
+                #     return
 
                 # mask image with subhalo
                 masked_exposure_with_subhalo = np.ma.masked_array(exposure.exposure, mask=mask)

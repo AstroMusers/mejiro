@@ -42,11 +42,11 @@ def main(config):
     # detectors = [1, 2, 4, 5]
     # detector_positions = [(2048, 2048), (2048, 2048), (2048, 2048), (2048, 2048)]
     detectors = list(range(1, 19))
-    # detector_positions = [(2048, 2048)]
+    detector_positions = [(2048, 2048)]
     # detector_positions = []
     # for i in range(4):
     #     detector_positions.extend(roman_util.divide_up_sca(i + 1))
-    detector_positions = roman_util.divide_up_sca(5)
+    # detector_positions = roman_util.divide_up_sca(2)
     num_pixes = [101]
 
     # Determine which PSFs need to be generated

@@ -4,7 +4,7 @@ import os
 import sys
 import time
 from copy import deepcopy
-from multiprocessing import Pool
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import galsim
 import hydra
@@ -36,13 +36,13 @@ def main(config):
     script_config = {
         'snr_quantile': 0.95,
         'image_radius': 0.01,  # arcsec
-        'num_lenses': None,  # None
+        'num_lenses': 24,  # None
         'num_positions': 1,
         'rng': galsim.UniformDeviate(42),
         'psf_cache_dir': os.path.join(config.machine.data_dir, 'cached_psfs')
     }
     subhalo_params = {
-        'masses': np.linspace(1e8, 1e11, 1000),  # 
+        'masses': np.linspace(1e8, 1e10, 100),  # 
         'concentration': 10,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -57,7 +57,7 @@ def main(config):
     positions = []
     for i in range(1, 19):
         sca = str(i).zfill(2)
-        coords = roman_util.divide_up_sca(4)
+        coords = roman_util.divide_up_sca(2)
         for coord in coords:
             positions.append((sca, coord))
     print(f'Processing {len(positions)} positions.')
@@ -77,7 +77,7 @@ def main(config):
     print(f'Collecting lenses from {pipeline_dir}')
     lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, verbose=True)
     og_count = len(lens_list)
-    lens_list = [lens for lens in lens_list if lens.snr > 50 and lens.get_einstein_radius() > 0.5]  #
+    lens_list = [lens for lens in lens_list if lens.snr > 100]  # 
     lens_list = sorted(lens_list, key=lambda x: x.snr, reverse=True)
     num_lenses = script_config['num_lenses']
     if num_lenses is not None:
@@ -86,19 +86,7 @@ def main(config):
         lens_list *= repeats
         lens_list = lens_list[:num_lenses]
     print(f'Processing {len(lens_list)} lens(es) of {og_count}')
-    # lens_list = np.random.choice(lens_list, num_lenses)
-    # lens_list = [lens for lens in lens_list if lens.uid != '00000019' and lens.uid != '00000040']
-    # lens_list = [lens for lens in lens_list if lens.uid == '00000040']
-    # print(f'Processing lens(es): {[lens.uid for lens in lens_list]}')
-
-    # TODO TEMP
-    # print(f'Generating subhalos...')
-    # for lens in tqdm(lens_list):
-    #     realization = lens.generate_cdm_subhalos()
-    #     lens.add_subhalos(realization)
-    # print(f'Generated subhalos for {len(lens_list)} lens(es).')
-
-    # calculate number of images to save
+    
     num_permutations = len(positions) * len(subhalo_params['masses']) * script_config['num_positions']
     idx_to_save = np.random.randint(low=num_permutations, size=len(lens_list))
 
@@ -110,7 +98,6 @@ def main(config):
         for
         run, lens in enumerate(lens_list)]
 
-    # split up the lenses into batches based on core count
     count = len(lens_list)
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - config.machine.headroom_cores
@@ -119,14 +106,15 @@ def main(config):
         process_count = count
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
-    # batch
-    generator = util.batch_list(tuple_list, process_count)
-    batches = list(generator)
-
-    # process the batches
-    for batch in tqdm(batches):
-        pool = Pool(processes=process_count)
-        pool.map(run, batch)
+    print(f'Processing {len(tuple_list)} lens(es) that satisfy criteria')
+    
+    with ProcessPoolExecutor(max_workers=process_count) as executor:
+        futures = {executor.submit(run, batch): batch for batch in tuple_list}
+        for future in tqdm(as_completed(futures), total=len(futures)):
+            try:
+                future.result()
+            except Exception as e:
+                print(f"Error encountered: {e}")
 
     stop = time.time()
     execution_time = str(datetime.timedelta(seconds=round(stop - start)))
@@ -161,6 +149,12 @@ def run(tuple):
     # initialize lists
     detectable_halos = []
 
+    # set kwargs_numerics
+    kwargs_numerics = {
+        'supersampling_factor': 3,
+        'compute_mode': 'adaptive',
+    }
+
     # solve for image positions
     image_x, image_y = lens.get_image_positions(pixel_coordinates=False)
 
@@ -193,6 +187,7 @@ def run(tuple):
                                           band=band,
                                           arcsec=scene_size,
                                           oversample=oversample,
+                                          kwargs_numerics=kwargs_numerics,
                                           instrument_params=instrument_params,
                                           pieces=True,
                                           verbose=False)
@@ -303,6 +298,7 @@ def run(tuple):
                                        band=band,
                                        arcsec=scene_size,
                                        oversample=oversample,
+                                       kwargs_numerics=kwargs_numerics,
                                        instrument_params=instrument_params,
                                        verbose=False)
                 # try:
