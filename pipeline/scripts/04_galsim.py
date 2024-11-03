@@ -155,8 +155,12 @@ def get_image(input):
     # seed = pipeline_params['seed']  # TODO think about what this is doing
     pieces = pipeline_params['pieces']
 
-    # load lens
-    lens = util.unpickle(os.path.join(input_dir, f'lens_{uid}.pkl'))
+    # Load lens
+    try:
+        lens = util.unpickle(os.path.join(input_dir, f'lens_{uid}.pkl'))
+    except Exception as e:
+        print(f'Error unpickling lens {uid}: {e}')
+        return 0
 
     # load the appropriate arrays
     arrays = [np.load(f'{input_dir}/array_{lens.uid}_{band}.npy') for band in bands]
@@ -172,6 +176,11 @@ def get_image(input):
     detector = int(sca)
     possible_detector_positions = roman_util.divide_up_sca(5)
     detector_pos = random.choice(possible_detector_positions)
+
+    # save attributes on StrongLens
+    lens.detector = detector
+    lens.detector_position = detector_pos
+    util.pickle(os.path.join(input_dir, f'lens_{uid}.pkl'), lens)
 
     gs_results = gs.get_images(lens,
                                arrays,
