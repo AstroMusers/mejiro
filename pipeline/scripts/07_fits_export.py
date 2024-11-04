@@ -48,7 +48,7 @@ def main(config):
     bands = pipeline_params['bands']
 
     # get all lenses
-    all_lenses = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=True, verbose=True, limit=None)
+    all_lenses = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=True, verbose=True, limit=None, exposure=True)
 
     for lens in tqdm(all_lenses):
         uid = lens.uid
@@ -103,10 +103,8 @@ def main(config):
             header['PIXELSCL'] = (0.11, 'Pixel scale [arcsec/pixel]')
             header['FOV'] = (0.11 * pipeline_params['final_pixel_side'], 'Field of view [arcsec]')
             header['DETECTOR'] = (lens.detector, 'Detector')
-            # header['DET_X'] = (lens.detector_position[0], 'Detector X position')
-            # header['DET_Y'] = (lens.detector_position[1], 'Detector Y position') # TODO TEMP
-            header['DET_X'] = (2048, 'Detector X position')
-            header['DET_Y'] = (2048, 'Detector Y position')
+            header['DET_X'] = (lens.detector_position[0], 'Detector X position')
+            header['DET_Y'] = (lens.detector_position[1], 'Detector Y position')
 
             # lens params
             header['SOURCMAG'] = (lens.source_mags[band], 'Unlensed source galaxy AB magnitude')
