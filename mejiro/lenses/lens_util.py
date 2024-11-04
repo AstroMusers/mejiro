@@ -42,11 +42,14 @@ def count_detectable_lenses(dir):
 #     assert len(lens_list) != 0, f'No pickled lenses found. Check {pipeline_dir}.'
 
 
-def get_detectable_lenses(pipeline_dir, limit=None, with_subhalos=False, verbose=False):
+def get_detectable_lenses(pipeline_dir, limit=None, with_subhalos=False, exposure=False,verbose=False):
     lens_list = []
 
     if with_subhalos:
-        pickles = glob(os.path.join(pipeline_dir, '02', '**', 'lens_with_subhalos_*.pkl'))
+        if exposure:
+            pickles = glob(os.path.join(pipeline_dir, '03', '**', 'lens_*.pkl'))
+        else:
+            pickles = glob(os.path.join(pipeline_dir, '02', '**', 'lens_with_subhalos_*.pkl'))
         if limit is not None:
             pickles = np.random.choice(pickles, limit)
         for pickle in tqdm(pickles, disable=not verbose):
