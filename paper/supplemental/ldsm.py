@@ -36,13 +36,13 @@ def main(config):
     script_config = {
         'snr_quantile': 0.95,
         'image_radius': 0.01,  # arcsec
-        'num_lenses': 24,  # None
+        'num_lenses': None,  # None
         'num_positions': 1,
         'rng': galsim.UniformDeviate(42),
         'psf_cache_dir': os.path.join(config.machine.data_dir, 'cached_psfs')
     }
     subhalo_params = {
-        'masses': np.linspace(1e8, 1e10, 100),  # 
+        'masses': np.arange(1e8, 1e10, 5e7),  # np.linspace(1e9, 1e10, 100)
         'concentration': 10,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -51,13 +51,13 @@ def main(config):
     imaging_params = {
         'band': 'F087',
         'scene_size': 5,  # arcsec
-        'oversample': 5,  # TODO TEMP
+        'oversample': 5,
         'exposure_time': 14600
     }
     positions = []
     for i in range(1, 19):
         sca = str(i).zfill(2)
-        coords = roman_util.divide_up_sca(2)
+        coords = roman_util.divide_up_sca(3)
         for coord in coords:
             positions.append((sca, coord))
     print(f'Processing {len(positions)} positions.')
@@ -77,7 +77,7 @@ def main(config):
     print(f'Collecting lenses from {pipeline_dir}')
     lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, verbose=True)
     og_count = len(lens_list)
-    lens_list = [lens for lens in lens_list if lens.snr > 100]  # 
+    lens_list = [lens for lens in lens_list if lens.snr > 150]  # 
     lens_list = sorted(lens_list, key=lambda x: x.snr, reverse=True)
     num_lenses = script_config['num_lenses']
     if num_lenses is not None:

@@ -35,18 +35,18 @@ def main(config):
     print(f'Saving PSFs to {save_dir}')
 
     oversamples = [5]
-    # bands = ['F087']  # , 'F106', 'F129', 'F158', 'F184'
-    bands = Roman().bands
+    bands = ['F087']  # , 'F106', 'F129', 'F158', 'F184'
+    # bands = Roman().bands
     # detectors = [4, 1, 9, 17]
     # detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
     # detectors = [1, 2, 4, 5]
     # detector_positions = [(2048, 2048), (2048, 2048), (2048, 2048), (2048, 2048)]
     detectors = list(range(1, 19))
-    detector_positions = [(2048, 2048)]
+    # detector_positions = [(2048, 2048)]
     # detector_positions = []
     # for i in range(4):
     #     detector_positions.extend(roman_util.divide_up_sca(i + 1))
-    # detector_positions = roman_util.divide_up_sca(2)
+    detector_positions = roman_util.divide_up_sca(3)
     num_pixes = [101]
 
     # Determine which PSFs need to be generated
@@ -73,7 +73,7 @@ def main(config):
     # Determine the number of processes
     count = len(arg_list)
     cpu_count = multiprocessing.cpu_count()
-    process_count = 10  # Fixed process count (you can adjust this as needed)
+    process_count = 24  # Fixed process count (you can adjust this as needed)
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s) to generate {count} PSF(s)')
 
     # Process the tasks with ProcessPoolExecutor
