@@ -49,7 +49,7 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
     calc['configuration']['instrument']['filter'] = synthetic_image.band.lower()
 
     # set detector
-    calc['configuration']['detector']['ma_table_name'] = 'hlwas_imaging'
+    # calc['configuration']['detector']['ma_table_name'] = 'hlwas_imaging'  # TODO this causes error sometimes? but build_default_calc sets it to this value, so having/not having this line should make no difference... 
     calc['configuration']['detector'][
         'nresultants'] = 8  # resultant number 8 to achieve HLWAS total integration duration of 145.96 s; see https://roman-docs.stsci.edu/raug/astronomers-proposal-tool-apt/appendix/appendix-wfi-multiaccum-tables
     
