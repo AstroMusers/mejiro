@@ -5,7 +5,7 @@ import os
 import sys
 import time
 from copy import deepcopy
-from multiprocessing import Pool
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import hydra
 import matplotlib.pyplot as plt
@@ -32,7 +32,6 @@ def get_masked_exposure(lens, model, band, psf, num_pix, oversample, exposure_ti
     util.center_crop_image(final_array, (90, 90))
 
     if mask:
-        # mask = np.ma.getmask(lens.masked_snr_array)
         data = lens.masked_snr_array.data
         strict_mask = np.ma.masked_where(data < snr_threshold, data)
         mask = np.ma.getmask(strict_mask)
@@ -70,7 +69,6 @@ def _get_subhalos(lens, subhalo_params, log_mlow, log_mhigh, cone_factor):
                    log_mhigh=log_mhigh,
                    log_m_host=np.log10(lens.main_halo_mass),
                    r_tidal=subhalo_params['r_tidal'],
-                   # cone_opening_angle_arcsec=lens.get_einstein_radius() * cone_factor,
                    cone_opening_angle_arcsec=5.,
                    LOS_normalization=subhalo_params['los_normalization'])
     except Exception as e:
@@ -78,163 +76,12 @@ def _get_subhalos(lens, subhalo_params, log_mlow, log_mhigh, cone_factor):
         return None
 
 
-@hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
-def main(config):
-    start = time.time()
-
-    # enable use of local packages
-    if config.machine.repo_dir not in sys.path:
-        sys.path.append(config.machine.repo_dir)
-    import mejiro
-    from mejiro.lenses import lens_util
-    from mejiro.helpers import psf
-    from mejiro.utils import util
-
-    # script configuration options
-    debugging = False
-    require_alignment = False
-    limit = 100
-    snr_threshold = 100.
-    snr_pixel_threshold = 1.
-    einstein_radius_threshold = 0.
-    log_m_host_threshold = 13.  # 13.3
-
-    # set subhalo and imaging params
-    subhalo_params = {
-        'r_tidal': 0.5,
-        'sigma_sub': 0.055,
-        'los_normalization': 0.
-    }
-    imaging_params = {
-        'oversample': 5,
-        'num_pix': 97,
-        'side': 10.67,
-        'control_band': 'F106',
-        'exposure_time': 146,
-    }
-    bands = ['F106']
-    # bands = ['F106', 'F129', 'F158', 'F184']
-    position_control = [
-        ('2', (2048, 2048))
-    ]
-    positions = [
-        ('1', (2048, 2048)),
-        ('2', (2048, 2048)),
-        ('3', (2048, 2048)),
-        ('4', (2048, 2048)),
-        ('5', (2048, 2048)),
-        ('6', (2048, 2048)),
-        ('7', (2048, 2048)),
-        ('8', (2048, 2048)),
-        ('9', (2048, 2048)),
-        ('10', (2048, 2048)),
-        ('11', (2048, 2048)),
-        ('12', (2048, 2048)),
-        ('13', (2048, 2048)),
-        ('14', (2048, 2048)),
-        ('15', (2048, 2048)),
-        ('16', (2048, 2048)),
-        ('17', (2048, 2048)),
-        ('18', (2048, 2048))
-    ]
-
-    # set up directories for script output
-    save_dir = os.path.join(config.machine.data_dir, 'output', 'power_spectra_parallelized')
-    util.create_directory_if_not_exists(save_dir)
-    util.clear_directory(save_dir)
-    image_save_dir = os.path.join(save_dir, 'images')
-    os.makedirs(image_save_dir, exist_ok=True)
-
-    # debugging? set pipeline dir accordingly
-    pipeline_params = util.hydra_to_dict(config.pipeline)
-    # TODO set debugging here based on yaml file? or manually above?
-    if debugging:
-        pipeline_dir = f'{config.machine.pipeline_dir}_dev'
-    else:
-        pipeline_dir = config.machine.pipeline_dir
-
-    # get zeropoint magnitudes
-    module_path = os.path.dirname(mejiro.__file__)
-    zp_dict = json.load(open(os.path.join(module_path, 'data', 'roman_zeropoint_magnitudes.json')))
-
-    # collect lenses
-    print(f'Collecting lenses...')
-    lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, verbose=True)
-    print(f'Collected {len(lens_list)} candidate lens(es).')
-    filtered_lenses = []
-    num_lenses = 0
-    for lens in lens_list:
-        if lens.snr > snr_threshold and lens.get_einstein_radius() > einstein_radius_threshold and np.log10(
-                lens.main_halo_mass) > log_m_host_threshold:
-            filtered_lenses.append(lens)
-            num_lenses += 1
-        if limit is not None and num_lenses >= limit:
-            break
-    print(f'Collected {len(filtered_lenses)} lens(es).')
-
-    # repeat lenses up to limit
-    lenses_to_process = []
-    if limit is not None:
-        repeats = int(np.ceil(limit / len(filtered_lenses)))
-        print(f'Repeating lenses {repeats} times...')
-        lenses_to_process = filtered_lenses * repeats
-        lenses_to_process = lenses_to_process[:limit]
-
-    for i, lens in enumerate(filtered_lenses):
-        print(f'{i}: StrongLens {lens.uid}, {np.log10(lens.main_halo_mass):.2f}, {lens.snr:.2f}')
-
-    # read cached PSFs
-    cached_psfs = {}
-    psf_cache_dir = os.path.join(config.machine.data_dir, 'cached_psfs')
-    psf_id_strings = []
-    for band in bands:
-        for detector, detector_position in position_control + positions:
-            psf_id_strings.append(
-                psf.get_psf_id_string(band, detector, detector_position, imaging_params['oversample'], 101))
-
-    for id_string in psf_id_strings:
-        cached_psfs[id_string] = psf.load_cached_psf(id_string, psf_cache_dir, suppress_output=False)
-
-    tuple_list = [
-        (run, lens, subhalo_params, imaging_params, position_control, positions, cached_psfs, require_alignment,
-         snr_pixel_threshold, save_dir, image_save_dir, debugging) for
-        run, lens in enumerate(lenses_to_process)]
-
-    # split up the lenses into batches based on core count
-    count = len(lenses_to_process)
-    cpu_count = multiprocessing.cpu_count()
-    process_count = cpu_count - config.machine.headroom_cores
-    process_count -= int(cpu_count / 2)
-    if count < process_count:
-        process_count = count
-    print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
-
-    # batch
-    generator = util.batch_list(tuple_list, process_count)
-    batches = list(generator)
-
-    # process the batches
-    print(f'Processing {len(tuple_list)} lens(es) that satisfy criteria')
-    for batch in tqdm(batches):
-        pool = Pool(processes=process_count)
-        pool.map(generate_power_spectra, batch)
-
-    stop = time.time()
-    execution_time = str(datetime.timedelta(seconds=round(stop - start)))
-    print(f'Execution time: {execution_time}')
-
-    execution_time_per_lens = str(datetime.timedelta(seconds=round((stop - start) / len(lenses_to_process))))
-    print(f'Execution time per lens: {execution_time_per_lens}')
-
-
-def generate_power_spectra(tuple):
+def generate_power_spectra(params):
     from mejiro.helpers import psf
     from mejiro.lenses import lens_util
     from mejiro.utils import util
 
-    # unpack tuple
-    (run, lens, subhalo_params, imaging_params, position_control, positions, cached_psfs, require_alignment,
-     snr_pixel_threshold, save_dir, image_save_dir, debugging) = tuple
+    run, lens, subhalo_params, imaging_params, position_control, positions, cached_psfs, require_alignment, snr_pixel_threshold, save_dir, image_save_dir, debugging = params
     control_band = imaging_params['control_band']
     oversample = imaging_params['oversample']
     num_pix = imaging_params['num_pix']
@@ -246,30 +93,18 @@ def generate_power_spectra(tuple):
         plot_figures = True
     run = str(run).zfill(3)
 
-    if debugging: print(f'Processing lens {lens.uid}...')
+    if debugging:
+        print(f'Processing lens {lens.uid}...')
     lens._set_classes()
 
-    from datetime import datetime
-    np.random.seed(int(datetime.now().timestamp()))
+    np.random.seed(int(datetime.datetime.now().timestamp()))
 
-    # ---------------------GENERATE SUBHALO POPULATIONS---------------------
-    # large subhalos
-    large_subhalo_exists = False
-    while not large_subhalo_exists:
-        if require_alignment:
-            aligned = False
-            i = 0
-            while not aligned:
-                large = get_large(lens, subhalo_params)
-                if large is None: sys.exit(0)
-                aligned = lens_util.check_halo_image_alignment(lens, large, halo_mass=5e9)
-                i += 1
-            print(f'Aligned in {i} iteration(s).')
-        else:
-            large = get_large(lens, subhalo_params)
-        if len(large.halos) > 0:
-            large_subhalo_exists = True
-    # print(f'{len(large.halos)} subhalo(es) in large subhalo population.')
+    # Large subhalos
+    large = get_large(lens, subhalo_params)
+
+    if large is None:
+        print(f'Skipping lens {lens.uid} due to failure in generating large subhalos')
+        return
 
     subhalo_lens = deepcopy(lens)
     subhalo_lens.add_subhalos(large)
@@ -290,24 +125,8 @@ def generate_power_spectra(tuple):
             print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
         plt.close()
 
-    # medium subhalos
-    medium_subhalo_exists = False
-    while not medium_subhalo_exists:
-        if require_alignment:
-            aligned = False
-            i = 0
-            while not aligned:
-                med = get_med(lens, subhalo_params)
-                if med is None: sys.exit(0)
-                aligned = lens_util.check_halo_image_alignment(lens, med, halo_mass=5e8)
-                i += 1
-            print(f'Aligned in {i} iteration(s).')
-        else:
-            med = get_med(lens, subhalo_params)
-        if len(med.halos) > 0:
-            medium_subhalo_exists = True
-    # print(f'{len(med.halos)} subhalo(es) in medium subhalo population.')
-
+    # Medium subhalos
+    med = get_med(lens, subhalo_params)
     subhalo_lens = deepcopy(lens)
     subhalo_lens.add_subhalos(med)
     subhalo_kappa = subhalo_lens.get_subhalo_kappa(num_pix, side)
@@ -327,10 +146,8 @@ def generate_power_spectra(tuple):
             print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
         plt.close()
 
-    # smed subhalos
+    # Smed subhalos
     smed = get_smed(lens, subhalo_params)
-    if smed is None: sys.exit(0)
-
     subhalo_lens = deepcopy(lens)
     subhalo_lens.add_subhalos(smed)
     subhalo_kappa = subhalo_lens.get_subhalo_kappa(num_pix, side)
@@ -349,10 +166,8 @@ def generate_power_spectra(tuple):
             print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
         plt.close()
 
-    # small subhalos
+    # Small subhalos
     small = get_small(lens, subhalo_params)
-    if small is None: sys.exit(0)
-
     subhalo_lens = deepcopy(lens)
     subhalo_lens.add_subhalos(small)
     subhalo_kappa = subhalo_lens.get_subhalo_kappa(num_pix, side)
@@ -371,7 +186,7 @@ def generate_power_spectra(tuple):
             print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
         plt.close()
 
-    # ---------------------BUILD WDM/MDM/CDM POPULATIONS---------------------
+    # Build WDM/MDM/CDM populations
     wdm = deepcopy(large)
     mdm = wdm.join(med)
     sdm = mdm.join(smed)
@@ -438,10 +253,9 @@ def generate_power_spectra(tuple):
             print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
         plt.close()
 
-    # ---------------------GENERATE SYNTHETIC IMAGES---------------------
-    # build kwargs_numerics
-    lens.side = side  # TODO temporary workaround
-    lens.num_pix = num_pix * oversample  # TODO temporary workaround
+    # Generate synthetic images
+    lens.side = side
+    lens.num_pix = num_pix * oversample
     try:
         supersampling_indices = lens.build_adaptive_grid(num_pix * oversample, pad=25)
     except Exception as e:
@@ -453,7 +267,6 @@ def generate_power_spectra(tuple):
         'supersampled_indexes': supersampling_indices
     }
 
-    # calculate surface brightness arrays
     _, _, wdm_array = wdm_lens.get_array(num_pix * oversample, side, control_band, return_pieces=True, kwargs_numerics=kwargs_numerics)
     _, _, mdm_array = mdm_lens.get_array(num_pix * oversample, side, control_band, return_pieces=True, kwargs_numerics=kwargs_numerics)
     _, _, sdm_array = sdm_lens.get_array(num_pix * oversample, side, control_band, return_pieces=True, kwargs_numerics=kwargs_numerics)
@@ -462,9 +275,9 @@ def generate_power_spectra(tuple):
     wdm_residual = wdm_array - cdm_array
     mdm_residual = mdm_array - cdm_array
     sdm_residual = sdm_array - cdm_array
-    min = np.min([wdm_residual, mdm_residual, sdm_residual])
-    max = np.max([wdm_residual, mdm_residual, sdm_residual])
-    vmax = np.max([np.abs(min), np.abs(max)])
+    min_value = np.min([wdm_residual, mdm_residual, sdm_residual])
+    max_value = np.max([wdm_residual, mdm_residual, sdm_residual])
+    vmax = np.max([np.abs(min_value), np.abs(max_value)])
 
     if plot_figures:
         _, ax = plt.subplots(2, 4, figsize=(14, 7), constrained_layout=True)
@@ -511,7 +324,7 @@ def generate_power_spectra(tuple):
             print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
         plt.close()
 
-    # ---------------------GENERATE EXPOSURES VARYING SUBHALO POPULATION---------------------
+    # Generate exposures varying subhalo population
     subhalos_psf_id_string = psf.get_psf_id_string(band=control_band, detector=position_control[0][0],
                                                    detector_position=position_control[0][1], oversample=oversample, num_pix=101)
     subhalos_psf_kernel = cached_psfs[subhalos_psf_id_string]
@@ -731,7 +544,158 @@ def generate_power_spectra(tuple):
             print(f'Failed to save {os.path.basename(image_save_path)}: {e}')
         plt.close()
 
-    print(f'Finished lens {lens.uid}.')
+    # print(f'Finished lens {lens.uid}.')
+
+
+@hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
+def main(config):
+    start = time.time()
+
+    # enable use of local packages
+    if config.machine.repo_dir not in sys.path:
+        sys.path.append(config.machine.repo_dir)
+    import mejiro
+    from mejiro.lenses import lens_util
+    from mejiro.helpers import psf
+    from mejiro.utils import util
+
+    # script configuration options
+    debugging = False
+    require_alignment = False
+    limit = None
+    snr_threshold = 100.
+    snr_pixel_threshold = 1.
+    einstein_radius_threshold = 0.
+    log_m_host_threshold = 1.  # 13.3
+
+    # set subhalo and imaging params
+    subhalo_params = {
+        'r_tidal': 0.5,
+        'sigma_sub': 0.055,
+        'los_normalization': 0.
+    }
+    imaging_params = {
+        'oversample': 5,
+        'num_pix': 97,
+        'side': 10.67,
+        'control_band': 'F106',
+        'exposure_time': 146,
+    }
+    bands = ['F106']
+    # bands = ['F106', 'F129', 'F158', 'F184']
+    position_control = [
+        ('2', (2048, 2048))
+    ]
+    positions = [
+        ('1', (2048, 2048)),
+        ('2', (2048, 2048)),
+        ('3', (2048, 2048)),
+        ('4', (2048, 2048)),
+        ('5', (2048, 2048)),
+        ('6', (2048, 2048)),
+        ('7', (2048, 2048)),
+        ('8', (2048, 2048)),
+        ('9', (2048, 2048)),
+        ('10', (2048, 2048)),
+        ('11', (2048, 2048)),
+        ('12', (2048, 2048)),
+        ('13', (2048, 2048)),
+        ('14', (2048, 2048)),
+        ('15', (2048, 2048)),
+        ('16', (2048, 2048)),
+        ('17', (2048, 2048)),
+        ('18', (2048, 2048))
+    ]
+
+    # set up directories for script output
+    save_dir = os.path.join(config.machine.data_dir, 'output', 'power_spectra_parallelized_dev')
+    util.create_directory_if_not_exists(save_dir)
+    util.clear_directory(save_dir)
+    image_save_dir = os.path.join(save_dir, 'images')
+    os.makedirs(image_save_dir, exist_ok=True)
+
+    # debugging? set pipeline dir accordingly
+    pipeline_params = util.hydra_to_dict(config.pipeline)
+    if debugging:
+        pipeline_dir = f'{config.machine.pipeline_dir}_dev'
+    else:
+        pipeline_dir = config.machine.pipeline_dir
+
+    # get zeropoint magnitudes
+    module_path = os.path.dirname(mejiro.__file__)
+    zp_dict = json.load(open(os.path.join(module_path, 'data', 'roman_zeropoint_magnitudes.json')))
+
+    # collect lenses
+    print(f'Collecting lenses...')
+    lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, verbose=True)
+    print(f'Collected {len(lens_list)} candidate lens(es).')
+    filtered_lenses = []
+    num_lenses = 0
+    for lens in lens_list:
+        if lens.snr > snr_threshold and lens.get_einstein_radius() > einstein_radius_threshold and np.log10(
+                lens.main_halo_mass) > log_m_host_threshold:
+            filtered_lenses.append(lens)
+            num_lenses += 1
+        if limit is not None and num_lenses >= limit:
+            break
+    print(f'Collected {len(filtered_lenses)} lens(es).')
+
+    # repeat lenses up to limit
+    lenses_to_process = []
+    if limit is not None:
+        repeats = int(np.ceil(limit / len(filtered_lenses)))
+        print(f'Repeating lenses {repeats} times...')
+        lenses_to_process = filtered_lenses * repeats
+        lenses_to_process = lenses_to_process[:limit]
+    else:
+        lenses_to_process = filtered_lenses
+
+    for i, lens in enumerate(filtered_lenses):
+        print(f'{i}: StrongLens {lens.uid}, {np.log10(lens.main_halo_mass):.2f}, {lens.snr:.2f}')
+
+    # read cached PSFs
+    cached_psfs = {}
+    psf_cache_dir = os.path.join(config.machine.data_dir, 'cached_psfs')
+    psf_id_strings = []
+    for band in bands:
+        for detector, detector_position in position_control + positions:
+            psf_id_strings.append(
+                psf.get_psf_id_string(band, detector, detector_position, imaging_params['oversample'], 101))
+
+    for id_string in psf_id_strings:
+        cached_psfs[id_string] = psf.load_cached_psf(id_string, psf_cache_dir, suppress_output=False)
+
+    params_list = [
+        (run, lens, subhalo_params, imaging_params, position_control, positions, cached_psfs, require_alignment,
+         snr_pixel_threshold, save_dir, image_save_dir, debugging)
+        for run, lens in enumerate(lenses_to_process)
+    ]
+
+    # split up the lenses into batches based on core count
+    count = len(lenses_to_process)
+    cpu_count = multiprocessing.cpu_count()
+    process_count = cpu_count - config.machine.headroom_cores
+    process_count -= int(cpu_count / 2)
+    if count < process_count:
+        process_count = count
+    print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
+
+    # process the tasks using ProcessPoolExecutor
+    with ProcessPoolExecutor(max_workers=process_count) as executor:
+        futures = [executor.submit(generate_power_spectra, params) for params in params_list]
+
+        for future in tqdm(as_completed(futures), total=len(futures)):
+            try:
+                future.result()
+            except Exception as e:
+                print(f'Error encountered: {e}')
+
+    stop = time.time()
+    execution_time = str(datetime.timedelta(seconds=round(stop - start)))
+    print(f'Execution time: {execution_time}')
+
+    execution_time_per_lens = str(datetime.timedelta(seconds=round((stop - start) / len(lenses_to_process))))
+    print(f'Execution time per lens: {execution_time_per_lens}')
 
 
 if __name__ == '__main__':
