@@ -81,6 +81,8 @@ class Exposure:
             # raise NotImplementedError('Pandeia engine not yet implemented')
             from mejiro.engines import pandeia_engine
 
+            # TODO warn that PSF isn't gonna do anything
+
             # validate engine params and set defaults
             if engine_params is None:
                 engine_params = pandeia_engine.default_roman_engine_params()
