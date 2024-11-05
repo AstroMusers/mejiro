@@ -63,7 +63,7 @@ def main(config):
     print(f'Processing {len(positions)} positions.')
 
     # set up directories for script output
-    save_dir = os.path.join(config.machine.data_dir, 'output', 'lowest_detectable_subhalo_mass_dev')
+    save_dir = os.path.join(config.machine.data_dir, 'output', 'lowest_detectable_subhalo_mass')
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
     image_save_dir = os.path.join(save_dir, 'images')
@@ -77,7 +77,7 @@ def main(config):
     print(f'Collecting lenses from {pipeline_dir}')
     lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, verbose=True)
     og_count = len(lens_list)
-    lens_list = [lens for lens in lens_list if lens.snr > 150]
+    lens_list = [lens for lens in lens_list if lens.snr > 100]
     lens_list = sorted(lens_list, key=lambda x: x.snr, reverse=True)
     num_lenses = script_config['num_lenses']
     if num_lenses is not None:
@@ -100,7 +100,7 @@ def main(config):
 
     count = len(lens_list)
     cpu_count = multiprocessing.cpu_count()
-    process_count = cpu_count - config.machine.headroom_cores
+    process_count = cpu_count #- config.machine.headroom_cores
     process_count -= int(cpu_count / 2)
     if count < process_count:
         process_count = count
