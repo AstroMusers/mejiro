@@ -34,9 +34,6 @@ def process_lens(lens, roman, band, scene_size, oversample, kwargs_numerics, ins
 
     engine_params = {
         'rng': rng,
-        'reciprocity_failure': False,
-        'nonlinearity': False,
-        'ipc': False
     }
     exposure_no_subhalos = Exposure(synth_no_subhalos,
                                     exposure_time=exposure_time,
@@ -48,8 +45,12 @@ def process_lens(lens, roman, band, scene_size, oversample, kwargs_numerics, ins
 
     # get noise
     poisson_noise = exposure_no_subhalos.poisson_noise
+    reciprocity_failure = exposure_no_subhalos.reciprocity_failure
     dark_noise = exposure_no_subhalos.dark_noise
+    nonlinearity = exposure_no_subhalos.nonlinearity
+    ipc = exposure_no_subhalos.ipc
     read_noise = exposure_no_subhalos.read_noise
+
     
     # calculate SNR in each pixel
     snr_array = np.nan_to_num(source_exposure / np.sqrt(exposure_no_subhalos.exposure))
@@ -76,7 +77,10 @@ def process_lens(lens, roman, band, scene_size, oversample, kwargs_numerics, ins
 
     engine_params.update({
         'poisson_noise': poisson_noise,
+        'reciprocity_failure': reciprocity_failure,
         'dark_noise': dark_noise,
+        'nonlinearity': nonlinearity,
+        'ipc': ipc,
         'read_noise': read_noise
     })
     
@@ -163,7 +167,7 @@ def main(config):
     sca_position = (2048, 2048)
     band = 'F129'
     oversample = 5
-    scene_size = 5
+    scene_size = 10
     psf_cache_dir = f'{config.machine.data_dir}/cached_psfs'
     rng = galsim.UniformDeviate(42)
     exposure_time = 146
@@ -201,9 +205,13 @@ def main(config):
                 result = future.result()
 
                 chi2_values.append(result["chi_square"])
+                uid = result["uid"]
+                util.pickle(os.path.join(save_dir, f'result_{uid}.pkl'), result)
+                
                 if result["chi_square"] > result["threshold_chi2"]:
                     num_characterizable += 1
-                    uids.append(result["uid"])
+                    uids.append(uid)
+               
             except Exception as e:
                 print(f"Error encountered: {e}")
     
