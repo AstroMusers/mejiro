@@ -13,12 +13,12 @@ def source_galaxies(lens_list, band, quantiles=[0.16, 0.5, 0.84]):
 
     data = np.column_stack([snr, source_R_sersic, source_magnitude, source_e1, source_e2])
 
-    figure = corner.corner(
+    return corner.corner(
         data,
         labels=[
             "SNR",
             r"$R_\textrm{Sersic}$",
-            f'AB Magnitude ({band})',
+            f'AB Mag ({band})',
             r'$e_1$',
             r'$e_2$',
         ],
@@ -38,12 +38,12 @@ def lens_galaxies(lens_list, band, quantiles=[0.16, 0.5, 0.84]):
 
     data = np.column_stack([snr, lens_R_sersic, lens_magnitude, lens_e1, lens_e2])
 
-    figure = corner.corner(
+    return corner.corner(
         data,
         labels=[
             "SNR",
             r"$R_\textrm{Sersic}$",
-            f'AB Magnitude ({band})',
+            f'AB Mag ({band})',
             r'$e_1$',
             r'$e_2$',
         ],
@@ -59,21 +59,22 @@ def system(lens_list, band, quantiles=[0.16, 0.5, 0.84]):
     lens_mag = [l.lens_mags[band] for l in lens_list]
     source_mag = [l.source_mags[band] for l in lens_list]
     einstein_radius = [l.get_einstein_radius() for l in lens_list]
-    main_halo_mass = [l.main_halo_mass for l in lens_list]
+    # velocity_dispersion = [l.lens_vel_disp for l in lens_list]
 
-    data = np.column_stack([snr, z_lens, z_source, lens_mag, source_mag, einstein_radius, main_halo_mass])
+    data = np.column_stack([snr, z_lens, z_source, lens_mag, source_mag, einstein_radius])  # velocity_dispersion
 
-    figure = corner.corner(
+    return corner.corner(
         data,
         labels=[
             "SNR",
             r"$z_\textrm{lens}$",
             r"$z_\textrm{source}$",
-            f"Lens AB Magnitude ({band})",
-            f"Source AB Magnitude ({band})",
+            r"$m_\textrm{lens}$" + f" ({band})",
+            r"$m_\textrm{source}$" + f" ({band})",
             r'$\theta_\textrm{E}$',
-            r'$M_\textrm{main halo}$',
+            #r'$\sigma_\textrm{v}$',
         ],
         quantiles=quantiles,
         show_titles=True,
+        density=True
     )
