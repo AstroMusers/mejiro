@@ -42,7 +42,7 @@ def main(config):
         'psf_cache_dir': os.path.join(config.machine.data_dir, 'cached_psfs')
     }
     subhalo_params = {
-        'masses': np.arange(1e8, 1e10, 1e8),  # np.linspace(1e9, 1e10, 20),  # 
+        'masses': np.arange(1e8, 1e10, 5e7),  # np.linspace(1e9, 1e10, 20),  # 
         'concentration': 10,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -57,13 +57,13 @@ def main(config):
     positions = []
     for i in range(1, 19):
         sca = str(i).zfill(2)
-        coords = roman_util.divide_up_sca(3)
+        coords = roman_util.divide_up_sca(4)
         for coord in coords:
             positions.append((sca, coord))
     print(f'Processing {len(positions)} positions.')
 
     # set up directories for script output
-    save_dir = os.path.join(config.machine.data_dir, 'output', 'lowest_detectable_subhalo_mass')
+    save_dir = os.path.join(config.machine.data_dir, 'output', 'lowest_detectable_subhalo_mass_dev')
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
     image_save_dir = os.path.join(save_dir, 'images')
@@ -166,7 +166,7 @@ def run(tuple):
 
     run = 0
     results = {}
-    for sca, sca_position in tqdm(positions, leave=False):
+    for sca, sca_position in tqdm(positions, disable=True):
         sca = int(sca)
         position_key = f'{sca}_{sca_position[0]}_{sca_position[1]}'
         # print(' ' + position_key)
