@@ -42,7 +42,7 @@ def main(config):
         'psf_cache_dir': os.path.join(config.machine.data_dir, 'cached_psfs')
     }
     subhalo_params = {
-        'masses': np.arange(1e8, 1e10, 5e7),  # np.linspace(1e9, 1e10, 100)
+        'masses': np.arange(1e8, 1e10, 1e8),  # np.linspace(1e9, 1e10, 20),  # 
         'concentration': 10,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -77,7 +77,7 @@ def main(config):
     print(f'Collecting lenses from {pipeline_dir}')
     lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, verbose=True)
     og_count = len(lens_list)
-    lens_list = [lens for lens in lens_list if lens.snr > 100]
+    lens_list = [lens for lens in lens_list if lens.snr > 200]
     lens_list = sorted(lens_list, key=lambda x: x.snr, reverse=True)
     num_lenses = script_config['num_lenses']
     if num_lenses is not None:
@@ -110,7 +110,7 @@ def main(config):
     
     with ProcessPoolExecutor(max_workers=process_count) as executor:
         futures = {executor.submit(run, batch): batch for batch in tuple_list}
-        for future in tqdm(as_completed(futures), total=len(futures)):
+        for future in tqdm(as_completed(futures), total=len(futures), leave=True):
             try:
                 future.result()
             except Exception as e:
@@ -166,7 +166,7 @@ def run(tuple):
 
     run = 0
     results = {}
-    for sca, sca_position in tqdm(positions):
+    for sca, sca_position in tqdm(positions, leave=False):
         sca = int(sca)
         position_key = f'{sca}_{sca_position[0]}_{sca_position[1]}'
         # print(' ' + position_key)
@@ -194,9 +194,8 @@ def run(tuple):
         try:
             engine_params = {
                 'rng': rng,
-                'reciprocity_failure': False,
-                'nonlinearity': False,
-                'ipc': False
+                # 'reciprocity_failure': False,
+                'nonlinearity': False
             }
             exposure_no_subhalo = Exposure(synth_no_subhalo,
                                            exposure_time=exposure_time,
@@ -213,10 +212,10 @@ def run(tuple):
 
         # get noise
         poisson_noise = exposure_no_subhalo.poisson_noise
-        # reciprocity_failure = exposure_no_subhalo.reciprocity_failure
+        reciprocity_failure = exposure_no_subhalo.reciprocity_failure
         dark_noise = exposure_no_subhalo.dark_noise
         # nonlinearity = exposure_no_subhalo.nonlinearity
-        # ipc = exposure_no_subhalo.ipc
+        ipc = exposure_no_subhalo.ipc
         read_noise = exposure_no_subhalo.read_noise
 
         # calculate SNR in each pixel
@@ -305,10 +304,10 @@ def run(tuple):
                 engine_params = {
                     'rng': rng,
                     'poisson_noise': poisson_noise,
-                    'reciprocity_failure': False,
                     'dark_noise': dark_noise,
+                    'reciprocity_failure': reciprocity_failure,
                     'nonlinearity': False,
-                    'ipc': False,
+                    'ipc': ipc,
                     'read_noise': read_noise
                 }
                 exposure = Exposure(synth,
