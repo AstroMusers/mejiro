@@ -563,7 +563,7 @@ def main(config):
     debugging = False
     require_alignment = False
     limit = None
-    snr_threshold = 100.
+    snr_threshold = 200.
     snr_pixel_threshold = 1.
     einstein_radius_threshold = 0.
     log_m_host_threshold = 1.  # 13.3
@@ -608,7 +608,7 @@ def main(config):
     ]
 
     # set up directories for script output
-    save_dir = os.path.join(config.machine.data_dir, 'output', 'power_spectra_parallelized_dev')
+    save_dir = os.path.join(config.machine.data_dir, 'output', 'power_spectra_parallelized')
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
     image_save_dir = os.path.join(save_dir, 'images')
@@ -674,7 +674,7 @@ def main(config):
     # split up the lenses into batches based on core count
     count = len(lenses_to_process)
     cpu_count = multiprocessing.cpu_count()
-    process_count = cpu_count - config.machine.headroom_cores
+    process_count = cpu_count #- config.machine.headroom_cores
     process_count -= int(cpu_count / 2)
     if count < process_count:
         process_count = count
