@@ -42,7 +42,7 @@ def main(config):
         'psf_cache_dir': os.path.join(config.machine.data_dir, 'cached_psfs')
     }
     subhalo_params = {
-        'masses': np.arange(1e8, 1e10, 5e7),  # np.linspace(1e9, 1e10, 20),  # 
+        'masses': np.arange(1e8, 1e10, 1e8),  # np.linspace(1e9, 1e10, 20),  # 
         'concentration': 10,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -57,13 +57,13 @@ def main(config):
     positions = []
     for i in range(1, 19):
         sca = str(i).zfill(2)
-        coords = roman_util.divide_up_sca(4)
+        coords = roman_util.divide_up_sca(3)
         for coord in coords:
             positions.append((sca, coord))
     print(f'Processing {len(positions)} positions.')
 
     # set up directories for script output
-    save_dir = os.path.join(config.machine.data_dir, 'output', 'lowest_detectable_subhalo_mass_dev')
+    save_dir = os.path.join(config.machine.data_dir, 'output', 'lowest_detectable_subhalo_mass')
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
     image_save_dir = os.path.join(save_dir, 'images')
@@ -75,7 +75,7 @@ def main(config):
     else:
         pipeline_dir = config.machine.pipeline_dir
     print(f'Collecting lenses from {pipeline_dir}')
-    lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, verbose=True)
+    lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=True, verbose=True)
     og_count = len(lens_list)
     lens_list = [lens for lens in lens_list if lens.snr > 200]
     lens_list = sorted(lens_list, key=lambda x: x.snr, reverse=True)
