@@ -24,7 +24,7 @@ roman_params = RomanParameters(csv_path)
 # TODO a(n imperfect) lens subtraction option?
 def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), input_num_pix=51, output_num_pix=45, side=4.95, oversample=1,
             exposure_time=146, add_subhalos=True, kwargs_numerics={'supersampling_factor': 3, 'compute_mode': 'regular'}, return_snr_list=False, debugging=False, debug_dir=None,
-            psf_cache_dir=None):
+            psf_cache_dir=None, snr_per_pixel_threshold=1):
     if debugging: assert debug_dir is not None, 'Debugging is enabled but no debug directory is provided.'
 
     if type(detector) is str:
@@ -73,12 +73,12 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), input_
     # calculate SNR in each pixel
     snr_array = np.nan_to_num(source / np.sqrt(total))
 
-    if not np.any(snr_array >= 1):
+    if not np.any(snr_array >= snr_per_pixel_threshold):
         return 1, np.ma.array(snr_array, mask=True), [
             1], None  # TODO I'm doing this because SNRs for non-detectable lenses don't really matter right now
         # masked_snr_array = np.ma.masked_where(snr_array <= np.quantile(snr_array, 0.9), snr_array)  # TODO this must be the mask that's causing issues
     else:
-        masked_snr_array = np.ma.masked_where(snr_array <= 1, snr_array)
+        masked_snr_array = np.ma.masked_where(snr_array <= snr_per_pixel_threshold, snr_array)
 
     # speed up region-identifying code by removing single pixel regions
     masked_snr_array = regions.remove_single_pixels(masked_snr_array)
