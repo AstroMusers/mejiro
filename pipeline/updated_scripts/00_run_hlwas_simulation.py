@@ -150,7 +150,7 @@ def run_slsim(tuple):
     cosmo = default_cosmology.get()
     # from astropy.cosmology import FlatLambdaCDM
     # cosmo = FlatLambdaCDM(H0=67.66, Om0=0.30966, Ob0=0.04897)
-    bands = pipeline_params['bands']
+    bands = survey_params['bands']
     if debugging: print(f'Surveying {sky_area.value} deg2 with bands {bands}')
 
     # define cuts on the intrinsic deflector and source populations (in addition to the skypy config file)
@@ -268,14 +268,6 @@ def run_slsim(tuple):
         #         filtered_sample['filter_1'].append(candidate)
         #     continue
 
-        # 1. extended source magnification
-        extended_source_magnification = candidate.extended_source_magnification()
-        if snr < 50 and extended_source_magnification < survey_params['magnification']:
-            filter_1 += 1
-            if filter_1 <= num_samples:
-                filtered_sample['filter_1'].append(candidate)
-            continue
-
         # 2. SNR
         snr, masked_snr_array, snr_list, _ = survey_sim.get_snr(candidate,
                                                                 band=survey_params['snr_band'],
@@ -294,6 +286,21 @@ def run_slsim(tuple):
         if snr is None:
             continue
 
+        if snr < survey_params['snr_threshold']:
+            # filter this candidate out
+            filter_2 += 1
+            if filter_2 <= num_samples:
+                filtered_sample['filter_2'].append(candidate)
+            continue
+
+        # 1. extended source magnification
+        extended_source_magnification = candidate.extended_source_magnification()
+        if snr < 50 and extended_source_magnification < survey_params['magnification']:
+            filter_1 += 1
+            if filter_1 <= num_samples:
+                filtered_sample['filter_1'].append(candidate)
+            continue
+
         # if debugging and k % 100 == 0:
         #     plt.imshow(masked_snr_array)
         #     plt.title(f'SNR: {snr}, SNR list: {snr_list}')
@@ -301,13 +308,6 @@ def run_slsim(tuple):
         #     plt.savefig(os.path.join(debug_dir, 'masked_snr_arrays', f'masked_snr_array_{id(masked_snr_array)}.png'))
         #     plt.close()
         # k += 1
-
-        if snr < survey_params['snr_threshold']:
-            # filter this candidate out
-            filter_2 += 1
-            if filter_2 <= num_samples:
-                filtered_sample['filter_2'].append(candidate)
-            continue
 
         # if both criteria satisfied, consider detectable
         detectable_gglenses.append(candidate)
