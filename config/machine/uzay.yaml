@@ -1,5 +1,6 @@
 # number of cores to subtract off from total available
 headroom_cores: 8
+num_cores: 56
 
 # where the repository lives
 repo_dir: /home/btwedig/mejiro
