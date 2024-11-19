@@ -85,6 +85,7 @@ def main(config):
     # Determine number of processes
     cpu_count = multiprocessing.cpu_count()
     process_count = int(cpu_count / 2)
+    process_count -= 4  # uzay needs even more headroom
     if count < process_count:
         process_count = count
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')

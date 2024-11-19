@@ -79,6 +79,7 @@ def main(config):
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
     process_count = int(cpu_count / 2)  # GalSim needs headroom
+    process_count -= 4  # uzay needs even more headroom
     count = runs
     if count < process_count:
         process_count = count
