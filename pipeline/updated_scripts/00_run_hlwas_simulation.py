@@ -78,8 +78,8 @@ def main(config):
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
-    process_count = cpu_count - config.machine.headroom_cores
-    process_count -= int(cpu_count / 2)  # GalSim needs headroom
+    process_count = int(cpu_count / 2)  # GalSim needs headroom
+    process_count -= 4  # uzay needs even more headroom
     count = runs
     if count < process_count:
         process_count = count
@@ -90,7 +90,7 @@ def main(config):
     batches = list(generator)
 
     # process the batches
-    for batch in tqdm(batches):
+    for batch in tqdm(batches, ascii=True):
         pool = Pool(processes=process_count)
         pool.map(run_slsim, batch)
 
@@ -151,7 +151,7 @@ def run_slsim(tuple):
     cosmo = default_cosmology.get()
     # from astropy.cosmology import FlatLambdaCDM
     # cosmo = FlatLambdaCDM(H0=67.66, Om0=0.30966, Ob0=0.04897)
-    bands = pipeline_params['bands']
+    bands = survey_params['bands']
     if debugging: print(f'Surveying {sky_area.value} deg2 with bands {bands}')
 
     # define cuts on the intrinsic deflector and source populations (in addition to the skypy config file)
@@ -196,7 +196,7 @@ def run_slsim(tuple):
         snr_list = []
         # j = 0
         num_exceptions = 0
-        for candidate in tqdm(total_lens_population, disable=not debugging):
+        for candidate in tqdm(total_lens_population, disable=not debugging, ascii=True):
             snr, _, _, _ = survey_sim.get_snr(candidate,
                                               band=survey_params['snr_band'],
                                               zp=sca_zp_dict[survey_params['snr_band']],
@@ -222,10 +222,12 @@ def run_slsim(tuple):
             # j += 1
         np.save(os.path.join(output_dir, f'snr_list_{run}_sca{sca_id}.npy'), snr_list)
 
-        if debugging:
-            print(f'Number of exceptions: {num_exceptions}; {num_exceptions / len(snr_list) * 100:.2f}%')
+        # if debugging:
+        #     print(f'Number of exceptions: {num_exceptions}; {num_exceptions / len(snr_list) * 100:.2f}%')
 
-        assert len(total_lens_population) == len(snr_list), f'Lengths of total_lens_population ({len(total_lens_population)}) and snr_list ({len(snr_list)}) do not match.'
+        # assert len(total_lens_population) == len(snr_list), f'Lengths of total_lens_population ({len(total_lens_population)}) and snr_list ({len(snr_list)}) do not match.'
+        if debugging:
+            print(f'Percentage of exceptions: {num_exceptions / len(total_lens_population) * 100:.2f}%')
 
         # save other params to CSV
         total_pop_csv = os.path.join(output_dir, f'total_pop_{run}_sca{sca_id}.csv')
@@ -255,7 +257,7 @@ def run_slsim(tuple):
     limit = None
     detectable_gglenses, detectable_snr_list, masked_snr_array_list = [], [], []
     k = 0
-    for candidate in tqdm(lens_population, disable=not debugging):
+    for candidate in tqdm(lens_population, disable=not debugging, ascii=True):
         # 1. Einstein radius and Sersic radius
         # _, kwargs_params = candidate.lenstronomy_kwargs(band=survey_params['large_lens_band'])
         # lens_mag = candidate.deflector_magnitude(band=survey_params['large_lens_band'])
@@ -266,14 +268,6 @@ def run_slsim(tuple):
         #     if filter_1 <= num_samples:
         #         filtered_sample['filter_1'].append(candidate)
         #     continue
-
-        # 1. extended source magnification
-        extended_source_magnification = candidate.extended_source_magnification()
-        if snr < 50 and extended_source_magnification < survey_params['magnification']:
-            filter_1 += 1
-            if filter_1 <= num_samples:
-                filtered_sample['filter_1'].append(candidate)
-            continue
 
         # 2. SNR
         snr, masked_snr_array, snr_list, _ = survey_sim.get_snr(candidate,
@@ -293,6 +287,21 @@ def run_slsim(tuple):
         if snr is None:
             continue
 
+        if snr < survey_params['snr_threshold']:
+            # filter this candidate out
+            filter_2 += 1
+            if filter_2 <= num_samples:
+                filtered_sample['filter_2'].append(candidate)
+            continue
+
+        # 1. extended source magnification
+        extended_source_magnification = candidate.extended_source_magnification()
+        if snr < 50 and extended_source_magnification < survey_params['magnification']:
+            filter_1 += 1
+            if filter_1 <= num_samples:
+                filtered_sample['filter_1'].append(candidate)
+            continue
+
         # if debugging and k % 100 == 0:
         #     plt.imshow(masked_snr_array)
         #     plt.title(f'SNR: {snr}, SNR list: {snr_list}')
@@ -300,13 +309,6 @@ def run_slsim(tuple):
         #     plt.savefig(os.path.join(debug_dir, 'masked_snr_arrays', f'masked_snr_array_{id(masked_snr_array)}.png'))
         #     plt.close()
         # k += 1
-
-        if snr < survey_params['snr_threshold']:
-            # filter this candidate out
-            filter_2 += 1
-            if filter_2 <= num_samples:
-                filtered_sample['filter_2'].append(candidate)
-            continue
 
         # if both criteria satisfied, consider detectable
         detectable_gglenses.append(candidate)
@@ -330,7 +332,7 @@ def run_slsim(tuple):
     if debugging: print('Retrieving lenstronomy parameters...')
     dict_list = []
     for gglens, snr, masked_snr_array in tqdm(zip(detectable_gglenses, detectable_snr_list, masked_snr_array_list),
-                                              disable=not debugging, total=len(detectable_gglenses)):
+                                              disable=not debugging, total=len(detectable_gglenses), ascii=True):
 
         # get lens params from gglens object
         kwargs_model, kwargs_params = gglens.lenstronomy_kwargs(
@@ -373,7 +375,7 @@ def run_slsim(tuple):
 
     if len(dict_list) > 0:
         if debugging: print('Pickling lenses...')
-        for i, each in tqdm(enumerate(dict_list), disable=not debugging):
+        for i, each in tqdm(enumerate(dict_list), disable=not debugging, ascii=True):
             save_path = os.path.join(lens_output_dir, f'detectable_lens_{run}_sca{sca_id}_{str(i).zfill(5)}.pkl')
             util.pickle(save_path, each)
 

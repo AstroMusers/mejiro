@@ -1,0 +1,23 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: mejiro
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Bryce
+    family-names: Wedig
+    email: b.t.wedig@wustl.edu
+    affiliation: Washington University in St. Louis
+    orcid: 'https://orcid.org/0000-0002-0748-7312'
+  - orcid: 'https://orcid.org/0000-0002-6939-9211'
+    family-names: Daylan
+    given-names: Tansu
+    affiliation: Washington University in St. Louis
+    email: tansu@wustl.edu
+repository-code: 'https://github.com/AstroMusers/mejiro'
+url: 'https://mejiro.readthedocs.io/en/latest/'
+license: MIT

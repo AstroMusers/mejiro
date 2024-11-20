@@ -13,6 +13,7 @@ from mejiro.analysis import regions
 from mejiro.helpers import gs
 from mejiro.helpers.roman_params import RomanParameters
 from mejiro.lenses import lens_util
+from mejiro.lenses.strong_lens import StrongLens
 from mejiro.plots import diagnostic_plot
 
 # get Roman params
@@ -32,8 +33,11 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), input_
 
     check_cache = False if psf_cache_dir is None else True
 
-    strong_lens = lens_util.slsim_lens_to_mejiro(gglens, bands=[band],
-                                                 cosmo=default_cosmology.get())  # TODO pass in cosmology
+    if type(gglens) is not StrongLens:
+        strong_lens = lens_util.slsim_lens_to_mejiro(gglens, bands=[band],
+                                                    cosmo=default_cosmology.get())  # TODO pass in cosmology
+    else:
+        strong_lens = gglens
 
     if add_subhalos:
         realization = strong_lens.generate_cdm_subhalos()
