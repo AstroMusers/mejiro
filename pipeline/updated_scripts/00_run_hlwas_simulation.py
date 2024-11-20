@@ -246,12 +246,13 @@ def run_slsim(tuple):
     if debugging: print(f'Number of detectable lenses from first set of criteria: {len(lens_population)}')
 
     # set up dict to capture some information about which candidates got filtered out
-    filtered_sample = {}
-    filtered_sample['total'] = len(lens_population)
-    num_samples = 16
-    filter_1, filter_2 = 0, 0
-    filtered_sample['filter_1'] = []
-    filtered_sample['filter_2'] = []
+    if not debugging:
+        filtered_sample = {}
+        filtered_sample['total'] = len(lens_population)
+        num_samples = 16
+        filter_1, filter_2 = 0, 0
+        filtered_sample['filter_1'] = []
+        filtered_sample['filter_2'] = []
 
     # apply additional detectability criteria
     limit = None
@@ -289,17 +290,19 @@ def run_slsim(tuple):
 
         if snr < survey_params['snr_threshold']:
             # filter this candidate out
-            filter_2 += 1
-            if filter_2 <= num_samples:
-                filtered_sample['filter_2'].append(candidate)
+            if not debugging:
+                filter_2 += 1
+                if filter_2 <= num_samples:
+                    filtered_sample['filter_2'].append(candidate)
             continue
 
         # 1. extended source magnification
         extended_source_magnification = candidate.extended_source_magnification()
         if snr < 50 and extended_source_magnification < survey_params['magnification']:
-            filter_1 += 1
-            if filter_1 <= num_samples:
-                filtered_sample['filter_1'].append(candidate)
+            if not debugging:
+                filter_1 += 1
+                if filter_1 <= num_samples:
+                    filtered_sample['filter_1'].append(candidate)
             continue
 
         # if debugging and k % 100 == 0:
@@ -322,9 +325,10 @@ def run_slsim(tuple):
     if debugging: print(f'Run {run}: {len(detectable_gglenses)} detectable lens(es)')
 
     # save information about which lenses got filtered out
-    filtered_sample['num_filter_1'] = filter_1
-    filtered_sample['num_filter_2'] = filter_2
-    util.pickle(os.path.join(output_dir, f'filtered_sample_{run}_sca{sca_id}.pkl'), filtered_sample)  # TODO temp: make this configurable
+    if not debugging: # TODO temp: make this configurable with its own option
+        filtered_sample['num_filter_1'] = filter_1
+        filtered_sample['num_filter_2'] = filter_2
+        util.pickle(os.path.join(output_dir, f'filtered_sample_{run}_sca{sca_id}.pkl'), filtered_sample)  
 
     assert len(detectable_gglenses) == len(
         detectable_snr_list), f'Lengths of detectable_gglenses ({len(detectable_gglenses)}) and detectable_snr_list ({len(detectable_snr_list)}) do not match.'
