@@ -5,7 +5,7 @@ defaults:
   - override hydra/job_logging: disabled
 
 survey:
-  - runs: 36 # 54
+  - runs: 540
   - area: 0.5
   - total_population: False
   - scas: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]  # 
@@ -27,7 +27,7 @@ survey:
   - magnification: 3
   - snr_subtract_lens: False
   - snr_add_subhalos: False
-  - snr_exposure_time: 292  # 146
+  - snr_exposure_time: 146
   - snr_band: F129
   - snr_threshold: 20
   - snr_side: 10.67
@@ -66,7 +66,7 @@ pipeline:
   - rgb_bands: [ F184, F129, F106 ]  # in RGB order
   - rgb_stretch: 3
   - rgb_q: 3
-  - exposure_time: 292  # 146
+  - exposure_time: 146
   # other
   - suppress_output: True
   - seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
