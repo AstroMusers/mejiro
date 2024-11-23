@@ -1,4 +1,5 @@
 import pytest
+from copy import deepcopy
 
 from mejiro.instruments.roman import Roman
 from mejiro.lenses.test import SampleStrongLens
@@ -17,6 +18,8 @@ def test_kwargs_numerics():
                                      arcsec=4.95,
                                      oversample=5,
                                      verbose=False)
+
+    # TODO some check
     
     # regular compute mode
     kwargs_numerics = {
@@ -31,7 +34,9 @@ def test_kwargs_numerics():
                                      kwargs_numerics=kwargs_numerics,
                                      verbose=False)
     
-    # adaptive compute mode
+    # TODO some check
+    
+    # adaptive compute mode with supersampled indices provided
     region = util.create_centered_circle(N=225, radius=100)
     kwargs_numerics = {
         'supersampling_factor': 3,
@@ -45,6 +50,23 @@ def test_kwargs_numerics():
                                      oversample=5,
                                      kwargs_numerics=kwargs_numerics,
                                      verbose=False)
+    
+    # TODO some check
+
+    # adaptive compute mode with default supersampled indices (annulus around image positions)
+    kwargs_numerics = {
+        'supersampling_factor': 3,
+        'compute_mode': 'adaptive',
+    }
+    synthetic_image = SyntheticImage(strong_lens=strong_lens,
+                                     instrument=instrument,
+                                     band='F129',
+                                     arcsec=4.95,
+                                     oversample=5,
+                                     kwargs_numerics=kwargs_numerics,
+                                     verbose=False)
+    
+    # TODO some check
 
 
 def test_set_up_pixel_grid():
