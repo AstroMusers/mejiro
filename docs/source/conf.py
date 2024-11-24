@@ -11,8 +11,9 @@ project = 'mejiro'
 copyright = '2024, AstroMusers'
 author = 'Bryce Wedig'
 
-release = '0.0'
-version = '0.0.0'
+import mejiro
+release = mejiro.__version__
+version = mejiro.__version__
 
 # -- General configuration
 
