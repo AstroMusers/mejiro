@@ -250,13 +250,14 @@ def get_kwargs_cosmo(astropy_cosmo):
     Returns
     -------
     dict
-        A dictionary containing the cosmological parameters
+        A dictionary containing the cosmological parameters:
+        
         - H0 : float
             The Hubble constant at z=0 in km/s/Mpc.
         - Ob0 : float
             The density of baryonic matter in units of the critical density at z=0.
         - Om0 : float
-            The density of non-relativistic matter in units of the critical density at z=0.
+            The density of non-relativistic matter in units of the critical density at z=0. 
     """
     return {
         "H0": astropy_cosmo.H0.value,
