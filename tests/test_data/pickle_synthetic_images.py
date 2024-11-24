@@ -18,21 +18,21 @@ def main(config):
     lens = SampleStrongLens()
 
     synthetic_image = SyntheticImage(strong_lens=lens,
-                                        instrument=roman,
-                                        band='F129',
-                                        arcsec=5,
-                                        oversample=1,
-                                        verbose=True)
-    
+                                     instrument=roman,
+                                     band='F129',
+                                     arcsec=5,
+                                     oversample=1,
+                                     verbose=True)
+
     util.pickle('synthetic_image_roman_F129_5_1.pkl', synthetic_image)
 
     synthetic_image = SyntheticImage(strong_lens=lens,
-                                        instrument=roman,
-                                        band='F129',
-                                        arcsec=5,
-                                        oversample=5,
-                                        verbose=True)
-    
+                                     instrument=roman,
+                                     band='F129',
+                                     arcsec=5,
+                                     oversample=5,
+                                     verbose=True)
+
     util.pickle('synthetic_image_roman_F129_5_5.pkl', synthetic_image)
 
 

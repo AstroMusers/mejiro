@@ -88,7 +88,7 @@ def main(config):
 
     stop = time.time()
     util.print_execution_time(start, stop)
-    
+
 
 def generate_psf(tuple):
     from mejiro.utils import util

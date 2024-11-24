@@ -70,7 +70,7 @@ class SampleStrongLens(StrongLens):
         super().__init__(kwargs_model=kwargs_model, kwargs_params=kwargs_params, lens_mags=lens_mags,
                          source_mags=source_mags, lens_stellar_mass=286796906929.3925, lens_vel_disp=295.97270864848,
                          snr=None, uid='SAMPLE')
-        
+
 
 class SampleStrongLens2(StrongLens):
     def __init__(self):

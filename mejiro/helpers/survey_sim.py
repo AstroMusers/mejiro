@@ -23,8 +23,11 @@ roman_params = RomanParameters(csv_path)
 
 
 # TODO a(n imperfect) lens subtraction option?
-def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), input_num_pix=51, output_num_pix=45, side=4.95, oversample=1,
-            exposure_time=146, add_subhalos=True, kwargs_numerics={'supersampling_factor': 3, 'compute_mode': 'regular'}, return_snr_list=False, debugging=False, debug_dir=None,
+def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), input_num_pix=51, output_num_pix=45,
+            side=4.95, oversample=1,
+            exposure_time=146, add_subhalos=True,
+            kwargs_numerics={'supersampling_factor': 3, 'compute_mode': 'regular'}, return_snr_list=False,
+            debugging=False, debug_dir=None,
             psf_cache_dir=None, snr_per_pixel_threshold=1):
     if debugging: assert debug_dir is not None, 'Debugging is enabled but no debug directory is provided.'
 
@@ -35,7 +38,7 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), input_
 
     if type(gglens) is not StrongLens:
         strong_lens = lens_util.slsim_lens_to_mejiro(gglens, bands=[band],
-                                                    cosmo=default_cosmology.get())  # TODO pass in cosmology
+                                                     cosmo=default_cosmology.get())  # TODO pass in cosmology
     else:
         strong_lens = gglens
 
@@ -54,10 +57,12 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), input_
         'compute_mode': kwargs_numerics['compute_mode'],
         'supersampled_indexes': supersampling_indices
     }
-    model, lens_sb, source_sb = strong_lens.get_array(input_num_pix * oversample, side, band, zp, kwargs_numerics=kwargs_numerics_TEMP, return_pieces=True)
+    model, lens_sb, source_sb = strong_lens.get_array(input_num_pix * oversample, side, band, zp,
+                                                      kwargs_numerics=kwargs_numerics_TEMP, return_pieces=True)
 
     # generate GalSim images
-    results, lenses, sources, _ = gs.get_images(strong_lens, [model], [band], {band: zp}, input_num_pix, output_num_pix, oversample,
+    results, lenses, sources, _ = gs.get_images(strong_lens, [model], [band], {band: zp}, input_num_pix, output_num_pix,
+                                                oversample,
                                                 oversample,
                                                 lens_surface_brightness=[lens_sb],
                                                 source_surface_brightness=[source_sb], detector=detector,
@@ -108,7 +113,8 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), input_
 
     if len(snr_list) != 0:
         if debugging and np.max(snr_list) > 20:
-            diagnostic_plot.snr_plot(strong_lens, total, lens, source, noise, snr_array, masked_snr_array, snr_list, debug_dir)
+            diagnostic_plot.snr_plot(strong_lens, total, lens, source, noise, snr_array, masked_snr_array, snr_list,
+                                     debug_dir)
 
     if return_snr_list:
         return snr_list, None, None, None

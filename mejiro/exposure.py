@@ -19,7 +19,8 @@ class Exposure:
         if engine == 'galsim':
             from mejiro.engines import galsim_engine
 
-            self.noise = galsim_engine.get_empty_image(self.synthetic_image.native_num_pix, self.synthetic_image.native_pixel_scale)
+            self.noise = galsim_engine.get_empty_image(self.synthetic_image.native_num_pix,
+                                                       self.synthetic_image.native_pixel_scale)
 
             if self.synthetic_image.instrument.name == 'Roman':
                 # validate engine params and set defaults
@@ -31,7 +32,7 @@ class Exposure:
                 # get exposure
                 results, self.psf, self.poisson_noise, self.reciprocity_failure, self.dark_noise, self.nonlinearity, self.ipc, self.read_noise = galsim_engine.get_roman_exposure(
                     synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
-                
+
                 # sum noise
                 if self.poisson_noise is not None: self.noise += self.poisson_noise
                 if self.reciprocity_failure is not None: self.noise += self.reciprocity_failure
@@ -52,7 +53,7 @@ class Exposure:
                 # get exposure
                 results, self.psf, self.poisson_noise, self.dark_noise, self.read_noise = galsim_engine.get_hwo_exposure(
                     synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
-                
+
                 # sum noise
                 if self.poisson_noise is not None: self.noise += self.poisson_noise
                 if self.dark_noise is not None: self.noise += self.dark_noise
@@ -64,7 +65,7 @@ class Exposure:
             from mejiro.engines import lenstronomy_engine
 
             self.noise = np.zeros_like(self.synthetic_image.image)
-            
+
             if self.synthetic_image.instrument.name == 'Roman':
                 # validate engine params and set defaults
                 if engine_params is None:
@@ -73,7 +74,9 @@ class Exposure:
                     engine_params = lenstronomy_engine.validate_roman_engine_params(engine_params)
 
                 # get exposure
-                results, self.psf, self.noise = lenstronomy_engine.get_roman_exposure(synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
+                results, self.psf, self.noise = lenstronomy_engine.get_roman_exposure(synthetic_image, exposure_time,
+                                                                                      psf, engine_params, self.verbose,
+                                                                                      **kwargs)
             else:
                 self.instrument_not_available_error(engine)
 
@@ -90,7 +93,8 @@ class Exposure:
                 engine_params = pandeia_engine.validate_roman_engine_params(engine_params)
 
             # get exposure
-            results, self.psf, self.noise = pandeia_engine.get_roman_exposure(synthetic_image, exposure_time, psf, engine_params, self.verbose, **kwargs)
+            results, self.psf, self.noise = pandeia_engine.get_roman_exposure(synthetic_image, exposure_time, psf,
+                                                                              engine_params, self.verbose, **kwargs)
 
             # TODO temporarily set noise to zeros until pandeia noise is implemented
             self.noise = np.zeros_like(self.synthetic_image.image)
@@ -101,7 +105,7 @@ class Exposure:
 
         else:
             raise ValueError(f'Engine "{engine}" not recognized')
-        
+
         # once engine params have been defaulted and validated, set them as an attribute
         self.engine_params = engine_params
 
@@ -130,14 +134,15 @@ class Exposure:
                 raise ValueError('Negative pixel values in lens image')
             if np.any(self.source_exposure < 0):
                 raise ValueError('Negative pixel values in source image')
-        
+
         end = time.time()
         self.calc_time = end - start
         if self.verbose:
             print(f'Exposure calculation time with {self.engine} engine: {util.calculate_execution_time(start, end)}')
 
     def instrument_not_available_error(self, engine):
-        raise ValueError(f'Instrument "{self.synthetic_image.instrument.name}" not available for engine "{engine}." Available engines are {self.synthetic_image.instrument.engines}')
+        raise ValueError(
+            f'Instrument "{self.synthetic_image.instrument.name}" not available for engine "{engine}." Available engines are {self.synthetic_image.instrument.engines}')
 
     @staticmethod
     def crop_edge_effects(image):

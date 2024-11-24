@@ -198,7 +198,7 @@ def main(config):
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     print(f'Processing {len(tuple_list)} lens(es) that satisfy criteria')
-    
+
     with ProcessPoolExecutor(max_workers=process_count) as executor:
         futures = {executor.submit(generate_power_spectra, batch): batch for batch in tuple_list}
         for future in tqdm(as_completed(futures), total=len(futures)):
@@ -442,10 +442,14 @@ def generate_power_spectra(tuple):
     }
 
     # calculate surface brightness arrays
-    _, _, wdm_array = wdm_lens.get_array(num_pix * oversample, side, control_band, return_pieces=True, kwargs_numerics=kwargs_numerics)
-    _, _, mdm_array = mdm_lens.get_array(num_pix * oversample, side, control_band, return_pieces=True, kwargs_numerics=kwargs_numerics)
-    _, _, sdm_array = sdm_lens.get_array(num_pix * oversample, side, control_band, return_pieces=True, kwargs_numerics=kwargs_numerics)
-    _, _, cdm_array = cdm_lens.get_array(num_pix * oversample, side, control_band, return_pieces=True, kwargs_numerics=kwargs_numerics)
+    _, _, wdm_array = wdm_lens.get_array(num_pix * oversample, side, control_band, return_pieces=True,
+                                         kwargs_numerics=kwargs_numerics)
+    _, _, mdm_array = mdm_lens.get_array(num_pix * oversample, side, control_band, return_pieces=True,
+                                         kwargs_numerics=kwargs_numerics)
+    _, _, sdm_array = sdm_lens.get_array(num_pix * oversample, side, control_band, return_pieces=True,
+                                         kwargs_numerics=kwargs_numerics)
+    _, _, cdm_array = cdm_lens.get_array(num_pix * oversample, side, control_band, return_pieces=True,
+                                         kwargs_numerics=kwargs_numerics)
 
     wdm_residual = wdm_array - cdm_array
     mdm_residual = mdm_array - cdm_array
@@ -501,7 +505,8 @@ def generate_power_spectra(tuple):
 
     # ---------------------GENERATE EXPOSURES VARYING SUBHALO POPULATION---------------------
     subhalos_psf_id_string = psf.get_psf_id_string(band=control_band, detector=position_control[0][0],
-                                                   detector_position=position_control[0][1], oversample=oversample, num_pix=101)
+                                                   detector_position=position_control[0][1], oversample=oversample,
+                                                   num_pix=101)
     subhalos_psf_kernel = cached_psfs[subhalos_psf_id_string]
 
     wdm_exposure = get_masked_exposure(wdm_lens, wdm_array, control_band, subhalos_psf_kernel, num_pix, oversample,

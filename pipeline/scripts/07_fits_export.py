@@ -48,7 +48,8 @@ def main(config):
     bands = pipeline_params['bands']
 
     # get all lenses
-    all_lenses = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=True, verbose=True, limit=None, exposure=True)
+    all_lenses = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=True, verbose=True, limit=None,
+                                                 exposure=True)
 
     for lens in tqdm(all_lenses):
         uid = lens.uid

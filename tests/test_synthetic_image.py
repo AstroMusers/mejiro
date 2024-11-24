@@ -20,10 +20,10 @@ def test_kwargs_numerics():
                                      verbose=False)
 
     # TODO some check
-    
+
     # regular compute mode
     kwargs_numerics = {
-        'supersampling_factor': 3, 
+        'supersampling_factor': 3,
         'compute_mode': 'regular'
     }
     synthetic_image = SyntheticImage(strong_lens=strong_lens,
@@ -33,9 +33,9 @@ def test_kwargs_numerics():
                                      oversample=5,
                                      kwargs_numerics=kwargs_numerics,
                                      verbose=False)
-    
+
     # TODO some check
-    
+
     # adaptive compute mode with supersampled indices provided
     region = util.create_centered_circle(N=225, radius=100)
     kwargs_numerics = {
@@ -50,7 +50,7 @@ def test_kwargs_numerics():
                                      oversample=5,
                                      kwargs_numerics=kwargs_numerics,
                                      verbose=False)
-    
+
     # TODO some check
 
     # adaptive compute mode with default supersampled indices (annulus around image positions)
@@ -65,7 +65,7 @@ def test_kwargs_numerics():
                                      oversample=5,
                                      kwargs_numerics=kwargs_numerics,
                                      verbose=False)
-    
+
     # TODO some check
 
 

@@ -325,10 +325,10 @@ def run_slsim(tuple):
     if debugging: print(f'Run {run}: {len(detectable_gglenses)} detectable lens(es)')
 
     # save information about which lenses got filtered out
-    if not debugging: # TODO temp: make this configurable with its own option
+    if not debugging:  # TODO temp: make this configurable with its own option
         filtered_sample['num_filter_1'] = filter_1
         filtered_sample['num_filter_2'] = filter_2
-        util.pickle(os.path.join(output_dir, f'filtered_sample_{run}_sca{sca_id}.pkl'), filtered_sample)  
+        util.pickle(os.path.join(output_dir, f'filtered_sample_{run}_sca{sca_id}.pkl'), filtered_sample)
 
     assert len(detectable_gglenses) == len(
         detectable_snr_list), f'Lengths of detectable_gglenses ({len(detectable_gglenses)}) and detectable_snr_list ({len(detectable_snr_list)}) do not match.'

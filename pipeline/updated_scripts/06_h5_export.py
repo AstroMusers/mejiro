@@ -58,7 +58,7 @@ def main(config):
     now_string = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
     f.attrs['created'] = (now_string)
 
-    #---------------------------CREATE IMAGE DATASET--------------------------------
+    # ---------------------------CREATE IMAGE DATASET--------------------------------
     group_images = f.create_group('images')
 
     # set group-level attributes
@@ -68,7 +68,8 @@ def main(config):
     group_images.attrs['webbpsf_version'] = (webbpsf.__version__, 'WebbPSF version')
 
     # get all lenses
-    all_lenses = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=True, verbose=True, limit=None, exposure=True)
+    all_lenses = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=True, verbose=True, limit=None,
+                                                 exposure=True)
 
     print(f'Creating datasets for {len(all_lenses)} lenses')
     for lens in tqdm(all_lenses):
@@ -97,8 +98,10 @@ def main(config):
         group_lens.attrs['detector'] = (str(lens.detector), 'Detector')
         group_lens.attrs['detector_position_x'] = (str(lens.detector_position[0]), 'Detector X position')
         group_lens.attrs['detector_position_y'] = (str(lens.detector_position[1]), 'Detector Y position')
-        group_lens.attrs['log_mlow'] = (str(pipeline_params['log_mlow']), 'Lower mass limit for subhalos [log10(M_sun)]')
-        group_lens.attrs['log_mhigh'] = (str(pipeline_params['log_mhigh']), 'Upper mass limit for subhalos [log10(M_sun)]')
+        group_lens.attrs['log_mlow'] = (
+        str(pipeline_params['log_mlow']), 'Lower mass limit for subhalos [log10(M_sun)]')
+        group_lens.attrs['log_mhigh'] = (
+        str(pipeline_params['log_mhigh']), 'Upper mass limit for subhalos [log10(M_sun)]')
         group_lens.attrs['r_tidal'] = (str(pipeline_params['r_tidal']), 'See pyHalo documentation')
         group_lens.attrs['sigma_sub'] = (str(pipeline_params['sigma_sub']), 'See pyHalo documentation')
         group_lens.attrs['num_subhalos'] = (str(lens.num_subhalos), 'Number of subhalos')
@@ -120,7 +123,7 @@ def main(config):
             # set synthetic image dataset attributes
             # dataset_synth.attrs['pixel_scale'] = (str(0.11 / pipeline_params['grid_oversample']), 'Pixel scale [arcsec/pixel]')
             # dataset_synth.attrs['fov'] = (str(pipeline_params['side']), 'Field of view [arcsec]')
-            
+
             # set exposure dataset attributes
             dataset_exposure.attrs['pixel_scale'] = (str(0.11), 'Pixel scale [arcsec/pixel]')
             dataset_exposure.attrs['fov'] = (str(0.11 * pipeline_params['final_pixel_side']), 'Field of view [arcsec]')
@@ -130,10 +133,11 @@ def main(config):
                 dset.attrs['units'] = ('Counts/sec', 'Units of pixel values')
                 dset.attrs['filter'] = (band, 'Filter')
                 dset.attrs['source_magnitude'] = (str(lens.source_mags[band]), 'Unlensed source galaxy AB magnitude')
-                dset.attrs['lensed_source_magnitude'] = (str(lens.lensed_source_mags[band]), 'Lensed source galaxy AB magnitude')
+                dset.attrs['lensed_source_magnitude'] = (
+                str(lens.lensed_source_mags[band]), 'Lensed source galaxy AB magnitude')
                 dset.attrs['lens_magnitude'] = (str(lens.lens_mags[band]), 'Lens galaxy AB magnitude')
 
-    #---------------------------CREATE PSF DATASET--------------------------------
+    # ---------------------------CREATE PSF DATASET--------------------------------
     # set detectors and detector_positions
     detectors = range(1, 19)
     detector_positions = roman_util.divide_up_sca(5)
@@ -153,7 +157,8 @@ def main(config):
 
         for det_pos in tqdm(detector_positions):
             for i, band in enumerate(pipeline_params['bands']):
-                psf_image = util.unpickle(f'/data/bwedig/mejiro/cached_psfs/{band}_{det}_{det_pos[0]}_{det_pos[1]}_5_101.pkl')
+                psf_image = util.unpickle(
+                    f'/data/bwedig/mejiro/cached_psfs/{band}_{det}_{det_pos[0]}_{det_pos[1]}_5_101.pkl')
                 psf = psf_image.image.array
 
                 dataset_psf = group_detector.create_dataset(f'psf_{det}_{det_pos[0]}_{det_pos[1]}_{band}', data=psf)

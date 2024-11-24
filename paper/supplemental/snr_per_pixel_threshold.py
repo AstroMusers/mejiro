@@ -84,14 +84,17 @@ def calc_snr(args):
     masked_snr_arrays = []
 
     for snr_threshold in tqdm(snr_thresholds, leave=False):
-        snr, masked_snr_array, _, _ = survey_sim.get_snr(lens, 'F129', zp, detector=1, detector_position=(2048, 2048), input_num_pix=97, output_num_pix=91, side=10.01, oversample=5, exposure_time=146, add_subhalos=False, snr_per_pixel_threshold=snr_threshold)
+        snr, masked_snr_array, _, _ = survey_sim.get_snr(lens, 'F129', zp, detector=1, detector_position=(2048, 2048),
+                                                         input_num_pix=97, output_num_pix=91, side=10.01, oversample=5,
+                                                         exposure_time=146, add_subhalos=False,
+                                                         snr_per_pixel_threshold=snr_threshold)
 
         if snr is None or masked_snr_array is None:
             return None, None, None
-        
+
         masked_snr_arrays.append(masked_snr_array)
         snrs.append(snr)
-    
+
     return lens.uid, snrs, masked_snr_arrays
 
 

@@ -33,7 +33,8 @@ def default_roman_engine_params():
     }
 
 
-def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=default_roman_engine_params(), verbose=False, **kwargs):
+def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=default_roman_engine_params(),
+                       verbose=False, **kwargs):
     band = synthetic_image.band
     image = synthetic_image.image
     strong_lens = synthetic_image.strong_lens
@@ -52,7 +53,7 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
     # calc['configuration']['detector']['ma_table_name'] = 'hlwas_imaging'  # TODO this causes error sometimes? but build_default_calc sets it to this value, so having/not having this line should make no difference... 
     calc['configuration']['detector'][
         'nresultants'] = 8  # resultant number 8 to achieve HLWAS total integration duration of 145.96 s; see https://roman-docs.stsci.edu/raug/astronomers-proposal-tool-apt/appendix/appendix-wfi-multiaccum-tables
-    
+
     # set noise and detector effects
     calc['calculation'] = engine_params['calculation']
 
@@ -194,7 +195,7 @@ def _get_cps_array(lens, array, num_samples, band, background):
 def _convert_cps_to_magnitude(array, band, zp):
     if zp is None:
         lenstronomy_roman_config = Roman(band=band.upper(), psf_type='PIXEL',
-                                        survey_mode='wide_area').kwargs_single_band()  # band e.g. 'F106'
+                                         survey_mode='wide_area').kwargs_single_band()  # band e.g. 'F106'
         magnitude_zero_point = lenstronomy_roman_config.get('magnitude_zero_point')
     else:
         magnitude_zero_point = zp
@@ -224,10 +225,11 @@ def _get_norm_wave(band):
 
     return filter_center_dict[band]
 
-    
+
 def validate_roman_engine_params(engine_params):
     if 'num_samples' not in engine_params.keys():
-        engine_params['num_samples'] = default_roman_engine_params()['num_samples']  # TODO is this necessary? doesn't GalSim do this?
+        engine_params['num_samples'] = default_roman_engine_params()[
+            'num_samples']  # TODO is this necessary? doesn't GalSim do this?
         # TODO logging to inform user of default
     else:
         # TODO validate

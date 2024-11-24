@@ -72,17 +72,17 @@ def create_centered_box(N, box_size):
         raise ValueError("box_size must be an odd number")
     if box_size > N:
         raise ValueError("box_size must be less than or equal to N")
-    
+
     # Create an NxN array of False
     array = np.full((N, N), False, dtype=bool)
-    
+
     # Find the coordinates of the centered inner box
     center = N // 2
     half_box_size = box_size // 2
-    
+
     # Set the inner box to True
-    array[center-half_box_size:center+half_box_size+1, center-half_box_size:center+half_box_size+1] = True
-    
+    array[center - half_box_size:center + half_box_size + 1, center - half_box_size:center + half_box_size + 1] = True
+
     return array
 
 
@@ -115,20 +115,20 @@ def create_centered_circle(N, radius):
         raise ValueError("Radius must be a positive number")
     if radius > N // 2:
         raise ValueError(f"Radius ({radius:.2f})must be less than or equal to N//2 ({N // 2:.2f})")
-    
+
     # Create an NxN array of False
     array = np.full((N, N), False, dtype=bool)
-    
+
     # Find the center of the array
     center = (N // 2, N // 2)
-    
+
     # Set the circular region to True
     for i in range(N):
         for j in range(N):
             # Calculate the distance from the center
-            if np.sqrt((i - center[0])**2 + (j - center[1])**2) <= radius:
+            if np.sqrt((i - center[0]) ** 2 + (j - center[1]) ** 2) <= radius:
                 array[i, j] = True
-    
+
     return array
 
 
@@ -311,6 +311,7 @@ def load_skypy_config(path):
     ignores unknown tags in the YAML file. This can be useful when the YAML file
     contains tags that are not recognized by the default YAML loader.
     """
+
     class SafeLoaderIgnoreUnknown(yaml.SafeLoader):
         def ignore_unknown(self, node):
             return None
@@ -635,7 +636,7 @@ def print_execution_time(start, stop, return_string=False):
     print(f"Execution time: {execution_time}")
     if return_string:
         return execution_time
-    
+
 
 def calculate_execution_time(start, stop):
     """

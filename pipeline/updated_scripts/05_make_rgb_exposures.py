@@ -122,7 +122,8 @@ def get_image(input):
 
     # Generate and save color image
     from mejiro.helpers import color
-    rgb_image = color.get_rgb(image_b=blue, image_g=green, image_r=red, stretch=stretch, Q=q)  # originally stretch=4, Q=5; then stretch=3, Q=4
+    rgb_image = color.get_rgb(image_b=blue, image_g=green, image_r=red, stretch=stretch,
+                              Q=q)  # originally stretch=4, Q=5; then stretch=3, Q=4
     np.save(os.path.join(output_dir, f'galsim_color_{str(uid).zfill(8)}.npy'), rgb_image)
 
     if pieces:
@@ -140,4 +141,3 @@ def get_image(input):
 
 if __name__ == '__main__':
     main()
-    

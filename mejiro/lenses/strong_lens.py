@@ -230,10 +230,10 @@ class StrongLens:
             first_key = next(iter(self.kwargs_source_dict))  # get first key from source dict
         except StopIteration:
             raise ValueError("kwargs_source_dict is empty.")
-        
+
         source_x = self.kwargs_source_dict[first_key]['center_x']
         source_y = self.kwargs_source_dict[first_key]['center_y']
-    
+
         solver = LensEquationSolver(self.lens_model_class)
         image_x, image_y = solver.image_position_from_source(sourcePos_x=source_x, sourcePos_y=source_y,
                                                              kwargs_lens=self.kwargs_lens)
@@ -242,7 +242,7 @@ class StrongLens:
             return self.coords.map_coord2pix(ra=image_x, dec=image_y)
         else:
             return image_x, image_y
-        
+
     # def get_point_source_image_positions(self, ):
     #     from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
 
@@ -250,7 +250,7 @@ class StrongLens:
     #     point_source_pos_x, point_source_pos_y = self.source.point_source_position(
     #         center_lens=self.deflector_position, draw_area=self.test_area
     #     )
-        
+
     #     try:
     #         point_image_positions = solver.image_position_from_source(
     #             point_source_pos_x,
@@ -403,7 +403,7 @@ class StrongLens:
     def get_total_flux_cps(self, band, zp=None):
         # TODO inefficient for this to call both methods if neither is initialized
         return self.get_lens_flux_cps(band, zp=zp) + self.get_source_flux_cps(band, zp=zp)
-    
+
     def build_adaptive_grid(self, num_pix, pad=40):
         image_positions = self.get_image_positions(pixel_coordinates=True)
         if len(image_positions) == 0 or len(image_positions[0]) == 0 or len(image_positions[1]) == 0:
@@ -412,20 +412,21 @@ class StrongLens:
 
         image_radii = []
         for x, y in zip(image_positions[0], image_positions[1]):
-            image_radii.append(np.sqrt((x - (num_pix // 2))**2 + (y - (num_pix // 2))**2))
-        
+            image_radii.append(np.sqrt((x - (num_pix // 2)) ** 2 + (y - (num_pix // 2)) ** 2))
+
         if len(image_radii) == 0:
             raise ValueError(f"Image radii list is empty: {image_radii}")
 
-        x = np.linspace(-num_pix//2, num_pix//2, num_pix)
-        y = np.linspace(-num_pix//2, num_pix//2, num_pix)
+        x = np.linspace(-num_pix // 2, num_pix // 2, num_pix)
+        y = np.linspace(-num_pix // 2, num_pix // 2, num_pix)
         X, Y = np.meshgrid(x, y)
-        distance = np.sqrt((X - (self.kwargs_lens[0]['center_x'] / 0.11))**2 + (Y - (self.kwargs_lens[0]['center_y'] / 0.11))**2)
-        
+        distance = np.sqrt(
+            (X - (self.kwargs_lens[0]['center_x'] / 0.11)) ** 2 + (Y - (self.kwargs_lens[0]['center_y'] / 0.11)) ** 2)
+
         return (distance >= np.min(image_radii) - pad) & (distance <= np.max(image_radii) + pad)
 
-
-    def get_array(self, num_pix, side, band, zp=None, kwargs_psf=None, return_pieces=False, kwargs_numerics={'supersampling_factor': 3, 'compute_mode': 'regular'}):
+    def get_array(self, num_pix, side, band, zp=None, kwargs_psf=None, return_pieces=False,
+                  kwargs_numerics={'supersampling_factor': 3, 'compute_mode': 'regular'}):
         self.num_pix = num_pix
         self.side = side
         self.oversample_factor = round((0.11 * self.num_pix) / self.side)
@@ -461,7 +462,8 @@ class StrongLens:
 
         if return_pieces:
             lens_surface_brightness = image_model.lens_surface_brightness(kwargs_lens_light_amp, unconvolved=True)
-            source_surface_brightness = image_model.source_surface_brightness(kwargs_source_amp, self.kwargs_lens, unconvolved=True)
+            source_surface_brightness = image_model.source_surface_brightness(kwargs_source_amp, self.kwargs_lens,
+                                                                              unconvolved=True)
             return total_image, lens_surface_brightness, source_surface_brightness
         else:
             return total_image

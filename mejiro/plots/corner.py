@@ -72,7 +72,7 @@ def system(lens_list, band, quantiles=[0.16, 0.5, 0.84]):
             r"$m_\textrm{lens}$" + f" ({band})",
             r"$m_\textrm{source}$" + f" ({band})",
             r'$\theta_\textrm{E}$',
-            #r'$\sigma_\textrm{v}$',
+            # r'$\sigma_\textrm{v}$',
         ],
         quantiles=quantiles,
         show_titles=True,

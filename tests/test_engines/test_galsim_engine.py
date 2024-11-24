@@ -32,7 +32,7 @@ def test_default_engine_params():
                         check_cache=True,
                         psf_cache_dir='test_data',
                         verbose=False)
-    
+
     assert exposure.engine == 'galsim'
 
     ignored_keys = ['rng']
@@ -87,12 +87,12 @@ def test_roman_noise():
     }
 
     exposure2 = Exposure(synthetic_image,
-                        exposure_time=exposure_time,
-                        engine_params=engine_params,
-                        check_cache=True,
-                        psf_cache_dir='test_data',
-                        verbose=False)
-    
+                         exposure_time=exposure_time,
+                         engine_params=engine_params,
+                         check_cache=True,
+                         psf_cache_dir='test_data',
+                         verbose=False)
+
     assert np.array_equal(exposure2.exposure, exposure.exposure)
     assert np.array_equal(poisson_noise.array, exposure2.poisson_noise.array)
     assert np.array_equal(reciprocity_failure.array, exposure2.reciprocity_failure.array)
@@ -136,12 +136,12 @@ def test_hwo_noise():
     }
 
     exposure2 = Exposure(synthetic_image,
-                        exposure_time=exposure_time,
-                        engine_params=engine_params,
-                        check_cache=True,
-                        psf_cache_dir='test_data',
-                        verbose=False)
-    
+                         exposure_time=exposure_time,
+                         engine_params=engine_params,
+                         check_cache=True,
+                         psf_cache_dir='test_data',
+                         verbose=False)
+
     assert np.array_equal(exposure2.exposure, exposure.exposure)
     assert np.array_equal(poisson_noise.array, exposure2.poisson_noise.array)
     assert np.array_equal(dark_noise.array, exposure2.dark_noise.array)

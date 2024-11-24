@@ -33,7 +33,8 @@ def default_hwo_engine_params():
     }
 
 
-def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=default_roman_engine_params(), verbose=False, **kwargs):
+def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=default_roman_engine_params(),
+                       verbose=False, **kwargs):
     # get detector and detector position
     detector = synthetic_image.instrument_params['detector']
     detector_position = synthetic_image.instrument_params['detector_position']

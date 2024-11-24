@@ -86,7 +86,7 @@ def main(config):
         lens_list *= repeats
         lens_list = lens_list[:num_lenses]
     print(f'Processing {len(lens_list)} lens(es) of {og_count}')
-    
+
     num_permutations = len(positions) * len(subhalo_params['masses']) * script_config['num_positions']
     idx_to_save = np.random.randint(low=num_permutations, size=len(lens_list))
 
@@ -100,14 +100,14 @@ def main(config):
 
     count = len(lens_list)
     cpu_count = multiprocessing.cpu_count()
-    process_count = cpu_count #- config.machine.headroom_cores
+    process_count = cpu_count  # - config.machine.headroom_cores
     process_count -= int(cpu_count / 2)
     if count < process_count:
         process_count = count
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     print(f'Processing {len(tuple_list)} lens(es) that satisfy criteria')
-    
+
     with ProcessPoolExecutor(max_workers=process_count) as executor:
         futures = {executor.submit(run, batch): batch for batch in tuple_list}
         for future in tqdm(as_completed(futures), total=len(futures), leave=True):

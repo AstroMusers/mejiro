@@ -42,7 +42,7 @@ def count_detectable_lenses(dir):
 #     assert len(lens_list) != 0, f'No pickled lenses found. Check {pipeline_dir}.'
 
 
-def get_detectable_lenses(pipeline_dir, limit=None, with_subhalos=False, exposure=False,verbose=False):
+def get_detectable_lenses(pipeline_dir, limit=None, with_subhalos=False, exposure=False, verbose=False):
     lens_list = []
 
     if with_subhalos:

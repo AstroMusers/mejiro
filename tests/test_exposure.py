@@ -16,7 +16,7 @@ def test_exposure_with_galsim_engine():
                         check_cache=True,
                         psf_cache_dir='test_data',
                         verbose=False)
-    
+
     assert exposure.synthetic_image == synthetic_image
     assert exposure.exposure_time == 146
     assert exposure.engine == 'galsim'
@@ -24,28 +24,26 @@ def test_exposure_with_galsim_engine():
 
     # TODO exposure
 
-
     # TODO noise
-
 
     # TODO image
 
-    
 
 def test_exposure_with_lenstronomy_engine():
     synthetic_image = util.unpickle('test_data/synthetic_image_roman_F129_5_5.pkl')
-    
+
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
                         engine='lenstronomy',
                         check_cache=True,
                         psf_cache_dir='test_data',
                         verbose=False)
-    
+
     assert exposure.synthetic_image == synthetic_image
     assert exposure.exposure_time == 146
     assert exposure.engine == 'lenstronomy'
     assert exposure.verbose == False
+
 
 def test_exposure_with_pandeia_engine():
     synthetic_image = util.unpickle('test_data/synthetic_image_roman_F129_5_5.pkl')
@@ -61,11 +59,12 @@ def test_exposure_with_pandeia_engine():
                         check_cache=True,
                         psf_cache_dir='test_data',
                         verbose=False)
-    
+
     assert exposure.synthetic_image == synthetic_image
     assert exposure.exposure_time == 146
     assert exposure.engine == 'pandeia'
     assert exposure.verbose == False
+
 
 def test_default_engine():
     synthetic_image = util.unpickle('test_data/synthetic_image_roman_F129_5_5.pkl')
@@ -79,15 +78,16 @@ def test_default_engine():
 
     assert exposure.engine == 'galsim'
 
+
 def test_invalid_engine():
     synthetic_image = util.unpickle('test_data/synthetic_image_roman_F129_5_5.pkl')
 
     try:
         Exposure(synthetic_image,
-                    exposure_time=146,
-                    engine='invalid_engine',
-                    check_cache=True,
-                    psf_cache_dir='test_data',
-                    verbose=False)
+                 exposure_time=146,
+                 engine='invalid_engine',
+                 check_cache=True,
+                 psf_cache_dir='test_data',
+                 verbose=False)
     except ValueError as e:
         assert str(e) == 'Engine "invalid_engine" not recognized'

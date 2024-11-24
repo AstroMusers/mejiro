@@ -12,6 +12,7 @@ copyright = '2024, AstroMusers'
 author = 'Bryce Wedig'
 
 import mejiro
+
 release = mejiro.__version__
 version = mejiro.__version__
 

@@ -66,7 +66,7 @@ def main(config):
     zp_dict = json.load(open(os.path.join(module_path, 'data', 'roman_zeropoint_magnitudes.json')))
 
     # tuple the parameters
-    runs = survey_params['runs'] 
+    runs = survey_params['runs']
     scas = survey_params['scas']
     area = survey_params['area']
     tuple_list = []
@@ -181,8 +181,10 @@ def run_slsim(tuple):
     if debugging: print('Defined galaxy population')
 
     # set kwargs_numerics for SNR calculation
-    radius = survey_params['snr_supersampling_radius'] / (0.11 / survey_params['snr_oversample'])  # convert radius from arcsec to pixels
-    supersampling_indices = util.create_centered_circle(N=survey_params['snr_input_num_pix'] * survey_params['snr_oversample'], radius=radius)
+    radius = survey_params['snr_supersampling_radius'] / (
+                0.11 / survey_params['snr_oversample'])  # convert radius from arcsec to pixels
+    supersampling_indices = util.create_centered_circle(
+        N=survey_params['snr_input_num_pix'] * survey_params['snr_oversample'], radius=radius)
     kwargs_numerics = {
         'supersampling_factor': survey_params['snr_supersampling_factor'],
         'compute_mode': survey_params['snr_supersampling_compute_mode'],
@@ -333,7 +335,8 @@ def run_slsim(tuple):
     # save information about which lenses got filtered out
     filtered_sample['num_filter_1'] = filter_1
     filtered_sample['num_filter_2'] = filter_2
-    util.pickle(os.path.join(output_dir, f'filtered_sample_{run}_sca{sca_id}.pkl'), filtered_sample)  # TODO temp: make this configurable
+    util.pickle(os.path.join(output_dir, f'filtered_sample_{run}_sca{sca_id}.pkl'),
+                filtered_sample)  # TODO temp: make this configurable
 
     # assert len(detectable_gglenses) == len(
     #     detectable_snr_list), f'Lengths of detectable_gglenses ({len(detectable_gglenses)}) and detectable_snr_list ({len(detectable_snr_list)}) do not match.'

@@ -16,6 +16,7 @@ from pyHalo.single_realization import SingleHalo
 from scipy.stats import chi2
 from tqdm import tqdm
 
+
 def process_lens(params):
     from mejiro.analysis import stats
     from mejiro.utils import util
@@ -24,7 +25,8 @@ def process_lens(params):
     from mejiro.plots import plot_util
     from mejiro.engines import webbpsf_engine
 
-    (run, lens, roman, script_config, imaging_params, subhalo_params, positions, save_dir, image_save_dir, idx_to_save) = params
+    (run, lens, roman, script_config, imaging_params, subhalo_params, positions, save_dir, image_save_dir,
+     idx_to_save) = params
     num_positions = script_config['num_positions']
     rng = script_config['rng']
     band = imaging_params['band']
@@ -91,7 +93,7 @@ def process_lens(params):
             return lens.uid, None, None
 
         source_exposure = exposure_no_subhalo.source_exposure
-        
+
         poisson_noise = exposure_no_subhalo.poisson_noise
         reciprocity_failure = exposure_no_subhalo.reciprocity_failure
         dark_noise = exposure_no_subhalo.dark_noise
@@ -173,7 +175,7 @@ def process_lens(params):
                 masked_exposure_with_subhalo = np.ma.masked_array(exposure.exposure, mask=mask)
                 chi_square = stats.chi_square(np.ma.compressed(masked_exposure_with_subhalo),
                                               np.ma.compressed(masked_exposure_no_subhalo))
-                
+
                 if chi_square < 0.:
                     print(f'{lens.uid}: {chi_square=}')
                     return lens.uid, None, None
@@ -191,33 +193,35 @@ def process_lens(params):
                         synth.set_native_coords()
                         coords_x, coords_y = synth.coords_native.map_coord2pix(halo_x, halo_y)
 
-                        ax00 = ax[0,0].imshow(masked_exposure_no_subhalo)
-                        ax01 = ax[0,1].imshow(masked_exposure_with_subhalo)
-                        ax[0,1].scatter(coords_x, coords_y, c='r', s=10)
-                        ax02 = ax[0,2].imshow(residual, cmap='bwr', vmin=-vmax, vmax=vmax)
+                        ax00 = ax[0, 0].imshow(masked_exposure_no_subhalo)
+                        ax01 = ax[0, 1].imshow(masked_exposure_with_subhalo)
+                        ax[0, 1].scatter(coords_x, coords_y, c='r', s=10)
+                        ax02 = ax[0, 2].imshow(residual, cmap='bwr', vmin=-vmax, vmax=vmax)
 
-                        ax[0,0].set_title(f'SNR: {lens.snr:.2f}')
-                        ax[0,1].set_title(f'{m200:.2e}')
-                        ax[0,2].set_title(r'$\chi^2=$ ' + f'{chi_square:.2f}, ' + r'$\chi_{3\sigma}^2=$ ' + f'{threshold_chi2:.2f}')
+                        ax[0, 0].set_title(f'SNR: {lens.snr:.2f}')
+                        ax[0, 1].set_title(f'{m200:.2e}')
+                        ax[0, 2].set_title(
+                            r'$\chi^2=$ ' + f'{chi_square:.2f}, ' + r'$\chi_{3\sigma}^2=$ ' + f'{threshold_chi2:.2f}')
 
                         synth_residual = synth.image - synth_no_subhalo.image
                         vmax_synth = plot_util.get_limit(synth_residual)
-                        ax10 = ax[1,0].imshow(synth_residual, cmap='bwr', vmin=-vmax_synth, vmax=vmax_synth)
-                        ax11 = ax[1,1].imshow(exposure.exposure)
-                        ax12 = ax[1,2].imshow(snr_array)
+                        ax10 = ax[1, 0].imshow(synth_residual, cmap='bwr', vmin=-vmax_synth, vmax=vmax_synth)
+                        ax11 = ax[1, 1].imshow(exposure.exposure)
+                        ax12 = ax[1, 2].imshow(snr_array)
 
-                        ax[1,0].set_title('Synthetic Residual')
-                        ax[1,1].set_title('Full Exposure With Subhalo')
-                        ax[1,2].set_title(f'SNR Array: {pixels_unmasked} pixels, {dof} dof')
+                        ax[1, 0].set_title('Synthetic Residual')
+                        ax[1, 1].set_title('Full Exposure With Subhalo')
+                        ax[1, 2].set_title(f'SNR Array: {pixels_unmasked} pixels, {dof} dof')
 
-                        plt.colorbar(ax00, ax=ax[0,0])
-                        plt.colorbar(ax01, ax=ax[0,1])
-                        plt.colorbar(ax02, ax=ax[0,2])
-                        plt.colorbar(ax10, ax=ax[1,0])
-                        plt.colorbar(ax11, ax=ax[1,1])
-                        plt.colorbar(ax12, ax=ax[1,2])
+                        plt.colorbar(ax00, ax=ax[0, 0])
+                        plt.colorbar(ax01, ax=ax[0, 1])
+                        plt.colorbar(ax02, ax=ax[0, 2])
+                        plt.colorbar(ax10, ax=ax[1, 0])
+                        plt.colorbar(ax11, ax=ax[1, 1])
+                        plt.colorbar(ax12, ax=ax[1, 2])
 
-                        plt.suptitle(f'StrongLens {lens.uid}, {sca_position} on SCA{sca}, Image Shape: {exposure.exposure.shape}')
+                        plt.suptitle(
+                            f'StrongLens {lens.uid}, {sca_position} on SCA{sca}, Image Shape: {exposure.exposure.shape}')
                         plt.savefig(os.path.join(image_save_dir, f'{lens.uid}_{run}.png'))
                         plt.close()
                     except Exception as e:
@@ -230,6 +234,7 @@ def process_lens(params):
     util.pickle(os.path.join(save_dir, f'detectable_halos_{lens.uid}_{run}.pkl'), detectable_halos)
 
     return lens.uid, results, detectable_halos
+
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
 def main(config):
@@ -257,7 +262,7 @@ def main(config):
         'psf_cache_dir': os.path.join(config.machine.data_dir, 'cached_psfs')
     }
     subhalo_params = {
-        'masses': np.logspace(6, 12, 100), 
+        'masses': np.logspace(6, 12, 100),
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
         'los_normalization': 0.
@@ -305,7 +310,7 @@ def main(config):
 
     count = len(lens_list)
     cpu_count = multiprocessing.cpu_count()
-    process_count = cpu_count #- config.machine.headroom_cores
+    process_count = cpu_count  # - config.machine.headroom_cores
     process_count -= int(cpu_count / 2)
     if count < process_count:
         process_count = count
@@ -332,4 +337,3 @@ def main(config):
 
 if __name__ == '__main__':
     main()
-    
