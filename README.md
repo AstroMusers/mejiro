@@ -1,12 +1,12 @@
-> [!WARNING]
-> **Currently under active development.**
-
 # mejiro
 
 `mejiro` ("MEH-ji-roe")[^1] is a pipeline to simulate Roman Space Telescope Wide Field Instrument images of
 galaxy-galaxy strong gravitational lenses built
 on [SLSim](https://github.com/LSST-strong-lensing/slsim), [lenstronomy](https://github.com/lenstronomy/lenstronomy), [pyHalo](https://github.com/dangilman/pyHalo), [GalSim](https://github.com/GalSim-developers/GalSim),
 and [Pandeia](https://outerspace.stsci.edu/display/PEN).
+
+> [!WARNING]
+> **Currently under active development.**
 
 > [!IMPORTANT]
 > [Read `mejiro`'s documentation here](https://mejiro.readthedocs.io/en/latest/index.html)
