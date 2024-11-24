@@ -1,13 +1,13 @@
 defaults:
   - _self_
-  - machine: hpc
+  - machine: uzay
   - override hydra/hydra_logging: disabled
   - override hydra/job_logging: disabled
 
 survey:
   - runs: 540
   - area: 0.5
-  - total_population: False
+  - total_population: True
   - scas: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]  # 
   - bands: [ F062, F087, F106, F129, F158, F184, F213, F146 ]  # [ F062, F087, F106, F129, F158, F184, F213, F146 ]
   - deflector_cut_band: F129
@@ -42,7 +42,7 @@ survey:
 
 pipeline:
   - nice: 19
-  - debugging: True  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
+  - debugging: False  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
   - limit: None  # None
   # scene params
   - side: 10.67  # 10.67  # 5.61  # 10.56
