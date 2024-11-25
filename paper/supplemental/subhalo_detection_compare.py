@@ -45,8 +45,8 @@ def process_lens(params):
     results = {}
 
     # generate and add subhalos
-    realization = lens.generate_cdm_subhalos()
-    lens.add_subhalos(realization)
+    # realization = lens.generate_cdm_subhalos()
+    # lens.add_subhalos(realization)
 
     # calculate image position and set subhalo position
     image_x, image_y = lens.get_image_positions(pixel_coordinates=False)
@@ -271,12 +271,12 @@ def main(config):
         'band': 'F087',
         'scene_size': 5,  # arcsec
         'oversample': 5,
-        'exposure_time': 14600
+        'exposure_time': 146
     }
     positions = [(1, (2044, 2044))]
     print(f'Processing {len(positions)} positions.')
 
-    save_dir = os.path.join(config.machine.data_dir, 'output', 'subhalo_detection_compare')
+    save_dir = os.path.join(config.machine.data_dir, 'output', 'subhalo_detection_compare_hlwas')
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
     image_save_dir = os.path.join(save_dir, 'images')
