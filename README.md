@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14216840.svg)](https://doi.org/10.5281/zenodo.14216840)
+
 # mejiro
 
 `mejiro` ("MEH-ji-roe")[^1] is a pipeline to simulate Roman Space Telescope Wide Field Instrument images of
