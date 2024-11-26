@@ -37,6 +37,34 @@ def smallest_non_negative_element(array):
 
 
 def replace_negatives(array, replacement=0):
+    """
+    Replace negative values in an array with a specified replacement value.
+
+    Parameters
+    ----------
+    array : numpy.ndarray
+        The input array in which negative values will be replaced.
+    replacement : int or float, optional
+        The value to replace negative values with. Default is 0.
+
+    Returns
+    -------
+    numpy.ndarray
+        The array with negative values replaced by the specified replacement value.
+
+    Warns
+    -----
+    UserWarning
+        If any negative values are found and replaced in the array.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from mejiro.utils.util import replace_negatives
+    >>> arr = np.array([-1, 2, -3, 4])
+    >>> replace_negatives(arr)
+    array([0, 2, 0, 4])
+    """
     if np.any(array < 0):
         array[array < 0] = replacement
         warnings.warn(f"Negative values in array have been replaced with {replacement}.")
