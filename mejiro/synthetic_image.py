@@ -11,8 +11,9 @@ from lenstronomy.Util import util as len_util
 
 class SyntheticImage:
     def __init__(self, strong_lens, instrument, band, arcsec, oversample=5,
-                 kwargs_numerics={'supersampling_factor': 3, 'compute_mode': 'adaptive'}, pieces=False, verbose=True,
+                 kwargs_numerics={}, pieces=False, verbose=True,
                  instrument_params={}):
+
         # assert band is valid for instrument
         assert band in instrument.bands, f'Band "{band}" not valid for instrument {instrument.name}'
 
@@ -30,12 +31,23 @@ class SyntheticImage:
 
         self._set_up_pixel_grid(arcsec, oversample)
 
+        # if kwargs_numerics is empty, use default values; defaulting dictionary in init gives weirdness
+        if not kwargs_numerics:
+            kwargs_numerics = {'supersampling_factor': 3, 'compute_mode': 'adaptive'}
+        else:
+            # TODO validate
+            pass
+
         # build adaptive grid
         if kwargs_numerics['compute_mode'] == 'adaptive' and 'supersampled_indexes' not in kwargs_numerics.keys():
+            print('Building adaptive grid')
             self.supersampled_indexes = self.build_adaptive_grid(pad=40)
             kwargs_numerics['supersampled_indexes'] = self.supersampled_indexes
 
-        if self.verbose: print(f'Computing with kwargs_numerics: {kwargs_numerics}')
+        if self.verbose: 
+            print(f'Computing with \'{kwargs_numerics["compute_mode"]}\' mode and supersampling factor {kwargs_numerics["supersampling_factor"]}')
+            if kwargs_numerics['compute_mode'] == 'adaptive':
+                print(f'Adaptive grid: {self.supersampled_indexes.shape}')
 
         self._calculate_surface_brightness(kwargs_numerics, pieces)
 
