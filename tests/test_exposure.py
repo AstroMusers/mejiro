@@ -32,6 +32,7 @@ def test_exposure_with_galsim_engine():
 def test_exposure_with_lenstronomy_engine():
     synthetic_image = util.unpickle('test_data/synthetic_image_roman_F129_5_5.pkl')
 
+    # default engine params
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
                         engine='lenstronomy',
@@ -48,14 +49,10 @@ def test_exposure_with_lenstronomy_engine():
 def test_exposure_with_pandeia_engine():
     synthetic_image = util.unpickle('test_data/synthetic_image_roman_F129_5_5.pkl')
 
-    engine_params = {
-        'num_samples': 100
-    }
-
+    # default engine params
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
                         engine='pandeia',
-                        engine_params=engine_params,
                         check_cache=True,
                         psf_cache_dir='test_data',
                         verbose=False)

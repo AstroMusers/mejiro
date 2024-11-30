@@ -1,3 +1,5 @@
+# Pandeia documentation: https://jwst-docs.stsci.edu/jwst-exposure-time-calculator-overview/jwst-etc-pandeia-engine-tutorial#gsc.tab=0
+
 import datetime
 import os
 import time
@@ -251,10 +253,16 @@ def validate_roman_engine_params(engine_params):
         else:
             # TODO validate
             pass
-    # if 'sky_background' not in engine_params.keys():
-    #     engine_params['sky_background'] = default_roman_engine_params()['sky_background']
-    #     # TODO logging to inform user of default
-    # else:
-    #     # TODO validate
-    #     pass
+    if 'background' not in engine_params.keys():
+        engine_params['background'] = default_roman_engine_params()['background']
+        # TODO logging to inform user of default
+    else:
+        # TODO validate
+        pass
+    if 'background_level' not in engine_params.keys():
+        engine_params['background_level'] = default_roman_engine_params()['background_level']
+        # TODO logging to inform user of default
+    else:
+        # TODO validate
+        pass
     return engine_params
