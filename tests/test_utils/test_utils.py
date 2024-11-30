@@ -41,7 +41,9 @@ def test_smallest_non_negative_element():
 def test_replace_negatives():
     # Test with an array containing negative values
     arr = np.array([-1, 2, -3, 4])
-    result = util.replace_negatives(arr)
+    with pytest.warns(UserWarning,
+                      match='Negative values in array have been replaced with 0'):
+        result = util.replace_negatives(arr)
     expected = np.array([0, 2, 0, 4])
     assert np.array_equal(result, expected), f"Expected {expected}, but got {result}"
 
@@ -53,7 +55,9 @@ def test_replace_negatives():
 
     # Test with an array containing all negative values
     arr = np.array([-1, -2, -3, -4])
-    result = util.replace_negatives(arr)
+    with pytest.warns(UserWarning,
+                      match='Negative values in array have been replaced with 0'):
+        result = util.replace_negatives(arr)
     expected = np.array([0, 0, 0, 0])
     assert np.array_equal(result, expected), f"Expected {expected}, but got {result}"
 
@@ -65,61 +69,49 @@ def test_replace_negatives():
 
     # Test with a custom replacement value
     arr = np.array([-1, 2, -3, 4])
-    result = util.replace_negatives(arr, replacement=99)
+    with pytest.warns(UserWarning,
+                      match='Negative values in array have been replaced with 99'):
+        result = util.replace_negatives(arr, replacement=99)
     expected = np.array([99, 2, 99, 4])
     assert np.array_equal(result, expected), f"Expected {expected}, but got {result}"
 
     # Test with a 2D array
     arr = np.array([[-1, 2], [-3, 4]])
-    result = util.replace_negatives(arr)
+    with pytest.warns(UserWarning,
+                      match='Negative values in array have been replaced with 0'):
+        result = util.replace_negatives(arr)
     expected = np.array([[0, 2], [0, 4]])
-    assert np.array_equal(result, expected), f"Expected {expected}, but got {result}"
-
-    # Test with a 3D array
-    arr = np.array([[[-1, 2], [-3, 4]], [[-5, 6], [-7, 8]]])
-    result = util.replace_negatives(arr)
-    expected = np.array([[[0, 2], [0, 4]], [[0, 6], [0, 8]]])
     assert np.array_equal(result, expected), f"Expected {expected}, but got {result}"
 
 
 def test_create_centered_box():
-    # Test with a simple 2D array
-    arr = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-    result = util.create_centered_box(arr, size=1)
-    expected = np.array([[5]])
+    # check even N
+    with pytest.raises(ValueError):
+        util.create_centered_box(4, 4)
+
+    # check even box size
+    with pytest.raises(ValueError):
+        util.create_centered_box(5, 4)
+
+    # check box size \leq N
+    with pytest.raises(ValueError):
+        util.create_centered_box(5, 6)
+
+    # check single True
+    result = util.create_centered_box(1, 1)
+    expected = np.ones((1, 1), dtype=bool)
     assert np.array_equal(result, expected), f"Expected {expected}, but got {result}"
 
-    # Test with a larger box size
-    result = util.create_centered_box(arr, size=2)
-    expected = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    # check all Trues
+    result = util.create_centered_box(5, 5)
+    expected = np.ones((5, 5), dtype=bool)
     assert np.array_equal(result, expected), f"Expected {expected}, but got {result}"
 
-    # Test with a 1D array
-    arr = np.array([1, 2, 3, 4, 5])
-    result = util.create_centered_box(arr, size=1)
-    expected = np.array([3])
-    assert np.array_equal(result, expected), f"Expected {expected}, but got {result}"
-
-    # Test with a 3D array
-    arr = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
-    result = util.create_centered_box(arr, size=1)
-    expected = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
-    assert np.array_equal(result, expected), f"Expected {expected}, but got {result}"
-
-    # Test with an empty array
-    arr = np.array([])
-    result = util.create_centered_box(arr, size=1)
-    expected = np.array([])
-    assert np.array_equal(result, expected), f"Expected {expected}, but got {result}"
-
-    # Test with a non-square 2D array
-    arr = np.array([[1, 2, 3], [4, 5, 6]])
-    result = util.create_centered_box(arr, size=1)
-    expected = np.array([[5]])
-    assert np.array_equal(result, expected), f"Expected {expected}, but got {result}"
-
-    # Test with a custom box size larger than the array
-    arr = np.array([[1, 2], [3, 4]])
-    result = util.create_centered_box(arr, size=3)
-    expected = np.array([[1, 2], [3, 4]])
+    # check a standard case
+    result = util.create_centered_box(5, 3)
+    expected = np.array([[False, False, False, False, False],
+                         [False, True, True, True, False],
+                         [False, True, True, True, False],
+                         [False, True, True, True, False],
+                         [False, False, False, False, False]])
     assert np.array_equal(result, expected), f"Expected {expected}, but got {result}"
