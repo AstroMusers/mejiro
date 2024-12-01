@@ -9,6 +9,24 @@ from mejiro.utils import roman_util
 
 
 def default_roman_engine_params():
+    """
+    Returns the default parameters for Roman image simulation with the GalSim engine.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the following keys:
+
+        - rng: galsim.UniformDeviate(42)
+        - sky_background: bool, default is True
+        - detector_effects: bool, default is True
+        - poisson_noise: bool, default is True
+        - reciprocity_failure: bool, default is True
+        - dark_noise: bool, default is True
+        - nonlinearity: bool, default is True
+        - ipc: bool, default is True
+        - read_noise: bool, default is True
+    """
     return {
         'rng': galsim.UniformDeviate(42),
         'sky_background': True,
@@ -23,8 +41,23 @@ def default_roman_engine_params():
 
 
 def default_hwo_engine_params():
+    """
+    Returns the default parameters for HWO image simulation with the GalSim engine.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the following keys:
+
+        - rng: galsim.UniformDeviate(42)
+        - sky_background: bool, default is True
+        - detector_effects: bool, default is True
+        - poisson_noise: bool, default is True
+        - dark_noise: bool, default is True
+        - read_noise: bool, default is True
+    """
     return {
-        'rng': galsim.UniformDeviate(),
+        'rng': galsim.UniformDeviate(42),
         'sky_background': True,
         'detector_effects': True,
         'poisson_noise': True,

@@ -6,6 +6,20 @@ from mejiro.utils import util
 
 
 def default_roman_engine_params():
+    """
+    Returns the default parameters for Roman image simulation with the lenstronomy engine.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the following keys:
+
+        - kwargs_numerics : dict, a dictionary containing numerical settings for the image simulation:
+
+            - supersampling_factor: int, default is 3
+            - compute_mode: str, default is 'regular'
+        - noise : bool, default is True
+    """
     return {
         'kwargs_numerics': {
             'supersampling_factor': 3,

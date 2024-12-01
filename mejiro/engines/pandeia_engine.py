@@ -15,6 +15,28 @@ from mejiro.helpers.roman_params import RomanParameters
 
 
 def default_roman_engine_params():
+    """
+    Returns the default parameters for Roman image simulation with the Pandeia engine.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the following keys:
+
+        - num_samples: int, default is 10000
+        - calculation: dict, containing:
+            - noise: dict, containing:
+                - crs: bool, default is True
+                - dark: bool, default is True
+                - excess: bool, default is False
+                - ffnoise: bool, default is True
+                - readnoise: bool, default is True
+                - scatter: bool, default is False
+            - effects: dict, containing:
+                - saturation: bool, default is True
+        - background: str, default is `minzodi`
+        - background_level: str, default is `medium`
+    """
     return {
         'num_samples': 10000,
         'calculation': {
