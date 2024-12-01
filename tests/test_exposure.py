@@ -1,3 +1,7 @@
+import pytest
+import galsim
+import numpy as np
+
 from mejiro.exposure import Exposure
 from mejiro.instruments.roman import Roman
 from mejiro.lenses.test import SampleStrongLens
@@ -9,10 +13,10 @@ from mejiro.engines import galsim_engine, lenstronomy_engine, pandeia_engine
 def test_exposure_with_galsim_engine():
     synthetic_image = util.unpickle('test_data/synthetic_image_roman_F129_5_5.pkl')
 
-    # default engine params
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
                         engine='galsim',
+                        # default engine params
                         check_cache=True,
                         psf_cache_dir='test_data',
                         verbose=False)
@@ -22,20 +26,34 @@ def test_exposure_with_galsim_engine():
     assert exposure.engine == 'galsim'
     assert exposure.verbose == False
 
-    # TODO exposure
+    # check engine param defaulting
+    ignored_keys = ['rng']
+    for key, item in exposure.engine_params.items():
+        if key not in ignored_keys:
+            assert item == galsim_engine.default_roman_engine_params()[key]
 
-    # TODO noise
+    # noise
+    assert exposure.noise is not None
+    assert type(exposure.noise) is np.ndarray
+    assert exposure.noise.shape == (synthetic_image.native_num_pix, synthetic_image.native_num_pix)
+    # engine-specific noise components are tested in the engine-specific tests
 
-    # TODO image
+    # exposure
+    assert type(exposure.exposure) is np.ndarray
+    assert exposure.exposure.shape == (synthetic_image.native_num_pix, synthetic_image.native_num_pix)
+
+    # image
+    assert type(exposure.image) is galsim.Image
+    assert exposure.image.array.shape == (synthetic_image.native_num_pix, synthetic_image.native_num_pix)
 
 
 def test_exposure_with_lenstronomy_engine():
     synthetic_image = util.unpickle('test_data/synthetic_image_roman_F129_5_5.pkl')
 
-    # default engine params
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
                         engine='lenstronomy',
+                        # default engine params
                         check_cache=True,
                         psf_cache_dir='test_data',
                         verbose=False)
@@ -45,14 +63,31 @@ def test_exposure_with_lenstronomy_engine():
     assert exposure.engine == 'lenstronomy'
     assert exposure.verbose == False
 
+    # check engine param defaulting
+    assert exposure.engine_params == lenstronomy_engine.default_roman_engine_params()
+
+    # noise
+    assert exposure.noise is not None
+    assert type(exposure.noise) is np.ndarray
+    assert exposure.noise.shape == (synthetic_image.native_num_pix, synthetic_image.native_num_pix)
+    # engine-specific noise components are tested in the engine-specific tests
+
+    # exposure
+    assert type(exposure.exposure) is np.ndarray
+    assert exposure.exposure.shape == (synthetic_image.native_num_pix, synthetic_image.native_num_pix)
+
 
 def test_exposure_with_pandeia_engine():
     synthetic_image = util.unpickle('test_data/synthetic_image_roman_F129_5_5.pkl')
 
-    # default engine params
+    # for Pandeia engine, default of 10^4 takes almost 10 minutes to run, so reduce number of samples
+    engine_params = pandeia_engine.default_roman_engine_params()
+    engine_params['num_samples'] = 10
+
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
                         engine='pandeia',
+                        engine_params=engine_params,
                         check_cache=True,
                         psf_cache_dir='test_data',
                         verbose=False)
@@ -61,6 +96,19 @@ def test_exposure_with_pandeia_engine():
     assert exposure.exposure_time == 146
     assert exposure.engine == 'pandeia'
     assert exposure.verbose == False
+
+    # check engine param defaulting
+    assert exposure.engine_params == engine_params
+
+    # noise
+    assert exposure.noise is not None
+    assert type(exposure.noise) is np.ndarray
+    assert exposure.noise.shape == (synthetic_image.native_num_pix, synthetic_image.native_num_pix)
+    # engine-specific noise components are tested in the engine-specific tests
+
+    # exposure
+    assert type(exposure.exposure) is np.ndarray
+    assert exposure.exposure.shape == (synthetic_image.native_num_pix, synthetic_image.native_num_pix)
 
 
 def test_default_engine():
@@ -88,3 +136,16 @@ def test_invalid_engine():
                  verbose=False)
     except ValueError as e:
         assert str(e) == 'Engine "invalid_engine" not recognized'
+
+
+def test_crop_edge_effects():
+    # unhappy path
+    image = np.zeros((100, 100))
+    with pytest.raises(AssertionError):
+        Exposure.crop_edge_effects(image)
+    
+    # happy path
+    image = np.zeros((101, 101))
+    expected = np.zeros((98, 98))
+    result = Exposure.crop_edge_effects(image)
+    assert np.array_equal(result, expected), f"Expected {expected}, but got {result}"

@@ -84,7 +84,9 @@ class Exposure:
             # raise NotImplementedError('Pandeia engine not yet implemented')
             from mejiro.engines import pandeia_engine
 
-            # TODO warn that PSF isn't gonna do anything
+            # warn that PSF isn't gonna do anything
+            if psf is not None:
+                print('WARNING: PSF is not used in the Pandeia engine')  # TODO warnings package?
 
             # validate engine params and set defaults
             if engine_params is None:
@@ -97,7 +99,7 @@ class Exposure:
                                                                               engine_params, self.verbose, **kwargs)
 
             # TODO temporarily set noise to zeros until pandeia noise is implemented
-            self.noise = np.zeros_like(self.synthetic_image.image)
+            self.noise = np.zeros((self.synthetic_image.native_num_pix, self.synthetic_image.native_num_pix))
 
         elif engine == 'romanisim':
             raise NotImplementedError('romanisim engine not yet implemented')
@@ -150,19 +152,3 @@ class Exposure:
         assert num_pix % 2 != 0, 'Image has even number of pixels'
         output_num_pix = num_pix - 3
         return util.center_crop_image(image, (output_num_pix, output_num_pix))
-
-    @property
-    def get_exposure_time(self):
-        return self.exposure_time
-
-    @property
-    def get_exposure(self):
-        return self.exposure
-
-    @property
-    def get_lens_exposure(self):
-        return self.lens_exposure
-
-    @property
-    def get_source_exposure(self):
-        return self.source_exposure
