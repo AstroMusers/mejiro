@@ -1,16 +1,27 @@
 import numpy as np
+from astropy import units as u
+from fractions import Fraction
+from syotools.models import Camera, Telescope
 
 from mejiro.instruments.instrument_base import InstrumentBase
 
 
-# from syotools.models import Camera, Telescope
-
-
 class HWO(InstrumentBase):
+    """
+    Habitable Worlds Observatory (HWO) instrument class
 
-    def __init__(self, aperture=10.):
+    Parameters
+    ----------
+    eac : str
+        Exploratory Analytic Case (EAC), possible mission architectures. Options are 'EAC1', 'EAC2', and 'EAC3'. Default is 'EAC1'. For more details, see https://pcos.gsfc.nasa.gov/physpag/meetings/HEAD2024/presentations/6_Burns_HWO.pdf
+    """
+
+    def __init__(self, eac='EAC1'):
+        self.telescope = Telescope()
+        self.camera = Camera()
+
         name = 'HWO'
-        bands = ['FUV', 'NUV', 'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K']
+        bands = self.camera.bandnames
         engines = ['galsim']
 
         super().__init__(
@@ -19,31 +30,47 @@ class HWO(InstrumentBase):
             engines
         )
 
-        # TODO eventually work with their ordereddict and astropy quantity stuff
-        # self.telescope = Telescope()
-        # self.camera = Camera()
+        # set aperture
+        assert self.telescope.recover('aperture').unit == u.m, "Aperture must be in units of meters"  # check that aperture is in meters
+        self.aperture = self.telescope.recover('aperture').value  # meters
 
-        self.aperture = aperture  # meters 
-        self.dark_current = [0.0005, 0.0005, 0.001, 0.001, 0.001, 0.001, 0.001, 0.002, 0.002, 0.002]
-        self.read_noise = [3., 3., 3., 3., 3., 3., 3., 4., 4., 4.]
-        self.pivotwave = np.array([155., 228., 360., 440., 550., 640., 790., 1260., 1600., 2220.])
+        self.pivotwave = self._set_camera_attribute_from_hwo_tools('pivotwave', u.nm)
         self.ab_zeropoint = [35548., 24166., 15305., 12523., 10018., 8609., 6975., 4373., 3444., 2482.]
-        self.aperture_correction = [1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]
-        self.bandpass_r = [5., 5., 5., 5., 5., 5., 5., 5., 5., 5.]
-        self.derived_bandpass = [pw / bp_r for pw, bp_r in zip(self.pivotwave, self.bandpass_r)]
+        self.aperture_correction = self._set_camera_attribute_from_hwo_tools('ap_corr')
+        self.bandpass_r = self._set_camera_attribute_from_hwo_tools('bandpass_r')
+        # self.derived_bandpass = {band: (self.pivotwave[band] / self.bandpass_r[band]) for band in self.bands}
+
         self.gain = 1.
+
+        # set noise parameters
+        self.dark_current = self._set_camera_attribute_from_hwo_tools('dark_current', u.electron / (u.pix * u.second))
+        self.read_noise = self._set_camera_attribute_from_hwo_tools('detector_rn', u.electron ** Fraction(1, 2) / u.pix ** Fraction(1, 2))
 
         # private attributes
         self._pixel_size = np.array(
             [0.016, 0.016, 0.016, 0.016, 0.016, 0.016, 0.016, 0.04, 0.04, 0.04])  # set by aperture in method below
 
         # methods
-        self._set_pixel_scale()
-        self._set_psf_fwhm()
+        # self._set_pixel_scale()
+        # self._set_psf_fwhm()
 
     def validate_instrument_params(self, params):
         # TODO implement this
         pass
+
+    def _set_camera_attribute_from_hwo_tools(self, attribute, unit=None):
+        if type(self.camera.recover(attribute)) == u.Quantity:
+            values = self.camera.recover(attribute).value
+        elif type(self.camera.recover(attribute)) == list:
+            values = self.camera.recover(attribute)
+        else:
+            raise ValueError(f"Cannot recover {attribute} of type {type(self.camera.recover(attribute))}")
+
+        assert len(self.bands) == len(values), f"Length of {attribute} does not match number of bands"
+        if unit is not None:
+            assert self.camera.recover(attribute).unit == unit, f"Unit of {attribute} must be {unit}"
+
+        return {band: value for band, value in zip(self.bands, values)}
 
     def _set_pixel_scale(self):
         self.pixel_scale = 1.22 * (self.pivotwave * 0.000000001) * 206264.8062 / self.aperture / 2.

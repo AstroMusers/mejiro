@@ -6,7 +6,12 @@ from mejiro.instruments.roman import Roman
 def test_init():
     roman = Roman()
 
+    # check inherited attributes
     assert roman.name == 'Roman'
+    assert roman.bands == ['F062', 'F087', 'F106', 'F129', 'F158', 'F184', 'F213', 'F146']
+    assert type(roman.engines) == list and len(roman.engines) > 0
+
+    # check values
     assert roman.pixels_per_axis == 4088
 
     # check that all files loaded
