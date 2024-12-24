@@ -15,7 +15,7 @@ from lenstronomy.SimulationAPI.ObservationConfig.Roman import Roman
 from lenstronomy.SimulationAPI.sim_api import SimAPI
 from lenstronomy.Util import data_util
 from lenstronomy.Util import util as len_util
-from pyHalo.preset_models import CDM
+from pyHalo.PresetModels.cdm import CDM
 from scipy.stats import truncnorm
 
 from mejiro.utils import util
