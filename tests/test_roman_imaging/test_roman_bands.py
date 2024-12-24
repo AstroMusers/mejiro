@@ -1,3 +1,4 @@
+import os
 import pytest
 
 from mejiro.exposure import Exposure
@@ -29,8 +30,8 @@ def test_band(band):
     exposure = Exposure(synthetic_image,
                         exposure_time=exposure_time,
                         check_cache=True,
-                        psf_cache_dir='test_data',
-                        verbose=False)
+                        psf_cache_dir=os.path.abspath('tests/test_data'),
+                        verbose=True)
 
     assert synthetic_image.pixel_scale == 0.022
     assert synthetic_image.native_pixel_scale == 0.11

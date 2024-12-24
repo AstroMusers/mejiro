@@ -1,3 +1,4 @@
+import os
 import galsim
 import numpy as np
 
@@ -30,7 +31,7 @@ def test_default_engine_params():
                         engine='galsim',
                         # don't provide engine params
                         check_cache=True,
-                        psf_cache_dir='test_data',
+                        psf_cache_dir=os.path.abspath('tests/test_data'),
                         verbose=False)
 
     assert exposure.engine == 'galsim'
@@ -60,7 +61,7 @@ def test_roman_noise():
     exposure = Exposure(synthetic_image,
                         exposure_time=exposure_time,
                         check_cache=True,
-                        psf_cache_dir='test_data',
+                        psf_cache_dir=os.path.abspath('tests/test_data'),
                         verbose=False)
 
     poisson_noise = exposure.poisson_noise
@@ -90,7 +91,7 @@ def test_roman_noise():
                          exposure_time=exposure_time,
                          engine_params=engine_params,
                          check_cache=True,
-                         psf_cache_dir='test_data',
+                         psf_cache_dir=os.path.abspath('tests/test_data'),
                          verbose=False)
 
     assert np.array_equal(exposure2.exposure, exposure.exposure)
@@ -139,7 +140,7 @@ def test_hwo_noise():
                          exposure_time=exposure_time,
                          engine_params=engine_params,
                          check_cache=True,
-                         psf_cache_dir='test_data',
+                         psf_cache_dir=os.path.abspath('tests/test_data'),
                          verbose=False)
 
     assert np.array_equal(exposure2.exposure, exposure.exposure)
