@@ -13,20 +13,18 @@ Create a conda environment:
 
     conda env create -f environment.yml
 
-Install ``SLSim``:
-
-.. code-block:: bash  
-
-    git clone https://github.com/LSST-strong-lensing/slsim.git
-    cd slsim
-    pip install -e .
-
 To generate PSFs with ``WebbPSF``, follow the instructions `here <https://webbpsf.readthedocs.io/en/latest/installation.html>`__ to download the required data files and set environment variables.
+
+Optional setup: `hwo-tools`
+============================
+
+Install `hwo-tools` by following the
+instructions `here <https://github.com/spacetelescope/hwo-tools/blob/main/README.md>`__.
 
 Optional setup: Pandeia
 ========================
 
-Install Pandeia (v3.1) by following the
+Install Pandeia by following the
 instructions `here <https://outerspace.stsci.edu/display/PEN/Pandeia+Engine+Installation>`__.
 
 First-time setup
