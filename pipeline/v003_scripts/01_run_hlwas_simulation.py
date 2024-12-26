@@ -19,6 +19,9 @@ import slsim.Deflectors as deflectors
 from tqdm import tqdm
 
 
+SCRIPT_NAME = '01'
+
+
 def main():
     start = time.time()
 
@@ -53,7 +56,7 @@ def main():
     util.create_directory_if_not_exists(pipeline_dir)
 
     # set up output directory
-    output_dir = os.path.join(pipeline_dir, '00')
+    output_dir = os.path.join(pipeline_dir, SCRIPT_NAME)
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
     if verbose: print(f'Set up output directory {output_dir}')
@@ -87,7 +90,7 @@ def main():
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
     process_count = int(cpu_count / 2)  # GalSim needs headroom
-    process_count -= config['pipeline']['headroom_cores']['script_00']  # subtract off any additional cores
+    process_count -= config['pipeline']['headroom_cores']['script_01']  # subtract off any additional cores
     count = runs
     if count < process_count:
         process_count = count
@@ -108,7 +111,7 @@ def main():
 
     stop = time.time()
     execution_time = util.print_execution_time(start, stop, return_string=True)
-    util.write_execution_time(execution_time, '00', os.path.join(os.path.dirname(output_dir), 'execution_times.json'))
+    util.write_execution_time(execution_time, SCRIPT_NAME, os.path.join(os.path.dirname(output_dir), 'execution_times.json'))
 
 
 def run_slsim(tuple):
@@ -246,8 +249,7 @@ def run_slsim(tuple):
         np.save(os.path.join(output_dir, f'snr_list_{run}_sca{sca_id}.npy'), snr_list)
 
         # assert len(total_lens_population) == len(snr_list), f'Lengths of total_lens_population ({len(total_lens_population)}) and snr_list ({len(snr_list)}) do not match.'
-        if verbose:
-            print(f'Percentage of exceptions: {num_exceptions / len(total_lens_population) * 100:.2f}%')
+        if verbose: print(f'Percentage of exceptions: {num_exceptions / len(total_lens_population) * 100:.2f}%')
 
         # save other params to CSV
         total_pop_csv = os.path.join(output_dir, f'total_pop_{run}_sca{sca_id}.csv')
@@ -295,14 +297,14 @@ def run_slsim(tuple):
                                                                 band=survey_config['snr_band'],
                                                                 zp=sca_zp_dict[survey_config['snr_band']],
                                                                 detector=sca_id,
-                                                                detector_position=(2048, 2048),
+                                                                detector_position=(2044, 2044),
                                                                 input_num_pix=survey_config['snr_input_num_pix'],
                                                                 output_num_pix=survey_config['snr_output_num_pix'],
                                                                 side=survey_config['snr_side'],
                                                                 oversample=survey_config['snr_oversample'],
                                                                 exposure_time=survey_config['snr_exposure_time'],
                                                                 add_subhalos=survey_config['snr_add_subhalos'],
-                                                                debugging=dev,
+                                                                debugging=False,
                                                                 debug_dir=debug_dir,
                                                                 psf_cache_dir=psf_cache_dir)
         if snr is None:
@@ -317,7 +319,7 @@ def run_slsim(tuple):
             continue
 
         # 1. extended source magnification
-        extended_source_magnification = candidate.extended_source_magnification()
+        extended_source_magnification = candidate.extended_source_magnification()[0]  # TODO confirm first element
         if snr < 50 and extended_source_magnification < survey_config['magnification']:
             # TODO filtering
             # if not debugging:
@@ -360,10 +362,10 @@ def run_slsim(tuple):
         lens_mags, source_mags, lensed_source_mags = {}, {}, {}
         for band in bands:
             lens_mags[band] = gglens.deflector_magnitude(band)
-            source_mags[band] = gglens.extended_source_magnitude(band, lensed=False)
-            lensed_source_mags[band] = gglens.extended_source_magnitude(band, lensed=True)
+            source_mags[band] = gglens.extended_source_magnitude(band, lensed=False)[0]  # TODO confirm first element
+            lensed_source_mags[band] = gglens.extended_source_magnitude(band, lensed=True)[0]  # TODO confirm first element
 
-        z_lens, z_source = gglens.deflector_redshift, gglens.source_redshift
+        z_lens, z_source = gglens.deflector_redshift, gglens.source_redshift_list[0]  # TODO confirm first element
         kwargs_lens = kwargs_params['kwargs_lens']
 
         # add additional necessary key/value pairs to kwargs_model
@@ -382,12 +384,14 @@ def run_slsim(tuple):
             'lensed_source_mags': lensed_source_mags,
             'deflector_stellar_mass': gglens.deflector_stellar_mass(),
             'deflector_velocity_dispersion': gglens.deflector_velocity_dispersion(),
-            'magnification': gglens.extended_source_magnification(),
+            'magnification': gglens.extended_source_magnification()[0],  # TODO confirm first element
             'snr': snr,
             'masked_snr_array': masked_snr_array,
             'num_images': len(gglens.point_source_image_positions()[0]),
             'sca': sca_id
         }
+
+        pprint(gglens_dict)
 
         dict_list.append(gglens_dict)
 
