@@ -18,10 +18,12 @@ dependencies:
     - pandeia-engine==2024.12
     - pysiaf
     - syotools  # for HWO imaging
+    - speclite
     - pyhalo
     - colossus  # needed for pyhalo
     - git+https://github.com/bryce-wedig/slsim.git@mejiro-v0.0.3
-    # - sncosmo
+    - sncosmo
+    - skypy
     # - mcfit
     # - git+https://github.com/bryce-wedig/hwo-tools.git@mejiro-v0.0.3
     - sphinx==7.1.2  # dev
