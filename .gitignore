@@ -17,7 +17,7 @@ docs/build
 
 # VS Code
 .vscode
-.code-workspace
+*.code-workspace
 
 # PyCharm
 .idea
