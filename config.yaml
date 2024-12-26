@@ -15,16 +15,16 @@ pipeline:
   limit: None  # None
   seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
   headroom_cores: 
-    script_00: 0
     script_01: 0
     script_02: 0
     script_03: 0
     script_04: 0
+    script_05: 0
   survey:
-    runs: 2  # 540
-    area: 0.01  # 0.5
+    runs: 10  # 540
+    area: 0.1  # 0.5
     total_population: True
-    scas: [1, 2]  # [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+    scas: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
     bands: [F062, F087, F106, F129, F158, F184, F213, F146]
     deflector_cut_band: F129
     deflector_cut_band_max: 27
