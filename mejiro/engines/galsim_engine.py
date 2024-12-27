@@ -17,7 +17,7 @@ def default_roman_engine_params():
     dict
         A dictionary containing the following keys:
 
-        - rng: galsim.UniformDeviate(42)
+        - rng_seed: int, default is 42
         - sky_background: bool, default is True
         - detector_effects: bool, default is True
         - poisson_noise: bool, default is True
@@ -28,7 +28,7 @@ def default_roman_engine_params():
         - read_noise: bool, default is True
     """
     return {
-        'rng': galsim.UniformDeviate(42),
+        'rng_seed': 42,
         'sky_background': True,
         'detector_effects': True,
         'poisson_noise': True,
@@ -74,6 +74,9 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
 
     # get optional kwargs
     gsparams_kwargs = kwargs.get('gsparams_kwargs', {})
+
+    # build rng
+    rng = galsim.UniformDeviate(engine_params['rng_seed'])
 
     # create interpolated image
     total_interp = galsim.InterpolatedImage(galsim.Image(synthetic_image.image, xmin=0, ymin=0),
@@ -132,7 +135,7 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
         elif type(engine_params['poisson_noise']) is bool:
             if engine_params['poisson_noise']:
                 before = deepcopy(image)
-                image.addNoise(galsim.PoissonNoise(engine_params['rng']))
+                image.addNoise(galsim.PoissonNoise(rng))
                 poisson_noise = image - before
                 image.quantize()
             else:
@@ -158,7 +161,7 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
             if engine_params['dark_noise']:
                 before = deepcopy(image)
                 total_dark_current = galsim.roman.dark_current * exposure_time
-                image.addNoise(galsim.DeviateNoise(galsim.PoissonDeviate(engine_params['rng'], total_dark_current)))
+                image.addNoise(galsim.DeviateNoise(galsim.PoissonDeviate(rng, total_dark_current)))
                 dark_noise = image - before
             else:
                 dark_noise = None
@@ -197,7 +200,7 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
             if engine_params['read_noise']:
                 before = deepcopy(image)
                 read_noise_sigma = galsim.roman.read_noise
-                image.addNoise(galsim.GaussianNoise(engine_params['rng'], sigma=read_noise_sigma))
+                image.addNoise(galsim.GaussianNoise(rng, sigma=read_noise_sigma))
                 read_noise = image - before
             else:
                 read_noise = None
@@ -292,6 +295,9 @@ def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=def
     # get optional kwargs
     gsparams_kwargs = kwargs.get('gsparams_kwargs', {})
 
+    # build rng
+    rng = galsim.UniformDeviate(engine_params['rng_seed'])
+
     # create interpolated image
     total_interp = galsim.InterpolatedImage(galsim.Image(synthetic_image.image, xmin=0, ymin=0),
                                             scale=synthetic_image.pixel_scale,
@@ -343,7 +349,7 @@ def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=def
         elif type(engine_params['poisson_noise']) is bool:
             if engine_params['poisson_noise']:
                 before = deepcopy(image)
-                image.addNoise(galsim.PoissonNoise(engine_params['rng']))
+                image.addNoise(galsim.PoissonNoise(rng))
                 poisson_noise = image - before
                 image.quantize()
             else:
@@ -357,7 +363,7 @@ def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=def
             if engine_params['dark_noise']:
                 before = deepcopy(image)
                 total_dark_current = synthetic_image.instrument.get_dark_current(synthetic_image.band) * exposure_time
-                image.addNoise(galsim.DeviateNoise(galsim.PoissonDeviate(engine_params['rng'], total_dark_current)))
+                image.addNoise(galsim.DeviateNoise(galsim.PoissonDeviate(rng, total_dark_current)))
                 dark_noise = image - before
             else:
                 dark_noise = None
@@ -370,7 +376,7 @@ def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=def
             if engine_params['read_noise']:
                 before = deepcopy(image)
                 read_noise_sigma = synthetic_image.instrument.get_read_noise(synthetic_image.band)
-                image.addNoise(galsim.GaussianNoise(engine_params['rng'], sigma=read_noise_sigma))
+                image.addNoise(galsim.GaussianNoise(rng, sigma=read_noise_sigma))
                 read_noise = image - before
             else:
                 read_noise = None
@@ -417,8 +423,8 @@ def get_roman_psf(band, detector, detector_position, pupil_bin=1):
 
 
 def validate_roman_engine_params(engine_params):
-    if 'rng' not in engine_params.keys():
-        engine_params['rng'] = default_roman_engine_params()['rng']  # TODO is this necessary? doesn't GalSim do this?
+    if 'rng_seed' not in engine_params.keys():
+        engine_params['rng_seed'] = default_roman_engine_params()['rng_seed']  # TODO is this necessary? doesn't GalSim do this?
         # TODO logging to inform user of default
     else:
         # TODO validate
@@ -475,8 +481,8 @@ def validate_roman_engine_params(engine_params):
 
 
 def validate_hwo_engine_params(engine_params):
-    if 'rng' not in engine_params.keys():
-        engine_params['rng'] = default_hwo_engine_params()['rng']  # TODO is this necessary? doesn't GalSim do this?
+    if 'rng_seed' not in engine_params.keys():
+        engine_params['rng_seed'] = default_hwo_engine_params()['rng_seed']  # TODO is this necessary? doesn't GalSim do this?
         # TODO logging to inform user of default
     else:
         # TODO validate
