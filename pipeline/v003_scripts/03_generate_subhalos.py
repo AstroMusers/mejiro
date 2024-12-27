@@ -23,7 +23,7 @@ def main():
         config = yaml.load(f, Loader=yaml.SafeLoader)
     repo_dir = config['repo_dir']
 
-    # Enable use of local packages
+    # enable use of local packages
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
     from mejiro.utils import util
@@ -108,8 +108,8 @@ def main():
 
     stop = time.time()
     execution_time = util.print_execution_time(start, stop, return_string=True)
-    util.write_execution_time(execution_time, '02',
-                              os.path.join(os.path.dirname(output_dir), 'execution_times.json'))
+    util.write_execution_time(execution_time, SCRIPT_NAME,
+                              os.path.join(pipeline_dir, 'execution_times.json'))
 
 
 def add(tuple):

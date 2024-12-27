@@ -40,7 +40,7 @@ class SyntheticImage:
 
         # build adaptive grid
         if kwargs_numerics['compute_mode'] == 'adaptive' and 'supersampled_indexes' not in kwargs_numerics.keys():
-            print('Building adaptive grid')
+            if self.verbose: print('Building adaptive grid')
             self.supersampled_indexes = self.build_adaptive_grid(pad=40)
             kwargs_numerics['supersampled_indexes'] = self.supersampled_indexes
 

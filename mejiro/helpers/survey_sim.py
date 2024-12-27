@@ -211,7 +211,7 @@ def write_lens_pop_to_csv(output_path, gg_lenses, detectable_snr_list, bands, ve
     df = pd.DataFrame(columns=listnamepara)
 
     for i, (gg_lens, snr) in tqdm(enumerate(zip(gg_lenses, detectable_snr_list)), total=len(gg_lenses),
-                                  disable=not verbose):
+                                  disable=not verbose, ascii=True):
         dict = {
             'velodisp': gg_lens.deflector_velocity_dispersion(),
             'massstel': gg_lens.deflector_stellar_mass() * 1e-12,
