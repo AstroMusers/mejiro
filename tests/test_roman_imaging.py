@@ -1,9 +1,14 @@
+import os
 import pytest
 
+import mejiro
 from mejiro.exposure import Exposure
 from mejiro.instruments.roman import Roman
 from mejiro.lenses.test import SampleStrongLens
 from mejiro.synthetic_image import SyntheticImage
+
+
+TEST_DATA_DIR = os.path.join(os.path.dirname(mejiro.__path__[0]), 'tests', 'test_data')
 
 
 def test_roman_imaging():
@@ -38,7 +43,7 @@ def test_roman_imaging():
     exposure = Exposure(synthetic_image,
                         exposure_time=exposure_time,
                         check_cache=True,
-                        psf_cache_dir='test_data',
+                        psf_cache_dir=TEST_DATA_DIR,
                         verbose=False)
 
     assert exposure.exposure is not None
@@ -95,7 +100,7 @@ def test_roman_cached_psf():
                                      verbose=False)
 
     import numpy as np
-    psf = np.load('test_data/F129_1_2048_2048_5_101.npy')
+    psf = np.load(f'{TEST_DATA_DIR}/F129_1_2048_2048_5_101.npy')
 
     exposure = Exposure(synthetic_image,
                         exposure_time=exposure_time,
@@ -128,7 +133,7 @@ def test_roman_sky_background_off():
                         exposure_time=exposure_time,
                         engine_params=engine_params,
                         check_cache=True,
-                        psf_cache_dir='test_data',
+                        psf_cache_dir=TEST_DATA_DIR,
                         verbose=False)
 
     # TODO checks on the images
@@ -157,7 +162,7 @@ def test_roman_all_detector_effects_off():
                         exposure_time=exposure_time,
                         engine_params=engine_params,
                         check_cache=True,
-                        psf_cache_dir='test_data',
+                        psf_cache_dir=TEST_DATA_DIR,
                         verbose=False)
 
     # TODO checks on the images
@@ -186,7 +191,7 @@ def test_roman_poisson_noise_off():
                         exposure_time=exposure_time,
                         engine_params=engine_params,
                         check_cache=True,
-                        psf_cache_dir='test_data',
+                        psf_cache_dir=TEST_DATA_DIR,
                         verbose=False)
 
     # TODO checks on the images
@@ -215,7 +220,7 @@ def test_roman_reciprocity_failure_off():
                         exposure_time=exposure_time,
                         engine_params=engine_params,
                         check_cache=True,
-                        psf_cache_dir='test_data',
+                        psf_cache_dir=TEST_DATA_DIR,
                         verbose=False)
 
     # TODO checks on the images
@@ -244,7 +249,7 @@ def test_roman_dark_noise_off():
                         exposure_time=exposure_time,
                         engine_params=engine_params,
                         check_cache=True,
-                        psf_cache_dir='test_data',
+                        psf_cache_dir=TEST_DATA_DIR,
                         verbose=False)
 
     # TODO checks on the images
@@ -273,7 +278,7 @@ def test_roman_nonlinearity_off():
                         exposure_time=exposure_time,
                         engine_params=engine_params,
                         check_cache=True,
-                        psf_cache_dir='test_data',
+                        psf_cache_dir=TEST_DATA_DIR,
                         verbose=False)
 
     # TODO checks on the images
@@ -302,7 +307,7 @@ def test_roman_ipc_off():
                         exposure_time=exposure_time,
                         engine_params=engine_params,
                         check_cache=True,
-                        psf_cache_dir='test_data',
+                        psf_cache_dir=TEST_DATA_DIR,
                         verbose=False)
 
     # TODO checks on the images
@@ -331,7 +336,7 @@ def test_roman_read_noise_off():
                         exposure_time=exposure_time,
                         engine_params=engine_params,
                         check_cache=True,
-                        psf_cache_dir='test_data',
+                        psf_cache_dir=TEST_DATA_DIR,
                         verbose=False)
 
     # TODO checks on the images
@@ -360,7 +365,7 @@ def test_roman_pieces():
     exposure = Exposure(synthetic_image,
                         exposure_time=exposure_time,
                         check_cache=True,
-                        psf_cache_dir='test_data',
+                        psf_cache_dir=TEST_DATA_DIR,
                         verbose=False)
 
     assert exposure.exposure is not None

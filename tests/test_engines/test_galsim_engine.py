@@ -1,12 +1,17 @@
+import os
 import galsim
 import numpy as np
 
+import mejiro
 from mejiro.engines import galsim_engine
 from mejiro.exposure import Exposure
 from mejiro.instruments.roman import Roman
 from mejiro.instruments.hwo import HWO
 from mejiro.lenses.test import SampleStrongLens
 from mejiro.synthetic_image import SyntheticImage
+
+
+TEST_DATA_DIR = os.path.join(os.path.dirname(mejiro.__path__[0]), 'tests', 'test_data')
 
 
 def test_default_engine_params():
@@ -30,7 +35,7 @@ def test_default_engine_params():
                         engine='galsim',
                         # don't provide engine params
                         check_cache=True,
-                        psf_cache_dir='test_data',
+                        psf_cache_dir=TEST_DATA_DIR,
                         verbose=False)
 
     assert exposure.engine == 'galsim'
@@ -60,7 +65,7 @@ def test_roman_noise():
     exposure = Exposure(synthetic_image,
                         exposure_time=exposure_time,
                         check_cache=True,
-                        psf_cache_dir='test_data',
+                        psf_cache_dir=TEST_DATA_DIR,
                         verbose=False)
 
     poisson_noise = exposure.poisson_noise
@@ -90,7 +95,7 @@ def test_roman_noise():
                          exposure_time=exposure_time,
                          engine_params=engine_params,
                          check_cache=True,
-                         psf_cache_dir='test_data',
+                         psf_cache_dir=TEST_DATA_DIR,
                          verbose=False)
 
     assert np.array_equal(exposure2.exposure, exposure.exposure)
@@ -139,7 +144,7 @@ def test_hwo_noise():
                          exposure_time=exposure_time,
                          engine_params=engine_params,
                          check_cache=True,
-                         psf_cache_dir='test_data',
+                         psf_cache_dir=TEST_DATA_DIR,
                          verbose=False)
 
     assert np.array_equal(exposure2.exposure, exposure.exposure)
