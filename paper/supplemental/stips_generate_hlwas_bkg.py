@@ -28,7 +28,6 @@ import pandas as pd
 import stips
 from multiprocessing import Pool
 import multiprocessing
-import hydra
 
 
 def roman_mag_to_cps(mag, band):
@@ -49,12 +48,16 @@ def batch_list(list, n):
         yield list[i:i + n]
 
 
-@hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
-def main(config):
+def main():
+    repo_dir = '/grad/bwedig/mejiro'
+    data_dir = '/data/bwedig/mejiro'
+
     # enable use of local packages
-    if config.machine.repo_dir not in sys.path:
-        sys.path.append(config.machine.repo_dir)
+    if repo_dir not in sys.path:
+        sys.path.append(repo_dir)
     from mejiro.utils import util
+
+    os.nice(19)
 
     start = time.time()
 
@@ -65,17 +68,17 @@ def main(config):
     detector_list = [f'SCA{str(i + 1).zfill(2)}' for i in range(num_detectors)]
     bands = ['F106', 'F129', 'F184']
     # bands = ['F106']
-    exposure_time = 1000
+    exposure_time = 146
 
     obs_prefix = 'hlwas_sim'
-    obs_ra = 30.
+    obs_ra = 15.
     obs_dec = -30.
 
-    skypy_config_path = os.path.join(config.machine.repo_dir, 'paper', 'supplemental',
+    skypy_config_path = os.path.join(repo_dir, 'paper', 'supplemental',
                                      'roman_hlwas_single_detector.yml')
 
     # set output directory
-    output_dir = os.path.join(config.machine.data_dir, 'STIPS_dev')
+    output_dir = os.path.join(data_dir, 'STIPS_dev')
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
 
@@ -162,7 +165,7 @@ def run_stips(tuple):
     rows_to_write = [row for row in output_rows if row['re'] < 5]  # 1e2 < row['F106'] and 
 
     # limit
-    rows_to_write = random.sample(rows_to_write, 25)
+    rows_to_write = random.sample(rows_to_write, 10)
 
     plt.hist([gal['re'] for gal in output_rows])
     plt.xlabel('Half-light radius [Pixels]')
@@ -230,6 +233,7 @@ def run_stips(tuple):
         'detectors': num_detectors,
         'distortion': True,
         'background': 0.15,
+        'fast_galaxy': True,
         'observations_id': j,
         'exptime': exposure_time,
         'offsets': [offset],
@@ -245,10 +249,10 @@ def run_stips(tuple):
     for _ in tqdm(range(num_obs)):
         obm.nextObservation()
 
-        output_stellar_catalogues = obm.addCatalogue(stellar_cat_file)
+        # output_stellar_catalogues = obm.addCatalogue(stellar_cat_file)
         output_galaxy_catalogues = obm.addCatalogue(galaxy_cat_file, fast_galaxies=True)
 
-        print("Output Catalogues are {} and {}".format(output_stellar_catalogues, output_galaxy_catalogues))
+        # print("Output Catalogues are {} and {}".format(output_stellar_catalogues, output_galaxy_catalogues))
 
         obm.addError()
 
