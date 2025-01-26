@@ -30,19 +30,6 @@ from multiprocessing import Pool
 import multiprocessing
 
 
-def roman_mag_to_cps(mag, band):
-    if band == 'F106':
-        mag_zero_point = 26.44
-    elif band == 'F129':
-        mag_zero_point = 26.40
-    elif band == 'F184':
-        mag_zero_point = 25.95
-    else:
-        raise ValueError('Unknown band')
-
-    return data_util.magnitude2cps(mag, mag_zero_point)
-
-
 def batch_list(list, n):
     for i in range(0, len(list), n):
         yield list[i:i + n]
@@ -67,7 +54,7 @@ def main():
     num_detectors = 1
     detector_list = [f'SCA{str(i + 1).zfill(2)}' for i in range(num_detectors)]
     bands = ['F106', 'F129', 'F184']
-    # bands = ['F106']
+    # bands = ['F129']
     exposure_time = 146
 
     obs_prefix = 'hlwas_sim'
@@ -84,7 +71,7 @@ def main():
     util.clear_directory(output_dir)
 
     # get star catalog
-    star_cat_file = os.path.join(repo_dir, 'paper', 'supplemental', 'full_catalog.fits')
+    star_cat_file = os.path.join(repo_dir, 'paper', 'supplemental', 'filtered_catalog.fits')
 
     # tuple the parameters
     tuple_list = [(j, num_detectors, detector_list, bands, exposure_time, obs_prefix, obs_coords[j], output_dir,
@@ -119,13 +106,13 @@ def run_stips(tuple):
 
     # create galaxy catalog
     galaxy_parameters = {
-                     'n_gals': 1000,
-                     'z_low': 0.0,
+                     'n_gals': 2000,
+                     'z_low': 0.2,
                      'z_high': 3.,  # 0.2
                      'rad_low': 0.01,
-                     'rad_high': 0.2,  # 2.
+                     'rad_high': 0.25,  # 2.
                      'sb_v_low': 28.0,
-                     'sb_v_high': 25.0,
+                     'sb_v_high': 24.0,
                      'distribution': 'uniform',
                      'clustered': False,
                      'radius': 250.0,
@@ -137,6 +124,17 @@ def run_stips(tuple):
     scm = SceneModule(out_prefix=f'{obs_prefix}_{j}', ra=obs_ra, dec=obs_dec, out_path=output_dir)
     galaxy_cat_file = scm.CreateGalaxies(galaxy_parameters)
     print("Galaxy population saved to file {}".format(galaxy_cat_file))
+
+    # Load galaxy catalog
+    galaxy_cat = Table.read(galaxy_cat_file)
+
+    # Filter out rows with absolute_surface_brightness > -8
+    filtered_galaxy_cat = galaxy_cat[galaxy_cat['absolute_surface_brightness'] <= -10]
+
+    # Save the filtered galaxy catalog
+    filtered_galaxy_cat_file = os.path.join(output_dir, f'filtered_{os.path.basename(galaxy_cat_file)}')
+    filtered_galaxy_cat.write(filtered_galaxy_cat_file, overwrite=True)
+    print("Filtered galaxy population saved to file {}".format(filtered_galaxy_cat_file))
 
     offset = {
         'offset_id': 1,
