@@ -2,7 +2,7 @@
 headroom_cores: 8 # 24
 
 # where the repository lives
-repo_dir: /nfshome/bwedig/mejiro
+repo_dir: /grad/bwedig/mejiro
 
 # where output data should be written
 data_dir: /data/bwedig/mejiro
