@@ -105,7 +105,7 @@ def main(config):
         'num_pix': 97,
         'side': 10.67,
         'control_band': 'F106',
-        'exposure_time': 146,
+        'exposure_time': 438,  # 146
     }
     bands = ['F106']
     position_control = [
@@ -132,7 +132,7 @@ def main(config):
         ('18', (2048, 2048))
     ]
 
-    save_dir = os.path.join(config.machine.data_dir, 'output', 'power_spectra_parallelized')
+    save_dir = os.path.join(config.machine.data_dir, 'output', 'power_spectra_parallelized_dev')
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
     image_save_dir = os.path.join(save_dir, 'images')
