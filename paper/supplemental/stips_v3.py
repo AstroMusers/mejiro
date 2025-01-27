@@ -55,7 +55,7 @@ def main():
     detector_list = [f'SCA{str(i + 1).zfill(2)}' for i in range(num_detectors)]
     bands = ['F106', 'F129', 'F184']
     # bands = ['F129']
-    exposure_time = 146
+    exposure_time = 1000
 
     obs_prefix = 'hlwas_sim'
     obs_ra = [14.25, 14.5, 14.75, 15, 15.25, 15.5, 15.75]
@@ -66,7 +66,7 @@ def main():
             obs_coords.append((ra, dec))
 
     # set output directory
-    output_dir = os.path.join(data_dir, 'STIPS')
+    output_dir = os.path.join(data_dir, 'STIPS_2')
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
 
@@ -107,11 +107,11 @@ def run_stips(tuple):
     # create galaxy catalog
     galaxy_parameters = {
                      'n_gals': 2000,
-                     'z_low': 0.2,
+                     'z_low': 0.5,
                      'z_high': 3.,  # 0.2
                      'rad_low': 0.01,
                      'rad_high': 0.25,  # 2.
-                     'sb_v_low': 28.0,
+                     'sb_v_low': 27.0,
                      'sb_v_high': 24.0,
                      'distribution': 'uniform',
                      'clustered': False,
