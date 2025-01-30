@@ -8,7 +8,7 @@ M_star_red: !astropy.modeling.models.Linear1D [-0.70798041, -20.37196157]
 phi_star_red: !astropy.modeling.models.Exponential1D [0.0035097, -1.41649]
 alpha_red: -0.5
 cosmology: !astropy.cosmology.default_cosmology.get []
-filters: ['RomanSCA01-F062', 'RomanSCA06-F087', 'RomanSCA06-F106', 'RomanSCA06-F129', 'RomanSCA06-F158', 'RomanSCA06-F184', 'RomanSCA06-F146', 'RomanSCA06-F213']
+filters: ['RomanSCA06-F062', 'RomanSCA06-F087', 'RomanSCA06-F106', 'RomanSCA06-F129', 'RomanSCA06-F158', 'RomanSCA06-F184', 'RomanSCA06-F146', 'RomanSCA06-F213']
 tables:
   blue:
     z: !skypy.galaxies.redshift.schechter_lf_redshift
