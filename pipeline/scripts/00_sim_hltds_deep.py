@@ -38,7 +38,7 @@ def main(config):
     debugging = pipeline_params['debugging']
 
     # set nice level
-    os.nice(pipeline_params['nice'])
+    # os.nice(pipeline_params['nice'])
 
     # set up output directory
     if debugging:
