@@ -268,15 +268,15 @@ def main(config):
         'los_normalization': 0.
     }
     imaging_params = {
-        'band': 'F087',
+        'band': 'F106',  # F106
         'scene_size': 5,  # arcsec
         'oversample': 5,
-        'exposure_time': 12500  # 438
+        'exposure_time': 438  # 438  # 37500  # 12500
     }
     positions = [(1, (2044, 2044))]
     print(f'Processing {len(positions)} positions.')
 
-    save_dir = os.path.join(config.machine.data_dir, 'output', 'subhalo_detection_compare_dev')  # hlwas_
+    save_dir = os.path.join(config.machine.data_dir, 'output', 'subhalo_detection_compare_hlwas')
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
     image_save_dir = os.path.join(save_dir, 'images')
