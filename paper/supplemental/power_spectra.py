@@ -132,7 +132,7 @@ def main(config):
         ('18', (2048, 2048))
     ]
 
-    save_dir = os.path.join(config.machine.data_dir, 'output', 'power_spectra_parallelized_dev')
+    save_dir = os.path.join(config.machine.data_dir, 'output', 'power_spectra_parallelized')
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
     image_save_dir = os.path.join(save_dir, 'images')
