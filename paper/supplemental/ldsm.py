@@ -29,7 +29,7 @@ def main(config):
     pipeline_params = util.hydra_to_dict(config.pipeline)
 
     # set nice level
-    os.nice(pipeline_params['nice'])
+    # os.nice(pipeline_params['nice'])
 
     # script configuration options
     debugging = False
@@ -63,7 +63,7 @@ def main(config):
     print(f'Processing {len(positions)} positions.')
 
     # set up directories for script output
-    save_dir = os.path.join(config.machine.data_dir, 'output', 'lowest_detectable_subhalo_mass_dev')  # 
+    save_dir = os.path.join(config.machine.data_dir, 'output', 'lowest_detectable_subhalo_mass_copy')  # 
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
     image_save_dir = os.path.join(save_dir, 'images')
