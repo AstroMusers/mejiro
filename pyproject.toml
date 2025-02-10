@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mejiro"
-version = "0.0.3"
+version = "1.0.0"
 authors = [
   { name="Bryce Wedig", email="b.t.wedig@wustl.edu" },
 ]

@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information
 
 project = 'mejiro'
-copyright = '2024, AstroMusers'
+copyright = '2025, AstroMusers'
 author = 'Bryce Wedig'
 
 import mejiro
