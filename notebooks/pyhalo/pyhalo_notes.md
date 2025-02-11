@@ -1,2 +1,0 @@
-``In principle, the projected mass in subhalos near the Einstein radius can depend on the host halo mass, redshift, and
-the severity of tidal stripping by the main lensing galaxy'' (Gilman et al. 2020).
