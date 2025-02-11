@@ -1,5 +1,6 @@
 /archive
-# /figures
+/figures
+/notebooks
 /mejiro/data/default_psfs
 /mejiro/data/cached_skypy_configs*
 /pandeia_docs
