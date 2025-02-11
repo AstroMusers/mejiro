@@ -1,10 +1,9 @@
+import hydra
 import json
 import os
+import speclite.filters
 import sys
 from glob import glob
-
-import hydra
-import speclite.filters
 from tqdm import tqdm
 
 

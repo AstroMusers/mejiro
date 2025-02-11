@@ -1,5 +1,5 @@
-import pytest
 import numpy as np
+import pytest
 
 from mejiro.instruments.hwo import HWO
 
@@ -34,4 +34,3 @@ def test_eacs():
 
     hwos = HWO(eac='EAC3')
     assert hwos.telescope.name == 'HWO-EAC-3'
-    

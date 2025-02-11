@@ -24,7 +24,7 @@ def test_band(band):
     exposure = Exposure(synthetic_image,
                         exposure_time=exposure_time,
                         verbose=False)
-    
+
     # TODO account for different pixel scales for different filters
     # assert synthetic_image.pixel_scale == 0.008
     # assert synthetic_image.native_pixel_scale == 0.04

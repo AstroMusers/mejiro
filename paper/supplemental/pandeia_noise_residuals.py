@@ -1,9 +1,8 @@
-import os
-import sys
-
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import sys
 from hydra import initialize, compose
 
 # set paths to various directories based on the machine this code is being executed on

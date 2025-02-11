@@ -1,15 +1,14 @@
 import datetime
-import multiprocessing
-import os
-import sys
-import time
-from copy import deepcopy
-from concurrent.futures import ProcessPoolExecutor, as_completed
-
 import galsim
 import hydra
 import matplotlib.pyplot as plt
+import multiprocessing
 import numpy as np
+import os
+import sys
+import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from copy import deepcopy
 from scipy.stats import chi2
 from tqdm import tqdm
 

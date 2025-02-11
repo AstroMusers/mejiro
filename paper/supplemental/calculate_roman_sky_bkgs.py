@@ -1,9 +1,8 @@
+import hydra
 import json
 import os
-import sys
-
-import hydra
 import speclite.filters
+import sys
 from lenstronomy.Util import data_util
 from slsim.Observations.roman_speclite import configure_roman_filters
 from slsim.Observations.roman_speclite import filter_names

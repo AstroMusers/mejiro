@@ -7,7 +7,6 @@ from mejiro.instruments.roman import Roman
 from mejiro.lenses.test import SampleStrongLens
 from mejiro.synthetic_image import SyntheticImage
 
-
 TEST_DATA_DIR = os.path.join(os.path.dirname(mejiro.__path__[0]), 'tests', 'test_data')
 
 

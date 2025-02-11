@@ -1,9 +1,8 @@
-import warnings
-from copy import deepcopy
-
 import galsim
 import galsim.roman  # NB not automatically imported with `import galsim`
 import numpy as np
+import warnings
+from copy import deepcopy
 
 from mejiro.utils import roman_util
 

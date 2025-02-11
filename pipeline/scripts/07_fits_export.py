@@ -1,14 +1,13 @@
-import os
-import sys
-import time
-from datetime import datetime
-from glob import glob
-
 import getpass
-import platform
 import hydra
 import numpy as np
+import os
+import platform
+import sys
+import time
 from astropy.io import fits
+from datetime import datetime
+from glob import glob
 from tqdm import tqdm
 
 

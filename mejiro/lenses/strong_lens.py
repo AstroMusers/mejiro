@@ -1,9 +1,8 @@
-from copy import deepcopy
-
 import astropy.cosmology.units as cu
 import astropy.units as u
 import numpy as np
 from astropy.cosmology import default_cosmology
+from copy import deepcopy
 from lenstronomy.Cosmo.lens_cosmo import LensCosmo
 from lenstronomy.Data.coord_transforms import Coordinates
 from lenstronomy.Data.pixel_grid import PixelGrid

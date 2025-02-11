@@ -1,10 +1,9 @@
 import datetime
+import galsim
+import numpy as np
 import os
 import random
 import time
-
-import galsim
-import numpy as np
 from astropy.coordinates import SkyCoord
 from galsim import InterpolatedImage, Image
 

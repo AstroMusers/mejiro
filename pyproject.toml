@@ -6,10 +6,10 @@ build-backend = "setuptools.build_meta"
 name = "mejiro"
 version = "1.0.0"
 authors = [
-  { name="Bryce Wedig", email="b.t.wedig@wustl.edu" },
+    { name = "Bryce Wedig", email = "b.t.wedig@wustl.edu" },
 ]
 readme = "README.md"
-license = {text = "MIT License"}
+license = { text = "MIT License" }
 
 [project.urls]
 Documentation = "https://mejiro.readthedocs.io/en/latest/index.html"
@@ -17,5 +17,5 @@ Repository = "https://github.com/AstroMusers/mejiro"
 
 [tool.pytest.ini_options]
 pythonpath = [
-  "."
+    "."
 ]

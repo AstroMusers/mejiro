@@ -1,8 +1,7 @@
 import json
 import os
-import warnings
-
 import pandas as pd
+import warnings
 
 import mejiro
 from mejiro.instruments.instrument_base import InstrumentBase

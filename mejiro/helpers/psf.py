@@ -1,10 +1,9 @@
-import os
-from glob import glob
-
 import astropy.io.fits as pyfits
 import galsim
+import os
 import webbpsf
 from galsim import roman
+from glob import glob
 from tqdm import tqdm
 from webbpsf.roman import WFI
 

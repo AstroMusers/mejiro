@@ -32,11 +32,14 @@ class HWO(InstrumentBase):
         )
 
         # set aperture
-        assert self.telescope.recover('aperture').unit == u.m, "Aperture must be in units of meters"  # check that aperture is in meters
+        assert self.telescope.recover(
+            'aperture').unit == u.m, "Aperture must be in units of meters"  # check that aperture is in meters
         self.aperture = self.telescope.recover('aperture').value  # meters
 
         self.pivotwave = self._set_camera_attribute_from_hwo_tools('pivotwave', u.nm)
-        self.ab_zeropoint = {b: zp for b, zp in zip(self.bands, [35548., 24166., 15305., 12523., 10018., 8609., 6975., 4373., 3444., 2482.])}  # TODO update
+        self.ab_zeropoint = {b: zp for b, zp in zip(self.bands,
+                                                    [35548., 24166., 15305., 12523., 10018., 8609., 6975., 4373., 3444.,
+                                                     2482.])}  # TODO update
         self.aperture_correction = self._set_camera_attribute_from_hwo_tools('ap_corr')
         self.bandpass_r = self._set_camera_attribute_from_hwo_tools('bandpass_r')
 
@@ -47,7 +50,9 @@ class HWO(InstrumentBase):
 
         # set noise parameters
         self.dark_current = self._set_camera_attribute_from_hwo_tools('dark_current', u.electron / (u.pix * u.second))
-        self.read_noise = self._set_camera_attribute_from_hwo_tools('detector_rn', u.electron ** Fraction(1, 2) / u.pix ** Fraction(1, 2))
+        self.read_noise = self._set_camera_attribute_from_hwo_tools('detector_rn',
+                                                                    u.electron ** Fraction(1, 2) / u.pix ** Fraction(1,
+                                                                                                                     2))
 
         # private attributes
         self._pixel_size = np.array(
@@ -83,12 +88,15 @@ class HWO(InstrumentBase):
 
         # this enforces the rule that the pixel sizes are set at the shortest wavelength in each channel 
         for i in range(0, 2):
-            pixel_scale_list[i] = 1.22 * (self.pivotwave['U'] * 0.000000001) * 206264.8062 / self.aperture / 2.  # UV set at U
+            pixel_scale_list[i] = 1.22 * (
+                        self.pivotwave['U'] * 0.000000001) * 206264.8062 / self.aperture / 2.  # UV set at U
         for i in range(2, len(pixel_scale_list) - 3):
-            pixel_scale_list[i] = 1.22 * (self.pivotwave['U'] * 0.000000001) * 206264.8062 / self.aperture / 2.  # Opt set at U
+            pixel_scale_list[i] = 1.22 * (
+                        self.pivotwave['U'] * 0.000000001) * 206264.8062 / self.aperture / 2.  # Opt set at U
         for i in range(len(pixel_scale_list) - 3, len(pixel_scale_list)):
-            pixel_scale_list[i] = 1.22 * (self.pivotwave['J'] * 0.000000001) * 206264.8062 / self.aperture / 2.  # NIR set at J
-        
+            pixel_scale_list[i] = 1.22 * (
+                        self.pivotwave['J'] * 0.000000001) * 206264.8062 / self.aperture / 2.  # NIR set at J
+
         self.pixel_scale = {band: pixel_scale for band, pixel_scale in zip(self.bands, pixel_scale_list)}
 
     def _set_psf_fwhm(self):

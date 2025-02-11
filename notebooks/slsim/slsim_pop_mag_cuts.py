@@ -2,7 +2,6 @@
 # coding: utf-8
 
 import os
-
 import slsim
 import speclite
 from astropy.cosmology import FlatLambdaCDM

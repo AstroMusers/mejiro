@@ -1,16 +1,15 @@
-import pytest
 import galsim
 import numpy as np
 import os
+import pytest
 
 import mejiro
+from mejiro.engines import galsim_engine, lenstronomy_engine, pandeia_engine
 from mejiro.exposure import Exposure
 from mejiro.instruments.roman import Roman
 from mejiro.lenses.test import SampleStrongLens
 from mejiro.synthetic_image import SyntheticImage
 from mejiro.utils import util
-from mejiro.engines import galsim_engine, lenstronomy_engine, pandeia_engine
-
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(mejiro.__path__[0]), 'tests', 'test_data')
 
@@ -148,7 +147,7 @@ def test_crop_edge_effects():
     image = np.zeros((100, 100))
     with pytest.raises(AssertionError):
         Exposure.crop_edge_effects(image)
-    
+
     # happy path
     image = np.zeros((101, 101))
     expected = np.zeros((98, 98))

@@ -1,4 +1,5 @@
 import sys
+
 sys.path.append('/grad/bwedig/mejiro')
 
 from mejiro.instruments.hwo import HWO

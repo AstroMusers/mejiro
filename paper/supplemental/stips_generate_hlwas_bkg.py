@@ -2,12 +2,11 @@
 # coding: utf-8
 
 import datetime
+import matplotlib
 import os
 import random
 import sys
 import time
-
-import matplotlib
 
 matplotlib.rcParams['axes.grid'] = False
 matplotlib.rcParams['image.origin'] = 'lower'

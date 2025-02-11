@@ -1,11 +1,10 @@
+import hydra
 import multiprocessing
+import numpy as np
 import os
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
-import numpy as np
-
-import hydra
 from hydra.core.hydra_config import HydraConfig
 from tqdm import tqdm
 

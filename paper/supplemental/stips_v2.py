@@ -2,12 +2,11 @@
 # coding: utf-8
 
 import datetime
+import matplotlib
 import os
 import random
 import sys
 import time
-
-import matplotlib
 
 matplotlib.rcParams['axes.grid'] = False
 matplotlib.rcParams['image.origin'] = 'lower'
@@ -100,20 +99,20 @@ def main():
 
     # create galaxy catalog
     galaxy_parameters = {
-                     'n_gals': 300,
-                     'z_low': 0.0,
-                     'z_high': 3.,  # 0.2
-                     'rad_low': 0.01,
-                     'rad_high': 2.0,  # 2.
-                     'sb_v_low': 28.0,
-                     'sb_v_high': 24.0,
-                     'distribution': 'uniform',
-                     'clustered': False,
-                     'radius': 250.0,
-                     'radius_units': 'arcsec',
-                     'offset_ra': 0.0,
-                     'offset_dec': 0.0,
-                    }
+        'n_gals': 300,
+        'z_low': 0.0,
+        'z_high': 3.,  # 0.2
+        'rad_low': 0.01,
+        'rad_high': 2.0,  # 2.
+        'sb_v_low': 28.0,
+        'sb_v_high': 24.0,
+        'distribution': 'uniform',
+        'clustered': False,
+        'radius': 250.0,
+        'radius_units': 'arcsec',
+        'offset_ra': 0.0,
+        'offset_dec': 0.0,
+    }
 
     scm = SceneModule(out_prefix=obs_prefix, ra=obs_ra, dec=obs_dec, out_path=output_dir)
     galaxy_cat_file = scm.CreateGalaxies(galaxy_parameters)
@@ -154,6 +153,7 @@ def main():
     stop = time.time()
     execution_time = str(datetime.timedelta(seconds=round(stop - start)))
     print(f'Execution time: {execution_time}')
+
 
 if __name__ == '__main__':
     main()
