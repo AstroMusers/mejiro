@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import pandas as pd
+from astropy.cosmology import default_cosmology
 from copy import deepcopy
 from lenstronomy.SimulationAPI.ObservationConfig import Roman
 from lenstronomy.SimulationAPI.sim_api import SimAPI
@@ -21,7 +22,7 @@ roman_params = RomanParameters(csv_path)
 
 
 # TODO a(n imperfect) lens subtraction option?
-def get_snr(gglens, cosmo, band, zp, detector=1, detector_position=(2048, 2048), input_num_pix=51, output_num_pix=45,
+def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), input_num_pix=51, output_num_pix=45,
             side=4.95, oversample=1,
             exposure_time=146, add_subhalos=True,
             kwargs_numerics={'supersampling_factor': 3, 'compute_mode': 'regular'}, return_snr_list=False,
@@ -36,7 +37,7 @@ def get_snr(gglens, cosmo, band, zp, detector=1, detector_position=(2048, 2048),
 
     if type(gglens) is not StrongLens:
         strong_lens = lens_util.slsim_lens_to_mejiro(gglens, bands=[band],
-                                                     cosmo=cosmo)
+                                                     cosmo=default_cosmology.get())  # TODO pass in cosmology
     else:
         strong_lens = gglens
 
@@ -194,11 +195,11 @@ def get_image(gglens, band, side=4.95):
     return total_image, lens_surface_brightness, source_surface_brightness, sim_r
 
 
-def write_lens_pop_to_csv(output_path, gg_lenses, detectable_snr_list, bands, verbose=False):
+def write_lens_pop_to_csv(output_path, gg_lenses, detectable_snr_list, bands, suppress_output=True):
     dictparaggln = {}
     dictparaggln['Candidate'] = {}
     listnamepara = ['velodisp', 'massstel', 'angleins', 'redssour', 'redslens', 'magnsour', 'snr', 'numbimag',
-                    'maxmdistimag']
+                    'maxmdistimag']  # 'xposlens', 'yposlens', 'xpossour', 'ypossour',
     for nameband in bands:
         listnamepara += ['magtlens%s' % nameband]
         listnamepara += ['magtsour%s' % nameband]
@@ -210,31 +211,39 @@ def write_lens_pop_to_csv(output_path, gg_lenses, detectable_snr_list, bands, ve
     df = pd.DataFrame(columns=listnamepara)
 
     for i, (gg_lens, snr) in tqdm(enumerate(zip(gg_lenses, detectable_snr_list)), total=len(gg_lenses),
-                                  disable=not verbose, ascii=True):
+                                  disable=suppress_output):
         dict = {
             'velodisp': gg_lens.deflector_velocity_dispersion(),
             'massstel': gg_lens.deflector_stellar_mass() * 1e-12,
-            'angleins': gg_lens.einstein_radius[0],  # TODO confirm first element
-            'redssour': gg_lens.source_redshift_list[0],  # TODO confirm first element
+            'angleins': gg_lens.einstein_radius,
+            'redssour': gg_lens.source_redshift,
             'redslens': gg_lens.deflector_redshift,
-            'magnsour': gg_lens.extended_source_magnification()[0],  # TODO confirm first element
+            'magnsour': gg_lens.extended_source_magnification(),
             'snr': snr
         }
 
         posiimag = gg_lens.point_source_image_positions()
-        dict['numbimag'] = int(posiimag[0][0].size)  # TODO confirm how to get number of images
+        dict['numbimag'] = int(posiimag[0].size)
 
         dict['maxmdistimag'] = np.amax(np.sqrt(
-            (posiimag[0][0][:, None] - posiimag[0][0][None, :]) ** 2 + (posiimag[0][1][:, None] - posiimag[0][1][None, :]) ** 2))
+            (posiimag[0][:, None] - posiimag[0][None, :]) ** 2 + (posiimag[1][:, None] - posiimag[1][None, :]) ** 2))
+
+        # TODO ypossour was throwing index 1 out of bounds. but I also don't need this info (for now) so maybe just delete
+        # posilens = gg_lens.deflector_position
+        # posisour = gg_lens.extended_source_image_positions()[0]
+        # dict['xposlens'] = posilens[0]
+        # dict['yposlens'] = posilens[1]
+        # dict['xpossour'] = posisour[0]
+        # dict['ypossour'] = posisour[1]
 
         for nameband in bands:
             dict['magtlens%s' % nameband] = gg_lens.deflector_magnitude(band=nameband)
-            dict['magtsour%s' % nameband] = gg_lens.extended_source_magnitude(band=nameband, lensed=False)[0]  # TODO confirm first element
-            dict['magtsourMagnified%s' % nameband] = gg_lens.extended_source_magnitude(band=nameband, lensed=True)[0]  # TODO confirm first element
+            dict['magtsour%s' % nameband] = gg_lens.extended_source_magnitude(band=nameband, lensed=False)
+            dict['magtsourMagnified%s' % nameband] = gg_lens.extended_source_magnitude(band=nameband, lensed=True)
 
         df.loc[i] = pd.Series(dict)
 
-    if verbose: print(f'Writing to {output_path}')
+    if not suppress_output: print('Writing to %s..' % output_path)
     if os.path.exists(output_path):
         os.remove(output_path)
     df.to_csv(output_path, index=False)

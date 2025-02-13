@@ -1,6 +1,5 @@
 import numpy as np
 import time
-import warnings
 
 from mejiro.utils import util
 
@@ -87,7 +86,7 @@ class Exposure:
 
             # warn that PSF isn't gonna do anything
             if psf is not None:
-                warnings.warn('PSF is not used in the Pandeia engine')
+                print('WARNING: PSF is not used in the Pandeia engine')  # TODO warnings package?
 
             # validate engine params and set defaults
             if engine_params is None:

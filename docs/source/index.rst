@@ -21,12 +21,6 @@ mejiro documentation
    mejiro/instruments.rst
    mejiro/utils.rst
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Appendices
-
-   appendices/structure.rst
-
 Indices and tables
 ==================
 * :ref:`genindex`

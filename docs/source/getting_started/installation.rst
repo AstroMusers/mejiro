@@ -23,12 +23,6 @@ Create a conda environment:
 
 To generate PSFs with ``STPSF`` (formerly ``WebbPSF``), follow the instructions `here <https://stpsf.readthedocs.io/en/latest/installation.html>`__ to download the required data files and set environment variables.
 
-Optional setup: `hwo-tools`
-============================
-
-Install `hwo-tools` by following the
-instructions `here <https://github.com/spacetelescope/hwo-tools/blob/main/README.md>`__.
-
 Optional setup: Pandeia
 ========================
 

@@ -11,9 +11,6 @@ from mejiro.helpers import psf
 from mejiro.instruments.roman import Roman
 from mejiro.utils import util
 
-# TODO TEMP
-from mejiro.engines import webbpsf_engine
-
 roman_params = Roman()
 
 
@@ -75,9 +72,10 @@ def get_images(lens, arrays, bands, sca_zp_dict=None, input_size=96, output_size
     bkgs = get_sky_bkgs(bands, detector, exposure_time, num_pix=input_size, oversample=1)
 
     # generate the PSFs I'll need for each unique band
-    psfs = {band : psf.kernel_to_galsim_interpolated_image(webbpsf_engine.get_roman_psf(band, detector, detector_pos, psf_oversample, 101, check_cache, psf_cache_dir, verbose=not suppress_output), psf_oversample, pixel_scale=0.11) for band in bands}
-    # psfs[band] = psf.get_webbpsf_psf(band, detector, detector_pos, psf_oversample, 101, check_cache,
-                                                # psf_cache_dir, suppress_output)
+    psf_kernels = {}
+    for band in bands:
+        psf_kernels[band] = psf.get_webbpsf_psf(band, detector, detector_pos, psf_oversample, 101, check_cache,
+                                                psf_cache_dir, suppress_output)
 
     results = []
     for _, (band, array) in enumerate(zip(bands, arrays)):
@@ -85,7 +83,7 @@ def get_images(lens, arrays, bands, sca_zp_dict=None, input_size=96, output_size
         zp = sca_zp_dict[band]
         total_flux_cps = lens.get_total_flux_cps(band, zp)
 
-        final_array = _calculate_image(array, band, grid_oversample, psfs, bkgs, input_size, output_size,
+        final_array = _calculate_image(array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size,
                                        total_flux_cps, exposure_time, rng, detector_effects=detector_effects,
                                        sky_background=sky_background)
 
@@ -99,10 +97,10 @@ def get_images(lens, arrays, bands, sca_zp_dict=None, input_size=96, output_size
             lens_flux_cps = lens.get_lens_flux_cps(band, zp)
             source_flux_cps = lens.get_source_flux_cps(band, zp)
 
-            lens_image = _calculate_image(lens_array, band, grid_oversample, psfs, bkgs, input_size, output_size,
+            lens_image = _calculate_image(lens_array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size,
                                           lens_flux_cps, exposure_time, rng, detector_effects=False,
                                           sky_background=False)
-            source_image = _calculate_image(source_array, band, grid_oversample, psfs, bkgs, input_size,
+            source_image = _calculate_image(source_array, band, grid_oversample, psf_kernels, bkgs, input_size,
                                             output_size, source_flux_cps, exposure_time, rng, detector_effects=False,
                                             sky_background=False)
 
@@ -118,15 +116,15 @@ def get_images(lens, arrays, bands, sca_zp_dict=None, input_size=96, output_size
         return results, execution_time
 
 
-def _calculate_image(array, band, grid_oversample, psfs, bkgs, input_size, output_size, flux_cps, exposure_time,
+def _calculate_image(array, band, grid_oversample, psf_kernels, bkgs, input_size, output_size, flux_cps, exposure_time,
                      rng, detector_effects=True, sky_background=True):
     # get interpolated image
     interp = InterpolatedImage(Image(array, xmin=0, ymin=0), scale=0.11 / grid_oversample,
                                flux=np.sum(array) * exposure_time)
 
     # convolve image with PSF
-    psf_interp = psfs[band]
-    image = convolve(interp, psf_interp, input_size)
+    psf_kernel = psf_kernels[band]
+    image = convolve(interp, psf_kernel, input_size)
 
     if sky_background:
         image += bkgs[band]  # add sky background to convolved image

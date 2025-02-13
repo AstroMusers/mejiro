@@ -1,7 +1,7 @@
 Engines
 #######
 
-`mejiro` wraps various image simulation packages to provide a consistent interface for simulating images.
+`mejiro` wraps various image simulation packages to provide a consistent interface for simulating images of strong gravitational lenses.
 
 ``galsim_engine``
 *****************

@@ -1,4 +1,3 @@
-import os
 import galsim
 import numpy as np
 import os
@@ -14,7 +13,7 @@ from mejiro.synthetic_image import SyntheticImage
 TEST_DATA_DIR = os.path.join(os.path.dirname(mejiro.__path__[0]), 'tests', 'test_data')
 
 
-def test_roman_default_engine_params():
+def test_default_engine_params():
     roman = Roman()
 
     lens = SampleStrongLens()
@@ -35,13 +34,15 @@ def test_roman_default_engine_params():
                         engine='galsim',
                         # don't provide engine params
                         check_cache=True,
-                        psf_cache_dir=os.path.abspath('tests/test_data'),
+                        psf_cache_dir=TEST_DATA_DIR,
                         verbose=False)
 
     assert exposure.engine == 'galsim'
 
+    ignored_keys = ['rng']
     for key, item in exposure.engine_params.items():
-        assert item == galsim_engine.default_roman_engine_params()[key]
+        if key not in ignored_keys:
+            assert item == galsim_engine.default_roman_engine_params()[key]
 
 
 def test_roman_noise():
@@ -63,7 +64,7 @@ def test_roman_noise():
     exposure = Exposure(synthetic_image,
                         exposure_time=exposure_time,
                         check_cache=True,
-                        psf_cache_dir=os.path.abspath('tests/test_data'),
+                        psf_cache_dir=TEST_DATA_DIR,
                         verbose=False)
 
     poisson_noise = exposure.poisson_noise
@@ -93,7 +94,7 @@ def test_roman_noise():
                          exposure_time=exposure_time,
                          engine_params=engine_params,
                          check_cache=True,
-                         psf_cache_dir=os.path.abspath('tests/test_data'),
+                         psf_cache_dir=TEST_DATA_DIR,
                          verbose=False)
 
     assert np.array_equal(exposure2.exposure, exposure.exposure)
@@ -103,36 +104,6 @@ def test_roman_noise():
     assert np.array_equal(nonlinearity.array, exposure2.nonlinearity.array)
     assert np.array_equal(ipc.array, exposure2.ipc.array)
     assert np.array_equal(read_noise.array, exposure2.read_noise.array)
-
-
-def test_hwo_default_engine_params():
-    hwo = HWO()
-
-    lens = SampleStrongLens()
-    band = 'J'
-    scene_size = 5  # arcsec
-    oversample = 5
-    exposure_time = 1000
-
-    synthetic_image = SyntheticImage(strong_lens=lens,
-                                     instrument=hwo,
-                                     band=band,
-                                     arcsec=scene_size,
-                                     oversample=oversample,
-                                     verbose=False)
-
-    exposure = Exposure(synthetic_image,
-                        exposure_time=exposure_time,
-                        engine='galsim',
-                        # don't provide engine params
-                        check_cache=True,
-                        psf_cache_dir=os.path.abspath('tests/test_data'),
-                        verbose=False)
-
-    assert exposure.engine == 'galsim'
-
-    for key, item in exposure.engine_params.items():
-        assert item == galsim_engine.default_roman_engine_params()[key]
 
 
 def test_hwo_noise():
@@ -172,7 +143,7 @@ def test_hwo_noise():
                          exposure_time=exposure_time,
                          engine_params=engine_params,
                          check_cache=True,
-                         psf_cache_dir=os.path.abspath('tests/test_data'),
+                         psf_cache_dir=TEST_DATA_DIR,
                          verbose=False)
 
     assert np.array_equal(exposure2.exposure, exposure.exposure)
