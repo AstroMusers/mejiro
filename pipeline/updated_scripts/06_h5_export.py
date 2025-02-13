@@ -1,19 +1,18 @@
-import os
-import sys
-import time
-from datetime import datetime
-from glob import glob
-
+import galsim
 import getpass
 import h5py
-import platform
 import hydra
-import numpy as np
-from astropy.io import fits
-from tqdm import tqdm
-import galsim
 import lenstronomy
+import numpy as np
+import os
+import platform
+import sys
+import time
 import webbpsf
+from astropy.io import fits
+from datetime import datetime
+from glob import glob
+from tqdm import tqdm
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -99,9 +98,9 @@ def main(config):
         group_lens.attrs['detector_position_x'] = (str(lens.detector_position[0]), 'Detector X position')
         group_lens.attrs['detector_position_y'] = (str(lens.detector_position[1]), 'Detector Y position')
         group_lens.attrs['log_mlow'] = (
-        str(pipeline_params['log_mlow']), 'Lower mass limit for subhalos [log10(M_sun)]')
+            str(pipeline_params['log_mlow']), 'Lower mass limit for subhalos [log10(M_sun)]')
         group_lens.attrs['log_mhigh'] = (
-        str(pipeline_params['log_mhigh']), 'Upper mass limit for subhalos [log10(M_sun)]')
+            str(pipeline_params['log_mhigh']), 'Upper mass limit for subhalos [log10(M_sun)]')
         group_lens.attrs['r_tidal'] = (str(pipeline_params['r_tidal']), 'See pyHalo documentation')
         group_lens.attrs['sigma_sub'] = (str(pipeline_params['sigma_sub']), 'See pyHalo documentation')
         group_lens.attrs['num_subhalos'] = (str(lens.num_subhalos), 'Number of subhalos')
@@ -134,7 +133,7 @@ def main(config):
                 dset.attrs['filter'] = (band, 'Filter')
                 dset.attrs['source_magnitude'] = (str(lens.source_mags[band]), 'Unlensed source galaxy AB magnitude')
                 dset.attrs['lensed_source_magnitude'] = (
-                str(lens.lensed_source_mags[band]), 'Lensed source galaxy AB magnitude')
+                    str(lens.lensed_source_mags[band]), 'Lensed source galaxy AB magnitude')
                 dset.attrs['lens_magnitude'] = (str(lens.lens_mags[band]), 'Lens galaxy AB magnitude')
 
     # ---------------------------CREATE PSF DATASET--------------------------------

@@ -1,5 +1,6 @@
-import corner
 import numpy as np
+
+import corner
 
 
 def source_galaxies(lens_list, band, quantiles=[0.16, 0.5, 0.84]):

@@ -1,11 +1,10 @@
+import hydra
 import multiprocessing
+import numpy as np
 import os
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
-import numpy as np
-
-import hydra
 from hydra.core.hydra_config import HydraConfig
 from tqdm import tqdm
 
@@ -35,18 +34,18 @@ def main(config):
     print(f'Saving PSFs to {save_dir}')
 
     oversamples = [5]
-    bands = ['F087']  # , 'F106', 'F129', 'F158', 'F184'
+    bands = ['F106']  # , 'F106', 'F129', 'F158', 'F184'
     # bands = Roman().bands
     # detectors = [4, 1, 9, 17]
     # detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
     # detectors = [1, 2, 4, 5]
     # detector_positions = [(2048, 2048), (2048, 2048), (2048, 2048), (2048, 2048)]
     detectors = list(range(1, 19))
-    # detector_positions = [(2048, 2048)]
+    detector_positions = [(2044, 2044)]
     # detector_positions = []
     # for i in range(4):
     #     detector_positions.extend(roman_util.divide_up_sca(i + 1))
-    detector_positions = roman_util.divide_up_sca(3)
+    # detector_positions = roman_util.divide_up_sca(4)
     num_pixes = [101]
 
     # Determine which PSFs need to be generated

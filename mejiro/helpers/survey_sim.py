@@ -1,8 +1,7 @@
-import os
-from copy import deepcopy
-
 import numpy as np
+import os
 import pandas as pd
+from copy import deepcopy
 from lenstronomy.SimulationAPI.ObservationConfig import Roman
 from lenstronomy.SimulationAPI.sim_api import SimAPI
 from tqdm import tqdm

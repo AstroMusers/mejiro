@@ -1,17 +1,16 @@
+import hydra
 import json
 import multiprocessing
+import numpy as np
 import os
+import speclite
 import sys
 import time
+from astropy.cosmology import default_cosmology
+from astropy.units import Quantity
 from glob import glob
 from multiprocessing import Pool
 from pprint import pprint
-
-import hydra
-import numpy as np
-import speclite
-from astropy.cosmology import default_cosmology
-from astropy.units import Quantity
 from slsim.lens_pop import LensPop
 from tqdm import tqdm
 

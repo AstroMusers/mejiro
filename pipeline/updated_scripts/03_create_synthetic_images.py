@@ -1,13 +1,12 @@
+import hydra
 import json
 import multiprocessing
+import numpy as np
 import os
 import sys
 import time
-from glob import glob
 from concurrent.futures import ProcessPoolExecutor, as_completed
-
-import hydra
-import numpy as np
+from glob import glob
 from tqdm import tqdm
 
 

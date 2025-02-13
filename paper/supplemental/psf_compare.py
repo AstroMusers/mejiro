@@ -1,9 +1,8 @@
+import hydra
+import numpy as np
 import os
 import sys
 from copy import deepcopy
-
-import hydra
-import numpy as np
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')

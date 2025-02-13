@@ -1,15 +1,14 @@
 import datetime
-import multiprocessing
-import os
-import sys
-import time
-from copy import deepcopy
-from concurrent.futures import ProcessPoolExecutor, as_completed
-
 import galsim
 import hydra
 import matplotlib.pyplot as plt
+import multiprocessing
 import numpy as np
+import os
+import sys
+import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from copy import deepcopy
 from scipy.stats import chi2
 from tqdm import tqdm
 
@@ -52,18 +51,18 @@ def main(config):
         'band': 'F087',
         'scene_size': 5,  # arcsec
         'oversample': 5,
-        'exposure_time': 14600
+        'exposure_time': 12500  # 14600
     }
     positions = []
     for i in range(1, 19):
         sca = str(i).zfill(2)
-        coords = roman_util.divide_up_sca(3)
+        coords = roman_util.divide_up_sca(4)
         for coord in coords:
             positions.append((sca, coord))
     print(f'Processing {len(positions)} positions.')
 
     # set up directories for script output
-    save_dir = os.path.join(config.machine.data_dir, 'output', 'lowest_detectable_subhalo_mass')
+    save_dir = os.path.join(config.machine.data_dir, 'output', 'lowest_detectable_subhalo_mass_dev')  # 
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
     image_save_dir = os.path.join(save_dir, 'images')

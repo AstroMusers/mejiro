@@ -1,7 +1,6 @@
+import hydra
 import os
 import sys
-
-import hydra
 from tqdm import tqdm
 
 

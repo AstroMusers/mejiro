@@ -1,6 +1,5 @@
-import warnings
-
 import numpy as np
+import warnings
 from lenstronomy.Data.coord_transforms import Coordinates
 from lenstronomy.Data.pixel_grid import PixelGrid
 from lenstronomy.Data.psf import PSF
@@ -44,8 +43,9 @@ class SyntheticImage:
             self.supersampled_indexes = self.build_adaptive_grid(pad=40)
             kwargs_numerics['supersampled_indexes'] = self.supersampled_indexes
 
-        if self.verbose: 
-            print(f'Computing with \'{kwargs_numerics["compute_mode"]}\' mode and supersampling factor {kwargs_numerics["supersampling_factor"]}')
+        if self.verbose:
+            print(
+                f'Computing with \'{kwargs_numerics["compute_mode"]}\' mode and supersampling factor {kwargs_numerics["supersampling_factor"]}')
             if kwargs_numerics['compute_mode'] == 'adaptive':
                 print(f'Adaptive grid: {self.supersampled_indexes.shape}')
 
@@ -70,7 +70,7 @@ class SyntheticImage:
         y = np.linspace(-self.num_pix // 2, self.num_pix // 2, self.num_pix)
         X, Y = np.meshgrid(x, y)
         distance = np.sqrt((X - (self.strong_lens.kwargs_lens[0]['center_x'] / self.pixel_scale)) ** 2 + (
-                    Y - (self.strong_lens.kwargs_lens[0]['center_y'] / self.pixel_scale)) ** 2)
+                Y - (self.strong_lens.kwargs_lens[0]['center_y'] / self.pixel_scale)) ** 2)
 
         min = np.min(image_radii) - pad
         if min < 0:

@@ -1,9 +1,8 @@
+import matplotlib.pyplot as plt
+import numpy as np
 import os
 from copy import deepcopy
 from glob import glob
-
-import matplotlib.pyplot as plt
-import numpy as np
 from lenstronomy.Data.coord_transforms import Coordinates
 from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
 from lenstronomy.Util import util as lenstronomy_util

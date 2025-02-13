@@ -1,15 +1,14 @@
 import datetime
+import hydra
 import multiprocessing
+import numpy as np
 import os
+import speclite
 import sys
 import time
-from multiprocessing import Pool
-
-import hydra
-import numpy as np
-import speclite
 from astropy.cosmology import default_cosmology
 from astropy.units import Quantity
+from multiprocessing import Pool
 from slsim.lens_pop import LensPop
 from tqdm import tqdm
 

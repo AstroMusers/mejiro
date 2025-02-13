@@ -1,17 +1,16 @@
+import hydra
 import json
 import multiprocessing
+import numpy as np
 import os
+import speclite
 import sys
 import time
+from astropy.cosmology import default_cosmology
+from astropy.units import Quantity
 from glob import glob
 from multiprocessing import Pool
 from pprint import pprint
-
-import hydra
-import numpy as np
-import speclite
-from astropy.cosmology import default_cosmology
-from astropy.units import Quantity
 from slsim.lens_pop import LensPop
 from tqdm import tqdm
 
@@ -182,7 +181,7 @@ def run_slsim(tuple):
 
     # set kwargs_numerics for SNR calculation
     radius = survey_params['snr_supersampling_radius'] / (
-                0.11 / survey_params['snr_oversample'])  # convert radius from arcsec to pixels
+            0.11 / survey_params['snr_oversample'])  # convert radius from arcsec to pixels
     supersampling_indices = util.create_centered_circle(
         N=survey_params['snr_input_num_pix'] * survey_params['snr_oversample'], radius=radius)
     kwargs_numerics = {

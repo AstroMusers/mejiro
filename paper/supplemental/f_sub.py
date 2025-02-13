@@ -1,9 +1,8 @@
-import os
-import sys
-
 import hydra
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import sys
 from matplotlib import colors
 from tqdm import tqdm
 

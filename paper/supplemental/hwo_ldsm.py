@@ -1,14 +1,13 @@
 import datetime
+import galsim
+import hydra
 import multiprocessing
+import numpy as np
 import os
 import sys
 import time
 from copy import deepcopy
 from multiprocessing import Pool
-
-import galsim
-import hydra
-import numpy as np
 from scipy.stats import chi2
 from tqdm import tqdm
 

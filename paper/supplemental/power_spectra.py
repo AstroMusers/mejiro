@@ -1,15 +1,14 @@
 import datetime
+import hydra
 import json
+import matplotlib.pyplot as plt
 import multiprocessing
+import numpy as np
 import os
 import sys
 import time
-from copy import deepcopy
 from concurrent.futures import ProcessPoolExecutor, as_completed
-
-import hydra
-import matplotlib.pyplot as plt
-import numpy as np
+from copy import deepcopy
 from galsim import InterpolatedImage, Image
 from lenstronomy.Util.correlation import power_spectrum_1d
 from pyHalo.preset_models import CDM
@@ -105,7 +104,7 @@ def main(config):
         'num_pix': 97,
         'side': 10.67,
         'control_band': 'F106',
-        'exposure_time': 146,
+        'exposure_time': 438,  # 146
     }
     bands = ['F106']
     position_control = [

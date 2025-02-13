@@ -1,17 +1,14 @@
 import datetime
 import json
+import numpy as np
 import os
+import pandas as pd
 import pickle as _pickle
 import shutil
 import warnings
+import yaml
 from collections import ChainMap
 from glob import glob
-
-import numpy as np
-import pandas as pd
-import yaml
-from PIL import Image
-from omegaconf import OmegaConf
 
 
 def smallest_non_negative_element(array):
@@ -261,6 +258,7 @@ def rotate_array(array, angle, fillcolor='white'):
         The rotated array.
 
     """
+    from PIL import Image
     pil_image = Image.fromarray(array)
     rotated_pil_image = pil_image.rotate(angle, fillcolor=fillcolor)
     return np.asarray(rotated_pil_image)
@@ -632,6 +630,7 @@ def hydra_to_dict(config):
         A dictionary representation of the Hydra configuration.
 
     """
+    from omegaconf import OmegaConf
     container = OmegaConf.to_container(config, resolve=True)
     return dict(ChainMap(*container))
 

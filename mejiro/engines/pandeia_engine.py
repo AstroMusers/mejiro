@@ -1,10 +1,9 @@
 # Pandeia documentation: https://jwst-docs.stsci.edu/jwst-exposure-time-calculator-overview/jwst-etc-pandeia-engine-tutorial#gsc.tab=0
 
 import datetime
+import numpy as np
 import os
 import time
-
-import numpy as np
 from lenstronomy.SimulationAPI.ObservationConfig.Roman import Roman
 from lenstronomy.Util import data_util
 from pandeia.engine.calc_utils import build_default_calc, build_default_source

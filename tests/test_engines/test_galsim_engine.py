@@ -1,13 +1,17 @@
 import os
 import galsim
 import numpy as np
+import os
 
+import mejiro
 from mejiro.engines import galsim_engine
 from mejiro.exposure import Exposure
-from mejiro.instruments.roman import Roman
 from mejiro.instruments.hwo import HWO
+from mejiro.instruments.roman import Roman
 from mejiro.lenses.test import SampleStrongLens
 from mejiro.synthetic_image import SyntheticImage
+
+TEST_DATA_DIR = os.path.join(os.path.dirname(mejiro.__path__[0]), 'tests', 'test_data')
 
 
 def test_roman_default_engine_params():

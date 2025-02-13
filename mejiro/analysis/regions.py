@@ -1,8 +1,7 @@
 # this file borrows heavily from the tutorial at https://www.geeksforgeeks.org/find-the-number-of-islands-using-dfs/
 
-import os  # TODO temp
-
 import numpy as np
+import os  # TODO temp
 
 from mejiro.utils import util
 

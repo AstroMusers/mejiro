@@ -1,6 +1,5 @@
-from copy import deepcopy
-
 import numpy as np
+from copy import deepcopy
 from lenstronomy.SimulationAPI.ObservationConfig import HST, LSST, Roman, DES, Euclid
 from lenstronomy.SimulationAPI.sim_api import SimAPI
 

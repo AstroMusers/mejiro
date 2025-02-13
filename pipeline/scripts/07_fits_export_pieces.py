@@ -1,12 +1,11 @@
+import hydra
+import numpy as np
 import os
 import sys
 import time
+from astropy.io import fits
 from datetime import datetime
 from glob import glob
-
-import hydra
-import numpy as np
-from astropy.io import fits
 from tqdm import tqdm
 
 

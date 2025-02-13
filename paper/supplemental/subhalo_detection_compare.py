@@ -1,15 +1,14 @@
 import datetime
-import multiprocessing
-import os
-import sys
-import time
-from copy import deepcopy
-from concurrent.futures import ProcessPoolExecutor, as_completed
-
 import galsim
 import hydra
 import matplotlib.pyplot as plt
+import multiprocessing
 import numpy as np
+import os
+import sys
+import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from copy import deepcopy
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.concentration_models import preset_concentration_models
 from pyHalo.single_realization import SingleHalo
@@ -268,10 +267,10 @@ def main(config):
         'los_normalization': 0.
     }
     imaging_params = {
-        'band': 'F087',
+        'band': 'F106',  # F106
         'scene_size': 5,  # arcsec
         'oversample': 5,
-        'exposure_time': 146
+        'exposure_time': 438  # 438  # 37500  # 12500
     }
     positions = [(1, (2044, 2044))]
     print(f'Processing {len(positions)} positions.')

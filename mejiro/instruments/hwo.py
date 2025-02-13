@@ -18,6 +18,7 @@ class HWO(InstrumentBase):
 
     def __init__(self, eac='EAC1'):
         self.telescope = Telescope()
+        self.telescope.set_from_json(eac)
         self.camera = Camera()
 
         name = 'HWO'
@@ -31,28 +32,35 @@ class HWO(InstrumentBase):
         )
 
         # set aperture
-        assert self.telescope.recover('aperture').unit == u.m, "Aperture must be in units of meters"  # check that aperture is in meters
+        assert self.telescope.recover(
+            'aperture').unit == u.m, "Aperture must be in units of meters"  # check that aperture is in meters
         self.aperture = self.telescope.recover('aperture').value  # meters
 
         self.pivotwave = self._set_camera_attribute_from_hwo_tools('pivotwave', u.nm)
-        self.ab_zeropoint = [35548., 24166., 15305., 12523., 10018., 8609., 6975., 4373., 3444., 2482.]
+        self.ab_zeropoint = {b: zp for b, zp in zip(self.bands,
+                                                    [35548., 24166., 15305., 12523., 10018., 8609., 6975., 4373., 3444.,
+                                                     2482.])}  # TODO update
         self.aperture_correction = self._set_camera_attribute_from_hwo_tools('ap_corr')
         self.bandpass_r = self._set_camera_attribute_from_hwo_tools('bandpass_r')
-        # self.derived_bandpass = {band: (self.pivotwave[band] / self.bandpass_r[band]) for band in self.bands}
+
+        # calculate derived bandpass
+        self.derived_bandpass = {band: (self.pivotwave[band] / self.bandpass_r[band]) for band in self.bands}
 
         self.gain = 1.
 
         # set noise parameters
         self.dark_current = self._set_camera_attribute_from_hwo_tools('dark_current', u.electron / (u.pix * u.second))
-        self.read_noise = self._set_camera_attribute_from_hwo_tools('detector_rn', u.electron ** Fraction(1, 2) / u.pix ** Fraction(1, 2))
+        self.read_noise = self._set_camera_attribute_from_hwo_tools('detector_rn',
+                                                                    u.electron ** Fraction(1, 2) / u.pix ** Fraction(1,
+                                                                                                                     2))
 
         # private attributes
         self._pixel_size = np.array(
             [0.016, 0.016, 0.016, 0.016, 0.016, 0.016, 0.016, 0.04, 0.04, 0.04])  # set by aperture in method below
 
         # methods
-        # self._set_pixel_scale()
-        # self._set_psf_fwhm()
+        self._set_pixel_scale()  # TODO update
+        self._set_psf_fwhm()  # TODO update
 
     def validate_instrument_params(self, params):
         # TODO implement this
@@ -72,29 +80,42 @@ class HWO(InstrumentBase):
 
         return {band: value for band, value in zip(self.bands, values)}
 
-    def _set_pixel_scale(self):
-        self.pixel_scale = 1.22 * (self.pivotwave * 0.000000001) * 206264.8062 / self.aperture / 2.
+    def _set_pixel_scale(self):  # TODO update
+        pixel_scale_list = []
+        for band, pw in self.pivotwave.items():
+            pixel_scale = 1.22 * (pw * 0.000000001) * 206264.8062 / self.aperture / 2.
+            pixel_scale_list.append(pixel_scale)
+
         # this enforces the rule that the pixel sizes are set at the shortest wavelength in each channel 
-        self.pixel_scale[0:2] = 1.22 * (
-                self.pivotwave[2] * 0.000000001) * 206264.8062 / self.aperture / 2.  # UV set at U
-        self.pixel_scale[2:-3] = 1.22 * (
-                self.pivotwave[2] * 0.000000001) * 206264.8062 / self.aperture / 2.  # Opt set at U
-        self.pixel_scale[-3:] = 1.22 * (
-                self.pivotwave[7] * 0.000000001) * 206264.8062 / self.aperture / 2.  # NIR set at J
+        for i in range(0, 2):
+            pixel_scale_list[i] = 1.22 * (
+                        self.pivotwave['U'] * 0.000000001) * 206264.8062 / self.aperture / 2.  # UV set at U
+        for i in range(2, len(pixel_scale_list) - 3):
+            pixel_scale_list[i] = 1.22 * (
+                        self.pivotwave['U'] * 0.000000001) * 206264.8062 / self.aperture / 2.  # Opt set at U
+        for i in range(len(pixel_scale_list) - 3, len(pixel_scale_list)):
+            pixel_scale_list[i] = 1.22 * (
+                        self.pivotwave['J'] * 0.000000001) * 206264.8062 / self.aperture / 2.  # NIR set at J
+
+        self.pixel_scale = {band: pixel_scale for band, pixel_scale in zip(self.bands, pixel_scale_list)}
 
     def _set_psf_fwhm(self):
         diff_limit = 1.22 * (500. * 0.000000001) * 206264.8062 / self.aperture
 
-        self.fwhm_psf = 1.22 * self.pivotwave * 0.000000001 * 206264.8062 / self.aperture
-        self.fwhm_psf[self.fwhm_psf < diff_limit] = self.fwhm_psf[self.fwhm_psf < diff_limit] * 0.0 + diff_limit
+        self.fwhm_psf = {}
+        for band, pw in self.pivotwave.items():
+            fwhm_psf = 1.22 * pw * 0.000000001 * 206264.8062 / self.aperture
+
+            if fwhm_psf < diff_limit:
+                fwhm_psf = diff_limit
+
+            self.fwhm_psf[band] = fwhm_psf
 
     def get_pixel_scale(self, band):
-        index = self._get_index(band)
-        return self._pixel_size[index]
+        return self.pixel_scale[band]
 
     def get_psf_fwhm(self, band):
-        index = self._get_index(band)
-        return self.fwhm_psf[index]
+        return self.fwhm_psf[band]
 
     def get_zeropoint_magnitude(self, band):
         """
@@ -102,14 +123,12 @@ class HWO(InstrumentBase):
 
         Source: https://jt-astro.science/luvoir_simtools/hdi_etc/SNR_equation.pdf
         """
-        index = self._get_index(band)
-
         # get telescope aperture diameter in cm
         aperture = self.aperture * 100
 
         # get band-specific parameters
-        bandwidth = self.derived_bandpass[index]  # TODO is this correct?
-        flux_zp = self.ab_zeropoint[index]
+        bandwidth = self.derived_bandpass[band]  # TODO is this correct?
+        flux_zp = self.ab_zeropoint[band]
 
         # calculate zeropoint magnitude
         zp_mag = (-1 / 0.4) * np.log10(4 / (np.pi * flux_zp * (aperture ** 2) * bandwidth))
@@ -120,20 +139,16 @@ class HWO(InstrumentBase):
         """
         Estimate noise per pixel per second in given band. For now, sum of dark current and read noise.
         """
-        index = self._get_index(band)
-
-        dark_current = self.dark_current[index]
-        read_noise = self.read_noise[index]
+        dark_current = self.dark_current[band]
+        read_noise = self.read_noise[band]
 
         return dark_current + read_noise
 
     def get_dark_current(self, band):
-        index = self._get_index(band)
-        return self.dark_current[index]
+        return self.dark_current[band]
 
     def get_read_noise(self, band):
-        index = self._get_index(band)
-        return self.read_noise[index]
+        return self.read_noise[band]
 
     def get_bands(self):
         return self.camera.recover('bandnames')

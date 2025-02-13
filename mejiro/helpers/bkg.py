@@ -1,8 +1,7 @@
-import os
-import random
-
 import lenstronomy.Util.data_util as data_util
 import numpy as np
+import os
+import random
 from jwst_backgrounds import jbt
 from scipy.stats import truncnorm
 

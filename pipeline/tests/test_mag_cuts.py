@@ -1,15 +1,14 @@
 import datetime
+import hydra
 import multiprocessing
+import numpy as np
 import os
+import speclite
 import sys
 import time
+from astropy.units import Quantity
 from multiprocessing import Pool
 from pprint import pprint
-
-import hydra
-import numpy as np
-import speclite
-from astropy.units import Quantity
 from slsim.Observations.roman_speclite import configure_roman_filters
 from slsim.Observations.roman_speclite import filter_names
 from slsim.lens_pop import LensPop

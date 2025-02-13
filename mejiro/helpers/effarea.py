@@ -1,7 +1,6 @@
 import csv
-import os
-
 import numpy as np
+import os
 import pandas as pd
 import speclite.filters
 from astropy import units as u
