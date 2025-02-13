@@ -13,7 +13,15 @@ Create a conda environment:
 
     conda env create -f environment.yml
 
-To generate PSFs with ``WebbPSF``, follow the instructions `here <https://webbpsf.readthedocs.io/en/latest/installation.html>`__ to download the required data files and set environment variables.
+.. Install ``SLSim``:
+
+.. .. code-block:: bash  
+
+..     git clone https://github.com/LSST-strong-lensing/slsim.git
+..     cd slsim
+..     pip install -e .
+
+To generate PSFs with ``STPSF`` (formerly ``WebbPSF``), follow the instructions `here <https://stpsf.readthedocs.io/en/latest/installation.html>`__ to download the required data files and set environment variables.
 
 Optional setup: `hwo-tools`
 ============================

@@ -12,7 +12,6 @@ dependencies:
   - pytest  # dev
   - tqdm
   - pip:
-    - hydra-core  # temp
     - lenstronomy==1.12.5
     - stpsf==2.0.0
     - pandeia-engine==2024.12
