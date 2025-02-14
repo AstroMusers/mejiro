@@ -11,14 +11,16 @@ def test_band(band):
     hwo = HWO()
     lens = SampleStrongLens()
     scene_size = 5  # arcsec
-    oversample = 5
+    oversample = 1
     exposure_time = 100
+    kwargs_numerics = {'supersampling_factor': 1}
 
     synthetic_image = SyntheticImage(strong_lens=lens,
                                      instrument=hwo,
                                      band=band,
                                      arcsec=scene_size,
                                      oversample=oversample,
+                                     kwargs_numerics=kwargs_numerics,
                                      verbose=False)
 
     exposure = Exposure(synthetic_image,

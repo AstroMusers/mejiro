@@ -48,7 +48,7 @@ def default_hwo_engine_params():
     dict
         A dictionary containing the following keys:
 
-        - rng: galsim.UniformDeviate(42)
+        - rng_seed: int, default is 42
         - sky_background: bool, default is True
         - detector_effects: bool, default is True
         - poisson_noise: bool, default is True
@@ -56,7 +56,7 @@ def default_hwo_engine_params():
         - read_noise: bool, default is True
     """
     return {
-        'rng': galsim.UniformDeviate(42),
+        'rng_seed': 42,
         'sky_background': True,
         'detector_effects': True,
         'poisson_noise': True,

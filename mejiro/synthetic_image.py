@@ -31,11 +31,20 @@ class SyntheticImage:
         self._set_up_pixel_grid(arcsec, oversample)
 
         # if kwargs_numerics is empty, use default values; defaulting dictionary in init gives weirdness
+        KWARGS_NUMERICS_DEFAULT = {'supersampling_factor': 3, 'compute_mode': 'adaptive'}
         if not kwargs_numerics:
-            kwargs_numerics = {'supersampling_factor': 3, 'compute_mode': 'adaptive'}
+            kwargs_numerics = KWARGS_NUMERICS_DEFAULT
         else:
-            # TODO validate
-            pass
+            # check for extra keys
+            for key in kwargs_numerics.keys():
+                if key not in ['supersampling_factor', 'compute_mode', 'supersampled_indexes']:
+                    warnings.warn(f'Unrecognized key in kwargs_numerics: {key}')
+            
+            # do some defaulting if certain keys are left out
+            if 'supersampling_factor' not in kwargs_numerics.keys():
+                kwargs_numerics['supersampling_factor'] = KWARGS_NUMERICS_DEFAULT['supersampling_factor']
+            if 'compute_mode' not in kwargs_numerics.keys():
+                kwargs_numerics['compute_mode'] = KWARGS_NUMERICS_DEFAULT['compute_mode']
 
         # build adaptive grid
         if kwargs_numerics['compute_mode'] == 'adaptive' and 'supersampled_indexes' not in kwargs_numerics.keys():
