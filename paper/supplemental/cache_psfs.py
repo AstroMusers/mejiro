@@ -19,7 +19,7 @@ def main(config):
     if config.machine.repo_dir not in sys.path:
         sys.path.append(config.machine.repo_dir)
     from mejiro.utils import roman_util, util
-    from mejiro.engines import webbpsf_engine
+    from mejiro.engines import stpsf_engine
     from mejiro.instruments.roman import Roman
 
     machine = HydraConfig.get().runtime.choices.machine
@@ -54,7 +54,7 @@ def main(config):
         for band in bands:
             for detector in detectors:
                 for detector_position in detector_positions:
-                    psf_id = webbpsf_engine.get_psf_id(band, detector, detector_position, oversample, num_pix)
+                    psf_id = stpsf_engine.get_psf_id(band, detector, detector_position, oversample, num_pix)
                     psf_filename = f'{psf_id}.npy'
                     psf_path = os.path.join(save_dir, psf_filename)
                     if os.path.exists(psf_path):
@@ -87,13 +87,13 @@ def main(config):
 
 
 def generate_psf(args):
-    from mejiro.engines import webbpsf_engine
+    from mejiro.engines import stpsf_engine
 
     # Unpack tuple
     psf_id, save_dir = args
 
     # Generate PSF
-    webbpsf_psf = webbpsf_engine.get_roman_psf_from_id(psf_id, check_cache=False, verbose=False)
+    webbpsf_psf = stpsf_engine.get_roman_psf_from_id(psf_id, check_cache=False, verbose=False)
 
     # Save PSF
     psf_path = os.path.join(save_dir, f'{psf_id}.npy')

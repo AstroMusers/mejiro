@@ -2,7 +2,7 @@ import numpy as np
 import os
 import warnings
 from glob import glob
-from webbpsf.roman import WFI
+from stpsf.roman import WFI
 
 from mejiro.utils import roman_util
 

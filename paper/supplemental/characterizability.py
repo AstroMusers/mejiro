@@ -143,7 +143,7 @@ def main(config):
     from mejiro.lenses import lens_util
     from mejiro.utils import util
     from mejiro.instruments.roman import Roman
-    from mejiro.engines import webbpsf_engine
+    from mejiro.engines import stpsf_engine
 
     pipeline_params = util.hydra_to_dict(config.pipeline)
     debugging = pipeline_params['debugging']
@@ -183,8 +183,8 @@ def main(config):
         'compute_mode': 'adaptive',
     }
 
-    psf_id = webbpsf_engine.get_psf_id(band, sca, sca_position, oversample, 101)
-    psf = webbpsf_engine.get_cached_psf(psf_id, psf_cache_dir, verbose=False)
+    psf_id = stpsf_engine.get_psf_id(band, sca, sca_position, oversample, 101)
+    psf = stpsf_engine.get_cached_psf(psf_id, psf_cache_dir, verbose=False)
 
     num_characterizable = 0
     chi2_values = []

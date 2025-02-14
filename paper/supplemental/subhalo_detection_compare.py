@@ -22,7 +22,7 @@ def process_lens(params):
     from mejiro.synthetic_image import SyntheticImage
     from mejiro.exposure import Exposure
     from mejiro.plots import plot_util
-    from mejiro.engines import webbpsf_engine
+    from mejiro.engines import stpsf_engine
 
     (run, lens, roman, script_config, imaging_params, subhalo_params, positions, save_dir, image_save_dir,
      idx_to_save) = params
@@ -64,8 +64,8 @@ def process_lens(params):
         results[position_key] = {}
 
         # get PSF
-        psf_id = webbpsf_engine.get_psf_id(band, sca, sca_position, oversample, 101)
-        psf = webbpsf_engine.get_cached_psf(psf_id, psf_cache_dir, verbose=False)
+        psf_id = stpsf_engine.get_psf_id(band, sca, sca_position, oversample, 101)
+        psf = stpsf_engine.get_cached_psf(psf_id, psf_cache_dir, verbose=False)
 
         lens_no_subhalo = deepcopy(lens)
         synth_no_subhalo = SyntheticImage(lens_no_subhalo,

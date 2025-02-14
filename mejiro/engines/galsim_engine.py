@@ -84,13 +84,13 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
 
     # get PSF
     if psf is None:
-        from mejiro.engines import webbpsf_engine
+        from mejiro.engines import stpsf_engine
 
         check_cache = kwargs.get('check_cache', True)
         psf_cache_dir = kwargs.get('psf_cache_dir', '/data/bwedig/mejiro/cached_psfs')
         calc_psf_kwargs = kwargs.get('calc_psf_kwargs', {})
 
-        psf = webbpsf_engine.get_roman_psf(band=synthetic_image.band,
+        psf = stpsf_engine.get_roman_psf(band=synthetic_image.band,
                                            detector=detector,
                                            detector_position=detector_position,
                                            oversample=synthetic_image.oversample,

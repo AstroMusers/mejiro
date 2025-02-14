@@ -129,7 +129,7 @@ def run(tuple):
     from mejiro.synthetic_image import SyntheticImage
     from mejiro.exposure import Exposure
     from mejiro.plots import plot_util
-    from mejiro.engines import webbpsf_engine
+    from mejiro.engines import stpsf_engine
 
     # unpack tuple
     (_, lens, roman, script_config, imaging_params, subhalo_params, positions, save_dir, image_save_dir,
@@ -176,8 +176,8 @@ def run(tuple):
         results[position_key] = {}
 
         # get PSF
-        psf_id = webbpsf_engine.get_psf_id(band, sca, sca_position, oversample, 101)
-        psf = webbpsf_engine.get_cached_psf(psf_id, psf_cache_dir, verbose=False)
+        psf_id = stpsf_engine.get_psf_id(band, sca, sca_position, oversample, 101)
+        psf = stpsf_engine.get_cached_psf(psf_id, psf_cache_dir, verbose=False)
 
         # get image with no subhalo
         lens_no_subhalo = deepcopy(lens)
