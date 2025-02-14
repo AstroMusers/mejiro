@@ -12,7 +12,7 @@ from hydra.core.hydra_config import HydraConfig
 from tqdm import tqdm
 
 
-@hydra.main(version_base=None, config_path='../../config', config_name='config_dev.yaml')
+@hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
 def main(config):
     start = time.time()
 
