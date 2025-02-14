@@ -10,7 +10,6 @@ from tqdm import tqdm
 
 # use mejiro plotting style
 import mejiro
-from mejiro.helpers import color
 from mejiro.lenses.strong_lens import StrongLens
 from mejiro.utils import util
 
@@ -235,6 +234,8 @@ def plot_projected_mass(lens):
 
 def get_sample(pipeline_dir, index, band=None, rgb_bands=['F184', 'F129', 'F106'], model=True, model_stretch=2,
                model_Q=3):
+    from astropy.visualization import make_lupton_rgb
+
     # get lens
     lens_dir = pipeline_dir + '/03'
     lens_path = glob(lens_dir + f'/**/lens_{str(index).zfill(8)}.pkl')
@@ -253,7 +254,11 @@ def get_sample(pipeline_dir, index, band=None, rgb_bands=['F184', 'F129', 'F106'
     r = [np.load(i) for i in files if rgb_bands[0] in i][0]
     g = [np.load(i) for i in files if rgb_bands[1] in i][0]
     b = [np.load(i) for i in files if rgb_bands[2] in i][0]
-    rgb_model = color.get_rgb(b, g, r, minimum=None, stretch=model_stretch, Q=model_Q)
+    min_r = np.min(r)
+    min_g = np.min(g)
+    min_b = np.min(b)
+    minimum = [min_r, min_g, min_b]
+    rgb_model = make_lupton_rgb(image_r=r, image_g=g, image_b=b, minimum=minimum, stretch=model_stretch, Q=model_Q)
 
     # get rgb image
     color_dir = pipeline_dir + '/05'
