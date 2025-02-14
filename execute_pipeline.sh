@@ -29,9 +29,9 @@ echo 'Simulating images...'
 python3 pipeline/updated_scripts/04_create_exposures.py
 echo 'GalSim simulations complete.'
 
-echo 'Generating color images...'
-python3 pipeline/updated_scripts/05_make_rgb_exposures.py
-echo 'Color image generation complete.'
+# echo 'Generating color images...'
+# python3 pipeline/updated_scripts/05_make_rgb_exposures.py
+# echo 'Color image generation complete.'
 
 # echo 'Generating hdf5 file...'
 # python3 06_output.py

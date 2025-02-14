@@ -15,7 +15,7 @@ from slsim.lens_pop import LensPop
 from tqdm import tqdm
 
 
-@hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
+@hydra.main(version_base=None, config_path='../../config', config_name='config_dev.yaml')
 def main(config):
     start = time.time()
 
@@ -37,7 +37,7 @@ def main(config):
 
     # set up output directory
     if debugging:
-        output_dir = os.path.join(f'{config.machine.pipeline_dir}_dev_double_exp_time',
+        output_dir = os.path.join(f'{config.machine.pipeline_dir}_dev',
                                   '00')  # TODO eventually, this should do something like reading the dir_00 from the config file, taking the parent dir, appending _dev, then appending whatever the basepath of dir_00 is: otherwise, there's no point in allowing dir_00 to be configurable. also, this change must take place for all scripts
     else:
         output_dir = config.machine.dir_00

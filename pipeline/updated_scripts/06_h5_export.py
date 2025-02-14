@@ -15,7 +15,7 @@ from glob import glob
 from tqdm import tqdm
 
 
-@hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
+@hydra.main(version_base=None, config_path='../../config', config_name='config_dev.yaml')
 def main(config):
     start = time.time()
 
@@ -31,7 +31,7 @@ def main(config):
 
     # retrieve configuration parameters
     pipeline_params = util.hydra_to_dict(config.pipeline)
-    debugging = False  # retrieve from prod
+    debugging = pipeline_params['debugging']
     if debugging:
         pipeline_dir = f'{config.machine.pipeline_dir}_dev'
     else:
@@ -46,7 +46,9 @@ def main(config):
     bands = pipeline_params['bands']
 
     # create h5 file
-    filepath = f'{data_dir}/h5_export/roman_hlwas_v_0_0_2.h5'
+    export_dir = os.path.join(data_dir, 'h5_export')
+    util.create_directory_if_not_exists(export_dir)
+    filepath = os.path.join(export_dir, 'roman_hlwas_dev.h5')  # v_0_0_2
     if os.path.exists(filepath):
         os.remove(filepath)
     f = h5py.File(filepath, 'a')  # append mode: read/write if exists, create otherwise

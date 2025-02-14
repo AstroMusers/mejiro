@@ -1,5 +1,4 @@
-# number of cores to subtract off from total available
-headroom_cores: 8
+headroom_cores: 8  # number of cores to subtract off from total available
 num_cores: 56
 
 # where the repository lives
