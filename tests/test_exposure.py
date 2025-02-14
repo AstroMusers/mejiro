@@ -6,20 +6,16 @@ import os
 import pytest
 
 import mejiro
-from mejiro.engines import galsim_engine, lenstronomy_engine, pandeia_engine
 from mejiro.exposure import Exposure
-from mejiro.instruments.roman import Roman
-from mejiro.lenses.test import SampleStrongLens
-from mejiro.synthetic_image import SyntheticImage
 from mejiro.utils import util
-from mejiro.engines import galsim_engine, lenstronomy_engine, pandeia_engine
 
 
-TEST_DATA_DIR = os.path.abspath('tests/test_data')
+TEST_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(mejiro.__file__)), 'tests', 'test_data')
 
 
 def test_exposure_with_galsim_engine():
-    synthetic_image = util.unpickle(f'{TEST_DATA_DIR}/synthetic_image_roman_F129_5_5.pkl')
+    from mejiro.engines import galsim_engine
+
     synthetic_image = util.unpickle(f'{TEST_DATA_DIR}/synthetic_image_roman_F129_5_5.pkl')
 
     exposure = Exposure(synthetic_image,
@@ -27,7 +23,6 @@ def test_exposure_with_galsim_engine():
                         engine='galsim',
                         # default engine params
                         check_cache=True,
-                        psf_cache_dir=TEST_DATA_DIR,
                         psf_cache_dir=TEST_DATA_DIR,
                         verbose=False)
 
@@ -59,6 +54,8 @@ def test_exposure_with_galsim_engine():
 
 # TODO awaiting fix of lenstronomy engine
 # def test_exposure_with_lenstronomy_engine():
+#     from mejiro.engines import lenstronomy_engine
+
 #     synthetic_image = util.unpickle(f'{TEST_DATA_DIR}/synthetic_image_roman_F129_5_5.pkl')
 
 #     exposure = Exposure(synthetic_image,
@@ -90,6 +87,8 @@ def test_exposure_with_galsim_engine():
 
 # TODO need to fix Pandeia engine for new version
 # def test_exposure_with_pandeia_engine():
+#     from mejiro.engines import pandeia_engine
+
 #     synthetic_image = util.unpickle(f'{TEST_DATA_DIR}/synthetic_image_roman_F129_5_5.pkl')
 
 #     # for Pandeia engine, default of 10^4 takes almost 10 minutes to run, so reduce number of samples
@@ -125,13 +124,11 @@ def test_exposure_with_galsim_engine():
 
 def test_default_engine():
     synthetic_image = util.unpickle(f'{TEST_DATA_DIR}/synthetic_image_roman_F129_5_5.pkl')
-    synthetic_image = util.unpickle(f'{TEST_DATA_DIR}/synthetic_image_roman_F129_5_5.pkl')
 
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
                         # don't provide engine
                         check_cache=True,
-                        psf_cache_dir=TEST_DATA_DIR,
                         psf_cache_dir=TEST_DATA_DIR,
                         verbose=False)
 
@@ -140,14 +137,12 @@ def test_default_engine():
 
 def test_invalid_engine():
     synthetic_image = util.unpickle(f'{TEST_DATA_DIR}/synthetic_image_roman_F129_5_5.pkl')
-    synthetic_image = util.unpickle(f'{TEST_DATA_DIR}/synthetic_image_roman_F129_5_5.pkl')
 
     try:
         Exposure(synthetic_image,
                  exposure_time=146,
                  engine='invalid_engine',
                  check_cache=True,
-                 psf_cache_dir=TEST_DATA_DIR,
                  psf_cache_dir=TEST_DATA_DIR,
                  verbose=False)
     except ValueError as e:
