@@ -321,7 +321,7 @@ def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=def
 
     # add sky background
     if engine_params['sky_background']:
-        min_zodi_cps = 0.2
+        min_zodi_cps = 0.2  # TODO this is a placeholder value
         sky_bkg_cps = min_zodi_cps * 1.5
 
         # build Image
