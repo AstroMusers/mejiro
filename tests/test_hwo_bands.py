@@ -15,13 +15,16 @@ def test_band(band):
     exposure_time = 100
     kwargs_numerics = {'supersampling_factor': 1}
 
-    synthetic_image = SyntheticImage(strong_lens=lens,
-                                     instrument=hwo,
-                                     band=band,
-                                     arcsec=scene_size,
-                                     oversample=oversample,
-                                     kwargs_numerics=kwargs_numerics,
-                                     verbose=False)
+    # The warning is expected: we're not testing for ray-shooting accuracy here, just that the code runs for different HWO bands, so we've set the oversampling factor to 1. This is not recommended for actual science cases.
+    with pytest.warns(UserWarning,
+                      match='Oversampling factor less than 5 may not be sufficient for accurate results, especially when convolving with a non-trivial PSF'):
+        synthetic_image = SyntheticImage(strong_lens=lens,
+                                        instrument=hwo,
+                                        band=band,
+                                        arcsec=scene_size,
+                                        oversample=oversample,
+                                        kwargs_numerics=kwargs_numerics,
+                                        verbose=False)
 
     exposure = Exposure(synthetic_image,
                         exposure_time=exposure_time,
