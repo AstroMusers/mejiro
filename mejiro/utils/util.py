@@ -11,6 +11,39 @@ from collections import ChainMap
 from glob import glob
 
 
+def print_key_structure(d, indent=0):
+    """
+    Print the structure of a dictionary, showing keys and nested keys.
+
+    Parameters
+    ----------
+    d : dict
+        The dictionary whose structure is to be printed.
+    indent : int, optional
+        The indentation level for nested keys. Default is 0.
+
+    Returns
+    -------
+    None
+
+    Examples
+    --------
+    >>> d = {'a': 1, 'b': {'c': 2, 'd': {'e': 3}}}
+    >>> print_key_structure(d)
+    a
+    b
+      c
+      d
+        e
+    """
+    if not isinstance(d, dict):
+        raise TypeError("Input must be a dictionary")
+    for key, value in d.items():
+        print(' ' * indent + str(key))
+        if isinstance(value, dict):
+            print_key_structure(value, indent + 2)
+
+
 def smallest_non_negative_element(array):
     """
     Find the smallest non-negative element in a given array.
