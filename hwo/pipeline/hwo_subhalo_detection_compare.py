@@ -233,7 +233,7 @@ def main():
         'band': 'J',  # F106
         'scene_size': 5,  # arcsec
         'oversample': 1,
-        'exposure_time': 12500
+        'exposure_time': 1250000
     }
 
     # set up directories to save output to
