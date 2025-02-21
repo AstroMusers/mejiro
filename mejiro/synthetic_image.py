@@ -174,10 +174,15 @@ class SyntheticImage:
                                  lens_light_model_class=self.strong_lens.lens_light_model_class,
                                  kwargs_numerics=kwargs_numerics)
 
-        self._convert_magnitudes_to_lenstronomy_amps()
-        kwargs_lens_light_amp = [self.strong_lens.kwargs_lens_light_amp_dict[self.band]]
-        kwargs_source_amp = [self.strong_lens.kwargs_source_amp_dict[self.band]]
+        # if kwargs_lens_light_amp_dict and kwargs_source_amp_dict are empty, it means magnitudes were provided, so convert magnitudes to lenstronomy amps
+        if not self.strong_lens.kwargs_lens_light_amp_dict and not self.strong_lens.kwargs_source_amp_dict:
+            self._convert_magnitudes_to_lenstronomy_amps()
 
+        # lenstronomy kwargs are lists
+        kwargs_lens_light_amp = self.strong_lens.kwargs_lens_light_amp_dict[self.band]
+        kwargs_source_amp = self.strong_lens.kwargs_source_amp_dict[self.band]
+
+        # ray-shoot
         self.image = image_model.image(kwargs_lens=self.strong_lens.kwargs_lens,
                                        kwargs_source=kwargs_source_amp,
                                        kwargs_lens_light=kwargs_lens_light_amp,
