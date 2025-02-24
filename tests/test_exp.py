@@ -1,0 +1,107 @@
+import os
+import pytest
+import galsim
+import numpy as np
+import os
+import pytest
+
+import mejiro
+from mejiro.exp import Exposure
+from mejiro.utils import util
+
+
+TEST_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(mejiro.__file__)), 'tests', 'test_data')
+
+
+def test_exposure_with_galsim_engine():
+    from mejiro.engines.galsim_engine import GalSimEngine
+
+    # TODO TEMP
+    # synthetic_image = util.unpickle(f'{TEST_DATA_DIR}/synthetic_image_roman_F129_5_5.pkl')
+    from mejiro.galaxy_galaxy import SampleGG, SampleSL2S, SampleBELLS
+    from mejiro.synth import SyntheticImage
+    from mejiro.instruments.roman import Roman
+    from mejiro.engines.stpsf_engine import STPSFEngine
+    kwargs_psf = STPSFEngine.get_psf_kwargs('F129', 'SCA01', (2048, 2048), oversample=5, num_pix=101, check_cache=True, psf_cache_dir=TEST_DATA_DIR, verbose=False)
+    synthetic_image = SyntheticImage(strong_lens=SampleSL2S(),
+                                     instrument=Roman(),
+                                     band='F129',
+                                     fov_arcsec=5,
+                                     instrument_params={'detector': 'SCA01'},
+                                     kwargs_numerics={},
+                                     kwargs_psf={},
+                                     pieces=False,
+                                     verbose=False)
+
+    exposure = Exposure(synthetic_image,
+                        exposure_time=146,
+                        engine='galsim',
+                        verbose=False)
+
+    assert exposure.synthetic_image == synthetic_image
+    assert exposure.exposure_time == 146
+    assert exposure.engine == 'galsim'
+    assert exposure.verbose == False
+
+    # check engine param defaulting
+    ignored_keys = ['rng']
+    for key, item in exposure.engine_params.items():
+        if key not in ignored_keys:
+            assert item == GalSimEngine.default_roman_engine_params()[key]
+
+    # noise
+    assert exposure.noise is not None
+    assert type(exposure.noise) is np.ndarray
+    assert exposure.noise.shape == (synthetic_image.num_pix, synthetic_image.num_pix)
+    # engine-specific noise components are tested in the engine-specific tests
+
+    # exposure
+    assert type(exposure.exposure) is np.ndarray
+    assert exposure.exposure.shape == (synthetic_image.num_pix, synthetic_image.num_pix)
+
+    # image
+    assert type(exposure.image) is galsim.Image
+    assert exposure.image.array.shape == (synthetic_image.num_pix, synthetic_image.num_pix)
+
+
+
+
+# TODO TEMP
+# def test_default_engine():
+#     synthetic_image = util.unpickle(f'{TEST_DATA_DIR}/synthetic_image_roman_F129_5_5.pkl')
+
+#     exposure = Exposure(synthetic_image,
+#                         exposure_time=146,
+#                         # don't provide engine
+#                         check_cache=True,
+#                         psf_cache_dir=TEST_DATA_DIR,
+#                         verbose=False)
+
+#     assert exposure.engine == 'galsim'
+
+
+# def test_invalid_engine():
+#     synthetic_image = util.unpickle(f'{TEST_DATA_DIR}/synthetic_image_roman_F129_5_5.pkl')
+
+#     try:
+#         Exposure(synthetic_image,
+#                  exposure_time=146,
+#                  engine='invalid_engine',
+#                  check_cache=True,
+#                  psf_cache_dir=TEST_DATA_DIR,
+#                  verbose=False)
+#     except ValueError as e:
+#         assert str(e) == 'Engine "invalid_engine" not recognized'
+
+
+# def test_crop_edge_effects():
+#     # unhappy path
+#     image = np.zeros((100, 100))
+#     with pytest.raises(AssertionError):
+#         Exposure.crop_edge_effects(image)
+
+#     # happy path
+#     image = np.zeros((101, 101))
+#     expected = np.zeros((98, 98))
+#     result = Exposure.crop_edge_effects(image)
+#     assert np.array_equal(result, expected), f"Expected {expected}, but got {result}"
