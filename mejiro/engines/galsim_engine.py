@@ -7,65 +7,132 @@ from copy import deepcopy
 from mejiro.utils import roman_util
 
 
-def default_roman_engine_params():
-    """
-    Returns the default parameters for Roman image simulation with the GalSim engine.
-
-    Returns
-    -------
-    dict
-        A dictionary containing the following keys:
-
-        - rng_seed: int, default is 42
-        - sky_background: bool, default is True
-        - detector_effects: bool, default is True
-        - poisson_noise: bool, default is True
-        - reciprocity_failure: bool, default is True
-        - dark_noise: bool, default is True
-        - nonlinearity: bool, default is True
-        - ipc: bool, default is True
-        - read_noise: bool, default is True
-    """
-    return {
-        'rng_seed': 42,
-        'sky_background': True,
-        'detector_effects': True,
-        'poisson_noise': True,
-        'reciprocity_failure': True,
-        'dark_noise': True,
-        'nonlinearity': True,
-        'ipc': True,
-        'read_noise': True,
-    }
+def defaults(instrument_name):
+    if instrument_name.casefold() == 'Roman':
+        return {
+            'rng_seed': 42,
+            'sky_background': True,
+            'detector_effects': True,
+            'poisson_noise': True,
+            'reciprocity_failure': True,
+            'dark_noise': True,
+            'nonlinearity': True,
+            'ipc': True,
+            'read_noise': True,
+        }
+    elif instrument_name.casefold() == 'HWO':
+        return {
+            'rng_seed': 42,
+            'sky_background': True,
+            'detector_effects': True,
+            'poisson_noise': True,
+            'dark_noise': True,
+            'read_noise': True,
+        }
+    else:
+        super().instrument_not_supported(instrument_name)
 
 
-def default_hwo_engine_params():
-    """
-    Returns the default parameters for HWO image simulation with the GalSim engine.
+def validate_engine_params(instrument_name, engine_params):
+    if instrument_name.casefold() == 'Roman':
+        if 'rng_seed' not in engine_params.keys():
+            engine_params['rng_seed'] = defaults('Roman')['rng_seed']
+            # TODO logging to inform user of default
+        else:
+            # TODO validate
+            pass
+        if 'sky_background' not in engine_params.keys():
+            engine_params['sky_background'] = defaults('Roman')['sky_background']
+            # TODO logging to inform user of default
+        else:
+            # TODO validate
+            pass
+        if 'detector_effects' not in engine_params.keys():
+            engine_params['detector_effects'] = defaults('Roman')['detector_effects']
+            # TODO logging to inform user of default
+        else:
+            # TODO validate
+            pass
+        if 'poisson_noise' not in engine_params.keys():
+            engine_params['poisson_noise'] = defaults('Roman')['poisson_noise']
+            # TODO logging to inform user of default
+        else:
+            # TODO validate
+            pass
+        if 'reciprocity_failure' not in engine_params.keys():
+            engine_params['reciprocity_failure'] = defaults('Roman')['reciprocity_failure']
+            # TODO logging to inform user of default
+        else:
+            # TODO validate
+            pass
+        if 'dark_noise' not in engine_params.keys():
+            engine_params['dark_noise'] = defaults('Roman')['dark_noise']
+            # TODO logging to inform user of default
+        else:
+            # TODO validate
+            pass
+        if 'nonlinearity' not in engine_params.keys():
+            engine_params['nonlinearity'] = defaults('Roman')['nonlinearity']
+            # TODO logging to inform user of default
+        else:
+            # TODO validate
+            pass
+        if 'ipc' not in engine_params.keys():
+            engine_params['ipc'] = defaults('Roman')['ipc']
+            # TODO logging to inform user of default
+        else:
+            # TODO validate
+            pass
+        if 'read_noise' not in engine_params.keys():
+            engine_params['read_noise'] = defaults('Roman')['read_noise']
+            # TODO logging to inform user of default
+        else:
+            # TODO validate
+            pass
+        return engine_params
+    elif instrument_name.casefold() == 'HWO':
+        if 'rng_seed' not in engine_params.keys():
+            engine_params['rng_seed'] = defaults('HWO')['rng_seed']
+            # TODO logging to inform user of default
+        else:
+            # TODO validate
+            pass
+        if 'sky_background' not in engine_params.keys():
+            engine_params['sky_background'] = defaults('HWO')['sky_background']
+            # TODO logging to inform user of default
+        else:
+            # TODO validate
+            pass
+        if 'detector_effects' not in engine_params.keys():
+            engine_params['detector_effects'] = defaults('HWO')['detector_effects']
+            # TODO logging to inform user of default
+        else:
+            # TODO validate
+            pass
+        if 'poisson_noise' not in engine_params.keys():
+            engine_params['poisson_noise'] = defaults('HWO')['poisson_noise']
+            # TODO logging to inform user of default
+        else:
+            # TODO validate
+            pass
+        if 'dark_noise' not in engine_params.keys():
+            engine_params['dark_noise'] = defaults('HWO')['dark_noise']
+            # TODO logging to inform user of default
+        else:
+            # TODO validate
+            pass
+        if 'read_noise' not in engine_params.keys():
+            engine_params['read_noise'] = defaults('HWO')['read_noise']
+            # TODO logging to inform user of default
+        else:
+            # TODO validate
+            pass
+        return engine_params
+    else:
+        super().instrument_not_supported(instrument_name)
 
-    Returns
-    -------
-    dict
-        A dictionary containing the following keys:
 
-        - rng_seed: int, default is 42
-        - sky_background: bool, default is True
-        - detector_effects: bool, default is True
-        - poisson_noise: bool, default is True
-        - dark_noise: bool, default is True
-        - read_noise: bool, default is True
-    """
-    return {
-        'rng_seed': 42,
-        'sky_background': True,
-        'detector_effects': True,
-        'poisson_noise': True,
-        'dark_noise': True,
-        'read_noise': True,
-    }
-
-
-def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=default_roman_engine_params(),
+def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=defaults('Roman'),
                        verbose=False, **kwargs):
     # get detector and detector position
     detector = synthetic_image.instrument_params['detector']
@@ -289,7 +356,7 @@ def get_roman_sky_background(instrument, bands, sca, exposure_time, num_pix, ove
     return bkgs
 
 
-def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=default_hwo_engine_params(), verbose=False,
+def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=defaults('HWO'), verbose=False,
                      **kwargs):
     # get optional kwargs
     gsparams_kwargs = kwargs.get('gsparams_kwargs', {})
@@ -410,10 +477,44 @@ def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=def
 
 
 def get_gaussian_psf(fwhm, flux=1.):
+    """
+    Generate a Gaussian Point Spread Function (PSF) using GalSim.
+
+    Parameters
+    ----------
+    fwhm : float
+        Full width at half maximum.
+    flux : float, optional
+        Transmission. Default is 1.
+
+    Returns
+    -------
+    galsim.Gaussian
+        A GalSim Gaussian object representing the PSF.
+    """
     return galsim.Gaussian(fwhm=fwhm, flux=flux)
 
 
-def get_roman_psf(band, detector, detector_position, pupil_bin=1):
+def get_roman_psf(band, detector=1, detector_position=(2048, 2048), pupil_bin=1):
+    """
+    Generate a Point Spread Function (PSF) for the Roman Space Telescope using GalSim. Note that mejiro's preferred method of generating Roman PSFs is using `STPSF`.
+
+    Parameters
+    ----------
+    band : str
+        The band for which the PSF is to be generated.
+    detector : int, optional
+        The Roman detector number (SCA), by default 1.
+    detector_position : tuple of float, optional
+        The position on the detector in pixels, by default (2048, 2048).
+    pupil_bin : int, optional
+        The binning factor for the pupil plane, by default 1.
+
+    Returns
+    -------
+    galsim.GSObject
+        The PSF object for the specified parameters.
+    """
     return galsim.roman.getPSF(SCA=detector,
                                SCA_pos=galsim.PositionD(*detector_position),
                                bandpass=None,
@@ -421,103 +522,20 @@ def get_roman_psf(band, detector, detector_position, pupil_bin=1):
                                pupil_bin=pupil_bin)
 
 
-def validate_roman_engine_params(engine_params):
-    if 'rng_seed' not in engine_params.keys():
-        engine_params['rng_seed'] = default_roman_engine_params()['rng_seed']  # TODO is this necessary? doesn't GalSim do this?
-        # TODO logging to inform user of default
-    else:
-        # TODO validate
-        pass
-    if 'sky_background' not in engine_params.keys():
-        engine_params['sky_background'] = default_roman_engine_params()['sky_background']
-        # TODO logging to inform user of default
-    else:
-        # TODO validate
-        pass
-    if 'detector_effects' not in engine_params.keys():
-        engine_params['detector_effects'] = default_roman_engine_params()['detector_effects']
-        # TODO logging to inform user of default
-    else:
-        # TODO validate
-        pass
-    if 'poisson_noise' not in engine_params.keys():
-        engine_params['poisson_noise'] = default_roman_engine_params()['poisson_noise']
-        # TODO logging to inform user of default
-    else:
-        # TODO validate
-        pass
-    if 'reciprocity_failure' not in engine_params.keys():
-        engine_params['reciprocity_failure'] = default_roman_engine_params()['reciprocity_failure']
-        # TODO logging to inform user of default
-    else:
-        # TODO validate
-        pass
-    if 'dark_noise' not in engine_params.keys():
-        engine_params['dark_noise'] = default_roman_engine_params()['dark_noise']
-        # TODO logging to inform user of default
-    else:
-        # TODO validate
-        pass
-    if 'nonlinearity' not in engine_params.keys():
-        engine_params['nonlinearity'] = default_roman_engine_params()['nonlinearity']
-        # TODO logging to inform user of default
-    else:
-        # TODO validate
-        pass
-    if 'ipc' not in engine_params.keys():
-        engine_params['ipc'] = default_roman_engine_params()['ipc']
-        # TODO logging to inform user of default
-    else:
-        # TODO validate
-        pass
-    if 'read_noise' not in engine_params.keys():
-        engine_params['read_noise'] = default_roman_engine_params()['read_noise']
-        # TODO logging to inform user of default
-    else:
-        # TODO validate
-        pass
-    return engine_params
-
-
-def validate_hwo_engine_params(engine_params):
-    if 'rng_seed' not in engine_params.keys():
-        engine_params['rng_seed'] = default_hwo_engine_params()['rng_seed']  # TODO is this necessary? doesn't GalSim do this?
-        # TODO logging to inform user of default
-    else:
-        # TODO validate
-        pass
-    if 'sky_background' not in engine_params.keys():
-        engine_params['sky_background'] = default_hwo_engine_params()['sky_background']
-        # TODO logging to inform user of default
-    else:
-        # TODO validate
-        pass
-    if 'detector_effects' not in engine_params.keys():
-        engine_params['detector_effects'] = default_hwo_engine_params()['detector_effects']
-        # TODO logging to inform user of default
-    else:
-        # TODO validate
-        pass
-    if 'poisson_noise' not in engine_params.keys():
-        engine_params['poisson_noise'] = default_hwo_engine_params()['poisson_noise']
-        # TODO logging to inform user of default
-    else:
-        # TODO validate
-        pass
-    if 'dark_noise' not in engine_params.keys():
-        engine_params['dark_noise'] = default_hwo_engine_params()['dark_noise']
-        # TODO logging to inform user of default
-    else:
-        # TODO validate
-        pass
-    if 'read_noise' not in engine_params.keys():
-        engine_params['read_noise'] = default_hwo_engine_params()['read_noise']
-        # TODO logging to inform user of default
-    else:
-        # TODO validate
-        pass
-    return engine_params
-
-
 def get_empty_image(num_pix, pixel_scale):
+    """
+    Create an empty image using GalSim.
+
+    Parameters
+    ----------
+    num_pix : int
+        The number of pixels along each dimension of the image.
+    pixel_scale : float
+        The scale of each pixel in the image.
+
+    Returns
+    -------
+    galsim.ImageF
+        An empty image with the specified dimensions and pixel scale.
+    """
     return galsim.ImageF(num_pix, num_pix, scale=pixel_scale)

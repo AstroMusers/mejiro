@@ -5,31 +5,25 @@ from lenstronomy.SimulationAPI.sim_api import SimAPI
 from mejiro.utils import util
 
 
-def default_roman_engine_params():
-    """
-    Returns the default parameters for Roman image simulation with the lenstronomy engine.
-
-    Returns
-    -------
-    dict
-        A dictionary containing the following keys:
-
-        - kwargs_numerics : dict, a dictionary containing numerical settings for the image simulation:
-
-            - supersampling_factor: int, default is 3
-            - compute_mode: str, default is 'regular'
-        - noise : bool, default is True
-    """
-    return {
-        'kwargs_numerics': {
-            'supersampling_factor': 3,
-            'compute_mode': 'regular'
-        },
-        'noise': True
-    }
+def defaults(instrument_name):
+    if instrument_name.casefold() == 'Roman':
+        return {
+            'kwargs_numerics': {
+                'supersampling_factor': 3,
+                'compute_mode': 'regular'
+            },
+            'noise': True
+        }
+    else:
+        super().instrument_not_supported(instrument_name)
 
 
-def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=default_roman_engine_params(),
+def validate_engine_params(engine_params):
+    # TODO implement
+    pass
+
+
+def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=defaults('Roman'),
                        verbose=False, **kwargs):
     strong_lens = synthetic_image.strong_lens
     band = synthetic_image.band
@@ -80,7 +74,3 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
         return total_image, lens_surface_brightness, source_surface_brightness, psf, noise
     else:
         return total_image, psf, noise
-
-
-def validate_roman_engine_params(engine_params):
-    pass

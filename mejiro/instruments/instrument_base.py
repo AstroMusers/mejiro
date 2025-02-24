@@ -17,10 +17,6 @@ class InstrumentBase(ABC):
     def get_pixel_scale(self, band):
         pass
 
-    # @abstractmethod
-    # def get_zeropoint_magnitude(self, band, detector=None):
-    #     pass
-
     @abstractmethod
     def validate_instrument_params(params):
         pass

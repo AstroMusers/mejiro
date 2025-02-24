@@ -1,9 +1,5 @@
-# Pandeia documentation: https://jwst-docs.stsci.edu/jwst-exposure-time-calculator-overview/jwst-etc-pandeia-engine-tutorial#gsc.tab=0
-
-import datetime
 import numpy as np
 import os
-import time
 from lenstronomy.SimulationAPI.ObservationConfig.Roman import Roman
 from lenstronomy.Util import data_util
 from pandeia.engine.calc_utils import build_default_calc, build_default_source
@@ -13,50 +9,74 @@ from tqdm import tqdm
 from mejiro.helpers.roman_params import RomanParameters
 
 
-def default_roman_engine_params():
-    """
-    Returns the default parameters for Roman image simulation with the Pandeia engine.
-
-    Returns
-    -------
-    dict
-        A dictionary containing the following keys:
-
-        - num_samples: int, default is 10000
-        - calculation: dict, containing:
-            - noise: dict, containing:
-                - crs: bool, default is True
-                - dark: bool, default is True
-                - excess: bool, default is False
-                - ffnoise: bool, default is True
-                - readnoise: bool, default is True
-                - scatter: bool, default is False
-            - effects: dict, containing:
-                - saturation: bool, default is True
-        - background: str, default is `minzodi`
-        - background_level: str, default is `medium`
-    """
-    return {
-        'num_samples': 10000,
-        'calculation': {
-            'noise': {
-                'crs': True,
-                'dark': True,
-                'excess': False,  # Roman's detectors are H4RG which do not have excess noise parameters
-                'ffnoise': True,
-                'readnoise': True,
-                'scatter': False  # doesn't seem to have an effect
+def defaults(instrument_name):
+    if instrument_name.casefold() == 'Roman':
+        return {
+            'num_samples': 10000,
+            'calculation': {
+                'noise': {
+                    'crs': True,
+                    'dark': True,
+                    'excess': False,  # Roman's detectors are H4RG which do not have excess noise parameters
+                    'ffnoise': True,
+                    'readnoise': True,
+                    'scatter': False  # doesn't seem to have an effect
+                },
+                'effects': {
+                    'saturation': True  # NB only has an effect for bright (>19mag) sources
+                }
             },
-            'effects': {
-                'saturation': True  # NB only has an effect for bright (>19mag) sources
-            }
-        },
-        'background': 'minzodi',
-        'background_level': 'medium'  # 'benchmark', 'none
-    }
+            'background': 'minzodi',
+            'background_level': 'medium'  # 'benchmark', 'none
+        }
+    else:
+        super().instrument_not_supported(instrument_name)
 
 
-def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=default_roman_engine_params(),
+def validate_engine_params(instrument_name, engine_params):
+    if instrument_name.casefold() == 'Roman':
+        if 'num_samples' not in engine_params.keys():
+            engine_params['num_samples'] = defaults('Roman')[
+                'num_samples']  # TODO is this necessary? doesn't GalSim do this?
+            # TODO logging to inform user of default
+        else:
+            # TODO validate
+            # TODO it doesn't like floats (e.g. 1e4), so make sure int
+            pass
+        if 'calculation' not in engine_params.keys():
+            engine_params['calculation'] = defaults('Roman')['calculation']
+            # TODO logging to inform user of default
+        else:
+            if 'noise' not in engine_params['calculation'].keys():
+                engine_params['calculation']['noise'] = defaults('Roman')['calculation']['noise']
+                # TODO logging to inform user of default
+            else:
+                # TODO validate
+                pass
+            if 'effects' not in engine_params['calculation'].keys():
+                engine_params['calculation']['effects'] = defaults('Roman')['calculation']['effects']
+                # TODO logging to inform user of default
+            else:
+                # TODO validate
+                pass
+        if 'background' not in engine_params.keys():
+            engine_params['background'] = defaults('Roman')['background']
+            # TODO logging to inform user of default
+        else:
+            # TODO validate
+            pass
+        if 'background_level' not in engine_params.keys():
+            engine_params['background_level'] = defaults('Roman')['background_level']
+            # TODO logging to inform user of default
+        else:
+            # TODO validate
+            pass
+        return engine_params
+    else:
+        super().instrument_not_supported(instrument_name)
+
+
+def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=defaults('Roman'),
                        verbose=False, **kwargs):
     band = synthetic_image.band
     image = synthetic_image.image
@@ -247,43 +267,3 @@ def _get_norm_wave(band):
     filter_center_dict = roman_params.get_filter_centers()
 
     return filter_center_dict[band]
-
-
-def validate_roman_engine_params(engine_params):
-    if 'num_samples' not in engine_params.keys():
-        engine_params['num_samples'] = default_roman_engine_params()[
-            'num_samples']  # TODO is this necessary? doesn't GalSim do this?
-        # TODO logging to inform user of default
-    else:
-        # TODO validate
-        # TODO it doesn't like floats (e.g. 1e4), so make sure int
-        pass
-    if 'calculation' not in engine_params.keys():
-        engine_params['calculation'] = default_roman_engine_params()['calculation']
-        # TODO logging to inform user of default
-    else:
-        if 'noise' not in engine_params['calculation'].keys():
-            engine_params['calculation']['noise'] = default_roman_engine_params()['calculation']['noise']
-            # TODO logging to inform user of default
-        else:
-            # TODO validate
-            pass
-        if 'effects' not in engine_params['calculation'].keys():
-            engine_params['calculation']['effects'] = default_roman_engine_params()['calculation']['effects']
-            # TODO logging to inform user of default
-        else:
-            # TODO validate
-            pass
-    if 'background' not in engine_params.keys():
-        engine_params['background'] = default_roman_engine_params()['background']
-        # TODO logging to inform user of default
-    else:
-        # TODO validate
-        pass
-    if 'background_level' not in engine_params.keys():
-        engine_params['background_level'] = default_roman_engine_params()['background_level']
-        # TODO logging to inform user of default
-    else:
-        # TODO validate
-        pass
-    return engine_params
