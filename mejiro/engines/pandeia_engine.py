@@ -11,7 +11,7 @@ from mejiro.instruments.roman import Roman
 class PandeiaEngine(Engine):
     @staticmethod
     def defaults(instrument_name):
-        if instrument_name.casefold() == 'Roman':
+        if instrument_name.lower() == 'roman':
             return {
                 'num_samples': 10000,
                 'calculation': {
@@ -36,7 +36,7 @@ class PandeiaEngine(Engine):
 
     @staticmethod
     def validate_engine_params(instrument_name, engine_params):
-        if instrument_name.casefold() == 'Roman':
+        if instrument_name.lower() == 'roman':
             if 'num_samples' not in engine_params.keys():
                 engine_params['num_samples'] = PandeiaEngine.defaults('Roman')[
                     'num_samples']  # TODO is this necessary? doesn't GalSim do this?

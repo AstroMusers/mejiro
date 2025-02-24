@@ -8,7 +8,7 @@ from mejiro.utils import util
 class LenstronomyEngine(Engine):
     @staticmethod
     def defaults(instrument_name):
-        if instrument_name.casefold() == 'Roman':
+        if instrument_name.lower() == 'roman':
             return {
                 'kwargs_numerics': {
                     'supersampling_factor': 3,
