@@ -11,7 +11,7 @@ from mejiro.utils import roman_util
 class STPSFEngine(Engine):
     @staticmethod
     def defaults(instrument_name):
-        if instrument_name.casefold() == 'Roman':
+        if instrument_name.lower() == 'roman':
             return {}  # TODO implement
         else:
             Engine.instrument_not_supported(instrument_name)
@@ -20,6 +20,17 @@ class STPSFEngine(Engine):
     def validate_engine_params(engine_params):
         # TODO implement
         pass
+
+    @staticmethod
+    def get_psf_kwargs(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None,
+                    verbose=False):
+        kernel = STPSFEngine.get_roman_psf(band, detector, detector_position, oversample, num_pix,
+                                            check_cache=check_cache, psf_cache_dir=psf_cache_dir, verbose=verbose)
+        return {
+            'psf_type': 'PIXEL', 
+            'kernel_point_source': kernel, 
+            'point_source_supersampling_factor': oversample
+        }
 
     @staticmethod
     def get_roman_psf(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None,
