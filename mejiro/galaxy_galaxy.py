@@ -7,7 +7,6 @@ from mejiro.strong_lens import StrongLens
 
 
 class GalaxyGalaxy(StrongLens):
-
     def __init__(
             self,
             name,
@@ -16,6 +15,25 @@ class GalaxyGalaxy(StrongLens):
             kwargs_params,
             magnitudes={}
     ):
+        """
+        Class for galaxy-galaxy strong lenses.
+
+        At minimum, a unique name and the parameterization in lenstronomy (`kwargs_model` and `kwargs_params`) must be provided. If the light models have amplitudes (`amp`), they will be used. If not, the AB magnitudes with their corresponding filters must be provided in the `magnitudes` dictionary.
+
+        Parameters
+        ----------
+        name : str
+            The name of the galaxy-galaxy strong lens. Should be unique.
+        coords : astropy.coordinates.SkyCoord or None
+            The coordinates of the system.
+        kwargs_model : dict
+            Dictionary in lenstronomy format containing model parameters.
+        kwargs_params : dict
+            Dictionary in lenstronomy format containing parameter values.
+        magnitudes : dict, optional
+            Dictionary containing magnitudes for lens and source, structured as
+            {'lens': {'band': mag, ...}, 'source': {'band': mag, ...}}. 
+        """
         super().__init__(name=name,
                          coords=coords, 
                          kwargs_model=kwargs_model,
@@ -37,11 +55,31 @@ class GalaxyGalaxy(StrongLens):
         self.lens_cosmo = None
     
     def get_lens_cosmo(self):
+        """
+        Get or create the LensCosmo instance, a lenstronomy class that supports physical unit calculations.
+
+        Returns
+        -------
+        LensCosmo
+            The lenstronomy.Cosmo.lens_cosmo.LensCosmo instance for the system.
+        """
         if self.lens_cosmo is None:
             self.lens_cosmo = LensCosmo(self.z_lens, self.z_source, cosmo=self.cosmo)
         return self.lens_cosmo
 
     def get_image_positions(self):
+        """
+        Calculate the image positions from the source position and lensing mass model.
+
+        Returns
+        -------
+        list of tuples
+            A list of (x, y) tuples representing the image positions.
+
+        Notes
+        -----
+        The source position is extracted from the first element of `kwargs_source`.
+        """
         from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
 
         source_x = self.kwargs_source[0]['center_x']
@@ -49,8 +87,8 @@ class GalaxyGalaxy(StrongLens):
 
         solver = LensEquationSolver(self.lens_model)
         return solver.image_position_from_source(sourcePos_x=source_x, 
-                                                             sourcePos_y=source_y,
-                                                             kwargs_lens=self.kwargs_lens)
+                                                 sourcePos_y=source_y,
+                                                 kwargs_lens=self.kwargs_lens)
 
     @property
     def kwargs_lens(self):
