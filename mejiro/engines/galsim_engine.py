@@ -14,7 +14,6 @@ class GalSimEngine(Engine):
         if instrument_name.lower() == 'roman':
             return {
                 'rng_seed': 42,
-                'gsparams_kwargs': {},
                 'sky_background': True,
                 'detector_effects': True,
                 'poisson_noise': True,
@@ -27,7 +26,6 @@ class GalSimEngine(Engine):
         elif instrument_name.lower() == 'hwo':
             return {
                 'rng_seed': 42,
-                'gsparams_kwargs': {},
                 'sky_background': True,
                 'detector_effects': True,
                 'poisson_noise': True,
@@ -43,12 +41,6 @@ class GalSimEngine(Engine):
         if instrument_name.lower() == 'roman':
             if 'rng_seed' not in engine_params.keys():
                 engine_params['rng_seed'] = GalSimEngine.defaults('Roman')['rng_seed']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
-            if 'gsparams_kwargs' not in engine_params.keys():
-                engine_params['gsparams_kwargs'] = GalSimEngine.defaults('Roman')['gsparams_kwargs']
                 # TODO logging to inform user of default
             else:
                 # TODO validate
@@ -109,12 +101,6 @@ class GalSimEngine(Engine):
             else:
                 # TODO validate
                 pass
-            if 'gsparams_kwargs' not in engine_params.keys():
-                engine_params['gsparams_kwargs'] = GalSimEngine.defaults('HWO')['gsparams_kwargs']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
             if 'sky_background' not in engine_params.keys():
                 engine_params['sky_background'] = GalSimEngine.defaults('HWO')['sky_background']
                 # TODO logging to inform user of default
@@ -165,16 +151,8 @@ class GalSimEngine(Engine):
         # build rng
         rng = galsim.UniformDeviate(engine_params['rng_seed'])
 
-        # create interpolated image
-        total_interp = galsim.InterpolatedImage(galsim.Image(synthetic_image.image, xmin=0, ymin=0),
-                                                scale=synthetic_image.pixel_scale,
-                                                flux=np.sum(synthetic_image.image) * exposure_time, gsparams=galsim.GSParams(**engine_params['gsparams_kwargs']))
-
-        # TODO TEMP cut this out once I'm sure I don't need to do the interpolated image
-        im = galsim.ImageF(synthetic_image.num_pix, synthetic_image.num_pix,
-                        scale=synthetic_image.pixel_scale)
-        im.setOrigin(0, 0)
-        image = total_interp.drawImage(im)
+        # import image to GalSim
+        image = galsim.Image(array=synthetic_image.image * exposure_time, scale=synthetic_image.pixel_scale, xmin=0, ymin=0, copy=True)
 
         # add sky background
         if engine_params['sky_background']:
@@ -546,7 +524,7 @@ class GalSimEngine(Engine):
 
         Returns
         -------
-        galsim.ImageF
-            An empty image with the specified dimensions and pixel scale.
+        galsim.ImageD
+            An empty image with the specified dimensions and pixel scale with dtype float64.
         """
-        return galsim.ImageF(num_pix, num_pix, scale=pixel_scale)
+        return galsim.ImageD(num_pix, num_pix, scale=pixel_scale)
