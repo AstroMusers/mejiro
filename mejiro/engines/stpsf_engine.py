@@ -108,6 +108,7 @@ class STPSFEngine(Engine):
         str
             A unique identifier string for the PSF.
         """
+        detector = roman_util.get_sca_int(detector)
         return f'{band}_{detector}_{detector_position[0]}_{detector_position[1]}_{oversample}_{num_pix}'
 
 

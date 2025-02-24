@@ -44,6 +44,7 @@ class SyntheticImage:
         self.instrument_params = instrument_params
         self.band = band
         self.fov_arcsec = fov_arcsec
+        self.pieces = pieces
         self.verbose = verbose
 
         # calculate size of scene
@@ -129,7 +130,7 @@ class SyntheticImage:
                                        lens_light_add=True, 
                                        point_source_add=True)
 
-        if pieces:
+        if self.pieces:
             self.lens_surface_brightness = image_model.lens_surface_brightness(kwargs_lens_light=self.strong_lens.kwargs_lens_light, unconvolved=True)
             self.source_surface_brightness = image_model.source_surface_brightness(kwargs_source=self.strong_lens.kwargs_source, kwargs_lens=self.strong_lens.kwargs_lens, kwargs_extinction=self.strong_lens.kwargs_extinction, kwargs_special=self.strong_lens.kwargs_special, unconvolved=True)
         else:

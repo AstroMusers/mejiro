@@ -11,9 +11,10 @@ from mejiro.utils import roman_util
 class GalSimEngine(Engine):
     @staticmethod
     def defaults(instrument_name):
-        if instrument_name.casefold() == 'Roman':
+        if instrument_name.lower() == 'roman':
             return {
                 'rng_seed': 42,
+                'gsparams_kwargs': {},
                 'sky_background': True,
                 'detector_effects': True,
                 'poisson_noise': True,
@@ -23,9 +24,10 @@ class GalSimEngine(Engine):
                 'ipc': True,
                 'read_noise': True,
             }
-        elif instrument_name.casefold() == 'HWO':
+        elif instrument_name.lower() == 'hwo':
             return {
                 'rng_seed': 42,
+                'gsparams_kwargs': {},
                 'sky_background': True,
                 'detector_effects': True,
                 'poisson_noise': True,
@@ -38,9 +40,15 @@ class GalSimEngine(Engine):
 
     @staticmethod
     def validate_engine_params(instrument_name, engine_params):
-        if instrument_name.casefold() == 'Roman':
+        if instrument_name.lower() == 'roman':
             if 'rng_seed' not in engine_params.keys():
                 engine_params['rng_seed'] = GalSimEngine.defaults('Roman')['rng_seed']
+                # TODO logging to inform user of default
+            else:
+                # TODO validate
+                pass
+            if 'gsparams_kwargs' not in engine_params.keys():
+                engine_params['gsparams_kwargs'] = GalSimEngine.defaults('Roman')['gsparams_kwargs']
                 # TODO logging to inform user of default
             else:
                 # TODO validate
@@ -94,9 +102,15 @@ class GalSimEngine(Engine):
                 # TODO validate
                 pass
             return engine_params
-        elif instrument_name.casefold() == 'HWO':
+        elif instrument_name.lower() == 'hwo':
             if 'rng_seed' not in engine_params.keys():
                 engine_params['rng_seed'] = GalSimEngine.defaults('HWO')['rng_seed']
+                # TODO logging to inform user of default
+            else:
+                # TODO validate
+                pass
+            if 'gsparams_kwargs' not in engine_params.keys():
+                engine_params['gsparams_kwargs'] = GalSimEngine.defaults('HWO')['gsparams_kwargs']
                 # TODO logging to inform user of default
             else:
                 # TODO validate
@@ -137,14 +151,16 @@ class GalSimEngine(Engine):
 
 
     @staticmethod
-    def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=defaults('Roman'),
-                        verbose=False, **kwargs):
+    def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params={},
+                        verbose=False):
+        # set engine params
+        if not engine_params:
+            engine_params = GalSimEngine.defaults('Roman')
+        else:
+            engine_params = GalSimEngine.validate_engine_params('Roman', engine_params)
+
         # get detector and detector position
         detector = synthetic_image.instrument_params['detector']
-        detector_position = synthetic_image.instrument_params['detector_position']
-
-        # get optional kwargs
-        gsparams_kwargs = kwargs.get('gsparams_kwargs', {})
 
         # build rng
         rng = galsim.UniformDeviate(engine_params['rng_seed'])
@@ -152,42 +168,18 @@ class GalSimEngine(Engine):
         # create interpolated image
         total_interp = galsim.InterpolatedImage(galsim.Image(synthetic_image.image, xmin=0, ymin=0),
                                                 scale=synthetic_image.pixel_scale,
-                                                flux=np.sum(synthetic_image.image) * exposure_time)
+                                                flux=np.sum(synthetic_image.image) * exposure_time, gsparams=galsim.GSParams(**engine_params['gsparams_kwargs']))
 
-        # get PSF
-        if psf is None:
-            from mejiro.engines import stpsf_engine
-
-            check_cache = kwargs.get('check_cache', True)
-            psf_cache_dir = kwargs.get('psf_cache_dir', '/data/bwedig/mejiro/cached_psfs')
-            calc_psf_kwargs = kwargs.get('calc_psf_kwargs', {})
-
-            psf = stpsf_engine.get_roman_psf(band=synthetic_image.band,
-                                            detector=detector,
-                                            detector_position=detector_position,
-                                            oversample=synthetic_image.oversample,
-                                            num_pix=101,  # NB WebbPSF wants the native pixel size
-                                            check_cache=check_cache,
-                                            psf_cache_dir=psf_cache_dir,
-                                            verbose=verbose,
-                                            **calc_psf_kwargs)
-        psf_interp = galsim.InterpolatedImage(galsim.Image(psf, scale=synthetic_image.pixel_scale))
-
-        # convolve with PSF
-        convolved = galsim.Convolve(total_interp, psf_interp, gsparams=galsim.GSParams(**gsparams_kwargs))
-
-        # draw image at the native pixel scale
-        im = galsim.ImageF(synthetic_image.native_num_pix, synthetic_image.native_num_pix,
-                        scale=synthetic_image.native_pixel_scale)
+        # TODO TEMP cut this out once I'm sure I don't need to do the interpolated image
+        im = galsim.ImageF(synthetic_image.num_pix, synthetic_image.num_pix,
+                        scale=synthetic_image.pixel_scale)
         im.setOrigin(0, 0)
-        image = convolved.drawImage(im)
-
-        # NB from here on out, the image is at the native pixel scale, i.e., the image is NOT oversampled
+        image = total_interp.drawImage(im)
 
         # add sky background
         if engine_params['sky_background']:
-            bkgs = GalSimEngine.get_roman_sky_background(synthetic_image.instrument, synthetic_image.band, detector, exposure_time,
-                                            num_pix=synthetic_image.native_num_pix, oversample=1)
+            bkgs = GalSimEngine.get_roman_sky_background(synthetic_image.band, detector, exposure_time,
+                                            num_pix=synthetic_image.num_pix)
             bkg = bkgs[synthetic_image.band]
             image += bkg
 
@@ -296,7 +288,7 @@ class GalSimEngine(Engine):
 
         if synthetic_image.pieces:
             lens_image = GalSimEngine.get_piece(synthetic_image.lens_surface_brightness, synthetic_image.pixel_scale,
-                                synthetic_image.native_pixel_scale, synthetic_image.native_num_pix, exposure_time,
+                                synthetic_image.pixel_scale, synthetic_image.pixel_scale, exposure_time,
                                 psf_interp, gsparams_kwargs)
             source_image = GalSimEngine.get_piece(synthetic_image.source_surface_brightness, synthetic_image.pixel_scale,
                                     synthetic_image.native_pixel_scale, synthetic_image.native_num_pix, exposure_time,
@@ -326,7 +318,11 @@ class GalSimEngine(Engine):
 
 
     @staticmethod
-    def get_roman_sky_background(instrument, bands, sca, exposure_time, num_pix, oversample):
+    def get_roman_sky_background(bands, sca, exposure_time, num_pix):
+        from mejiro.instruments.roman import Roman
+
+        roman = Roman()
+
         # was only one band provided as a string? or a list of bands?
         if not isinstance(bands, list):
             bands = [bands]
@@ -337,7 +333,7 @@ class GalSimEngine(Engine):
             sky_image = galsim.ImageF(num_pix, num_pix)
 
             # get minimum zodiacal light in this band in counts/pixel/sec
-            sky_level = instrument.get_min_zodi(band, sca)
+            sky_level = roman.get_min_zodi(band, sca)
 
             # "For observations at high galactic latitudes, the Zodi intensity is typically ~1.5x the minimum" (https://roman.gsfc.nasa.gov/science/WFI_technical.html)
             sky_level *= 1.5
@@ -346,7 +342,7 @@ class GalSimEngine(Engine):
             sky_level *= (1. + galsim.roman.stray_light_fraction)
 
             # get thermal background in this band in counts/pixel/sec
-            thermal_bkg = instrument.get_thermal_bkg(band, sca)
+            thermal_bkg = roman.get_thermal_bkg(band, sca)
 
             # combine the two backgrounds (still counts/pixel/sec)
             sky_image += sky_level
@@ -355,8 +351,8 @@ class GalSimEngine(Engine):
             # convert to counts/pixel
             sky_image *= exposure_time
 
-            # if the image is oversampled, the sky background must be spread out over more pixels
-            sky_image /= oversample ** 2
+            # # if the image is oversampled, the sky background must be spread out over more pixels
+            # sky_image /= oversample ** 2
 
             bkgs[band] = sky_image
 
@@ -364,10 +360,13 @@ class GalSimEngine(Engine):
 
 
     @staticmethod
-    def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params=defaults('HWO'), verbose=False,
+    def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params={}, verbose=False,
                         **kwargs):
-        # get optional kwargs
-        gsparams_kwargs = kwargs.get('gsparams_kwargs', {})
+        # set engine params
+        if not engine_params:
+            engine_params = GalSimEngine.defaults('HWO')
+        else:
+            engine_params = GalSimEngine.validate_engine_params('HWO', engine_params)
 
         # build rng
         rng = galsim.UniformDeviate(engine_params['rng_seed'])
@@ -384,6 +383,7 @@ class GalSimEngine(Engine):
                                     scale=synthetic_image.native_pixel_scale)
 
         # convolve with PSF
+        gsparams_kwargs = engine_params['gsparams_kwargs']
         convolved = galsim.Convolve(total_interp, psf_interp, gsparams=galsim.GSParams(**gsparams_kwargs))
 
         # draw image at the native pixel scale
