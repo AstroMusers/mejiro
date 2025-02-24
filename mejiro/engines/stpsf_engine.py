@@ -14,7 +14,7 @@ class STPSFEngine(Engine):
         if instrument_name.casefold() == 'Roman':
             return {}  # TODO implement
         else:
-            Engine().instrument_not_supported(instrument_name)
+            Engine.instrument_not_supported(instrument_name)
     
     @staticmethod
     def validate_engine_params(engine_params):

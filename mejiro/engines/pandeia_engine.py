@@ -31,7 +31,7 @@ class PandeiaEngine(Engine):
                 'background_level': 'medium'  # 'benchmark', 'none
             }
         else:
-            Engine().instrument_not_supported(instrument_name)
+            Engine.instrument_not_supported(instrument_name)
 
 
     @staticmethod
@@ -75,7 +75,7 @@ class PandeiaEngine(Engine):
                 pass
             return engine_params
         else:
-            Engine().instrument_not_supported(instrument_name)
+            Engine.instrument_not_supported(instrument_name)
 
 
     @staticmethod

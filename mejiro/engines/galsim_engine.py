@@ -33,7 +33,7 @@ class GalSimEngine(Engine):
                 'read_noise': True,
             }
         else:
-            Engine().instrument_not_supported(instrument_name)
+            Engine.instrument_not_supported(instrument_name)
 
 
     @staticmethod
@@ -133,7 +133,7 @@ class GalSimEngine(Engine):
                 pass
             return engine_params
         else:
-            Engine().instrument_not_supported(instrument_name)
+            Engine.instrument_not_supported(instrument_name)
 
 
     @staticmethod

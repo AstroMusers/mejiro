@@ -16,6 +16,7 @@ class Engine(ABC):
     def validate_engine_params(self, instrument_name, engine_params):
         pass
 
+    @staticmethod
     def instrument_not_supported(instrument_name):
         """
         Raise an error if the instrument is not supported.
