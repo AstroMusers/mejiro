@@ -53,6 +53,30 @@ class GalaxyGalaxy(StrongLens):
         
         # fields to initialize: these can be computed on demand
         self.lens_cosmo = None
+        self.realization = None
+
+    def add_realization(self, realization):
+        """
+        Add a pyHalo dark matter subhalo realization to the mass model of the system. See the [pyHalo documentation](https://github.com/dangilman/pyHalo) for details.
+
+        Parameters
+        ----------
+        realization : pyHalo realization object
+            See the pyHalo documentation for details.
+        """
+        self.realization = realization
+
+        # get lenstronomy lensing quantities
+        halo_lens_model_list, halo_redshift_array, kwargs_halos, _ = realization.lensing_quantities(
+            add_mass_sheet_correction=True)
+        
+        # halo_lens_model_list and kwargs_halos are lists, but halo_redshift_array is ndarray
+        halo_redshift_list = list(halo_redshift_array)
+
+        # add subhalos to lenstronomy objects that model the strong lens
+        self.kwargs_lens += kwargs_halos
+        self.lens_redshift_list += halo_redshift_list
+        self.lens_model_list += halo_lens_model_list
     
     def get_lens_cosmo(self):
         """
@@ -142,14 +166,42 @@ class GalaxyGalaxy(StrongLens):
     def lens_model_list(self):
         return self.kwargs_model.get('lens_model_list', None)
     
+    @lens_model_list.setter
+    def lens_model_list(self, value):
+        self.kwargs_model['lens_model_list'] = value
+    
     @property
     def lens_light_model_list(self):
         return self.kwargs_model.get('lens_light_model_list', None)
+    
+    @lens_light_model_list.setter
+    def lens_light_model_list(self, value):
+        self.kwargs_model['lens_light_model_list'] = value
     
     @property
     def source_light_model_list(self):
         return self.kwargs_model.get('source_light_model_list', None)
     
+    @source_light_model_list.setter
+    def source_light_model_list(self, value):
+        self.kwargs_model['source_light_model_list'] = value
+    
+    @property
+    def lens_redshift_list(self):
+        return self.kwargs_model.get('lens_redshift_list', None)
+    
+    @lens_redshift_list.setter
+    def lens_redshift_list(self, value):
+        self.kwargs_model['lens_redshift_list'] = value
+
+    @property
+    def source_redshift_list(self):
+        return self.kwargs_model.get('source_redshift_list', None)
+    
+    @source_redshift_list.setter
+    def source_redshift_list(self, value):
+        self.kwargs_model['source_redshift_list'] = value
+
     @property
     def lens_model(self):
         return LensModel(self.lens_model_list)
