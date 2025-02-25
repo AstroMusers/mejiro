@@ -1,6 +1,7 @@
+import pytest
 from astropy.cosmology import default_cosmology
 
-from mejiro.galaxy_galaxy import GalaxyGalaxy, SampleGG
+from mejiro.galaxy_galaxy import SampleGG
 
 
 def test_init():
@@ -17,14 +18,6 @@ def test_init():
     assert strong_lens.z_lens == 0.2902115249535011
     assert strong_lens.cosmo == default_cosmology.get()
     assert strong_lens.lens_cosmo is None
-
-
-def test_get_lens_cosmo():
-    strong_lens = SampleGG()
-    
-    lens_cosmo = strong_lens.get_lens_cosmo()
-    assert lens_cosmo.z_lens == 0.2902115249535011
-    assert lens_cosmo.z_source == 0.5876899931818929
 
 
 def test_property():
@@ -51,4 +44,24 @@ def test_property():
             'ra_0': 0
         }
     ]
+
+
+def test_get_lens_cosmo():
+    strong_lens = SampleGG()
+    
+    lens_cosmo = strong_lens.get_lens_cosmo()
+    assert lens_cosmo.z_lens == 0.2902115249535011
+    assert lens_cosmo.z_source == 0.5876899931818929
+
+
+def test_get_image_positions():
+    strong_lens = SampleGG()
+    
+    image_positions = strong_lens.get_image_positions()
+    
+    expected_positions = ([1.12731457, -0.56841653], [-1.50967129,  0.57814324])
+    
+    assert len(image_positions) == len(expected_positions)
+    for pos, expected_pos in zip(image_positions, expected_positions):
+        assert pos == pytest.approx(expected_pos, rel=1e-5)
     

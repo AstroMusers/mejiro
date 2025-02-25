@@ -97,8 +97,8 @@ class GalaxyGalaxy(StrongLens):
 
         Returns
         -------
-        list of tuples
-            A list of (x, y) tuples representing the image positions.
+        Tuple of arrays
+            ([x coordinates], [y coordinates]) of the image positions in lenstronomy "angle" units (often, arcseconds).
 
         Notes
         -----
