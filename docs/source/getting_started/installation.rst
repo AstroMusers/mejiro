@@ -21,6 +21,12 @@ Create a conda environment:
 ..     cd slsim
 ..     pip install -e .
 
+To simulate images from *Roman*, you will need to download the `roman-technical-information` repository `here <https://github.com/spacetelescope/roman-technical-information>`__. Then, set the environment variable `ROMAN_TECHNICAL_INFORMATION_PATH` to the path where you downloaded the repository, e.g., in your `.bashrc`:
+
+.. code-block:: bash
+
+    export ROMAN_TECHNICAL_INFORMATION_PATH="/{your_path}/roman-technical-information"
+
 To generate PSFs with ``STPSF`` (formerly ``WebbPSF``), follow the instructions `here <https://stpsf.readthedocs.io/en/latest/installation.html>`__ to download the required data files and set environment variables.
 
 Optional setup: `hwo-tools`
@@ -45,4 +51,4 @@ First-time setup
 3. Modify the ``defaults.machine`` attribute in the file you just copied (``config/config.yaml``) to the name (without extension) of the yaml file created in step 1.
 
 .. warning::
-   Note that this ``hydra``-based configuration will be changed soon.
+   Note that this ``hydra``-based configuration will be changed in v2.0.0.
