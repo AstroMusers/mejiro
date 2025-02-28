@@ -62,10 +62,6 @@ class HWO(Instrument):
         self._set_pixel_scale()  # TODO update
         self._set_psf_fwhm()  # TODO update
 
-    def validate_instrument_params(self, params):
-        # TODO implement this
-        pass
-
     def _set_camera_attribute_from_hwo_tools(self, attribute, unit=None):
         if type(self.camera.recover(attribute)) == u.Quantity:
             values = self.camera.recover(attribute).value
@@ -149,9 +145,6 @@ class HWO(Instrument):
 
     def get_read_noise(self, band):
         return self.read_noise[band]
-
-    def get_bands(self):
-        return self.camera.recover('bandnames')
 
     def _get_index(self, band):
         """
