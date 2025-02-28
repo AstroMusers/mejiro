@@ -1,28 +1,56 @@
 import pytest
+from astropy.units import Quantity
 
 from mejiro.instruments.roman import Roman
 
 
+RTI_PATH = '/nfsdata1/bwedig/STScI/roman-technical-information'
+
+
 def test_init():
-    roman = Roman()
+    roman = Roman(roman_technical_information_path=RTI_PATH)
 
     # check inherited attributes
     assert roman.name == 'Roman'
     assert roman.bands == ['F062', 'F087', 'F106', 'F129', 'F158', 'F184', 'F213', 'F146']
     assert type(roman.engines) == list and len(roman.engines) > 0
 
-    # check values
-    assert roman.pixels_per_axis == 4088
+    # check other attributes
+    assert roman.pixel_scale == Quantity(0.11, 'arcsec / pix')
+    assert roman.version is not None
 
-    # check that all files loaded
-    assert not roman.df.empty, 'roman_spacecraft_and_instrument_parameters DataFrame is empty'
-    assert roman.zp_dict, 'zp_dict is empty'  # NB empty dictionaries evaluate to False
-    assert roman.min_zodi_dict, 'min_zodi_dict is empty'
-    assert roman.thermal_bkg_dict, 'thermal_bkg_dict is empty'
+    # check fields to initialize
+    assert roman.zeropoints is None
+    assert roman.thermal_background is None
+    assert roman.minimum_zodiacal_light is None
+    assert roman.psf_fwhm is None
 
+def test_get_pixel_scale():
+    roman = Roman(roman_technical_information_path=RTI_PATH)
+    assert roman.get_pixel_scale() == Quantity(0.11, 'arcsec / pix')
+
+def test_get_zeropoint_magnitude():
+    roman = Roman(roman_technical_information_path=RTI_PATH)
+    assert roman.get_zeropoint_magnitude('F062', 'SCA01') == pytest.approx(26.57, rel=1e-2)
+    assert roman.zeropoints is not None
+    
+def test_get_minimum_zodiacal_light():
+    roman = Roman(roman_technical_information_path=RTI_PATH)
+    assert roman.get_minimum_zodiacal_light('F062') == Quantity(0.25, 'ct / pix')
+    assert roman.minimum_zodiacal_light is not None
+
+def test_get_thermal_background():
+    roman = Roman(roman_technical_information_path=RTI_PATH)
+    assert roman.get_thermal_background('F062') == Quantity(0.003, 'ct / pix')
+    assert roman.thermal_background is not None
+
+def test_get_psf_fwhm():
+    roman = Roman(roman_technical_information_path=RTI_PATH)
+    assert roman.get_psf_fwhm('F062') == Quantity(0.058, 'arcsec')
+    assert roman.psf_fwhm is not None
 
 def test_validate_instrument_params():
-    roman = Roman()
+    roman = Roman(roman_technical_information_path=RTI_PATH)
 
     # Test valid parameters
     valid_params = {

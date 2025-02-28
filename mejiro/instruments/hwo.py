@@ -3,10 +3,10 @@ from astropy import units as u
 from fractions import Fraction
 from syotools.models import Camera, Telescope
 
-from mejiro.instruments.instrument_base import InstrumentBase
+from mejiro.instruments.instrument import Instrument
 
 
-class HWO(InstrumentBase):
+class HWO(Instrument):
     """
     Habitable Worlds Observatory (HWO) instrument class
 

@@ -1,16 +1,23 @@
-import json
 import os
-import pandas as pd
 import warnings
+import yaml
+from astropy.table import Table
+from astropy.table import QTable
+from astropy.units import Quantity
 
 import mejiro
-from mejiro.instruments.instrument_base import InstrumentBase
-from mejiro.utils import roman_util
+from mejiro.instruments.instrument import Instrument
+from mejiro.utils import roman_util, rti_util
 
 
-class Roman(InstrumentBase):
+ZEROPOINT_PATH = 'data/WideFieldInstrument/Imaging/ZeroPoints/Roman_zeropoints_*.ecsv'
+ZODIACAL_LIGHT_PATH = 'data/WideFieldInstrument/Imaging/ZodiacalLight/zodiacal_light.ecsv'
+THERMAL_BACKGROUND_PATH = 'data/WideFieldInstrument/Imaging/Backgrounds/internal_thermal_backgrounds.ecsv'
+FILTER_PARAMS_PATH = 'data/WideFieldInstrument/Imaging/FiltersSummary/filter_parameters.ecsv'
 
-    def __init__(self):
+
+class Roman(Instrument):
+    def __init__(self, roman_technical_information_path):
         name = 'Roman'
         bands = ['F062', 'F087', 'F106', 'F129', 'F158', 'F184', 'F213', 'F146']
         engines = ['galsim', 'lenstronomy', 'pandeia', 'romanisim']
@@ -21,108 +28,55 @@ class Roman(InstrumentBase):
             engines
         )
 
-        module_path = os.path.dirname(mejiro.__file__)
-        csv_path = os.path.join(module_path, 'data', 'roman_spacecraft_and_instrument_parameters.csv')
-        self.df = pd.read_csv(csv_path)
+        self.pixel_scale = Quantity(0.11, 'arcsec / pix')
+        self.roman_technical_information_path = roman_technical_information_path
 
-        # load SCA-specific zeropoints
-        self.zp_dict = json.load(open(os.path.join(module_path, 'data', 'roman_zeropoint_magnitudes.json')))
-        self.min_zodi_dict = json.load(open(os.path.join(module_path, 'data', 'roman_minimum_zodiacal_light.json')))
-        self.thermal_bkg_dict = json.load(open(os.path.join(module_path, 'data', 'roman_thermal_background.json')))
+        # read from roman-technical-documentation
+        # module_path = os.path.dirname(mejiro.__file__)
+        # rti_path = os.path.join(module_path, 'data', 'roman-technical-documentation')
 
-        # ---------------------CONSTANTS---------------------
-        self.pixel_scale = 0.11  # arcsec per pixel
-        self.diameter = 2.4  # m
-        self.psf_jitter = 0.012  # arcsec per axis
-        self.pixels_per_axis = 4088
-        self.total_pixels_per_axis = 4096
-        self.thermal_bkg = {
-            'F062': 0.003,
-            'F087': 0.003,
-            'F106': 0.003,
-            'F129': 0.003,
-            'F158': 0.048,
-            'F184': 0.155,
-            'F213': 4.38,
-            'F146': 1.03
-        }  # retrieved 31 July 2024 from https://roman.gsfc.nasa.gov/science/WFI_technical.html, information dated 03 June 2024
-        self.min_zodi = {
-            'F062': 0.25,
-            'F087': 0.251,
-            'F106': 0.277,
-            'F129': 0.267,
-            'F158': 0.244,
-            'F184': 0.141,
-            'F213': 0.118,
-            'F146': 0.781
-        }  # retrieved 31 July 2024 from https://roman.gsfc.nasa.gov/science/WFI_technical.html, information dated 03 June 2024
-        self.psf_fwhm = {
-            'F062': 0.058,
-            'F087': 0.073,
-            'F106': 0.087,
-            'F129': 0.106,
-            'F158': 0.128,
-            'F184': 0.146,
-            'F213': 0.169,
-            'F146': 0.105
-        }  # retrieved 25 June 2024 from https://outerspace.stsci.edu/pages/viewpage.action?spaceKey=ISWG&title=Roman+WFI+and+Observatory+Performance
+        # record version of roman-technical-documentation
+        try:
+            version_path = os.path.join(roman_technical_information_path, 'VERSION.md')
+            with open(version_path, 'r', encoding='utf-8') as file:
+                lines = file.readlines()
+
+            if len(lines) >= 2:
+                self.version = lines[1].strip()
+            else:
+                raise IndexError("Error reading version number from VERSION.md: not enough lines.")
+        except FileNotFoundError:
+            raise FileNotFoundError(f"VERSION.md not found in {roman_technical_information_path}.")
+
+        # fields to initialize: these can be retrieved on demand
+        self.zeropoints = None
+        self.thermal_background = None
+        self.minimum_zodiacal_light = None
+        self.psf_fwhm = None
 
     def get_pixel_scale(self, band=None):
-        """
-        Returns the pixel scale for Roman's WFI.
-
-        Parameters
-        ----------
-        band : str, optional
-            The specific band for which to get the pixel scale. For Roman's WFI, the pixel scale is the same across all bands.
-
-        Returns
-        -------
-        float
-            The pixel scale in arcseconds per pixel.
-        """
         return self.pixel_scale
-
-    def get_filter_centers(self):
-        fields = [f'WFI_Filter_{band}_Center' for band in self.bands]
-
-        filter_centers = {}
-        for band, field in zip(self.bands, fields):
-            filter_centers[band] = float(self.df.loc[self.df['Name'] == field]['Value'].to_string(index=False))
-
-        return filter_centers
-
-    def get_min_max_wavelength(self, band):
-        range = self.df.loc[self.df['Name'] == f'WFI_Filter_{band.upper()}_Wavelength_Range']['Value'].to_string(
-            index=False)
-        min, max = range.split('-')
-        return float(min), float(max)
-
-    def get_min_zodi_count_rate(self, band):
-        count_rate = self.df.loc[self.df['Name'] == f'WFI_Count_Rate_Zody_Minimum_{band.upper()}']['Value'].to_string(
-            index=False)
-        return float(count_rate)
-
+    
+    def get_zeropoint_magnitude(self, band, detector):
+        sca_number = roman_util.get_sca_int(detector)
+        if self.zeropoints is None:
+            self.zeropoints = rti_util.return_qtable(os.path.join(self.roman_technical_information_path, ZEROPOINT_PATH))
+        return self.zeropoints[(self.zeropoints['element'] == band) & (self.zeropoints['detector'] == f'WFI{str(sca_number).zfill(2)}')]['ABMag']
+        
+    def get_thermal_background(self, band):
+        if self.thermal_background is None:
+            self.thermal_background = rti_util.return_qtable(os.path.join(self.roman_technical_information_path, THERMAL_BACKGROUND_PATH))
+        return self.thermal_background[self.thermal_background['filter'] == band]['rate']
+        
+    def get_minimum_zodiacal_light(self, band):
+        if self.minimum_zodiacal_light is None:
+            self.minimum_zodiacal_light = rti_util.return_qtable(os.path.join(self.roman_technical_information_path, ZODIACAL_LIGHT_PATH))
+        return self.minimum_zodiacal_light[self.minimum_zodiacal_light['filter'] == band]['rate']
+        
     def get_psf_fwhm(self, band):
-        """
-        Return PSF FWHM in given band in arcsec. Note from STScI: "PSF FWHM in arcseconds simulated for a detector near the center of the WFI FOV using an input spectrum for a K0V type star."
-        """
-        return self.psf_fwhm[band.upper()]
-
-    def get_thermal_bkg(self, band, sca):
-        sca = roman_util.get_sca_string(sca)
-        return self.thermal_bkg_dict[sca][band.upper()]
-
-    def get_min_zodi(self, band, sca):
-        sca = roman_util.get_sca_string(sca)
-        return self.min_zodi_dict[sca][band.upper()]
-
-    def get_zeropoint_magnitude(self, band, sca=1):
-        """
-        Return AB zeropoint in given band for the given SCA
-        """
-        sca = roman_util.get_sca_string(sca)
-        return self.zp_dict[sca][band.upper()]
+        if self.psf_fwhm is None:
+            self.psf_fwhm = rti_util.return_qtable(os.path.join(self.roman_technical_information_path, FILTER_PARAMS_PATH))
+        return self.psf_fwhm[self.psf_fwhm['filter'] == band]['PSF_FWHM']
 
     @staticmethod
     def default_params():
@@ -130,7 +84,7 @@ class Roman(InstrumentBase):
             'detector': 1,
             'detector_position': (2048, 2048)
         }
-
+    
     @staticmethod
     def validate_instrument_params(params):
         if 'detector' in params:
