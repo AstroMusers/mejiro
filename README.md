@@ -1,3 +1,4 @@
+[![Documentation Status](https://readthedocs.org/projects/mejiro/badge/?version=latest)](https://readthedocs.org/projects/mejiro/badge/?version=latest)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14216840.svg)](https://doi.org/10.5281/zenodo.14216840)
 
 # mejiro
