@@ -5,7 +5,7 @@ from glob import glob
 from stpsf.roman import WFI
 
 from mejiro.engines.engine import Engine
-from mejiro.utils import roman_util
+from mejiro.utils import roman_util, lenstronomy_util
 
 
 class STPSFEngine(Engine):
@@ -22,15 +22,11 @@ class STPSFEngine(Engine):
         pass
 
     @staticmethod
-    def get_psf_kwargs(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None,
+    def get_roman_psf_kwargs(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None,
                     verbose=False):
         kernel = STPSFEngine.get_roman_psf(band, detector, detector_position, oversample, num_pix,
                                             check_cache=check_cache, psf_cache_dir=psf_cache_dir, verbose=verbose)
-        return {
-            'psf_type': 'PIXEL', 
-            'kernel_point_source': kernel, 
-            'point_source_supersampling_factor': oversample
-        }
+        return lenstronomy_util.get_pixel_psf_kwargs(kernel, oversample)
 
     @staticmethod
     def get_roman_psf(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None,

@@ -23,7 +23,7 @@ def test_exposure_with_galsim_engine():
     from mejiro.instruments.roman import Roman
     from mejiro.engines.stpsf_engine import STPSFEngine
 
-    kwargs_psf = STPSFEngine.get_psf_kwargs('F129', 'SCA01', (2048, 2048), oversample=5, num_pix=101, check_cache=True, psf_cache_dir=TEST_DATA_DIR, verbose=False)
+    kwargs_psf = STPSFEngine.get_roman_psf_kwargs('F129', 'SCA01', (2048, 2048), oversample=5, num_pix=101, check_cache=True, psf_cache_dir=TEST_DATA_DIR, verbose=False)
 
     synthetic_image = SyntheticImage(strong_lens=SampleSL2S(),
                                      instrument=Roman(),

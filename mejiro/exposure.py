@@ -7,7 +7,15 @@ from mejiro.utils import util
 
 class Exposure:
 
-    def __init__(self, synthetic_image, exposure_time, engine='galsim', engine_params={}, psf=None, verbose=True):
+    def __init__(self, 
+                 synthetic_image, 
+                 exposure_time, 
+                 engine='galsim', 
+                 engine_params={}, 
+                 psf=None, 
+                 verbose=True
+                 ):
+        
         start = time.time()
 
         self.synthetic_image = synthetic_image

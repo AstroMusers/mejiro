@@ -32,11 +32,18 @@ class SyntheticImage:
                  kwargs_numerics={},
                  kwargs_psf={},
                  pieces=False,
-                 verbose=True):
+                 verbose=True
+                 ):
         
         # check band is valid for instrument
         if band not in instrument.bands:
             raise ValueError(f'Band "{band}" not valid for instrument {instrument.name}')
+        
+        # set up instrument params 
+        if not instrument_params:
+            instrument_params = instrument.default_params()
+        else:
+            instrument_params = instrument.validate_instrument_params(instrument_params)
         
         # set up attributes
         self.strong_lens = strong_lens
@@ -106,6 +113,8 @@ class SyntheticImage:
             self.supersampled_indexes = self.build_adaptive_grid(pad=40)
             kwargs_numerics['supersampled_indexes'] = self.supersampled_indexes
         self.kwargs_numerics = kwargs_numerics
+        if kwargs_numerics['supersampling_factor'] < 5:
+            if self.verbose: print('Supersampling factor less than 5 may not be sufficient for accurate results, especially when convolving with a non-trivial PSF')
 
         # set kwargs_psf
         if not kwargs_psf:

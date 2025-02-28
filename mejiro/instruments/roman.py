@@ -1,13 +1,9 @@
 import os
 import warnings
-import yaml
-from astropy.table import Table
-from astropy.table import QTable
 from astropy.units import Quantity
 
-import mejiro
 from mejiro.instruments.instrument import Instrument
-from mejiro.utils import roman_util, rti_util
+from mejiro.utils import roman_util, util
 
 
 ZEROPOINT_PATH = 'data/WideFieldInstrument/Imaging/ZeroPoints/Roman_zeropoints_*.ecsv'
@@ -31,9 +27,9 @@ class Roman(Instrument):
         self.pixel_scale = Quantity(0.11, 'arcsec / pix')
 
         # get path to roman-technical-information from environment variable
-        self.roman_technical_information_path = os.getenv("ROMAN_TECHNICAL_DOCUMENTATION_PATH")
+        self.roman_technical_information_path = os.getenv("ROMAN_TECHNICAL_INFORMATION_PATH")
         if self.roman_technical_information_path is None:
-            raise EnvironmentError("Environment variable 'ROMAN_TECHNICAL_DOCUMENTATION_PATH' is not set.")
+            raise EnvironmentError("Environment variable 'ROMAN_TECHNICAL_INFORMATION_PATH' is not set.")
 
         # read from roman-technical-documentation
         # module_path = os.path.dirname(mejiro.__file__)
@@ -64,22 +60,22 @@ class Roman(Instrument):
     def get_zeropoint_magnitude(self, band, detector):
         sca_number = roman_util.get_sca_int(detector)
         if self.zeropoints is None:
-            self.zeropoints = rti_util.return_qtable(os.path.join(self.roman_technical_information_path, ZEROPOINT_PATH))
+            self.zeropoints = util.return_qtable(os.path.join(self.roman_technical_information_path, ZEROPOINT_PATH))
         return self.zeropoints[(self.zeropoints['element'] == band) & (self.zeropoints['detector'] == f'WFI{str(sca_number).zfill(2)}')]['ABMag']
         
     def get_thermal_background(self, band):
         if self.thermal_background is None:
-            self.thermal_background = rti_util.return_qtable(os.path.join(self.roman_technical_information_path, THERMAL_BACKGROUND_PATH))
+            self.thermal_background = util.return_qtable(os.path.join(self.roman_technical_information_path, THERMAL_BACKGROUND_PATH))
         return self.thermal_background[self.thermal_background['filter'] == band]['rate']
         
     def get_minimum_zodiacal_light(self, band):
         if self.minimum_zodiacal_light is None:
-            self.minimum_zodiacal_light = rti_util.return_qtable(os.path.join(self.roman_technical_information_path, ZODIACAL_LIGHT_PATH))
+            self.minimum_zodiacal_light = util.return_qtable(os.path.join(self.roman_technical_information_path, ZODIACAL_LIGHT_PATH))
         return self.minimum_zodiacal_light[self.minimum_zodiacal_light['filter'] == band]['rate']
         
     def get_psf_fwhm(self, band):
         if self.psf_fwhm is None:
-            self.psf_fwhm = rti_util.return_qtable(os.path.join(self.roman_technical_information_path, FILTER_PARAMS_PATH))
+            self.psf_fwhm = util.return_qtable(os.path.join(self.roman_technical_information_path, FILTER_PARAMS_PATH))
         return self.psf_fwhm[self.psf_fwhm['filter'] == band]['PSF_FWHM']
 
     @staticmethod

@@ -1,5 +1,6 @@
 import datetime
 import json
+from astropy.table import QTable, Table
 import numpy as np
 import os
 import pandas as pd
@@ -916,3 +917,97 @@ def delete_if_exists(path):
     """
     if os.path.exists(path):
         os.remove(path)
+
+
+def _handle_glob(path):
+    """
+    Handle glob pattern matching for file paths.
+
+    Parameters
+    ----------
+    path : str
+        The glob pattern to match file paths.
+
+    Returns
+    -------
+    str
+        The single file path that matches the glob pattern.
+
+    Raises
+    ------
+    FileNotFoundError
+        If no files are found matching the glob pattern.
+    FileExistsError
+        If multiple files are found matching the glob pattern.
+    """
+    filepaths = sorted(glob(path))
+
+    if len(filepaths) == 0:
+        raise FileNotFoundError(f"No files found matching {path}.")
+    elif len(filepaths) > 1:
+        raise FileExistsError(f"Multiple files found matching {path}: {filepaths}.")
+    else:
+        return filepaths[0]
+
+
+def return_qtable(path):
+    """
+    Reads a QTable from a given file path.
+
+    Parameters
+    ----------
+    path : str
+        The file path or pattern to read the QTable from.
+
+    Returns
+    -------
+    Astropy.table.QTable
+        The QTable read from the specified file path.
+    """
+    filepath = _handle_glob(path)
+    return QTable.read(filepath)
+
+
+def return_table(path):
+    """
+    Reads a table from the given file path.
+
+    Parameters
+    ----------
+    path : str
+        The file path or pattern to read the table from.
+
+    Returns
+    -------
+    Astropy.table.Table
+        The table read from the specified file path.
+    """
+    filepath = _handle_glob(path)
+    return Table.read(filepath)
+
+
+def return_yaml(path):
+    """
+    Reads a YAML file from the given path and returns its contents as a dictionary.
+
+    Parameters
+    ----------
+    path : str
+        The path to the YAML file. This can include glob patterns.
+
+    Returns
+    -------
+    dict
+        The contents of the YAML file as a dictionary.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the file does not exist.
+    yaml.YAMLError
+        If there is an error parsing the YAML file.
+    """
+    filepath = _handle_glob(path)
+    with open(filepath, 'r', encoding='utf-8') as file:
+        data = yaml.safe_load(file)
+    return data

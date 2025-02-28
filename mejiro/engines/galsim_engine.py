@@ -266,12 +266,8 @@ class GalSimEngine(Engine):
             read_noise = None
 
         if synthetic_image.pieces:
-            lens_image = GalSimEngine.get_piece(synthetic_image.lens_surface_brightness, synthetic_image.pixel_scale,
-                                synthetic_image.pixel_scale, synthetic_image.pixel_scale, exposure_time,
-                                psf_interp, gsparams_kwargs)
-            source_image = GalSimEngine.get_piece(synthetic_image.source_surface_brightness, synthetic_image.pixel_scale,
-                                    synthetic_image.native_pixel_scale, synthetic_image.native_num_pix, exposure_time,
-                                    psf_interp, gsparams_kwargs)
+            lens_image = GalSimEngine.get_piece(synthetic_image.lens_surface_brightness, exposure_time, synthetic_image.pixel_scale)
+            source_image = GalSimEngine.get_piece(synthetic_image.source_surface_brightness, exposure_time, synthetic_image.pixel_scale)
             results = image, lens_image, source_image
         else:
             results = image
@@ -280,20 +276,12 @@ class GalSimEngine(Engine):
 
 
     @staticmethod
-    def get_piece(surface_brightness, pixel_scale, native_pixel_scale, native_num_pix, exposure_time, psf_interp,
-                gsparams_kwargs):
-        interp = galsim.InterpolatedImage(galsim.Image(surface_brightness, xmin=0, ymin=0), scale=pixel_scale,
-                                        flux=np.sum(surface_brightness) * exposure_time)
-
-        convolved = galsim.Convolve(interp, psf_interp, gsparams=galsim.GSParams(**gsparams_kwargs))
-
-        im = galsim.ImageF(native_num_pix, native_num_pix, scale=native_pixel_scale)
-        im.setOrigin(0, 0)
-        image = convolved.drawImage(im)
-        image.replaceNegative(0.)
-        image.quantize()
-
-        return image
+    def get_piece(array, exposure_time, pixel_scale):
+        return galsim.Image(array=array * exposure_time, 
+                            scale=pixel_scale, 
+                            xmin=0, 
+                            ymin=0, 
+                            copy=True)
 
 
     @staticmethod
@@ -313,6 +301,8 @@ class GalSimEngine(Engine):
 
             # get minimum zodiacal light in this band in counts/pixel/sec
             sky_level = roman.get_minimum_zodiacal_light(band)
+            if sky_level.unit != 'ct / pix':
+                raise ValueError(f"Minimum zodiacal light is not in units of counts/pixel: {sky_level.unit}")
 
             # "For observations at high galactic latitudes, the Zodi intensity is typically ~1.5x the minimum" (https://roman.gsfc.nasa.gov/science/WFI_technical.html)
             sky_level *= 1.5
@@ -326,7 +316,7 @@ class GalSimEngine(Engine):
                 raise ValueError(f"Thermal background is not in units of counts/pixel: {thermal_bkg.unit}")
 
             # combine the two backgrounds (still counts/pixel/sec)
-            sky_image += sky_level
+            sky_image += sky_level.value
             sky_image += thermal_bkg.value
 
             # convert to counts/pixel
@@ -488,7 +478,7 @@ class GalSimEngine(Engine):
     @staticmethod
     def get_roman_psf(band, detector=1, detector_position=(2048, 2048), pupil_bin=1):
         """
-        Generate a Point Spread Function (PSF) for the Roman Space Telescope using GalSim. Note that mejiro's preferred method of generating Roman PSFs is using `STPSF`.
+        Generate a Point Spread Function (PSF) for the Roman Space Telescope using GalSim. Note that mejiro's preferred package for generating Roman PSFs is `STPSF`.
 
         Parameters
         ----------
@@ -516,7 +506,7 @@ class GalSimEngine(Engine):
     @staticmethod
     def get_empty_image(num_pix, pixel_scale):
         """
-        Create an empty image using GalSim.
+        Create an empty image using GalSim with dtype np.float64.
 
         Parameters
         ----------
