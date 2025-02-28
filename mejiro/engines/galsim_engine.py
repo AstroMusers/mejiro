@@ -1,3 +1,4 @@
+import os
 import galsim
 import galsim.roman  # NB not automatically imported with `import galsim`
 import numpy as np
@@ -311,7 +312,7 @@ class GalSimEngine(Engine):
             sky_image = galsim.ImageF(num_pix, num_pix)
 
             # get minimum zodiacal light in this band in counts/pixel/sec
-            sky_level = roman.get_min_zodi(band, sca)
+            sky_level = roman.get_minimum_zodiacal_light(band)
 
             # "For observations at high galactic latitudes, the Zodi intensity is typically ~1.5x the minimum" (https://roman.gsfc.nasa.gov/science/WFI_technical.html)
             sky_level *= 1.5
@@ -320,11 +321,13 @@ class GalSimEngine(Engine):
             sky_level *= (1. + galsim.roman.stray_light_fraction)
 
             # get thermal background in this band in counts/pixel/sec
-            thermal_bkg = roman.get_thermal_bkg(band, sca)
+            thermal_bkg = roman.get_thermal_background(band)
+            if thermal_bkg.unit != 'ct / pix':
+                raise ValueError(f"Thermal background is not in units of counts/pixel: {thermal_bkg.unit}")
 
             # combine the two backgrounds (still counts/pixel/sec)
             sky_image += sky_level
-            sky_image += thermal_bkg
+            sky_image += thermal_bkg.value
 
             # convert to counts/pixel
             sky_image *= exposure_time

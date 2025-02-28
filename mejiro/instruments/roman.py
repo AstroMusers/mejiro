@@ -17,7 +17,7 @@ FILTER_PARAMS_PATH = 'data/WideFieldInstrument/Imaging/FiltersSummary/filter_par
 
 
 class Roman(Instrument):
-    def __init__(self, roman_technical_information_path):
+    def __init__(self):
         name = 'Roman'
         bands = ['F062', 'F087', 'F106', 'F129', 'F158', 'F184', 'F213', 'F146']
         engines = ['galsim', 'lenstronomy', 'pandeia', 'romanisim']
@@ -26,10 +26,14 @@ class Roman(Instrument):
             name,
             bands,
             engines
-        )
+        )        
 
         self.pixel_scale = Quantity(0.11, 'arcsec / pix')
-        self.roman_technical_information_path = roman_technical_information_path
+
+        # get path to roman-technical-information from environment variable
+        self.roman_technical_information_path = os.getenv("ROMAN_TECHNICAL_DOCUMENTATION_PATH")
+        if self.roman_technical_information_path is None:
+            raise EnvironmentError("Environment variable 'ROMAN_TECHNICAL_DOCUMENTATION_PATH' is not set.")
 
         # read from roman-technical-documentation
         # module_path = os.path.dirname(mejiro.__file__)
@@ -37,7 +41,7 @@ class Roman(Instrument):
 
         # record version of roman-technical-documentation
         try:
-            version_path = os.path.join(roman_technical_information_path, 'VERSION.md')
+            version_path = os.path.join(self.roman_technical_information_path, 'VERSION.md')
             with open(version_path, 'r', encoding='utf-8') as file:
                 lines = file.readlines()
 
@@ -46,7 +50,7 @@ class Roman(Instrument):
             else:
                 raise IndexError("Error reading version number from VERSION.md: not enough lines.")
         except FileNotFoundError:
-            raise FileNotFoundError(f"VERSION.md not found in {roman_technical_information_path}.")
+            raise FileNotFoundError(f"VERSION.md not found in {self.roman_technical_information_path}.")
 
         # fields to initialize: these can be retrieved on demand
         self.zeropoints = None

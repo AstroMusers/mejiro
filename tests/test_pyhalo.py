@@ -2,7 +2,7 @@ from pyHalo.preset_models import preset_model_from_name
 
 from mejiro.galaxy_galaxy import SampleGG
 from mejiro.instruments.roman import Roman
-from mejiro.synth import SyntheticImage
+from mejiro.synthetic_image import SyntheticImage
 
 
 def test_CDM():
