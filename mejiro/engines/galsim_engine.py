@@ -157,10 +157,8 @@ class GalSimEngine(Engine):
 
         # add sky background
         if engine_params['sky_background']:
-            bkgs = GalSimEngine.get_roman_sky_background(synthetic_image.band, detector, exposure_time,
+            image += GalSimEngine.get_roman_sky_background(synthetic_image.band, exposure_time,
                                             num_pix=synthetic_image.num_pix)
-            bkg = bkgs[synthetic_image.band]
-            image += bkg
 
         # integer number of photons are being detected, so quantize
         image.quantize()
@@ -202,7 +200,7 @@ class GalSimEngine(Engine):
             elif type(engine_params['dark_noise']) is bool:
                 if engine_params['dark_noise']:
                     before = deepcopy(image)
-                    total_dark_current = galsim.roman.dark_current * exposure_time
+                    total_dark_current = galsim.roman.dark_current * exposure_time  # TODO would like to get this from roman-technical-information through Roman() instead of galsim
                     image.addNoise(galsim.DeviateNoise(galsim.PoissonDeviate(rng, total_dark_current)))
                     dark_noise = image - before
                 else:
@@ -241,7 +239,7 @@ class GalSimEngine(Engine):
             elif type(engine_params['read_noise']) is bool:
                 if engine_params['read_noise']:
                     before = deepcopy(image)
-                    read_noise_sigma = galsim.roman.read_noise
+                    read_noise_sigma = galsim.roman.read_noise  # TODO would like to get this from roman-technical-information through Roman() instead of galsim
                     image.addNoise(galsim.GaussianNoise(rng, sigma=read_noise_sigma))
                     read_noise = image - before
                 else:
@@ -285,49 +283,37 @@ class GalSimEngine(Engine):
 
 
     @staticmethod
-    def get_roman_sky_background(bands, sca, exposure_time, num_pix):
+    def get_roman_sky_background(band, exposure_time, num_pix):
         from mejiro.instruments.roman import Roman
-
         roman = Roman()
 
-        # was only one band provided as a string? or a list of bands?
-        if not isinstance(bands, list):
-            bands = [bands]
+        # build Image
+        sky_image = galsim.ImageF(num_pix, num_pix)
 
-        bkgs = {}
-        for band in bands:
-            # build Image
-            sky_image = galsim.ImageF(num_pix, num_pix)
+        # get minimum zodiacal light in this band in counts/pixel/sec
+        sky_level = roman.get_minimum_zodiacal_light(band)
+        if sky_level.unit != 'ct / pix':
+            raise ValueError(f"Minimum zodiacal light is not in units of counts/pixel: {sky_level.unit}")
 
-            # get minimum zodiacal light in this band in counts/pixel/sec
-            sky_level = roman.get_minimum_zodiacal_light(band)
-            if sky_level.unit != 'ct / pix':
-                raise ValueError(f"Minimum zodiacal light is not in units of counts/pixel: {sky_level.unit}")
+        # "For observations at high galactic latitudes, the Zodi intensity is typically ~1.5x the minimum" (https://roman.gsfc.nasa.gov/science/WFI_technical.html)
+        sky_level *= 1.5
 
-            # "For observations at high galactic latitudes, the Zodi intensity is typically ~1.5x the minimum" (https://roman.gsfc.nasa.gov/science/WFI_technical.html)
-            sky_level *= 1.5
+        # add stray light contribution
+        sky_level *= (1. + roman.stray_light_fraction)
 
-            # the stray light level is currently set in GalSim to a pessimistic 10% of sky level
-            sky_level *= (1. + galsim.roman.stray_light_fraction)
+        # get thermal background in this band in counts/pixel/sec
+        thermal_bkg = roman.get_thermal_background(band)
+        if thermal_bkg.unit != 'ct / pix':
+            raise ValueError(f"Thermal background is not in units of counts/pixel: {thermal_bkg.unit}")
 
-            # get thermal background in this band in counts/pixel/sec
-            thermal_bkg = roman.get_thermal_background(band)
-            if thermal_bkg.unit != 'ct / pix':
-                raise ValueError(f"Thermal background is not in units of counts/pixel: {thermal_bkg.unit}")
+        # combine the two backgrounds (still counts/pixel/sec)
+        sky_image += sky_level.value
+        sky_image += thermal_bkg.value
 
-            # combine the two backgrounds (still counts/pixel/sec)
-            sky_image += sky_level.value
-            sky_image += thermal_bkg.value
+        # convert to counts/pixel
+        sky_image *= exposure_time
 
-            # convert to counts/pixel
-            sky_image *= exposure_time
-
-            # # if the image is oversampled, the sky background must be spread out over more pixels
-            # sky_image /= oversample ** 2
-
-            bkgs[band] = sky_image
-
-        return bkgs
+        return sky_image
     
 
     @staticmethod
@@ -343,8 +329,8 @@ class GalSimEngine(Engine):
         # "For observations at high galactic latitudes, the Zodi intensity is typically ~1.5x the minimum" (https://roman.gsfc.nasa.gov/science/WFI_technical.html)
         sky_level *= 1.5
 
-        # the stray light level is currently set to a pessimistic 10% of sky level
-        sky_level *= 1.1
+        # add stray light contribution
+        sky_level *= (1. + hwo.stray_light_fraction)
 
         # get thermal background in this band in counts/pixel/sec
         thermal_bkg = hwo.get_thermal_background(band)
