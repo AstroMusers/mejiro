@@ -126,6 +126,20 @@ class Exposure:
         if self.verbose:
             print(f'Exposure calculation time with {self.engine} engine: {util.calculate_execution_time(start, end)}')
 
+    def plot(self, savepath=None):
+        import matplotlib.pyplot as plt
+
+        plt.imshow(np.log10(self.exposure))
+        plt.title(f'{self.synthetic_image.strong_lens.name}: {self.synthetic_image.instrument_name} {self.synthetic_image.band} band, {self.exposure_time} s exposure {self.exposure.shape}')
+        cbar = plt.colorbar()
+        cbar.set_label(r'log$_{10}$(Counts)')
+        plt.xlabel('x [Pixels]')
+        plt.ylabel('y [Pixels]')
+        plt.tight_layout()
+        if savepath is not None:
+            plt.savefig(savepath)
+        plt.show()
+
     def instrument_not_available_error(self, engine):
         raise ValueError(
             f'Instrument "{self.synthetic_image.instrument_name}" not available for engine "{engine}."')
