@@ -1,21 +1,21 @@
 Engines
 #######
 
-`mejiro` wraps various image simulation packages to provide a consistent interface for simulating images. Each wrapped package is referred to as an "engine." The following engines are currently supported:
+``mejiro`` wraps various image simulation packages to provide a consistent interface for simulating images. Each wrapped package is referred to as an "engine." The following engines are currently supported:
 
-- `GalSim`
+- GalSim
     - *Roman Space Telescope*
     - *Habitable Worlds Observatory*
-- `Lenstronomy`
+- Lenstronomy
     - *Roman Space Telescope*
-- `Pandeia`
+- Pandeia
     - *Roman Space Telescope*
-- `Romanisim`
+- Romanisim
     - *Roman Space Telescope*
-- `STPSF` (PSFs only)
+- STPSF (PSFs only)
     - *Roman Space Telescope*
 
-An engine is specified when generating a simulated exposure, i.e., an instance of `mejiro.exposure.Exposure`. The engine is specified in the `engine` keyword argument, and any specific parameters passed to the engine are specified in the `engine_params` dictionary. For example, to simulate a *Roman* image using `GalSim` with ,
+An engine is specified when generating a simulated exposure, i.e., an instance of ``mejiro.exposure.Exposure``. The engine is specified in the ``engine`` keyword argument, and any specific parameters passed to the engine are specified in the ``engine_params`` dictionary. For example, to simulate a *Roman* image using GalSim with ,
 
 .. code-block:: python
 
@@ -34,7 +34,7 @@ An engine is specified when generating a simulated exposure, i.e., an instance o
                         exposure_time=146,
                         engine='galsim')
 
-To see the available options for each engine, check the default parameters using `defaults(instrument_name)`. For example, the default parameters for simulating *Roman* images with `GalSim` are:
+To see the available options for each engine, check the default parameters using ``defaults(instrument_name)``. For example, the default parameters for simulating *Roman* images with GalSim are:
 
 .. code-block:: python
 
@@ -66,13 +66,13 @@ To see the available options for each engine, check the default parameters using
     :undoc-members:
     :show-inheritance:
 
-``lenstronomy_engine``
-**********************
+.. ``lenstronomy_engine``
+.. **********************
 
-.. automodule:: mejiro.engines.lenstronomy_engine
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. .. automodule:: mejiro.engines.lenstronomy_engine
+..     :members:
+..     :undoc-members:
+..     :show-inheritance:
 
 .. ``pandeia_engine``
 .. ******************

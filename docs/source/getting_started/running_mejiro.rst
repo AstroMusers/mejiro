@@ -6,3 +6,6 @@ Update pipeline parameters in ``config/config.yaml`` and ensure ``defaults.machi
 .. code-block:: bash    
 
     time bash execute_pipeline.sh
+
+.. warning::
+   Note that this ``hydra``-based configuration will be changed in v2.0.0.
