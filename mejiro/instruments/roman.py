@@ -13,6 +13,28 @@ FILTER_PARAMS_PATH = 'data/WideFieldInstrument/Imaging/FiltersSummary/filter_par
 
 
 class Roman(Instrument):
+    """
+    Roman Space Telescope (Roman) Wide Field Instrument (WFI) class
+
+    Attributes
+    ----------
+    roman_technical_information_path : str
+        Path to the roman-technical-information directory.
+    pixel_scale : Quantity
+        Pixel scale of the instrument in arcsec/pix.
+    gain : float
+        Gain of the instrument.
+    stray_light_fraction : float
+        Fraction of stray light.
+    zeropoints : QTable or None
+        Zeropoints table, initialized on demand.
+    thermal_background : QTable or None
+        Thermal background table, initialized on demand.
+    minimum_zodiacal_light : QTable or None
+        Minimum zodiacal light table, initialized on demand.
+    psf_fwhm : QTable or None
+        PSF FWHM table, initialized on demand.
+    """
     def __init__(self):
         name = 'Roman'
         bands = ['F062', 'F087', 'F106', 'F129', 'F158', 'F184', 'F213', 'F146']
@@ -89,18 +111,18 @@ class Roman(Instrument):
     def validate_instrument_params(params):
         if 'detector' in params:
             detector = roman_util.get_sca_int(params['detector'])
-            assert detector in range(1, 19), 'Detector number must be an integer between 1 and 18.'
+            if detector not in range(1, 19):
+                raise ValueError('Detector number must be an integer between 1 and 18.')
         else:
             default_detector = Roman.default_params()['detector']
             warnings.warn(f'No detector number provided. Defaulting to detector {default_detector}.')
             params['detector'] = default_detector
 
         if 'detector_position' in params:
-            assert isinstance(params['detector_position'], tuple) and len(params['detector_position']) == 2 and all(
-                isinstance(x, int) for x in
-                params['detector_position']), 'The detector_position parameter must be an (x,y) coordinate tuple.'
-            assert params['detector_position'][0] in range(4, 4092 + 1) and params['detector_position'][1] in range(4,
-                                                                                                                    4092 + 1), 'Choose a valid pixel position on the range 4-4092.'
+            if not (isinstance(params['detector_position'], tuple) and len(params['detector_position']) == 2 and all(isinstance(x, int) for x in params['detector_position'])):
+                    raise ValueError('The detector_position parameter must be an (x,y) coordinate tuple.')
+            if not (params['detector_position'][0] in range(4, 4092 + 1) and params['detector_position'][1] in range(4, 4092 + 1)):
+                    raise ValueError('Choose a valid pixel position on the range 4-4092.')
         else:
             default_detector_position = Roman.default_params()['detector_position']
             warnings.warn(f'No detector position provided. Defaulting to {default_detector_position}')

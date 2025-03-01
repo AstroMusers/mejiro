@@ -56,7 +56,7 @@ def test_validate_instrument_params():
     }
     try:
         roman.validate_instrument_params(valid_params)
-    except AssertionError:
+    except ValueError:
         pytest.fail("validate_instrument_params raised AssertionError unexpectedly with valid parameters!")
 
     # Test invalid detector number
@@ -64,7 +64,7 @@ def test_validate_instrument_params():
         'detector': 20,
         'detector_position': (2044, 2044)
     }
-    with pytest.raises(AssertionError, match='Detector number must be an integer between 1 and 18.'):
+    with pytest.raises(ValueError, match='Detector number must be an integer between 1 and 18.'):
         roman.validate_instrument_params(invalid_detector_params)
 
     # Test invalid detector position type
@@ -72,7 +72,7 @@ def test_validate_instrument_params():
         'detector': 5,
         'detector_position': [2044, 2044]
     }
-    with pytest.raises(AssertionError, match='The detector_position parameter must be an \(x,y\) coordinate tuple.'):
+    with pytest.raises(ValueError, match='The detector_position parameter must be an \(x,y\) coordinate tuple.'):
         roman.validate_instrument_params(invalid_position_type_params)
 
     # Test invalid detector position length
@@ -80,7 +80,7 @@ def test_validate_instrument_params():
         'detector': 5,
         'detector_position': (2044,)
     }
-    with pytest.raises(AssertionError, match='The detector_position parameter must be an \(x,y\) coordinate tuple.'):
+    with pytest.raises(ValueError, match='The detector_position parameter must be an \(x,y\) coordinate tuple.'):
         roman.validate_instrument_params(invalid_position_length_params)
 
     # Test invalid detector position values
@@ -88,5 +88,5 @@ def test_validate_instrument_params():
         'detector': 5,
         'detector_position': (5000, 2044)
     }
-    with pytest.raises(AssertionError, match='Choose a valid pixel position on the range 4-4092.'):
+    with pytest.raises(ValueError, match='Choose a valid pixel position on the range 4-4092.'):
         roman.validate_instrument_params(invalid_position_values_params)

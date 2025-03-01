@@ -100,8 +100,29 @@ class Instrument(ABC):
 
     @abstractmethod
     def default_params():
+        """
+        Returns a dictionary of default parameters for the instrument. For example, for the Roman WFI, the 'detector' parameter enables the calculation of detector-specific fluxes from the detector-specific zero-point magnitude.
+
+        Returns
+        -------
+        dict
+            The default parameters.
+        """
         pass
 
     @abstractmethod
     def validate_instrument_params(params):
+        """
+        Validate the parameters for an instrument. If any required parameters are missing, they will be populated with the default values (see default_params). If any parameters are invalid, a ValueError will be raised.
+
+        Parameters
+        ----------
+        params : dict
+            A dictionary containing the parameters to be validated.
+
+        Returns
+        -------
+        dict
+            The validated parameters.
+        """
         pass
