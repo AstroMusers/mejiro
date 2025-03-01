@@ -43,7 +43,7 @@ def test_kwargs_numerics():
     
     # regular compute mode
     kwargs_numerics = {
-        'supersampling_factor': 3,
+        'supersampling_factor': 5,
         'compute_mode': 'regular'
     }
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
@@ -59,7 +59,7 @@ def test_kwargs_numerics():
     # adaptive compute mode with supersampled indices provided
     region = util.create_centered_circle(N=47, radius=10)
     kwargs_numerics = {
-        'supersampling_factor': 3,
+        'supersampling_factor': 5,
         'compute_mode': 'adaptive',
         'supersampled_indexes': region
     }
@@ -75,7 +75,7 @@ def test_kwargs_numerics():
 
     # adaptive compute mode with default supersampled indices (annulus around image positions)
     kwargs_numerics = {
-        'supersampling_factor': 3,
+        'supersampling_factor': 5,
         'compute_mode': 'adaptive',
     }
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
@@ -87,3 +87,21 @@ def test_kwargs_numerics():
                                      kwargs_psf={},
                                      pieces=False,
                                      verbose=False)
+    
+    # unhappy path: insufficient supersampling factor
+    kwargs_numerics = {
+        'supersampling_factor': 1,
+        'compute_mode': 'adaptive',
+    }
+    with pytest.warns(UserWarning,
+                      match='Supersampling factor less than 5 may not be sufficient for accurate results, especially when convolving with a non-trivial PSF'):
+        synthetic_image = SyntheticImage(strong_lens=SampleGG(),
+                                     instrument=Roman(),
+                                     band='F129',
+                                     fov_arcsec=5,
+                                     instrument_params={'detector': 'SCA01'},
+                                     kwargs_numerics=kwargs_numerics,
+                                     kwargs_psf={},
+                                     pieces=False,
+                                     verbose=False)
+        

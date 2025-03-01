@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 from lenstronomy.Data.coord_transforms import Coordinates
 from lenstronomy.Data.pixel_grid import PixelGrid
 from lenstronomy.Data.psf import PSF
@@ -108,13 +109,15 @@ class SyntheticImage:
         # set kwargs_numerics
         if not kwargs_numerics:
             kwargs_numerics = SyntheticImage.DEFAULT_KWARGS_NUMERICS
+        elif 'compute_mode' not in kwargs_numerics:
+            kwargs_numerics['compute_mode'] = 'regular'
         if kwargs_numerics['compute_mode'] == 'adaptive' and 'supersampled_indexes' not in kwargs_numerics.keys():
             if self.verbose: print('Building adaptive grid')
             self.supersampled_indexes = self.build_adaptive_grid(pad=40)
             kwargs_numerics['supersampled_indexes'] = self.supersampled_indexes
-        self.kwargs_numerics = kwargs_numerics
         if kwargs_numerics['supersampling_factor'] < 5:
-            if self.verbose: print('Supersampling factor less than 5 may not be sufficient for accurate results, especially when convolving with a non-trivial PSF')
+            warnings.warn('Supersampling factor less than 5 may not be sufficient for accurate results, especially when convolving with a non-trivial PSF')
+        self.kwargs_numerics = kwargs_numerics            
 
         # set kwargs_psf
         if not kwargs_psf:

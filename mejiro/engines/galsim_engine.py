@@ -328,11 +328,44 @@ class GalSimEngine(Engine):
             bkgs[band] = sky_image
 
         return bkgs
+    
+
+    @staticmethod
+    def get_hwo_sky_background(hwo, band, exposure_time, num_pix, pixel_scale):
+        # build Image
+        sky_image = GalSimEngine.get_empty_image(num_pix, pixel_scale)
+
+        # get minimum zodiacal light in this band in counts/pixel/sec
+        sky_level = hwo.get_minimum_zodiacal_light(band)
+        if sky_level.unit != 'ct / pix':
+            raise ValueError(f"Minimum zodiacal light is not in units of counts/pixel: {sky_level.unit}")
+
+        # "For observations at high galactic latitudes, the Zodi intensity is typically ~1.5x the minimum" (https://roman.gsfc.nasa.gov/science/WFI_technical.html)
+        sky_level *= 1.5
+
+        # the stray light level is currently set to a pessimistic 10% of sky level
+        sky_level *= 1.1
+
+        # get thermal background in this band in counts/pixel/sec
+        thermal_bkg = hwo.get_thermal_background(band)
+        if thermal_bkg.unit != 'ct / pix':
+            raise ValueError(f"Thermal background is not in units of counts/pixel: {thermal_bkg.unit}")
+
+        # combine the two backgrounds (still counts/pixel/sec)
+        sky_image += sky_level.value
+        sky_image += thermal_bkg.value
+
+        # convert to counts/pixel
+        sky_image *= exposure_time
+
+        return sky_image
 
 
     @staticmethod
-    def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params={}, verbose=False,
-                        **kwargs):
+    def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params={}, verbose=False):
+        from mejiro.instruments.hwo import HWO
+        hwo = HWO()
+
         # set engine params
         if not engine_params:
             engine_params = GalSimEngine.defaults('HWO')
@@ -342,43 +375,12 @@ class GalSimEngine(Engine):
         # build rng
         rng = galsim.UniformDeviate(engine_params['rng_seed'])
 
-        # create interpolated image
-        total_interp = galsim.InterpolatedImage(galsim.Image(synthetic_image.image, xmin=0, ymin=0),
-                                                scale=synthetic_image.pixel_scale,
-                                                flux=np.sum(synthetic_image.image) * exposure_time)
-
-        # get PSF
-        if psf is None:
-            psf_interp = GalSimEngine.get_gaussian_psf(synthetic_image.instrument.get_psf_fwhm(synthetic_image.band))
-            psf = psf_interp.drawImage(nx=synthetic_image.native_num_pix, ny=synthetic_image.native_num_pix,
-                                    scale=synthetic_image.native_pixel_scale)
-
-        # convolve with PSF
-        gsparams_kwargs = engine_params['gsparams_kwargs']
-        convolved = galsim.Convolve(total_interp, psf_interp, gsparams=galsim.GSParams(**gsparams_kwargs))
-
-        # draw image at the native pixel scale
-        im = galsim.ImageF(synthetic_image.native_num_pix, synthetic_image.native_num_pix,
-                        scale=synthetic_image.native_pixel_scale)
-        im.setOrigin(0, 0)
-        image = convolved.drawImage(im)
-
-        # NB from here on out, the image is at the native pixel scale, i.e., the image is NOT oversampled
+        # import image to GalSim
+        image = galsim.Image(array=synthetic_image.image * exposure_time, scale=synthetic_image.pixel_scale, xmin=0, ymin=0, copy=True)
 
         # add sky background
         if engine_params['sky_background']:
-            min_zodi_cps = 0.2  # TODO this is a placeholder value
-            sky_bkg_cps = min_zodi_cps * 1.5
-
-            # build Image
-            sky_image = galsim.ImageF(synthetic_image.native_num_pix, synthetic_image.native_num_pix)
-            sky_image.setOrigin(0, 0)
-            sky_image += sky_bkg_cps
-
-            # convert to counts/pixel
-            sky_image *= exposure_time
-
-            image += sky_image
+            image += GalSimEngine.get_hwo_sky_background(hwo, synthetic_image.band, exposure_time, synthetic_image.num_pix, synthetic_image.pixel_scale)
 
         # integer number of photons are being detected, so quantize
         image.quantize()
@@ -407,7 +409,7 @@ class GalSimEngine(Engine):
             elif type(engine_params['dark_noise']) is bool:
                 if engine_params['dark_noise']:
                     before = deepcopy(image)
-                    total_dark_current = synthetic_image.instrument.get_dark_current(synthetic_image.band) * exposure_time
+                    total_dark_current = hwo.get_dark_current(synthetic_image.band).value * exposure_time
                     image.addNoise(galsim.DeviateNoise(galsim.PoissonDeviate(rng, total_dark_current)))
                     dark_noise = image - before
                 else:
@@ -420,14 +422,14 @@ class GalSimEngine(Engine):
             elif type(engine_params['read_noise']) is bool:
                 if engine_params['read_noise']:
                     before = deepcopy(image)
-                    read_noise_sigma = synthetic_image.instrument.get_read_noise(synthetic_image.band)
+                    read_noise_sigma = hwo.get_read_noise(synthetic_image.band).value
                     image.addNoise(galsim.GaussianNoise(rng, sigma=read_noise_sigma))
                     read_noise = image - before
                 else:
                     read_noise = None
 
             # gain
-            image /= synthetic_image.instrument.gain
+            image /= hwo.gain
 
             # quantize, since analog-to-digital conversion gives integers
             image.quantize()
@@ -442,12 +444,8 @@ class GalSimEngine(Engine):
             read_noise = None
 
         if synthetic_image.pieces:
-            lens_image = GalSimEngine.get_piece(synthetic_image.lens_surface_brightness, synthetic_image.pixel_scale,
-                                synthetic_image.native_pixel_scale, synthetic_image.native_num_pix, exposure_time,
-                                psf_interp, gsparams_kwargs)
-            source_image = GalSimEngine.get_piece(synthetic_image.source_surface_brightness, synthetic_image.pixel_scale,
-                                    synthetic_image.native_pixel_scale, synthetic_image.native_num_pix, exposure_time,
-                                    psf_interp, gsparams_kwargs)
+            lens_image = GalSimEngine.get_piece(synthetic_image.lens_surface_brightness, exposure_time, synthetic_image.pixel_scale)
+            source_image = GalSimEngine.get_piece(synthetic_image.source_surface_brightness, exposure_time, synthetic_image.pixel_scale)
             results = image, lens_image, source_image
         else:
             results = image

@@ -1,5 +1,6 @@
 import numpy as np
 from astropy import units as u
+from astropy.units import Quantity
 from fractions import Fraction
 from syotools.models import Camera, Telescope
 
@@ -108,10 +109,42 @@ class HWO(Instrument):
             self.fwhm_psf[band] = fwhm_psf
 
     def get_pixel_scale(self, band):
-        return self.pixel_scale[band]
+        return Quantity(self.pixel_scale[band], 'arcsec / pix')
 
     def get_psf_fwhm(self, band):
         return self.fwhm_psf[band]
+    
+    def get_minimum_zodiacal_light(self, band):
+        # TODO these aren't real values, just placeholders
+        minimum_zodiacal_light = {
+            'B': 0.1,
+            'FUV': 0.1,
+            'H': 0.1,
+            'I': 0.1,
+            'J': 0.1,
+            'K': 0.1,
+            'NUV': 0.1,
+            'R': 0.1,
+            'U': 0.1,
+            'V': 0.1
+        }
+        return Quantity(minimum_zodiacal_light[band], 'ct / pix')
+    
+    def get_thermal_background(self, band):
+        # TODO these aren't real values, just placeholders
+        thermal_background = {
+            'B': 0.0,
+            'FUV': 0.0,
+            'H': 0.0,
+            'I': 0.0,
+            'J': 0.0,
+            'K': 0.0,
+            'NUV': 0.0,
+            'R': 0.0,
+            'U': 0.0,
+            'V': 0.0
+        }
+        return Quantity(thermal_background[band], 'ct / pix')
 
     def get_zeropoint_magnitude(self, band):
         """
@@ -138,13 +171,13 @@ class HWO(Instrument):
         dark_current = self.dark_current[band]
         read_noise = self.read_noise[band]
 
-        return dark_current + read_noise
+        return Quantity(dark_current + read_noise, 'ct / pix')
 
     def get_dark_current(self, band):
-        return self.dark_current[band]
+        return Quantity(self.dark_current[band], 'ct / pix')
 
     def get_read_noise(self, band):
-        return self.read_noise[band]
+        return Quantity(self.read_noise[band], 'ct / pix')
 
     def _get_index(self, band):
         """

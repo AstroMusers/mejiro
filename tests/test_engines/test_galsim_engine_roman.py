@@ -1,7 +1,6 @@
 import os
 import galsim
 import numpy as np
-import os
 
 import mejiro
 from mejiro.engines import galsim_engine

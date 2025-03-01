@@ -1,7 +1,6 @@
 import os
 import galsim
 import numpy as np
-import os
 
 import mejiro
 from mejiro.engines import galsim_engine
@@ -10,56 +9,60 @@ from mejiro.instruments.hwo import HWO
 from mejiro.galaxy_galaxy import SampleGG, SampleSL2S, SampleBELLS
 from mejiro.synthetic_image import SyntheticImage
 
+
 TEST_DATA_DIR = os.path.join(os.path.dirname(mejiro.__path__[0]), 'tests', 'test_data')
 
 
 def test_hwo_default_engine_params():
-    hwo = HWO()
-
-    lens = SampleStrongLens()
-    band = 'J'
-    scene_size = 5  # arcsec
-    oversample = 5
-    exposure_time = 1000
-
-    synthetic_image = SyntheticImage(strong_lens=lens,
-                                     instrument=hwo,
-                                     band=band,
-                                     arcsec=scene_size,
-                                     oversample=oversample,
+    synthetic_image = SyntheticImage(strong_lens=SampleGG(),
+                                     instrument=HWO(),
+                                     band='J',
                                      verbose=False)
 
     exposure = Exposure(synthetic_image,
-                        exposure_time=exposure_time,
+                        exposure_time=1000,
                         engine='galsim',
                         # don't provide engine params
-                        check_cache=True,
-                        psf_cache_dir=os.path.abspath('tests/test_data'),
                         verbose=False)
 
     assert exposure.engine == 'galsim'
 
     for key, item in exposure.engine_params.items():
-        assert item == galsim_engine.default_roman_engine_params()[key]
+        assert item == galsim_engine.default_engine_params('HWO')[key]
+
+
+def test_hwo_pieces():
+    synthetic_image = SyntheticImage(strong_lens=SampleGG(),
+                                     instrument=HWO(),
+                                     band='J',
+                                     pieces=True,
+                                     verbose=False)
+
+    assert synthetic_image.image.shape == (229, 229)
+    assert synthetic_image.lens_surface_brightness.shape == (229, 229)
+    assert synthetic_image.source_surface_brightness.shape == (229, 229)
+
+    exposure = Exposure(synthetic_image,
+                        exposure_time=146,
+                        engine='galsim',
+                        verbose=False)
+
+    assert exposure.exposure.shape == (229, 229)
+    assert exposure.lens_exposure.shape == (229, 229)
+    assert exposure.source_exposure.shape == (229, 229)
+
+    # TODO checks on the images
 
 
 def test_hwo_noise():
-    hwo = HWO()
-    lens = SampleStrongLens()
-    band = 'J'
-    scene_size = 5  # arcsec
-    oversample = 5
-    exposure_time = 1000
-
-    synthetic_image = SyntheticImage(strong_lens=lens,
-                                     instrument=hwo,
-                                     band=band,
-                                     arcsec=scene_size,
-                                     oversample=oversample,
+    synthetic_image = SyntheticImage(strong_lens=SampleGG(),
+                                     instrument=HWO(),
+                                     band='J',
                                      verbose=False)
 
     exposure = Exposure(synthetic_image,
-                        exposure_time=exposure_time,
+                        exposure_time=1000,
+                        engine='galsim',
                         verbose=False)
 
     poisson_noise = exposure.poisson_noise
@@ -77,10 +80,9 @@ def test_hwo_noise():
     }
 
     exposure2 = Exposure(synthetic_image,
-                         exposure_time=exposure_time,
+                         exposure_time=1000,
+                         engine='galsim',
                          engine_params=engine_params,
-                         check_cache=True,
-                         psf_cache_dir=os.path.abspath('tests/test_data'),
                          verbose=False)
 
     assert np.array_equal(exposure2.exposure, exposure.exposure)
