@@ -7,6 +7,8 @@ def get_pixel_psf_kwargs(kernel, supersampling_factor, kernel_point_source_norma
     }
 
 def get_gaussian_psf_kwargs(fwhm):
+    if type(fwhm) is not float:
+        fwhm = fwhm.value
     return {
         'psf_type': 'GAUSSIAN', 
         'fwhm': fwhm,
