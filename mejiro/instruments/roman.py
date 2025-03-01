@@ -24,16 +24,10 @@ class Roman(Instrument):
             engines
         )        
 
-        self.pixel_scale = Quantity(0.11, 'arcsec / pix')
-
         # get path to roman-technical-information from environment variable
         self.roman_technical_information_path = os.getenv("ROMAN_TECHNICAL_INFORMATION_PATH")
         if self.roman_technical_information_path is None:
             raise EnvironmentError("Environment variable 'ROMAN_TECHNICAL_INFORMATION_PATH' is not set.")
-
-        # read from roman-technical-documentation
-        # module_path = os.path.dirname(mejiro.__file__)
-        # rti_path = os.path.join(module_path, 'data', 'roman-technical-documentation')
 
         # record version of roman-technical-documentation
         try:
@@ -42,41 +36,47 @@ class Roman(Instrument):
                 lines = file.readlines()
 
             if len(lines) >= 2:
-                self.version = lines[1].strip()
+                self.versions['roman-technical-information'] = lines[1].strip()
             else:
                 raise IndexError("Error reading version number from VERSION.md: not enough lines.")
         except FileNotFoundError:
             raise FileNotFoundError(f"VERSION.md not found in {self.roman_technical_information_path}.")
+        
+        # set attributes
+        self.pixel_scale = Quantity(0.11, 'arcsec / pix')
+        self.gain = 1.
+        self.stray_light_fraction = 0.1
 
         # fields to initialize: these can be retrieved on demand
         self.zeropoints = None
         self.thermal_background = None
         self.minimum_zodiacal_light = None
         self.psf_fwhm = None
-
+    
+    # implement abstract methods
+    def get_minimum_zodiacal_light(self, band):
+        if self.minimum_zodiacal_light is None:
+            self.minimum_zodiacal_light = util.return_qtable(os.path.join(self.roman_technical_information_path, ZODIACAL_LIGHT_PATH))
+        return self.minimum_zodiacal_light[self.minimum_zodiacal_light['filter'] == band]['rate']
+    
     def get_pixel_scale(self, band=None):
         return self.pixel_scale
+        
+    def get_psf_fwhm(self, band):
+        if self.psf_fwhm is None:
+            self.psf_fwhm = util.return_qtable(os.path.join(self.roman_technical_information_path, FILTER_PARAMS_PATH))
+        return self.psf_fwhm[self.psf_fwhm['filter'] == band]['PSF_FWHM']
+    
+    def get_thermal_background(self, band):
+        if self.thermal_background is None:
+            self.thermal_background = util.return_qtable(os.path.join(self.roman_technical_information_path, THERMAL_BACKGROUND_PATH))
+        return self.thermal_background[self.thermal_background['filter'] == band]['rate']
     
     def get_zeropoint_magnitude(self, band, detector):
         sca_number = roman_util.get_sca_int(detector)
         if self.zeropoints is None:
             self.zeropoints = util.return_qtable(os.path.join(self.roman_technical_information_path, ZEROPOINT_PATH))
         return self.zeropoints[(self.zeropoints['element'] == band) & (self.zeropoints['detector'] == f'WFI{str(sca_number).zfill(2)}')]['ABMag']
-        
-    def get_thermal_background(self, band):
-        if self.thermal_background is None:
-            self.thermal_background = util.return_qtable(os.path.join(self.roman_technical_information_path, THERMAL_BACKGROUND_PATH))
-        return self.thermal_background[self.thermal_background['filter'] == band]['rate']
-        
-    def get_minimum_zodiacal_light(self, band):
-        if self.minimum_zodiacal_light is None:
-            self.minimum_zodiacal_light = util.return_qtable(os.path.join(self.roman_technical_information_path, ZODIACAL_LIGHT_PATH))
-        return self.minimum_zodiacal_light[self.minimum_zodiacal_light['filter'] == band]['rate']
-        
-    def get_psf_fwhm(self, band):
-        if self.psf_fwhm is None:
-            self.psf_fwhm = util.return_qtable(os.path.join(self.roman_technical_information_path, FILTER_PARAMS_PATH))
-        return self.psf_fwhm[self.psf_fwhm['filter'] == band]['PSF_FWHM']
 
     @staticmethod
     def default_params():

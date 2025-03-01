@@ -11,10 +11,10 @@ def test_init():
     assert roman.name == 'Roman'
     assert roman.bands == ['F062', 'F087', 'F106', 'F129', 'F158', 'F184', 'F213', 'F146']
     assert type(roman.engines) == list and len(roman.engines) > 0
+    assert roman.versions
 
     # check other attributes
     assert roman.pixel_scale == Quantity(0.11, 'arcsec / pix')
-    assert roman.version is not None
 
     # check fields to initialize
     assert roman.zeropoints is None
