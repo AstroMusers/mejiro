@@ -7,17 +7,22 @@ from mejiro.instruments.hwo import HWO
 def test_init():
     hwo = HWO()
 
+    # super
     assert hwo.name == 'HWO'
     assert type(hwo.bands) == list
     assert type(hwo.engines) == list and len(hwo.engines) > 0
 
-    # check values imported from hwo-tools
-    assert type(hwo.aperture) == np.float64
-    assert type(hwo.pivotwave) == dict
-    # assert type(hwo.ab_zeropoint) == dict
-    assert type(hwo.aperture_correction) == dict
-    assert type(hwo.bandpass_r) == dict
-    assert type(hwo.derived_bandpass) == dict
+    # set attributes
+    assert hwo.gain == 1.0
+    assert hwo.stray_light_fraction == 0.1
+    assert hwo.aperture is not None
+    assert hwo.pixel_scale is not None
+    assert hwo.dark_current is not None
+    assert hwo.read_noise is not None
+    assert hwo.sky_level is not None
+    assert hwo.psf_fwhm is not None
+    assert hwo.thermal_background is not None
+    assert hwo.zeropoints is not None
 
 
 def test_eacs():

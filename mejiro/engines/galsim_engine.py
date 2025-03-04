@@ -275,7 +275,7 @@ class GalSimEngine(Engine):
 
     @staticmethod
     def get_piece(array, exposure_time, pixel_scale):
-        return galsim.Image(array=array * exposure_time, 
+        return galsim.ImageD(array=array * exposure_time, 
                             scale=pixel_scale, 
                             xmin=0, 
                             ymin=0, 
@@ -288,7 +288,7 @@ class GalSimEngine(Engine):
         roman = Roman()
 
         # build Image
-        sky_image = galsim.ImageF(num_pix, num_pix)
+        sky_image = galsim.ImageD(num_pix, num_pix)
 
         # get minimum zodiacal light in this band in counts/pixel/sec
         sky_level = roman.get_minimum_zodiacal_light(band)
@@ -322,12 +322,9 @@ class GalSimEngine(Engine):
         sky_image = GalSimEngine.get_empty_image(num_pix, pixel_scale)
 
         # get minimum zodiacal light in this band in counts/pixel/sec
-        sky_level = hwo.get_minimum_zodiacal_light(band)
+        sky_level = hwo.get_sky_level(band)
         if sky_level.unit != 'ct / pix':
             raise ValueError(f"Minimum zodiacal light is not in units of counts/pixel: {sky_level.unit}")
-
-        # "For observations at high galactic latitudes, the Zodi intensity is typically ~1.5x the minimum" (https://roman.gsfc.nasa.gov/science/WFI_technical.html)
-        sky_level *= 1.5
 
         # add stray light contribution
         sky_level *= (1. + hwo.stray_light_fraction)

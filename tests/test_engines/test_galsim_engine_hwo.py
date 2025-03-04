@@ -38,18 +38,18 @@ def test_hwo_pieces():
                                      pieces=True,
                                      verbose=False)
 
-    assert synthetic_image.image.shape == (229, 229)
-    assert synthetic_image.lens_surface_brightness.shape == (229, 229)
-    assert synthetic_image.source_surface_brightness.shape == (229, 229)
+    assert synthetic_image.image.shape == (291, 291)
+    assert synthetic_image.lens_surface_brightness.shape == (291, 291)
+    assert synthetic_image.source_surface_brightness.shape == (291, 291)
 
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
                         engine='galsim',
                         verbose=False)
 
-    assert exposure.exposure.shape == (229, 229)
-    assert exposure.lens_exposure.shape == (229, 229)
-    assert exposure.source_exposure.shape == (229, 229)
+    assert exposure.exposure.shape == (291, 291)
+    assert exposure.lens_exposure.shape == (291, 291)
+    assert exposure.source_exposure.shape == (291, 291)
 
     # TODO checks on the images
 

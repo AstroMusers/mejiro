@@ -12,23 +12,6 @@ class Instrument(ABC):
         self.bands = bands
         self.engines = engines
         self.versions = {}
-    
-    @abstractmethod
-    def get_minimum_zodiacal_light(self, band):
-        """
-        Get the minimum zodiacal light at high galactic latitudes for a given band in ct/pix.
-
-        Parameters
-        ----------
-        band : str
-            The name of the band, e.g., 'F129' for Roman or 'J' for HWO.
-
-        Returns
-        -------
-        Astropy.units.Quantity
-            Minimum zodiacal light in ct/pix.
-        """
-        pass
 
     @abstractmethod
     def get_pixel_scale(self, band):

@@ -75,12 +75,25 @@ class Roman(Instrument):
         self.minimum_zodiacal_light = None
         self.psf_fwhm = None
     
-    # implement abstract methods
     def get_minimum_zodiacal_light(self, band):
+        """
+        Get the minimum zodiacal light at high galactic latitudes for a given band in ct/pix.
+
+        Parameters
+        ----------
+        band : str
+            The name of the band, e.g., 'F129'.
+
+        Returns
+        -------
+        Astropy.units.Quantity
+            Minimum zodiacal light in ct/pix.
+        """
         if self.minimum_zodiacal_light is None:
             self.minimum_zodiacal_light = util.return_qtable(os.path.join(self.roman_technical_information_path, ZODIACAL_LIGHT_PATH))
         return self.minimum_zodiacal_light[self.minimum_zodiacal_light['filter'] == band]['rate']
     
+    # implement abstract methods
     def get_pixel_scale(self, band=None):
         return self.pixel_scale
         
