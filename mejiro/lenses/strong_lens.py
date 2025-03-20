@@ -296,7 +296,7 @@ class StrongLens:
         from pyHalo.Cosmology.cosmology import Cosmology
         Cosmology(astropy_instance=self.cosmo)
 
-    def add_subhalos(self, realization):  # , return_stats=False, suppress_output=True
+    def add_subhalos(self, realization, mass_sheet_correction=True):  # , return_stats=False, suppress_output=True
         # set cosmology by initializing pyHalo's Cosmology object, otherwise Colossus throws an error when calling realization.lensing_quantities()
         self._set_pyhalo_cosmology()
 
@@ -306,7 +306,7 @@ class StrongLens:
 
         # generate lenstronomy objects
         halo_lens_model_list, halo_redshift_array, kwargs_halos, _ = realization.lensing_quantities(
-            add_mass_sheet_correction=True)
+            add_mass_sheet_correction=mass_sheet_correction)
 
         # halo_lens_model_list and kwargs_halos are lists, but halo_redshift_array is ndarray
         halo_redshift_list = list(halo_redshift_array)
