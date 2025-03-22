@@ -117,7 +117,7 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
         image += bkg
 
     # integer number of photons are being detected, so quantize
-    image.quantize()
+    # image.quantize()
 
     # add detector effects
     if engine_params['detector_effects']:
@@ -205,7 +205,7 @@ def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=d
         image /= galsim.roman.gain
 
         # quantize, since analog-to-digital conversion gives integers
-        image.quantize()
+        # image.quantize()
 
         # if any unphysical negative pixels exist due to how GalSim adds Poisson noise, set them to zero
         if np.any(image.array < 0):
