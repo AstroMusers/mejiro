@@ -16,7 +16,7 @@ def main():
     repo_dir = '/grad/bwedig/mejiro'
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
-    from mejiro.lenses.strong_lens import StrongLens
+    from mejiro.galaxy_galaxy import GalaxyGalaxy
     from mejiro.utils import util
 
     # set up directories to save output to
@@ -92,10 +92,10 @@ def main():
             assert len(kwargs_model['lens_model_list']) == len(kwargs_model['lens_redshift_list'])
             assert len(kwargs_model['source_light_model_list']) == len(kwargs_model['source_redshift_list'])
 
-            strong_lens = StrongLens(kwargs_model=kwargs_model,
-                                    kwargs_params=kwargs_params,
-                                    band='J',
-                                    uid=system_name)
+            strong_lens = GalaxyGalaxy(name=system_name,
+                           coords=None,  # TODO TEMP
+                           kwargs_model=kwargs_model,
+                           kwargs_params=kwargs_params)
             
             util.pickle(os.path.join(save_dir, f'{system_name}.pkl'), strong_lens)
         except Exception as e:
