@@ -362,8 +362,14 @@ class GalSimEngine(Engine):
         image = galsim.Image(array=synthetic_image.image * exposure_time, scale=synthetic_image.pixel_scale, xmin=0, ymin=0, copy=True)
 
         # add sky background
-        if engine_params['sky_background']:
-            image += GalSimEngine.get_hwo_sky_background(hwo, synthetic_image.band, exposure_time, synthetic_image.num_pix, synthetic_image.pixel_scale)
+        if type(engine_params['sky_background']) is galsim.Image:
+            sky_background = engine_params['sky_background']
+            image += sky_background
+        elif engine_params['sky_background']:
+            sky_background = GalSimEngine.get_hwo_sky_background(hwo, synthetic_image.band, exposure_time, synthetic_image.num_pix, synthetic_image.pixel_scale)
+            image += sky_background
+        else:
+            sky_background = None
 
         # integer number of photons are being detected, so quantize
         image.quantize()
@@ -433,7 +439,7 @@ class GalSimEngine(Engine):
         else:
             results = image
 
-        return results, psf, poisson_noise, dark_noise, read_noise
+        return results, sky_background, psf, poisson_noise, dark_noise, read_noise
 
 
     @staticmethod

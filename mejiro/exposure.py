@@ -48,10 +48,11 @@ class Exposure:
 
             elif self.synthetic_image.instrument_name == 'HWO':
                 # get exposure
-                results, self.psf, self.poisson_noise, self.dark_noise, self.read_noise = GalSimEngine.get_hwo_exposure(
+                results, self.psf, self.sky_background, self.poisson_noise, self.dark_noise, self.read_noise = GalSimEngine.get_hwo_exposure(
                     synthetic_image, exposure_time, psf, engine_params, self.verbose)
 
                 # sum noise
+                if self.sky_background is not None: self.noise += self.sky_background
                 if self.poisson_noise is not None: self.noise += self.poisson_noise
                 if self.dark_noise is not None: self.noise += self.dark_noise
                 if self.read_noise is not None: self.noise += self.read_noise
