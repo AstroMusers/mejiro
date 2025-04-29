@@ -34,7 +34,7 @@ def process_lens(params):
     masses = subhalo_params['masses']
 
     kwargs_numerics = {
-        'supersampling_factor': 3,
+        'supersampling_factor': 1,
         'compute_mode': 'regular',
     }
 
@@ -45,22 +45,23 @@ def process_lens(params):
     # realization = lens.generate_cdm_subhalos()
     # lens.add_subhalos(realization)
 
-    # calculate image position and set subhalo position
-    image_x, image_y = lens.get_image_positions(pixel_coordinates=False)
-    image_distance = np.sqrt(image_x ** 2 + image_y ** 2)
-    more_distant_image_index = np.argmax(image_distance)
-    halo_x = image_x[more_distant_image_index]
-    halo_y = image_y[more_distant_image_index]
-
     lens_no_subhalo = deepcopy(lens)
     synth_no_subhalo = SyntheticImage(lens_no_subhalo,
                                         hwo,
                                         band=band,
-                                        arcsec=scene_size,
-                                        oversample=oversample,
+                                        fov_arcsec=scene_size,
                                         kwargs_numerics=kwargs_numerics,
                                         pieces=True,
                                         verbose=False)
+    
+    # calculate image position and set subhalo position
+    image_x, image_y = synth_no_subhalo.get_image_positions(pixel=False)
+    image_distance = np.sqrt(image_x ** 2 + image_y ** 2)
+    # more_distant_image_index = np.argmax(image_distance)
+    image_index = np.random.randint(0, len(image_distance))
+    halo_x = image_x[image_index]
+    halo_y = image_y[image_index]
+
     try:
         engine_params = {
             'rng_seed': rng_seed,
@@ -70,11 +71,11 @@ def process_lens(params):
                                         engine_params=engine_params,
                                         verbose=False)
     except Exception as e:
-        print(f'Failed to generate exposure for StrongLens {lens.uid}: {e}')
-        return lens.uid, None, None
+        print(f'Failed to generate exposure for StrongLens {lens.name}: {e}')
+        return lens.name, None, None
 
     source_exposure = exposure_no_subhalo.source_exposure
-
+    sky_background = exposure_no_subhalo.sky_background
     poisson_noise = exposure_no_subhalo.poisson_noise
     dark_noise = exposure_no_subhalo.dark_noise
     read_noise = exposure_no_subhalo.read_noise
@@ -122,17 +123,17 @@ def process_lens(params):
         c = single_halo.halos[0].c
 
         lens_with_subhalo = deepcopy(lens)
-        lens_with_subhalo.add_subhalos(single_halo)
+        lens_with_subhalo.add_realization(single_halo)
         synth = SyntheticImage(lens_with_subhalo,
                                 hwo,
                                 band=band,
-                                arcsec=scene_size,
-                                oversample=oversample,
+                                fov_arcsec=scene_size,
                                 kwargs_numerics=kwargs_numerics,
                                 verbose=False)
         try:
             engine_params = {
                 'rng_seed': rng_seed,
+                'sky_background': sky_background,
                 'poisson_noise': poisson_noise,
                 'dark_noise': dark_noise,
                 'read_noise': read_noise
@@ -142,16 +143,16 @@ def process_lens(params):
                                 engine_params=engine_params,
                                 verbose=False)
         except Exception as e:
-            print(f'Failed to generate exposure with subhalo for StrongLens {lens.uid}: {e}')
-            return lens.uid, None, None
+            print(f'Failed to generate exposure with subhalo for StrongLens {lens.name}: {e}')
+            return lens.name, None, None
 
         masked_exposure_with_subhalo = np.ma.masked_array(exposure.exposure, mask=mask)
         chi_square = stats.chi_square(np.ma.compressed(masked_exposure_with_subhalo),
                                         np.ma.compressed(masked_exposure_no_subhalo))
 
         if chi_square < 0.:
-            print(f'{lens.uid}: {chi_square=}')
-            return lens.uid, None, None
+            print(f'{lens.name}: {chi_square=}')
+            return lens.name, None, None
 
         chi_square_list.append(chi_square)
         if chi_square > threshold_chi2:
@@ -194,8 +195,8 @@ def process_lens(params):
                 plt.colorbar(ax12, ax=ax[1, 2])
 
                 plt.suptitle(
-                    f'StrongLens {lens.uid}, Image Shape: {exposure.exposure.shape}')
-                plt.savefig(os.path.join(image_save_dir, f'{lens.uid}_{run}.png'))
+                    f'StrongLens {lens.name}, Image Shape: {exposure.exposure.shape}')
+                plt.savefig(os.path.join(image_save_dir, f'{lens.name}_{run}.png'))
                 plt.close()
             except Exception as e:
                 print(e)
@@ -203,10 +204,10 @@ def process_lens(params):
         pvals = [rv.sf(chi) for chi in chi_square_list]
         results[mass_key] = pvals
 
-    util.pickle(os.path.join(save_dir, f'results_{lens.uid}_{run}.pkl'), results)
-    util.pickle(os.path.join(save_dir, f'detectable_halos_{lens.uid}_{run}.pkl'), detectable_halos)
+    util.pickle(os.path.join(save_dir, f'results_{lens.name}_{run}.pkl'), results)
+    util.pickle(os.path.join(save_dir, f'detectable_halos_{lens.name}_{run}.pkl'), detectable_halos)
 
-    return lens.uid, results, detectable_halos
+    return lens.name, results, detectable_halos
 
 
 def main():
@@ -233,7 +234,7 @@ def main():
         'band': 'J',  # F106
         'scene_size': 5,  # arcsec
         'oversample': 1,
-        'exposure_time': 1250000
+        'exposure_time': 1e8
     }
 
     # set up directories to save output to
@@ -245,7 +246,7 @@ def main():
     os.makedirs(image_save_dir, exist_ok=True)
 
     # collect lenses
-    lens_list = util.unpickle_all('/data/bwedig/mejiro/hwo/dinos_best')
+    lens_list = util.unpickle_all('/data/bwedig/mejiro/hwo/dinos_good')
     print(f'Loaded {len(lens_list)} strong lenses')
     og_count = len(lens_list)
     num_lenses = script_config['num_lenses']
@@ -281,9 +282,9 @@ def main():
 
         for future in tqdm(as_completed(futures), total=len(futures)):
             # try:
-            lens_uid, results, detectable_halos = future.result()
+            lens_name, results, detectable_halos = future.result()
                 # if results is not None and detectable_halos is not None:
-                #     print(f'Processed StrongLens {lens_uid}')
+                #     print(f'Processed StrongLens {lens_name}')
             # except Exception as e:
             #     print(f"Error encountered: {e}")
 
