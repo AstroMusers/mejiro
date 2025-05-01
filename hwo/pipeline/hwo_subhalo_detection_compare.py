@@ -176,18 +176,18 @@ def process_lens(params):
             vmax_synth = plot_util.get_limit(synth_residual)
             ax10 = ax[1, 0].imshow(synth_residual, cmap='bwr', vmin=-vmax_synth, vmax=vmax_synth)
             ax11 = ax[1, 1].imshow(np.log10(exposure.exposure), cmap='cubehelix')
-            # ax12 = ax[1, 2].imshow(snr_array)
+            ax12 = ax[1, 2].imshow(snr_array)
 
             ax[1, 0].set_title('Synthetic Residual')
             ax[1, 1].set_title('Full Exposure With Subhalo')
-            # ax[1, 2].set_title(f'SNR Array: {pixels_unmasked} pixels, {dof} dof')
+            ax[1, 2].set_title(f'SNR Array: {pixels_unmasked} pixels, {dof} dof')
 
             plt.colorbar(ax00, ax=ax[0, 0])
             plt.colorbar(ax01, ax=ax[0, 1])
             plt.colorbar(ax02, ax=ax[0, 2])
             plt.colorbar(ax10, ax=ax[1, 0])
             plt.colorbar(ax11, ax=ax[1, 1])
-            # plt.colorbar(ax12, ax=ax[1, 2])
+            plt.colorbar(ax12, ax=ax[1, 2])
 
             plt.suptitle(
                 f'StrongLens {lens.name}, Image Shape: {exposure.exposure.shape}')
@@ -213,83 +213,85 @@ def main():
     from mejiro.utils import util
     from mejiro.instruments.hwo import HWO
 
-    # script configuration options
-    script_config = {
-        'snr_quantile': 0.9,
-        'num_lenses': 49,  # None
-        'num_positions': 4,
-        'rng_seed': 42,
-    }
-    subhalo_params = {
-        'masses': np.logspace(5, 11, 100),
-        'r_tidal': 0.5,
-        'sigma_sub': 0.055,
-        'los_normalization': 0.
-    }
-    imaging_params = {
-        'band': 'J',  # F106
-        'scene_size': 5,  # arcsec
-        'oversample': 5,
-        'exposure_time': 1e10
-    }
+    eacs = [1, 2, 3]
+    for eac in eacs:
+        # script configuration options
+        script_config = {
+            'snr_quantile': 0.9,
+            'num_lenses': 49 * 2,  # None
+            'num_positions': 4,
+            'rng_seed': 42,
+        }
+        subhalo_params = {
+            'masses': np.logspace(4, 10, 100),
+            'r_tidal': 0.5,
+            'sigma_sub': 0.055,
+            'los_normalization': 0.
+        }
+        imaging_params = {
+            'band': 'J',
+            'scene_size': 5,  # arcsec
+            'oversample': 1,
+            'exposure_time': 1e10
+        }
 
-    # set up directories to save output to
-    data_dir = '/data/bwedig/mejiro'
-    save_dir = os.path.join(data_dir, 'hwo_subhalo_detection_compare')
-    util.create_directory_if_not_exists(save_dir)
-    util.clear_directory(save_dir)
-    image_save_dir = os.path.join(save_dir, 'images')
-    os.makedirs(image_save_dir, exist_ok=True)
+        # set up directories to save output to
+        data_dir = '/data/bwedig/mejiro'
+        save_dir = os.path.join(data_dir, f'hwo_subhalo_detection_compare_eac{eac}')
+        util.create_directory_if_not_exists(save_dir)
+        util.clear_directory(save_dir)
+        image_save_dir = os.path.join(save_dir, 'images')
+        os.makedirs(image_save_dir, exist_ok=True)
 
-    # collect lenses
-    lens_list = util.unpickle_all('/data/bwedig/mejiro/hwo/dinos_good')
-    print(f'Loaded {len(lens_list)} strong lenses')
-    og_count = len(lens_list)
-    num_lenses = script_config['num_lenses']
-    if num_lenses is not None:
-        repeats = int(np.ceil(num_lenses / len(lens_list)))
-        print(f'Repeating lenses {repeats} time(s)')
-        lens_list *= repeats
-        lens_list = lens_list[:num_lenses]
-    print(f'Processing {len(lens_list)} lens(es) of {og_count}')
+        # collect lenses
+        lens_list = util.unpickle_all('/data/bwedig/mejiro/hwo/dinos_good')
+        print(f'Loaded {len(lens_list)} strong lenses')
+        og_count = len(lens_list)
+        num_lenses = script_config['num_lenses']
+        if num_lenses is not None:
+            repeats = int(np.ceil(num_lenses / len(lens_list)))
+            print(f'Repeating lenses {repeats} time(s)')
+            lens_list *= repeats
+            lens_list = lens_list[:num_lenses]
+        print(f'Processing {len(lens_list)} lens(es) of {og_count}')
 
-    # num_permutations = len(subhalo_params['masses']) * len(lens_list)
-    idx_to_save = np.random.choice(len(lens_list), size=10, replace=False).tolist()
+        # num_permutations = len(subhalo_params['masses']) * len(lens_list)
+        idx_to_save = np.random.choice(len(lens_list), size=10, replace=False).tolist()
 
-    # generate instrument
-    hwo = HWO()
+        # generate instrument
+        hwo = HWO(eac=f'EAC{eac}')
 
-    # generate params list and spin up processes
-    params_list = [
-        (
-            run, lens, hwo, script_config, imaging_params, subhalo_params, save_dir, image_save_dir,
-            idx_to_save)
-        for run, lens in enumerate(lens_list)]
-    count = len(lens_list)
-    cpu_count = multiprocessing.cpu_count()
-    process_count = cpu_count  # - config.machine.headroom_cores
-    process_count -= int(cpu_count / 2)
-    if count < process_count:
-        process_count = count
-    print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
+        # generate params list and spin up processes
+        params_list = [
+            (
+                run, lens, hwo, script_config, imaging_params, subhalo_params, save_dir, image_save_dir,
+                idx_to_save)
+            for run, lens in enumerate(lens_list)]
+        count = len(lens_list)
+        cpu_count = multiprocessing.cpu_count()
+        process_count = cpu_count  # - config.machine.headroom_cores
+        process_count -= int(cpu_count / 2)
+        if count < process_count:
+            process_count = count
+        print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
-    with ProcessPoolExecutor(max_workers=process_count) as executor:
-        futures = {executor.submit(process_lens, params): params for params in params_list}
+        with ProcessPoolExecutor(max_workers=process_count) as executor:
+            futures = {executor.submit(process_lens, params): params for params in params_list}
 
-        for future in tqdm(as_completed(futures), total=len(futures)):
-            # try:
-            lens_name, results, detectable_halos = future.result()
-                # if results is not None and detectable_halos is not None:
-                #     print(f'Processed StrongLens {lens_name}')
-            # except Exception as e:
-            #     print(f"Error encountered: {e}")
+            for future in tqdm(as_completed(futures), total=len(futures)):
+                # try:
+                lens_name, results, detectable_halos = future.result()
+                    # if results is not None and detectable_halos is not None:
+                    #     print(f'Processed StrongLens {lens_name}')
+                # except Exception as e:
+                #     print(f"Error encountered: {e}")
 
-    stop = time.time()
-    execution_time = str(datetime.timedelta(seconds=round(stop - start)))
-    print(f'Execution time: {execution_time}')
+        stop = time.time()
+        execution_time = str(datetime.timedelta(seconds=round(stop - start)))
+        print(f'Execution time: {execution_time}')
 
-    execution_time_per_lens = str(datetime.timedelta(seconds=round((stop - start) / len(lens_list))))
-    print(f'Execution time per lens: {execution_time_per_lens}')
+        execution_time_per_lens = str(datetime.timedelta(seconds=round((stop - start) / len(lens_list))))
+        print(f'Execution time per lens: {execution_time_per_lens}')
 
 
 if __name__ == '__main__':
