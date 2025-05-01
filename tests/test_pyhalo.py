@@ -17,7 +17,7 @@ def test_CDM():
                                      instrument=Roman(),
                                      band='F129',
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01'},
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
                                      pieces=False,
                                      verbose=False)
     
@@ -66,7 +66,7 @@ def test_WDM():
                                      instrument=Roman(),
                                      band='F129',
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01'},
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
                                      pieces=False,
                                      verbose=False)
 
@@ -87,7 +87,7 @@ def test_SIDM():
                                      instrument=Roman(),
                                      band='F129',
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01'},
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
                                      pieces=False,
                                      verbose=False)
     

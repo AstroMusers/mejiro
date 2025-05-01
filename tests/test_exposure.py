@@ -8,28 +8,29 @@ import pytest
 import mejiro
 from mejiro.exposure import Exposure
 from mejiro.synthetic_image import SyntheticImage
-from mejiro.utils import util
+from mejiro.galaxy_galaxy import SampleGG, SampleSL2S, SampleBELLS
+from mejiro.instruments.roman import Roman
+from mejiro.engines.stpsf_engine import STPSFEngine
 
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(mejiro.__file__)), 'tests', 'test_data')
 
 
-def test_exposure_with_galsim_engine():
+@pytest.mark.parametrize("strong_lens", [SampleGG(), SampleSL2S(), SampleBELLS()])
+def test_exposure_with_galsim_engine(strong_lens):
     from mejiro.engines.galsim_engine import GalSimEngine
 
-    # TODO TEMP
-    # synthetic_image = util.unpickle(f'{TEST_DATA_DIR}/synthetic_image_roman_F129_5_5.pkl')
-    from mejiro.galaxy_galaxy import SampleGG, SampleSL2S, SampleBELLS
-    from mejiro.instruments.roman import Roman
-    from mejiro.engines.stpsf_engine import STPSFEngine
+    band = 'F129'
+    detector = 'SCA01'
+    detector_position = (2048, 2048)
 
-    kwargs_psf = STPSFEngine.get_roman_psf_kwargs('F129', 'SCA01', (2048, 2048), oversample=5, num_pix=101, check_cache=True, psf_cache_dir=TEST_DATA_DIR, verbose=False)
+    kwargs_psf = STPSFEngine.get_roman_psf_kwargs(band, detector, detector_position, oversample=5, num_pix=101, check_cache=True, psf_cache_dir=TEST_DATA_DIR, verbose=False)
 
-    synthetic_image = SyntheticImage(strong_lens=SampleSL2S(),
+    synthetic_image = SyntheticImage(strong_lens=strong_lens,
                                      instrument=Roman(),
-                                     band='F129',
+                                     band=band,
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01'},
+                                     instrument_params={'detector': detector, 'detector_position': detector_position},
                                      kwargs_numerics={},
                                      kwargs_psf=kwargs_psf,
                                      pieces=False,
