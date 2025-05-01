@@ -360,12 +360,13 @@ class GalSimEngine(Engine):
         if type(engine_params['sky_background']) is galsim.Image:
             sky_background = engine_params['sky_background']
             image += sky_background
-        elif engine_params['sky_background']:
-            sky_background = GalSimEngine.get_hwo_sky_background(hwo, synthetic_image.band, exposure_time, synthetic_image.num_pix, synthetic_image.pixel_scale)
-            image += sky_background
-        else:
-            sky_background = None
-
+        elif type(engine_params['sky_background']) is bool:
+            if engine_params['sky_background']:
+                sky_background = GalSimEngine.get_hwo_sky_background(hwo, synthetic_image.band, exposure_time, synthetic_image.num_pix, synthetic_image.pixel_scale)
+                image += sky_background
+            else:
+                sky_background = None
+        
         # integer number of photons are being detected, so quantize
         image.quantize()
 
@@ -417,11 +418,6 @@ class GalSimEngine(Engine):
 
             # quantize, since analog-to-digital conversion gives integers
             image.quantize()
-
-            # if any unphysical negative pixels exists due to how GalSim adds Poisson noise, set them to zero
-            if np.any(image.array < 0):
-                warnings.warn('Negative pixel values in final image')
-                image.replaceNegative(0.)
         else:
             poisson_noise = None
             dark_noise = None
@@ -434,7 +430,7 @@ class GalSimEngine(Engine):
         else:
             results = image
 
-        return results, sky_background, psf, poisson_noise, dark_noise, read_noise
+        return results, psf, sky_background, poisson_noise, dark_noise, read_noise
 
 
     @staticmethod

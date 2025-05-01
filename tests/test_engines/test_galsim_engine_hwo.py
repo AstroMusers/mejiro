@@ -89,3 +89,98 @@ def test_hwo_noise():
     assert np.array_equal(poisson_noise.array, exposure2.poisson_noise.array)
     assert np.array_equal(dark_noise.array, exposure2.dark_noise.array)
     assert np.array_equal(read_noise.array, exposure2.read_noise.array)
+
+
+def test_hwo_sky_background_off():
+    synthetic_image = SyntheticImage(strong_lens=SampleGG(),
+                                     instrument=HWO(),
+                                     band='J',
+                                     verbose=False)
+
+    engine_params = {
+        'sky_background': False
+    }
+
+    exposure = Exposure(synthetic_image,
+                        exposure_time=1000,
+                        engine='galsim',
+                        engine_params=engine_params,
+                        verbose=False)
+
+    # TODO checks on the images
+
+
+def test_hwo_all_detector_effects_off():
+    synthetic_image = SyntheticImage(strong_lens=SampleGG(),
+                                     instrument=HWO(),
+                                     band='J',
+                                     verbose=False)
+
+    engine_params = {
+        'detector_effects': False
+    }
+
+    exposure = Exposure(synthetic_image,
+                        exposure_time=1000,
+                        engine='galsim',
+                        engine_params=engine_params,
+                        verbose=False)
+
+    # TODO checks on the images
+
+
+def test_hwo_poisson_noise_off():
+    synthetic_image = SyntheticImage(strong_lens=SampleGG(),
+                                     instrument=HWO(),
+                                     band='J',
+                                     verbose=False)
+
+    engine_params = {
+        'poisson_noise': False
+    }
+
+    exposure = Exposure(synthetic_image,
+                        exposure_time=1000,
+                        engine='galsim',
+                        engine_params=engine_params,
+                        verbose=False)
+
+    # TODO checks on the images
+
+
+def test_hwo_dark_noise_off():
+    synthetic_image = SyntheticImage(strong_lens=SampleGG(),
+                                     instrument=HWO(),
+                                     band='J',
+                                     verbose=False)
+
+    engine_params = {
+        'dark_noise': False
+    }
+
+    exposure = Exposure(synthetic_image,
+                        exposure_time=1000,
+                        engine='galsim',
+                        engine_params=engine_params,
+                        verbose=False)
+
+    # TODO checks on the images
+
+
+def test_hwo_read_noise_off():
+    synthetic_image = SyntheticImage(strong_lens=SampleGG(),
+                                     instrument=HWO(),
+                                     band='J',
+                                     verbose=False)
+
+    engine_params = {
+        'read_noise': False
+    }
+
+    exposure = Exposure(synthetic_image,
+                        exposure_time=1000,
+                        engine='galsim',
+                        engine_params=engine_params,
+                        verbose=False)
+
+    # TODO checks on the images
