@@ -60,6 +60,9 @@ class Exposure:
             else:
                 self.instrument_not_available_error(engine)
 
+            # write the noise out to a numpy array
+            self.noise = self.noise.array
+
         elif engine == 'lenstronomy':
             from mejiro.engines.lenstronomy_engine import LenstronomyEngine
 
