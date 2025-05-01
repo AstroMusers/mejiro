@@ -250,11 +250,6 @@ class GalSimEngine(Engine):
 
             # quantize, since analog-to-digital conversion gives integers
             image.quantize()
-
-            # if any unphysical negative pixels exist due to how GalSim adds Poisson noise, set them to zero
-            if np.any(image.array < 0):
-                warnings.warn('Negative pixel values in final image')
-                image.replaceNegative(0.)
         else:
             poisson_noise = None
             reciprocity_failure = None
