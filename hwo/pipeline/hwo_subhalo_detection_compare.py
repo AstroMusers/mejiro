@@ -14,9 +14,6 @@ from scipy.stats import chi2
 from tqdm import tqdm
 
 
-os.nice(19)
-
-
 def process_lens(params):
     from mejiro.analysis import stats
     from mejiro.utils import util
@@ -34,7 +31,7 @@ def process_lens(params):
     masses = subhalo_params['masses']
 
     kwargs_numerics = {
-        'supersampling_factor': 1,
+        'supersampling_factor': oversample,
         'compute_mode': 'regular',
     }
 
@@ -158,48 +155,45 @@ def process_lens(params):
         if chi_square > threshold_chi2:
             detectable_halos.append((lens.z_lens, m200, c))
 
-        if run == idx_to_save:
-            try:
-                _, ax = plt.subplots(2, 3, figsize=(15, 10))
-                residual = masked_exposure_with_subhalo - masked_exposure_no_subhalo
-                vmax = plot_util.get_limit(residual)
-                if vmax == 0.: vmax = 0.1
-                synth.set_native_coords()
-                coords_x, coords_y = synth.coords_native.map_coord2pix(halo_x, halo_y)
+        if run in idx_to_save:
+            _, ax = plt.subplots(2, 3, figsize=(15, 10))
+            residual = masked_exposure_with_subhalo - masked_exposure_no_subhalo
+            vmax = plot_util.get_limit(residual)
+            if vmax == 0.: vmax = 0.1
+            coords_x, coords_y = synth.coords.map_coord2pix(halo_x, halo_y)
 
-                ax00 = ax[0, 0].imshow(masked_exposure_no_subhalo)
-                ax01 = ax[0, 1].imshow(masked_exposure_with_subhalo)
-                ax[0, 1].scatter(coords_x, coords_y, c='r', s=10)
-                ax02 = ax[0, 2].imshow(residual, cmap='bwr', vmin=-vmax, vmax=vmax)
+            ax00 = ax[0, 0].imshow(masked_exposure_no_subhalo)
+            ax01 = ax[0, 1].imshow(masked_exposure_with_subhalo)
+            ax[0, 1].scatter(coords_x, coords_y, c='r', s=10)
+            ax02 = ax[0, 2].imshow(residual, cmap='bwr', vmin=-vmax, vmax=vmax)
 
-                ax[0, 0].set_title(f'SNR: {lens.snr:.2f}')
-                ax[0, 1].set_title(f'{m200:.2e}')
-                ax[0, 2].set_title(
-                    r'$\chi^2=$ ' + f'{chi_square:.2f}, ' + r'$\chi_{3\sigma}^2=$ ' + f'{threshold_chi2:.2f}')
+            # ax[0, 0].set_title(f'SNR: {lens.snr:.2f}')
+            ax[0, 1].set_title(f'{m200:.2e}')
+            ax[0, 2].set_title(
+                r'$\chi^2=$ ' + f'{chi_square:.2f}, ' + r'$\chi_{3\sigma}^2=$ ' + f'{threshold_chi2:.2f}')
 
-                synth_residual = synth.image - synth_no_subhalo.image
-                vmax_synth = plot_util.get_limit(synth_residual)
-                ax10 = ax[1, 0].imshow(synth_residual, cmap='bwr', vmin=-vmax_synth, vmax=vmax_synth)
-                ax11 = ax[1, 1].imshow(exposure.exposure)
-                ax12 = ax[1, 2].imshow(snr_array)
+            synth_residual = synth.image - synth_no_subhalo.image
+            vmax_synth = plot_util.get_limit(synth_residual)
+            ax10 = ax[1, 0].imshow(synth_residual, cmap='bwr', vmin=-vmax_synth, vmax=vmax_synth)
+            ax11 = ax[1, 1].imshow(np.log10(exposure.exposure), cmap='cubehelix')
+            # ax12 = ax[1, 2].imshow(snr_array)
 
-                ax[1, 0].set_title('Synthetic Residual')
-                ax[1, 1].set_title('Full Exposure With Subhalo')
-                ax[1, 2].set_title(f'SNR Array: {pixels_unmasked} pixels, {dof} dof')
+            ax[1, 0].set_title('Synthetic Residual')
+            ax[1, 1].set_title('Full Exposure With Subhalo')
+            # ax[1, 2].set_title(f'SNR Array: {pixels_unmasked} pixels, {dof} dof')
 
-                plt.colorbar(ax00, ax=ax[0, 0])
-                plt.colorbar(ax01, ax=ax[0, 1])
-                plt.colorbar(ax02, ax=ax[0, 2])
-                plt.colorbar(ax10, ax=ax[1, 0])
-                plt.colorbar(ax11, ax=ax[1, 1])
-                plt.colorbar(ax12, ax=ax[1, 2])
+            plt.colorbar(ax00, ax=ax[0, 0])
+            plt.colorbar(ax01, ax=ax[0, 1])
+            plt.colorbar(ax02, ax=ax[0, 2])
+            plt.colorbar(ax10, ax=ax[1, 0])
+            plt.colorbar(ax11, ax=ax[1, 1])
+            # plt.colorbar(ax12, ax=ax[1, 2])
 
-                plt.suptitle(
-                    f'StrongLens {lens.name}, Image Shape: {exposure.exposure.shape}')
-                plt.savefig(os.path.join(image_save_dir, f'{lens.name}_{run}.png'))
-                plt.close()
-            except Exception as e:
-                print(e)
+            plt.suptitle(
+                f'StrongLens {lens.name}, Image Shape: {exposure.exposure.shape}')
+            plt.savefig(os.path.join(image_save_dir, f'{lens.name}_{run}.png'))
+            plt.close()
+
 
         pvals = [rv.sf(chi) for chi in chi_square_list]
         results[mass_key] = pvals
@@ -213,19 +207,21 @@ def process_lens(params):
 def main():
     start = time.time()
 
+    os.nice(19)
+
     sys.path.append('/grad/bwedig/mejiro')
     from mejiro.utils import util
     from mejiro.instruments.hwo import HWO
 
     # script configuration options
     script_config = {
-        'snr_quantile': 0.95,
-        'num_lenses': 40,  # None
-        'num_positions': 1,
+        'snr_quantile': 0.9,
+        'num_lenses': 49,  # None
+        'num_positions': 4,
         'rng_seed': 42,
     }
     subhalo_params = {
-        'masses': np.logspace(6, 12, 100),
+        'masses': np.logspace(5, 11, 100),
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
         'los_normalization': 0.
@@ -233,8 +229,8 @@ def main():
     imaging_params = {
         'band': 'J',  # F106
         'scene_size': 5,  # arcsec
-        'oversample': 1,
-        'exposure_time': 1e8
+        'oversample': 5,
+        'exposure_time': 1e10
     }
 
     # set up directories to save output to
@@ -257,8 +253,8 @@ def main():
         lens_list = lens_list[:num_lenses]
     print(f'Processing {len(lens_list)} lens(es) of {og_count}')
 
-    num_permutations = len(subhalo_params['masses']) * len(lens_list)
-    idx_to_save = np.random.randint(low=num_permutations, size=len(lens_list))
+    # num_permutations = len(subhalo_params['masses']) * len(lens_list)
+    idx_to_save = np.random.choice(len(lens_list), size=10, replace=False).tolist()
 
     # generate instrument
     hwo = HWO()
@@ -267,7 +263,7 @@ def main():
     params_list = [
         (
             run, lens, hwo, script_config, imaging_params, subhalo_params, save_dir, image_save_dir,
-            idx_to_save[run])
+            idx_to_save)
         for run, lens in enumerate(lens_list)]
     count = len(lens_list)
     cpu_count = multiprocessing.cpu_count()
