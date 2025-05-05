@@ -115,7 +115,7 @@ class SyntheticImage:
             if self.verbose: print('Building adaptive grid')
             self.supersampled_indexes = self.build_adaptive_grid(pad=40)
             kwargs_numerics['supersampled_indexes'] = self.supersampled_indexes
-        if kwargs_numerics['supersampling_factor'] < 5:
+        if kwargs_numerics['supersampling_factor'] < 5 and verbose:
             warnings.warn('Supersampling factor less than 5 may not be sufficient for accurate results, especially when convolving with a non-trivial PSF')
         self.kwargs_numerics = kwargs_numerics            
 

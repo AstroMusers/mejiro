@@ -1,15 +1,19 @@
 import numpy as np
+from scipy import ndimage
 
 
 def get_snr(exposure, snr_per_pixel_threshold=1, verbose=False):
-    from scipy import ndimage
-
     snr_array = get_snr_array(exposure)
     masked_snr_array = np.ma.masked_where(snr_array <= snr_per_pixel_threshold, snr_array)
 
-    structure = np.array([[1, 1, 1],
+    # if no pixels are above the threshold, return None
+    if masked_snr_array.mask.all():
+        return 1, masked_snr_array
+
+    structure = np.array(
+                    [[0, 1, 0],
                      [1, 1, 1],
-                     [1, 1, 1]])
+                     [0, 1, 0]])
     if verbose: print(f'Using structure: {structure}')
 
     labeled_array, num_regions = ndimage.label(masked_snr_array.filled(0), structure=structure)
@@ -25,7 +29,7 @@ def get_snr(exposure, snr_per_pixel_threshold=1, verbose=False):
         if verbose: print(f'Region {i}: SNR = {snr}')
 
     # return the maximum SNR
-    return np.max(snrs) if snrs else None
+    return np.max(snrs) if snrs else None, masked_snr_array
 
 
 def get_snr_array(exposure):

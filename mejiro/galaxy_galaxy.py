@@ -13,6 +13,7 @@ class GalaxyGalaxy(StrongLens):
             coords,
             kwargs_model,
             kwargs_params,
+            physical_params={},
             magnitudes={}
     ):
         """
@@ -37,7 +38,8 @@ class GalaxyGalaxy(StrongLens):
         super().__init__(name=name,
                          coords=coords, 
                          kwargs_model=kwargs_model,
-                         kwargs_params=kwargs_params)
+                         kwargs_params=kwargs_params,
+                         physical_params=physical_params)
         
         self.magnitudes = magnitudes  # TODO validation that these must be provided if lenstronomy amplitudes aren't provided in the kwargs_params?
         

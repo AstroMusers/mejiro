@@ -8,9 +8,11 @@ class StrongLens(ABC):
             name,
             coords,
             kwargs_model,
-            kwargs_params
+            kwargs_params,
+            physical_params={}
     ):
         self.name = name
         self.coords = coords
         self.kwargs_model = kwargs_model
         self.kwargs_params = kwargs_params
+        self.physical_params = physical_params

@@ -11,6 +11,7 @@ dependencies:
   - pandas=2.2.3
   - pip
   - pytest  # dev
+  - scipy=1.11.4
   - tqdm
   - pip:
     - lenstronomy==1.12.5
