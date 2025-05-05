@@ -26,6 +26,8 @@ def main(config):
         os.environ['WEBBPSF_PATH'] = '/data/bwedig/STScI/webbpsf-data'
     elif machine == 'uzay':
         os.environ['WEBBPSF_PATH'] = '/data/scratch/btwedig/STScI/ref_data/webbpsf-data'
+    elif machine == 'astromusers':
+        os.environ['WEBBPSF_PATH'] = '/data/bwedig/STScI/webbpsf-data'
 
     # set directory for all output of this script
     # save_dir = os.path.join(config.machine.repo_dir, 'mejiro', 'data', 'cached_psfs')
@@ -34,17 +36,17 @@ def main(config):
 
     oversamples = [5]
     # bands = ['F087', 'F106', 'F129', 'F158', 'F184']
-    bands = ['F087']
+    bands = ['F129']
     # detectors = [4, 1, 9, 17]
     # detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
     # detectors = [1, 2, 4, 5]
     # detector_positions = [(2048, 2048), (2048, 2048), (2048, 2048), (2048, 2048)]
     detectors = list(range(1, 19))
-    # detector_positions = [(2048, 2048)]
+    detector_positions = [(2048, 2048)]
     # detector_positions = []
     # for i in range(4):
     #     detector_positions.extend(roman_util.divide_up_sca(i + 1))
-    detector_positions = roman_util.divide_up_sca(3)
+    # detector_positions = roman_util.divide_up_sca(3)
     num_pixes = [101]
 
     # determine which PSFs need to be generated

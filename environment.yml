@@ -16,9 +16,9 @@ dependencies:
       # - colossus
       # - mcfit
       - webbpsf==1.4.0
-      - numba==0.58.1
+      # - numba==0.58.1
       - lenstronomy==1.12.3
-      - slsim==0.1.0
+      # - slsim==0.1.0
       # - pysiaf
       - pandeia-engine==2024.9.1
       # - sncosmo
