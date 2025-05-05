@@ -43,9 +43,6 @@ class Exposure:
                 if self.ipc is not None: self.noise += self.ipc
                 if self.read_noise is not None: self.noise += self.read_noise
 
-                # it's confusing for all detector effects to be type galsim.Image and the noise attribute to be an ndarray, but for comparison across engines, the noise should be an array and the detector effects should be Images so they can be passed in as engine params
-                self.noise = self.noise.array
-
             elif self.synthetic_image.instrument_name == 'HWO':
                 # get exposure
                 results, self.psf, self.sky_background, self.poisson_noise, self.dark_noise, self.read_noise = GalSimEngine.get_hwo_exposure(
@@ -61,7 +58,7 @@ class Exposure:
                 self.instrument_not_available_error(engine)
 
             # write the noise out to a numpy array
-            self.noise = self.noise.array
+            self.noise = self.noise.array  # it's confusing for all detector effects to be type galsim.Image and the noise attribute to be an ndarray, but for comparison across engines, the noise should be an array and the detector effects should be Images so they can be passed in as engine params
 
         elif engine == 'lenstronomy':
             from mejiro.engines.lenstronomy_engine import LenstronomyEngine
