@@ -9,6 +9,7 @@ import time
 from copy import deepcopy
 from multiprocessing import Pool
 from tqdm import tqdm
+from scipy import ndimage
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -229,25 +230,17 @@ def run_process(tuple):
             assert np.isinf(np.min(snr_array)) == False, 'Inf in SNR array'
             masked_snr_array = np.ma.masked_where(snr_array <= 1, snr_array)
 
-            # calculate regions of connected pixels given the snr mask
-            indices_list = regions.get_regions(masked_snr_array, debug_dir=None)
-            if indices_list is None:
-                print(f'Error in get_regions for {lens.uid} at {detector_position}')
-                continue
-            # print(f'{len(indices_list)} regions found')
+            structure = np.array([[0, 1, 0],
+                            [1, 1, 1],
+                            [0, 1, 0]])
+            labeled_array, num_regions = ndimage.label(masked_snr_array.filled(0), structure=structure)
 
+            # calculate the SNR for each region
             snr_list = []
-            for region in indices_list:
-                numerator, denominator = 0, 0
-                for i, j in region:
-                    numerator += source_exposure[i, j]
-                    denominator += source_exposure[i, j] + lens_exposure[i, j] + noise[i, j]
-                if denominator <= 0.:
-                    continue
-                snr = numerator / np.sqrt(denominator)
-                # print(f'{snr=}, {numerator=}, {denominator=}')
-                assert not np.isnan(snr), 'NaN in SNR list'
-                assert not np.isinf(snr), 'Inf in SNR list'
+            for i in range(1, num_regions + 1):
+                source_counts = np.sum(source_exposure[labeled_array == i])
+                total_counts = np.sum(total_exposure[labeled_array == i])
+                snr = source_counts / np.sqrt(total_counts)
                 snr_list.append(snr)
 
             snrs_for_positions.append(np.max(snr_list))
