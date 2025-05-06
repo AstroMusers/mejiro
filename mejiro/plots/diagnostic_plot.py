@@ -7,7 +7,7 @@ from mejiro.lenses import lens_util
 from mejiro.plots import plot_util
 
 
-def snr_plot(strong_lens, total, lens, source, noise, snr_array, masked_snr_array, snr_list, debug_dir):
+def snr_plot(labeled_array, strong_lens, total, lens, source, noise, snr_array, masked_snr_array, snr_list, debug_dir):
     _, ax = plt.subplots(2, 3, figsize=(12, 8))
 
     # vmin, vmax = plot_util.get_min_max([total, lens, source, noise])
@@ -31,9 +31,12 @@ def snr_plot(strong_lens, total, lens, source, noise, snr_array, masked_snr_arra
     plt.colorbar(im10, ax=ax[1][0])
     ax[1][0].set_title('Noise')
 
-    im11 = ax[1][1].imshow(snr_array)
+    im11 = ax[1][1].imshow(labeled_array)
+    # for k, region in enumerate(indices_list):
+    #     for i, j in region:
+    #         ax[1][1].plot(j, i, 'ro', markersize=1, color=f'C{k}')
     plt.colorbar(im11, ax=ax[1][1])
-    ax[1][1].set_title('SNR Array')
+    ax[1][1].set_title('Labeled Array')
 
     im12 = ax[1][2].imshow(masked_snr_array)
     plt.colorbar(im12, ax=ax[1][2])
