@@ -121,7 +121,7 @@ def run_slsim(tuple):
     sys.setrecursionlimit(survey_params['snr_input_num_pix'] ** 2)
 
     # load SkyPy config file
-    cache_dir = os.path.join(module_path, 'data', 'roman_hlwas_skypy_configs')
+    cache_dir = os.path.join(module_path, 'data', f'cached_skypy_configs_{area}')
     skypy_config = os.path.join(cache_dir,
                                 f'roman_hlwas_sca{sca_id}.yml')  # TODO TEMP: there should be one source of truth for this, and if necessary, some code should update the cache behind the scenes
     # skypy_config = os.path.join(module_path, 'data', 'roman_hlwas.yml')
