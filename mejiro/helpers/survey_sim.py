@@ -6,6 +6,7 @@ from copy import deepcopy
 from lenstronomy.SimulationAPI.ObservationConfig import Roman
 from lenstronomy.SimulationAPI.sim_api import SimAPI
 from tqdm import tqdm
+from scipy import ndimage
 
 import mejiro
 from mejiro.analysis import regions
@@ -88,31 +89,44 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), input_
     else:
         masked_snr_array = np.ma.masked_where(snr_array <= snr_per_pixel_threshold, snr_array)
 
-    # speed up region-identifying code by removing single pixel regions
-    masked_snr_array = regions.remove_single_pixels(masked_snr_array)
+    # # speed up region-identifying code by removing single pixel regions
+    # masked_snr_array = regions.remove_single_pixels(masked_snr_array)
 
-    # calculate regions of connected pixels given the snr mask
-    indices_list = regions.get_regions(masked_snr_array, debug_dir)
+    # # calculate regions of connected pixels given the snr mask
+    # indices_list = regions.get_regions(masked_snr_array, debug_dir)
 
-    if indices_list is None:
-        return None, None, None, None
+    # if indices_list is None:
+    #     return None, None, None, None
 
+    # snr_list = []
+    # for region in indices_list:
+    #     numerator, denominator = 0, 0
+    #     for j, i in region:
+    #         numerator += source[i, j]
+    #         denominator += source[i, j] + lens[i, j] + noise[i, j]
+    #     if denominator <= 0.:
+    #         continue
+    #     snr = numerator / np.sqrt(denominator)
+    #     assert not np.isnan(snr), 'NaN in SNR list'
+    #     assert not np.isinf(snr), 'Inf in SNR list'
+    #     snr_list.append(snr)
+
+    structure = np.array([[0, 1, 0],
+                     [1, 1, 1],
+                     [0, 1, 0]])
+    labeled_array, num_regions = ndimage.label(masked_snr_array.filled(0), structure=structure)
+
+    # calculate the SNR for each region
     snr_list = []
-    for region in indices_list:
-        numerator, denominator = 0, 0
-        for i, j in region:
-            numerator += source[i, j]
-            denominator += source[i, j] + lens[i, j] + noise[i, j]
-        if denominator <= 0.:
-            continue
-        snr = numerator / np.sqrt(denominator)
-        assert not np.isnan(snr), 'NaN in SNR list'
-        assert not np.isinf(snr), 'Inf in SNR list'
+    for i in range(1, num_regions + 1):
+        source_counts = np.sum(source[labeled_array == i])
+        total_counts = np.sum(total[labeled_array == i])
+        snr = source_counts / np.sqrt(total_counts)
         snr_list.append(snr)
 
     if len(snr_list) != 0:
         if debugging and np.max(snr_list) > 20:
-            diagnostic_plot.snr_plot(strong_lens, total, lens, source, noise, snr_array, masked_snr_array, snr_list,
+            diagnostic_plot.snr_plot(labeled_array, strong_lens, total, lens, source, noise, snr_array, masked_snr_array, snr_list,
                                      debug_dir)
 
     if return_snr_list:
