@@ -67,7 +67,7 @@ def write_lens_pop_to_csv(output_path, gg_lenses, detectable_snr_list, bands, ve
         dict = {
             'velodisp': gg_lens.deflector_velocity_dispersion(),
             'massstel': gg_lens.deflector_stellar_mass() * 1e-12,
-            'angleins': gg_lens.einstein_radius,
+            'angleins': gg_lens.einstein_radius[0],
             'redssour': gg_lens.source_redshift_list[0],  # TODO confirm that first element of source_redshift_list will give the appropriate source. for galaxy-galaxy lensing, this will be the case, so this is fine for now.
             'redslens': gg_lens.deflector_redshift,
             'magnsour': gg_lens.extended_source_magnification(),
@@ -88,8 +88,8 @@ def write_lens_pop_to_csv(output_path, gg_lenses, detectable_snr_list, bands, ve
 
         for nameband in bands:
             dict['magtlens%s' % nameband] = gg_lens.deflector_magnitude(band=nameband)
-            dict['magtsour%s' % nameband] = gg_lens.extended_source_magnitude(band=nameband, lensed=False)
-            dict['magtsourMagnified%s' % nameband] = gg_lens.extended_source_magnitude(band=nameband, lensed=True)
+            dict['magtsour%s' % nameband] = gg_lens.extended_source_magnitude(band=nameband, lensed=False)[0]
+            dict['magtsourMagnified%s' % nameband] = gg_lens.extended_source_magnitude(band=nameband, lensed=True)[0]
 
         df.loc[i] = pd.Series(dict)
 

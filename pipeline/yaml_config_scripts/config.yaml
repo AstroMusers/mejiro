@@ -1,21 +1,21 @@
-repo_dir: /grad/bwedig/mejiro  # where the repository lives
-data_dir: /data/bwedig/mejiro  # where output data should be written
-figure_dir: ${machine.repo_dir}/figures
-pipeline_dir: ${data_dir}/pipeline
+repo_dir: &repo_dir /grad/bwedig/mejiro  # where the repository lives
+data_dir: &data_dir /data/bwedig/mejiro  # where output data should be written
+figure_dir: figures # !concat [*repo_dir, "/figures"]
+pipeline_dir: pipeline
 dev: True
 nice: 19
 verbose: True  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
 limit: null
 seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
 headroom_cores: 
-  script_00: 64
+  script_00: 0
   script_01: 0
   script_02: 0
   script_03: 0
   script_04: 0
   script_05: 0
 survey:
-  runs: 10  # 540
+  runs: 180  # 540
   area: 0.5  # 0.5
   total_population: True
   scas: &scas [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
@@ -23,11 +23,11 @@ survey:
   deflector_cut_band: F129
   deflector_cut_band_max: 27
   deflector_z_min: 0.01
-  deflector_z_max: 3.0
+  deflector_z_max: 6.0
   source_cut_band: F129
-  source_cut_band_max: 27
+  source_cut_band_max: 28
   source_z_min: 0.01
-  source_z_max: 6.0
+  source_z_max: 10.0
   min_image_separation: 0.3  # arcseconds
   max_image_separation: 10.0  # arcseconds
   mag_arc_limit_band: F129
