@@ -126,9 +126,8 @@ def create_synthetic_image(input):
 
     # unpack pipeline params
     bands = synthetic_image_config['bands']
-    side = synthetic_image_config['side']
+    fov_arcsec = synthetic_image_config['fov_arcsec']
     pieces = synthetic_image_config['pieces']
-    base_supersampling = synthetic_image_config['base_supersampling']
     supersampling_factor = synthetic_image_config['supersampling_factor']
     supersampling_compute_mode = synthetic_image_config['supersampling_compute_mode']
     divide_up_sca = synthetic_image_config['divide_up_sca']
@@ -156,8 +155,7 @@ def create_synthetic_image(input):
         synthetic_image = SyntheticImage(strong_lens=lens,
                                      instrument=roman,
                                      band=band,
-                                     arcsec=side,
-                                     oversample=base_supersampling,
+                                     fov_arcsec=fov_arcsec,
                                      kwargs_numerics=kwargs_numerics,
                                      pieces=pieces,
                                      verbose=False,
