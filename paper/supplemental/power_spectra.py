@@ -89,10 +89,10 @@ def main(config):
     debugging = False
     require_alignment = False
     limit = None
-    snr_threshold = 100.
+    snr_threshold = 115.47
     snr_pixel_threshold = 1.
     einstein_radius_threshold = 0.
-    log_m_host_threshold = 13
+    log_m_host_threshold = 1
 
     subhalo_params = {
         'r_tidal': 0.5,
@@ -152,7 +152,7 @@ def main(config):
     filtered_lenses = []
     num_lenses = 0
     for lens in lens_list:
-        if lens.snr > snr_threshold and lens.get_einstein_radius() > einstein_radius_threshold and np.log10(
+        if lens.snr > snr_threshold and lens.snr != np.inf and lens.get_einstein_radius() > einstein_radius_threshold and np.log10(
                 lens.main_halo_mass) > log_m_host_threshold:
             filtered_lenses.append(lens)
             num_lenses += 1
