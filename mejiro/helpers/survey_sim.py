@@ -124,10 +124,19 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), input_
         snr = source_counts / np.sqrt(total_counts)
         snr_list.append(snr)
 
-    if len(snr_list) != 0:
-        if debugging and np.max(snr_list) > 20:
-            diagnostic_plot.snr_plot(labeled_array, strong_lens, total, lens, source, noise, snr_array, masked_snr_array, snr_list,
+    # if len(snr_list) != 0:
+    #     if debugging and np.max(snr_list) > 20:
+    #         diagnostic_plot.snr_plot(labeled_array, strong_lens, total, lens, source, noise, snr_array, masked_snr_array, snr_list,
+    #                                  debug_dir)
+            
+    if np.max(snr_list) == np.inf and debugging:
+        diagnostic_plot.snr_plot(labeled_array, strong_lens, total, lens, source, noise, snr_array, masked_snr_array, snr_list,
                                      debug_dir)
+        try:
+            np.save(os.path.join(debug_dir, f'{id(total)}_total.npy'), total)
+            np.save(os.path.join(debug_dir, f'{id(masked_snr_array)}_masked_snr_array.npy'), masked_snr_array)
+        except:
+            print(debug_dir, id(strong_lens))
 
     if return_snr_list:
         return snr_list, None, None, None

@@ -42,7 +42,7 @@ def snr_plot(labeled_array, strong_lens, total, lens, source, noise, snr_array, 
     plt.colorbar(im12, ax=ax[1][2])
     ax[1][2].set_title('Masked SNR Array')
 
-    plt.suptitle(f'SNR: {np.max(snr_list)}')
+    plt.suptitle(f'SNR: {np.max(snr_list)}, z_l={strong_lens.z_lens:.2f}, z_s={strong_lens.z_source:.2f}')
     try:
         plt.savefig(f'{debug_dir}/snr/snr_check_{id(total)}.png')
         plt.close()
