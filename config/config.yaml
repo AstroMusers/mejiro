@@ -64,8 +64,8 @@ pipeline:
   # imaging params
   - bands: [ F106, F129, F158, F184 ]  # [ F087, F106, F129, F158, F184 ]
   - rgb_bands: [ F184, F129, F106 ]  # in RGB order
-  - rgb_stretch: 3
-  - rgb_q: 3
+  - rgb_stretch: 2
+  - rgb_q: 2
   - exposure_time: 146
   # other
   - suppress_output: True
