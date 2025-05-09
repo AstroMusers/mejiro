@@ -80,7 +80,7 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), input_
     noise = total - (lens + source)
 
     # calculate SNR in each pixel
-    snr_array = np.nan_to_num(source / np.sqrt(total))
+    snr_array = np.nan_to_num(source / np.sqrt(total), posinf=0, neginf=0)
 
     if not np.any(snr_array >= snr_per_pixel_threshold):
         return 1, np.ma.array(snr_array, mask=True), [
