@@ -50,9 +50,10 @@ def process_lens(params):
     # calculate image position and set subhalo position
     image_x, image_y = lens.get_image_positions(pixel_coordinates=False)
     image_distance = np.sqrt(image_x ** 2 + image_y ** 2)
-    more_distant_image_index = np.argmax(image_distance)
-    halo_x = image_x[more_distant_image_index]
-    halo_y = image_y[more_distant_image_index]
+    # more_distant_image_index = np.argmax(image_distance)
+    image_index = np.random.choice(len(image_distance))
+    halo_x = image_x[image_index]
+    halo_y = image_y[image_index]
 
     for sca, sca_position in positions:
         sca = int(sca)
@@ -270,12 +271,12 @@ def main(config):
         'band': 'F106',  # F106
         'scene_size': 5,  # arcsec
         'oversample': 5,
-        'exposure_time': 438  # 438  # 37500  # 12500
+        'exposure_time': 12500  # 438  # 37500  # 12500
     }
     positions = [(1, (2044, 2044))]
     print(f'Processing {len(positions)} positions.')
 
-    save_dir = os.path.join(config.machine.data_dir, 'output', 'subhalo_detection_compare_hlwas')
+    save_dir = os.path.join(config.machine.data_dir, 'output', 'subhalo_detection_compare_hltds_wide')  # hlwas  # hltds_deep  # hltds_wide
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
     image_save_dir = os.path.join(save_dir, 'images')
@@ -288,14 +289,15 @@ def main(config):
     print(f'Collecting lenses from {pipeline_dir}')
     lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=False, verbose=True)
     og_count = len(lens_list)
-    lens_list = [lens for lens in lens_list if lens.snr > 200]
+    lens_list = [lens for lens in lens_list if lens.snr > 115.47 and lens.snr != np.inf]
+    num_unique_systems = len(lens_list)
     num_lenses = script_config['num_lenses']
     if num_lenses is not None:
         repeats = int(np.ceil(num_lenses / len(lens_list)))
         print(f'Repeating lenses {repeats} time(s)')
         lens_list *= repeats
         lens_list = lens_list[:num_lenses]
-    print(f'Processing {len(lens_list)} lens(es) of {og_count}')
+    print(f'Processing {num_unique_systems} lens(es) of {og_count}')
 
     num_permutations = len(positions) * len(subhalo_params['masses']) * script_config['num_positions']
     idx_to_save = np.random.randint(low=num_permutations, size=len(lens_list))
