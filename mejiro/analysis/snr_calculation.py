@@ -34,7 +34,7 @@ def get_snr(exposure, snr_per_pixel_threshold=1, verbose=False):
 
 def get_snr_array(exposure):
     _validate_exposure_for_snr_calculation(exposure)
-    return exposure.source_exposure / np.sqrt(exposure.exposure)
+    return np.nan_to_num(exposure.source_exposure / np.sqrt(exposure.exposure), nan=0, posinf=0, neginf=0)
 
 
 def _validate_exposure_for_snr_calculation(exposure):
