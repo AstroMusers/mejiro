@@ -54,7 +54,7 @@ class HWO(Instrument):
         self.dark_current = self.get_attribute_from_syotools(self.camera, 'dark_current', u.electron / (u.pix * u.second))
         self.read_noise = self.get_attribute_from_syotools(self.camera, 'detector_rn', u.electron ** Fraction(1, 2) / u.pix ** Fraction(1, 2))
         self.sky_level = {band: value * u.Unit('ct / pix') for band, value in self.get_attribute_from_syotools(self.camera, 'sky_sigma', None).items()}  # TODO need to revisit this and confirm that it's what I think it is. syotools currently doesn't give it units or provide any documentation
-        self.psf_fwhm = self.get_attribute_from_syotools(self.camera, 'fwhm_psf', u.arcsec)
+        self.psf_fwhm = self.get_attribute_from_syotools(self.camera, 'fwhm_psf', u.arcsec, check_unit=False)  # TODO temporary override of unit check
         self.thermal_background = {
             'B': Quantity(0.0, 'ct / pix'),
             'FUV': Quantity(0.0, 'ct / pix'),
@@ -72,10 +72,10 @@ class HWO(Instrument):
         aperture_cm = self.aperture.to(u.cm).value  # get telescope aperture diameter in cm
         bandwidth = {band: bp for band, bp in zip(self.bands, self.camera.recover('derived_bandpass'))}
         flux_zp = {band: bp for band, bp in zip(self.bands, self.camera.recover('ab_zeropoint'))}
-        self.zeropoints = {band: (-1 / 0.4) * np.log10(4 / (np.pi * flux_zp[band].value * (aperture_cm ** 2) * bandwidth[band])) for band in self.bands}
+        self.zeropoints = {band: (-1 / 0.4) * np.log10(4 / (np.pi * flux_zp[band].value * (aperture_cm ** 2) * bandwidth[band].value)) for band in self.bands}
 
 
-    def get_attribute_from_syotools(self, syotools_object, attribute, unit):
+    def get_attribute_from_syotools(self, syotools_object, attribute, unit, check_unit=True):
         values = syotools_object.recover(attribute)
         
         if type(values) == list:
@@ -87,8 +87,9 @@ class HWO(Instrument):
             raise ValueError(f"Length of {attribute} does not match number of bands")
 
         # check units
-        if type(values) == u.Quantity and unit is not None and values.unit != unit:
-            raise ValueError(f"Unit of {attribute} must be {unit}, not {values.unit}")
+        if check_unit:
+            if type(values) == u.Quantity and unit is not None and values.unit != unit:
+                raise ValueError(f"Unit of {attribute} must be {unit}, not {values.unit}")
 
         return {band: value for band, value in zip(self.bands, values)}
     
