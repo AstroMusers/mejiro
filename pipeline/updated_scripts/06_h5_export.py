@@ -48,7 +48,7 @@ def main(config):
     # create h5 file
     export_dir = os.path.join(data_dir, 'h5_export')
     util.create_directory_if_not_exists(export_dir)
-    filepath = os.path.join(export_dir, 'roman_hlwas_v_0_0_2.h5')
+    filepath = os.path.join(export_dir, 'roman_hlwas_v_0_0_3.h5')
     if os.path.exists(filepath):
         os.remove(filepath)
     f = h5py.File(filepath, 'a')  # append mode: read/write if exists, create otherwise
@@ -71,6 +71,9 @@ def main(config):
     # get all lenses
     all_lenses = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=True, verbose=True, limit=None,
                                                  exposure=True)
+    
+    # filter lenses by SNR
+    all_lenses = [lens for lens in all_lenses if lens.snr != np.inf]
 
     print(f'Creating datasets for {len(all_lenses)} lenses')
     for lens in tqdm(all_lenses):
