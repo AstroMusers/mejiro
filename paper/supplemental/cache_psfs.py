@@ -33,35 +33,36 @@ def main(config):
     util.create_directory_if_not_exists(save_dir)
     print(f'Saving PSFs to {save_dir}')
 
-    oversamples = [5]
-    bands = ['F106']  # , 'F106', 'F129', 'F158', 'F184'
+    oversamples = [1, 5]
+    bands = ['F087']  # , 'F106', 'F129', 'F158', 'F184'
     # bands = Roman().bands
     # detectors = [4, 1, 9, 17]
     # detector_positions = [(4, 4092), (2048, 2048), (4, 4), (4092, 4092)]
     # detectors = [1, 2, 4, 5]
     # detector_positions = [(2048, 2048), (2048, 2048), (2048, 2048), (2048, 2048)]
     detectors = list(range(1, 19))
-    detector_positions = [(2044, 2044)]
+    # detector_positions = [(2044, 2044)]
     # detector_positions = []
     # for i in range(4):
     #     detector_positions.extend(roman_util.divide_up_sca(i + 1))
-    # detector_positions = roman_util.divide_up_sca(4)
+    detector_positions = roman_util.divide_up_sca(4)
     num_pixes = [101]
 
     # Determine which PSFs need to be generated
     psf_ids = []
-    for oversample, num_pix in zip(oversamples, num_pixes):
-        for band in bands:
-            for detector in detectors:
-                for detector_position in detector_positions:
-                    psf_id = webbpsf_engine.get_psf_id(band, detector, detector_position, oversample, num_pix)
-                    psf_filename = f'{psf_id}.npy'
-                    psf_path = os.path.join(save_dir, psf_filename)
-                    if os.path.exists(psf_path):
-                        print(f'{psf_path} already exists')
-                        continue
-                    else:
-                        psf_ids.append(psf_id)
+    for oversample in oversamples:
+        for num_pix in num_pixes:
+            for band in bands:
+                for detector in detectors:
+                    for detector_position in detector_positions:
+                        psf_id = webbpsf_engine.get_psf_id(band, detector, detector_position, oversample, num_pix)
+                        psf_filename = f'{psf_id}.npy'
+                        psf_path = os.path.join(save_dir, psf_filename)
+                        if os.path.exists(psf_path):
+                            print(f'{psf_path} already exists')
+                            continue
+                        else:
+                            psf_ids.append(psf_id)
 
     if len(psf_ids) == 0:
         print('All PSFs already exist. Exiting.')
