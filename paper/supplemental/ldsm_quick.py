@@ -41,7 +41,7 @@ def main(config):
         'psf_cache_dir': os.path.join(config.machine.data_dir, 'cached_psfs')
     }
     subhalo_params = {
-        'masses': np.linspace(1e8, 1e10, 50),  # np.linspace(1e9, 1e10, 20),  # 
+        'masses': np.linspace(1e8, 1e10, 20),  # np.linspace(1e9, 1e10, 20),  # np.arange(1e8, 1e10, 1e9)
         'concentration': 10,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -62,7 +62,7 @@ def main(config):
     print(f'Processing {len(positions)} positions.')
 
     # set up directories for script output
-    save_dir = os.path.join(config.machine.data_dir, 'output', 'lowest_detectable_subhalo_mass')
+    save_dir = os.path.join(config.machine.data_dir, 'output', 'lowest_detectable_subhalo_mass_dev')
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
     image_save_dir = os.path.join(save_dir, 'images')
@@ -165,7 +165,7 @@ def run(tuple):
 
     run = 0
     results = {}
-    for sca, sca_position in tqdm(positions, disable=True):
+    for sca, sca_position in tqdm(positions, disable=False):
         sca = int(sca)
         position_key = f'{sca}_{sca_position[0]}_{sca_position[1]}'
         # print(' ' + position_key)
@@ -349,48 +349,48 @@ def run(tuple):
                     detectable_halos.append((lens.z_lens, m200, c))
 
                 # save image
-                if run == idx_to_save:
-                    try:
-                        _, ax = plt.subplots(2, 3, figsize=(15, 10))
-                        residual = masked_exposure_with_subhalo - masked_exposure_no_subhalo
-                        vmax = plot_util.get_limit(residual)
-                        if vmax == 0.: vmax = 0.1
-                        synth.set_native_coords()
-                        coords_x, coords_y = synth.coords_native.map_coord2pix(halo_x, halo_y)
+                # if run == idx_to_save:
+                #     try:
+                #         _, ax = plt.subplots(2, 3, figsize=(15, 10))
+                #         residual = masked_exposure_with_subhalo - masked_exposure_no_subhalo
+                #         vmax = plot_util.get_limit(residual)
+                #         if vmax == 0.: vmax = 0.1
+                #         synth.set_native_coords()
+                #         coords_x, coords_y = synth.coords_native.map_coord2pix(halo_x, halo_y)
 
-                        ax00 = ax[0, 0].imshow(masked_exposure_no_subhalo)
-                        ax01 = ax[0, 1].imshow(masked_exposure_with_subhalo)
-                        ax[0, 1].scatter(coords_x, coords_y, c='r', s=10)
-                        ax02 = ax[0, 2].imshow(residual, cmap='bwr', vmin=-vmax, vmax=vmax)
+                #         ax00 = ax[0, 0].imshow(masked_exposure_no_subhalo)
+                #         ax01 = ax[0, 1].imshow(masked_exposure_with_subhalo)
+                #         ax[0, 1].scatter(coords_x, coords_y, c='r', s=10)
+                #         ax02 = ax[0, 2].imshow(residual, cmap='bwr', vmin=-vmax, vmax=vmax)
 
-                        ax[0, 0].set_title(f'SNR: {lens.snr:.2f}')
-                        ax[0, 1].set_title(f'{m200:.2e}')
-                        ax[0, 2].set_title(
-                            r'$\chi^2=$ ' + f'{chi_square:.2f}, ' + r'$\chi_{3\sigma}^2=$ ' + f'{threshold_chi2:.2f}')
+                #         ax[0, 0].set_title(f'SNR: {lens.snr:.2f}')
+                #         ax[0, 1].set_title(f'{m200:.2e}')
+                #         ax[0, 2].set_title(
+                #             r'$\chi^2=$ ' + f'{chi_square:.2f}, ' + r'$\chi_{3\sigma}^2=$ ' + f'{threshold_chi2:.2f}')
 
-                        synth_residual = synth.image - synth_no_subhalo.image
-                        vmax_synth = plot_util.get_limit(synth_residual)
-                        ax10 = ax[1, 0].imshow(synth_residual, cmap='bwr', vmin=-vmax_synth, vmax=vmax_synth)
-                        ax11 = ax[1, 1].imshow(exposure.exposure)
-                        ax12 = ax[1, 2].imshow(snr_array)
+                #         synth_residual = synth.image - synth_no_subhalo.image
+                #         vmax_synth = plot_util.get_limit(synth_residual)
+                #         ax10 = ax[1, 0].imshow(synth_residual, cmap='bwr', vmin=-vmax_synth, vmax=vmax_synth)
+                #         ax11 = ax[1, 1].imshow(exposure.exposure)
+                #         ax12 = ax[1, 2].imshow(snr_array)
 
-                        ax[1, 0].set_title('Synthetic Residual')
-                        ax[1, 1].set_title('Full Exposure With Subhalo')
-                        ax[1, 2].set_title(f'SNR Array: {pixels_unmasked} pixels, {dof} dof')
+                #         ax[1, 0].set_title('Synthetic Residual')
+                #         ax[1, 1].set_title('Full Exposure With Subhalo')
+                #         ax[1, 2].set_title(f'SNR Array: {pixels_unmasked} pixels, {dof} dof')
 
-                        plt.colorbar(ax00, ax=ax[0, 0])
-                        plt.colorbar(ax01, ax=ax[0, 1])
-                        plt.colorbar(ax02, ax=ax[0, 2])
-                        plt.colorbar(ax10, ax=ax[1, 0])
-                        plt.colorbar(ax11, ax=ax[1, 1])
-                        plt.colorbar(ax12, ax=ax[1, 2])
+                #         plt.colorbar(ax00, ax=ax[0, 0])
+                #         plt.colorbar(ax01, ax=ax[0, 1])
+                #         plt.colorbar(ax02, ax=ax[0, 2])
+                #         plt.colorbar(ax10, ax=ax[1, 0])
+                #         plt.colorbar(ax11, ax=ax[1, 1])
+                #         plt.colorbar(ax12, ax=ax[1, 2])
 
-                        plt.suptitle(
-                            f'StrongLens {lens.uid}, {sca_position} on SCA{sca}, Image Shape: {exposure.exposure.shape}')
-                        plt.savefig(os.path.join(image_save_dir, f'{lens.uid}_{execution_key}.png'))
-                        plt.close()
-                    except Exception as e:
-                        print(e)
+                #         plt.suptitle(
+                #             f'StrongLens {lens.uid}, {sca_position} on SCA{sca}, Image Shape: {exposure.exposure.shape}')
+                #         plt.savefig(os.path.join(image_save_dir, f'{lens.uid}_{execution_key}.png'))
+                #         plt.close()
+                #     except Exception as e:
+                #         print(e)
                 run += 1
 
             # convert chi2 to p-value
