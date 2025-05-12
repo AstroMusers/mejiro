@@ -71,7 +71,7 @@ def main(config):
     # get all lenses
     all_lenses = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=True, verbose=True, limit=None,
                                                  exposure=True)
-    
+
     # filter lenses by SNR
     all_lenses = [lens for lens in all_lenses if lens.snr != np.inf]
 

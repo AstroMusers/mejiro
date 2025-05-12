@@ -5,8 +5,8 @@ from astropy.cosmology import default_cosmology
 from copy import deepcopy
 from lenstronomy.SimulationAPI.ObservationConfig import Roman
 from lenstronomy.SimulationAPI.sim_api import SimAPI
-from tqdm import tqdm
 from scipy import ndimage
+from tqdm import tqdm
 
 import mejiro
 from mejiro.analysis import regions
@@ -112,8 +112,8 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), input_
     #     snr_list.append(snr)
 
     structure = np.array([[0, 1, 0],
-                     [1, 1, 1],
-                     [0, 1, 0]])
+                          [1, 1, 1],
+                          [0, 1, 0]])
     labeled_array, num_regions = ndimage.label(masked_snr_array.filled(0), structure=structure)
 
     # calculate the SNR for each region
@@ -128,10 +128,11 @@ def get_snr(gglens, band, zp, detector=1, detector_position=(2048, 2048), input_
     #     if debugging and np.max(snr_list) > 20:
     #         diagnostic_plot.snr_plot(labeled_array, strong_lens, total, lens, source, noise, snr_array, masked_snr_array, snr_list,
     #                                  debug_dir)
-            
+
     if np.max(snr_list) == np.inf and debugging:
-        diagnostic_plot.snr_plot(labeled_array, strong_lens, total, lens, source, noise, snr_array, masked_snr_array, snr_list,
-                                     debug_dir)
+        diagnostic_plot.snr_plot(labeled_array, strong_lens, total, lens, source, noise, snr_array, masked_snr_array,
+                                 snr_list,
+                                 debug_dir)
         try:
             np.save(os.path.join(debug_dir, f'{id(total)}_total.npy'), total)
             np.save(os.path.join(debug_dir, f'{id(masked_snr_array)}_masked_snr_array.npy'), masked_snr_array)

@@ -39,8 +39,9 @@ def main(config):
     util.clear_directory(subhalo_dir)
 
     # get all lenses
-    all_lenses = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=True, verbose=True, limit=None, exposure=True)
-    
+    all_lenses = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=True, verbose=True, limit=None,
+                                                 exposure=True)
+
     # filter lenses by SNR
     all_lenses = [lens for lens in all_lenses if lens.snr != np.inf]
 
@@ -48,7 +49,8 @@ def main(config):
     for lens in tqdm(all_lenses):
         uid = lens.uid
 
-        subhalo_files = glob(os.path.join(pipeline_dir, '02', '*', 'subhalos', f'subhalo_realization_{str(uid).zfill(8)}.pkl'))
+        subhalo_files = glob(
+            os.path.join(pipeline_dir, '02', '*', 'subhalos', f'subhalo_realization_{str(uid).zfill(8)}.pkl'))
         subhalo_filepath = subhalo_files[0]
 
         dest_path = os.path.join(subhalo_dir, os.path.basename(subhalo_filepath))

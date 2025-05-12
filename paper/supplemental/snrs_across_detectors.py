@@ -8,8 +8,8 @@ import sys
 import time
 from copy import deepcopy
 from multiprocessing import Pool
-from tqdm import tqdm
 from scipy import ndimage
+from tqdm import tqdm
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -231,8 +231,8 @@ def run_process(tuple):
             masked_snr_array = np.ma.masked_where(snr_array <= 1, snr_array)
 
             structure = np.array([[0, 1, 0],
-                            [1, 1, 1],
-                            [0, 1, 0]])
+                                  [1, 1, 1],
+                                  [0, 1, 0]])
             labeled_array, num_regions = ndimage.label(masked_snr_array.filled(0), structure=structure)
 
             # calculate the SNR for each region

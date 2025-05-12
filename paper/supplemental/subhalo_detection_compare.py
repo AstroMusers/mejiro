@@ -276,7 +276,8 @@ def main(config):
     positions = [(1, (2044, 2044))]
     print(f'Processing {len(positions)} positions.')
 
-    save_dir = os.path.join(config.machine.data_dir, 'output', 'subhalo_detection_compare_hltds_wide')  # hlwas  # hltds_deep  # hltds_wide
+    save_dir = os.path.join(config.machine.data_dir, 'output',
+                            'subhalo_detection_compare_hltds_wide')  # hlwas  # hltds_deep  # hltds_wide
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
     image_save_dir = os.path.join(save_dir, 'images')

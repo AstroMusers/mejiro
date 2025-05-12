@@ -89,13 +89,13 @@ class HWO(InstrumentBase):
         # this enforces the rule that the pixel sizes are set at the shortest wavelength in each channel 
         for i in range(0, 2):
             pixel_scale_list[i] = 1.22 * (
-                        self.pivotwave['U'] * 0.000000001) * 206264.8062 / self.aperture / 2.  # UV set at U
+                    self.pivotwave['U'] * 0.000000001) * 206264.8062 / self.aperture / 2.  # UV set at U
         for i in range(2, len(pixel_scale_list) - 3):
             pixel_scale_list[i] = 1.22 * (
-                        self.pivotwave['U'] * 0.000000001) * 206264.8062 / self.aperture / 2.  # Opt set at U
+                    self.pivotwave['U'] * 0.000000001) * 206264.8062 / self.aperture / 2.  # Opt set at U
         for i in range(len(pixel_scale_list) - 3, len(pixel_scale_list)):
             pixel_scale_list[i] = 1.22 * (
-                        self.pivotwave['J'] * 0.000000001) * 206264.8062 / self.aperture / 2.  # NIR set at J
+                    self.pivotwave['J'] * 0.000000001) * 206264.8062 / self.aperture / 2.  # NIR set at J
 
         self.pixel_scale = {band: pixel_scale for band, pixel_scale in zip(self.bands, pixel_scale_list)}
 
