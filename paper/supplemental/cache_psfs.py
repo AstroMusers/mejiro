@@ -45,7 +45,7 @@ def main(config):
     # detector_positions = []
     # for i in range(4):
     #     detector_positions.extend(roman_util.divide_up_sca(i + 1))
-    detector_positions = roman_util.divide_up_sca(4)
+    detector_positions = roman_util.divide_up_sca(3)
     num_pixes = [101]
 
     # Determine which PSFs need to be generated
