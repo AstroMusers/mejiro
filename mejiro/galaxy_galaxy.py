@@ -339,7 +339,7 @@ class SampleBELLS(GalaxyGalaxy):
         kwargs_model = {
             'cosmo': default_cosmology.get(),
             'lens_light_model_list': ['SERSIC_ELLIPSE', 'SERSIC_ELLIPSE'],
-            'lens_model_list': ['PEMD', 'SHEAR_GAMMA_PSI'],
+            'lens_model_list': ['EPL', 'SHEAR_GAMMA_PSI'],
             'lens_redshift_list': [0.58, 0.58],
             'source_light_model_list': ['SHAPELETS', 'SERSIC_ELLIPSE'],
             'source_redshift_list': [1.35, 1.35],
@@ -427,7 +427,7 @@ class SampleSL2S(GalaxyGalaxy):
         kwargs_model = {
             'cosmo': default_cosmology.get(),
             'lens_light_model_list': ['SERSIC_ELLIPSE', 'SERSIC_ELLIPSE', 'SERSIC_ELLIPSE', 'SERSIC_ELLIPSE'],
-            'lens_model_list': ['PEMD', 'SHEAR_GAMMA_PSI'],
+            'lens_model_list': ['EPL', 'SHEAR_GAMMA_PSI'],
             'lens_redshift_list': [0.32, 0.32],
             'source_light_model_list': ['SHAPELETS', 'SERSIC_ELLIPSE', 'SHAPELETS', 'SERSIC_ELLIPSE'],
             'source_redshift_list': [1.42, 1.42, 1.42, 1.42],
