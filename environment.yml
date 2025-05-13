@@ -25,7 +25,7 @@ dependencies:
     - git+https://github.com/bryce-wedig/slsim.git@mejiro-v2.0.0
     - sncosmo==2.10.4
     - skypy==0.5.3
-    # - mcfit
+    - mcfit==0.0.22
     # - git+https://github.com/bryce-wedig/hwo-tools.git@mejiro-v2.0.0
     - sphinx==7.1.2  # dev
     - sphinx-rtd-theme==1.3.0rc1  # dev
