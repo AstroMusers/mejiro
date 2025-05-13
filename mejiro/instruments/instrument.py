@@ -67,7 +67,7 @@ class Instrument(ABC):
     @abstractmethod
     def get_zeropoint_magnitude(self, band):
         """
-        Get the zeropoint AB magnitude for a given band.
+        Get the zeropoint magnitude for a given band.
 
         Parameters
         ----------
