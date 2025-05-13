@@ -149,6 +149,36 @@ class SyntheticImage:
             self.lens_surface_brightness, self.source_surface_brightness = None, None
 
     def build_adaptive_grid(self, pad):
+        """
+        Builds an adaptive grid mask based on the distance of image positions from the center of the scene. To ensure that the mask includes the image positions, the pad value should be at least two pixels but ideally much larger in order to capture the vast majority of the lensed source's flux.
+
+        Parameters
+        ----------
+        pad : int
+            Padding value to extend the minimum and maximum radii of the grid mask. Must be non-negative.
+
+        Returns
+        -------
+        numpy.ndarray
+            A boolean mask array where `True` indicates grid points within the adaptive grid range
+            and `False` indicates points outside the range.
+
+        Raises
+        ------
+        ValueError
+            If the image positions cannot be calculated or are empty.
+
+        Notes
+        -----
+        - The grid is centered around the scene, and the distances are calculated relative to the 
+          lens center adjusted by the pixel scale.
+        - The adaptive grid range is determined by the minimum and maximum radii of the image positions,
+          adjusted by the padding value.
+        - The range is clamped to ensure it does not exceed the bounds of the scene dimensions.
+        """
+        if pad < 0 or not isinstance(pad, (int)):
+            raise ValueError(f"Padding value must be a non-negative integer.")
+
         image_positions = self.get_image_positions()
         if len(image_positions) == 0 or len(image_positions[0]) == 0 or len(image_positions[1]) == 0:
             raise ValueError(f"Failed to calculate image positions: {image_positions}")
@@ -174,6 +204,20 @@ class SyntheticImage:
         return (distance >= min) & (distance <= max)
 
     def get_image_positions(self, pixel=True):
+        """
+        Calculate the image positions from the source position and lensing mass model. Wraps GalaxyGalaxy.get_image_positions(), with the added functionality of returning the positions in pixel coordinates.
+
+        Parameters
+        ----------
+        pixel : bool, optional
+            If True, the image positions are returned in pixel coordinates. 
+            If False, the image positions are returned in lenstronomy's default angular coordinates. Default is True.
+
+        Returns
+        -------
+        Tuple of arrays
+            ([x coordinates], [y coordinates]) of the image positions in lenstronomy "angle" units (often, arcseconds).
+        """
         image_x, image_y = self.strong_lens.get_image_positions()
 
         if pixel:
@@ -184,6 +228,19 @@ class SyntheticImage:
             return image_x, image_y
         
     def plot(self, savepath=None):
+        """
+        Quickly visualize the synthetic image.
+
+        Parameters
+        ----------
+        savepath : str, optional
+            The file path where the plot will be saved. If None, the plot 
+            will not be saved. Default is None.
+
+        Notes
+        -----
+        The image is displayed using a logarithmic scale (base 10).
+        """
         import matplotlib.pyplot as plt
 
         plt.imshow(np.log10(self.image))
