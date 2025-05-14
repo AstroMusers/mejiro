@@ -42,7 +42,7 @@ templates_path = ['_templates']
 # https://stackoverflow.com/questions/67485175/docstrings-are-not-included-in-read-the-docs-sphinx-build/67486947#67486947
 autodoc_mock_imports = ['numpy', 'pandas', 'PIL', 'astropy', 'galsim', 'stpsf', 'tqdm', 'lenstronomy',
                         'slsim', 'speclite', 'specutils', 'synphot', 'pyhalo', 'pysiaf', 'pandeia-engine',
-                        'yaml', 'scipy']
+                        'yaml', 'scipy', 'syotools']
 
 # -- Options for HTML output
 

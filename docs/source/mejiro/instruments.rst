@@ -22,10 +22,10 @@ Instruments
     :undoc-members:
     :show-inheritance:
 
-.. ``hwo``
-.. *******
+``hwo``
+*******
 
-.. .. automodule:: mejiro.instruments.hwo
-..     :members:
-..     :undoc-members:
-..     :show-inheritance:
+.. automodule:: mejiro.instruments.hwo
+    :members:
+    :undoc-members:
+    :show-inheritance:

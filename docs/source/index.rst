@@ -17,6 +17,7 @@ mejiro documentation
    :caption: Documentation   
 
    mejiro/analysis.rst
+   mejiro/cosmo.rst
    mejiro/engines.rst
    mejiro/instruments.rst
    mejiro/utils.rst

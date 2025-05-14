@@ -3,17 +3,11 @@ Engines
 
 ``mejiro`` wraps various image simulation packages to provide a consistent interface for simulating images. Each wrapped package is referred to as an "engine." The following engines are currently supported:
 
-- GalSim
-    - *Roman Space Telescope*
-    - *Habitable Worlds Observatory*
-- Lenstronomy
-    - *Roman Space Telescope*
-- Pandeia
-    - *Roman Space Telescope*
-- Romanisim
-    - *Roman Space Telescope*
-- STPSF (PSFs only)
-    - *Roman Space Telescope*
+- GalSim: *Roman*, *HWO*
+- Lenstronomy: *Roman*
+- Pandeia: *Roman*
+- Romanisim: *Roman*
+- STPSF (PSFs only): *Roman*
 
 An engine is specified when generating a simulated exposure, i.e., an instance of ``mejiro.exposure.Exposure``. The engine is specified in the ``engine`` keyword argument, and any specific parameters passed to the engine are specified in the ``engine_params`` dictionary. For example, to simulate a *Roman* image using GalSim with ,
 
@@ -27,8 +21,6 @@ An engine is specified when generating a simulated exposure, i.e., an instance o
                                     instrument=Roman(),
                                     band='F129',
                                     fov_arcsec=5)
-
-
 
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
