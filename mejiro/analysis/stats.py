@@ -4,7 +4,11 @@ from scipy.optimize import curve_fit
 
 def chi_square(a, b):
     """
-    Compute the chi-square statistic between two arrays.
+    Compute the chi-square statistic between two arrays:
+
+    .. math::
+
+        \\chi^2 = \\sum_{i} \\frac{\\left(A_{i} - B_{i}\\right)^2}{B_{i}}
 
     Parameters
     ----------
