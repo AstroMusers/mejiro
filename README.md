@@ -2,7 +2,7 @@
 
 [![Documentation Status](https://readthedocs.org/projects/mejiro/badge/?version=latest)](https://readthedocs.org/projects/mejiro/badge/?version=latest)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15377389.svg)](https://doi.org/10.5281/zenodo.15377389)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14216840.svg)](https://doi.org/10.5281/zenodo.14216840)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14216839.svg)](https://doi.org/10.5281/zenodo.14216839)
 
 `mejiro` ("MEH-ji-roe" or "meh-JI-roe")[^1] is a pipeline to simulate space telescope images of
 galaxy-galaxy strong gravitational lenses built
