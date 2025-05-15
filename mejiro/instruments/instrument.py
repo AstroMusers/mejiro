@@ -82,6 +82,18 @@ class Instrument(ABC):
         pass
 
     @abstractmethod
+    def load_speclite_filters():
+        """
+        Load the filter response curves for the instrument to speclite.
+
+        Returns
+        -------
+        None
+        """
+        pass
+
+
+    @abstractmethod
     def default_params():
         """
         Returns a dictionary of default parameters for the instrument. For example, for the Roman WFI, the 'detector' parameter enables the calculation of detector-specific fluxes from the detector-specific zero-point magnitude.

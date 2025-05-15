@@ -6,6 +6,7 @@ from astropy import units as u
 from astropy.units import Quantity
 from fractions import Fraction
 from syotools.models import Camera, Telescope
+from glob import glob
 
 from mejiro.instruments.instrument import Instrument
 
@@ -111,7 +112,7 @@ class HWO(Instrument):
     def get_read_noise(self, band):
         return self.read_noise[band]
     
-    # implement abstract methods    
+    # implement abstract methods
     def get_pixel_scale(self, band):
         return self.pixel_scale[band]
     
@@ -123,6 +124,15 @@ class HWO(Instrument):
     
     def get_zeropoint_magnitude(self, band):
         return self.zeropoints[band]
+    
+    @staticmethod
+    def load_speclite_filters():
+        import mejiro
+        module_path = os.path.dirname(mejiro.__file__)
+        filters = sorted(glob(os.path.join(module_path, 'data', 'hwo_filter_response', f'HRI-*.ecsv')))
+
+        from speclite.filters import load_filters
+        _ = load_filters(*filters)
 
     @staticmethod
     def default_params():

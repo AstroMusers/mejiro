@@ -115,15 +115,15 @@ class Roman(Instrument):
         return self.zeropoints[(self.zeropoints['element'] == band) & (self.zeropoints['detector'] == f'WFI{str(sca_number).zfill(2)}')]['ABMag']
     
     @staticmethod
-    def load_skypy_filters(sca=1):
-        sca_id = roman_util.get_sca_string(sca)
+    def load_speclite_filters(sca=1):
+        sca_string = roman_util.get_sca_string(sca)
 
         import mejiro
         module_path = os.path.dirname(mejiro.__file__)
-        roman_filters = sorted(glob(os.path.join(module_path, 'data', 'roman_filter_response', f'RomanSCA{sca_id}-*.ecsv')))
+        filters = sorted(glob(os.path.join(module_path, 'data', 'roman_filter_response', f'Roman{sca_string}-*.ecsv')))
 
         from speclite.filters import load_filters
-        _ = load_filters(*roman_filters[:8])
+        _ = load_filters(*filters[:8])
 
     @staticmethod
     def default_params():
