@@ -88,7 +88,8 @@ class Instrument(ABC):
 
         Returns
         -------
-        None
+        speclite.filters.FilterSequence
+            The loaded filter response curves.
         """
         pass
 

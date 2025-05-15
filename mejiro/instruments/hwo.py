@@ -132,7 +132,7 @@ class HWO(Instrument):
         filters = sorted(glob(os.path.join(module_path, 'data', 'hwo_filter_response', f'HRI-*.ecsv')))
 
         from speclite.filters import load_filters
-        _ = load_filters(*filters)
+        return load_filters(*filters)
 
     @staticmethod
     def default_params():

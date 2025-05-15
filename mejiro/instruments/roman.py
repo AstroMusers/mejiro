@@ -123,7 +123,7 @@ class Roman(Instrument):
         filters = sorted(glob(os.path.join(module_path, 'data', 'roman_filter_response', f'Roman{sca_string}-*.ecsv')))
 
         from speclite.filters import load_filters
-        _ = load_filters(*filters[:8])
+        return load_filters(*filters[:8])
 
     @staticmethod
     def default_params():
