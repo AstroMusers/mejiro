@@ -1,6 +1,7 @@
 import os
 import warnings
 from astropy.units import Quantity
+from glob import glob
 
 from mejiro.instruments.instrument import Instrument
 from mejiro.utils import roman_util, util
@@ -112,6 +113,17 @@ class Roman(Instrument):
         if self.zeropoints is None:
             self.zeropoints = util.return_qtable(os.path.join(self.roman_technical_information_path, ZEROPOINT_PATH))
         return self.zeropoints[(self.zeropoints['element'] == band) & (self.zeropoints['detector'] == f'WFI{str(sca_number).zfill(2)}')]['ABMag']
+    
+    @staticmethod
+    def load_skypy_filters(sca=1):
+        sca_id = roman_util.get_sca_string(sca)
+
+        import mejiro
+        module_path = os.path.dirname(mejiro.__file__)
+        roman_filters = sorted(glob(os.path.join(module_path, 'data', 'roman_filter_response', f'RomanSCA{sca_id}-*.ecsv')))
+
+        from speclite.filters import load_filters
+        _ = load_filters(*roman_filters[:8])
 
     @staticmethod
     def default_params():
