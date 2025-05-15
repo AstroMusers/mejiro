@@ -2,6 +2,7 @@ import importlib.metadata
 import os
 import numpy as np
 import syotools
+import lenstronomy.Util.data_util as data_util
 from astropy import units as u
 from astropy.units import Quantity
 from fractions import Fraction
@@ -54,7 +55,6 @@ class HWO(Instrument):
         self.pixel_scale = self.get_attribute_from_syotools(self.camera, 'pixel_size', u.arcsec / u.pix)
         self.dark_current = self.get_attribute_from_syotools(self.camera, 'dark_current', u.electron / (u.pix * u.second))
         self.read_noise = self.get_attribute_from_syotools(self.camera, 'detector_rn', u.electron ** Fraction(1, 2) / u.pix ** Fraction(1, 2))
-        self.sky_level = {band: value * u.Unit('ct / pix') for band, value in self.get_attribute_from_syotools(self.camera, 'sky_sigma', None).items()}  # TODO need to revisit this and confirm that it's what I think it is. syotools currently doesn't give it units or provide any documentation
         self.psf_fwhm = self.get_attribute_from_syotools(self.camera, 'fwhm_psf', u.arcsec, check_unit=False)  # TODO temporary override of unit check
         self.thermal_background = {
             'B': Quantity(0.0, 'ct / pix'),
@@ -74,6 +74,10 @@ class HWO(Instrument):
         bandwidth = {band: bp for band, bp in zip(self.bands, self.camera.recover('derived_bandpass'))}
         flux_zp = {band: bp for band, bp in zip(self.bands, self.camera.recover('ab_zeropoint'))}
         self.zeropoints = {band: (-1 / 0.4) * np.log10(4 / (np.pi * flux_zp[band].value * (aperture_cm ** 2) * bandwidth[band].value)) for band in self.bands}
+
+        # calculate sky level
+        sky_level_mag_per_arcsec2 = {band: value for band, value in self.get_attribute_from_syotools(self.camera, 'sky_sigma', None).items()}
+        self.sky_level = {band: data_util.magnitude2cps(mag_per_arcsec2, magnitude_zero_point=self.get_zeropoint_magnitude(band)) * (self.get_pixel_scale(band) ** 2).value * u.Unit('ct / pix') for band, mag_per_arcsec2 in sky_level_mag_per_arcsec2.items()}
 
 
     def get_attribute_from_syotools(self, syotools_object, attribute, unit, check_unit=True):
