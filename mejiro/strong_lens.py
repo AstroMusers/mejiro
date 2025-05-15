@@ -5,7 +5,73 @@ from lenstronomy.LightModel.light_model import LightModel
 
 
 class StrongLens(ABC):
+    """
+    Parent class for strong lenses.
 
+    At minimum, a unique name and the parameterization in lenstronomy (`kwargs_model` and `kwargs_params`) must be provided. If the light models have amplitudes (`amp`), they will be used. If not, magnitudes with their corresponding filters must be provided in the 'physical_params' dictionary. If both are provided, the `amp` values will be used.
+
+    Parameters
+    ----------
+    name : str
+        The name of the galaxy-galaxy strong lens. Should be unique.
+    coords : astropy.coordinates.SkyCoord or None
+        The coordinates of the system.
+    kwargs_model : dict
+        In Lenstronomy format: see Lenstronomy documentation.
+    kwargs_params : dict
+        In Lenstronomy format: see Lenstronomy documentation.
+    physical_params : dict
+        A dictionary of physical parameters. The following are populated when importing from SLSim:
+            - 'lens_stellar_mass': the stellar mass of the lens galaxy in solar masses.
+            - 'lens_velocity_dispersion': the velocity dispersion of the lens galaxy in km/s.
+            - 'magnification': the magnification of the source galaxy.
+            - 'magnitudes': a dictionary of magnitudes for the lens and source galaxies, with keys 'lens' and 'source', respectively. Each value should be a dictionary with keys corresponding to the filter names (e.g., 'F062', 'F087', etc.) and values as the magnitudes in those filters.
+        
+    Examples
+    --------
+    Here is a sample ``physical_params`` dictionary:
+
+    .. code-block:: python
+
+        {
+            "lens_stellar_mass": 977409654003.7206,
+            "lens_velocity_dispersion": 318.1035069180407,
+            "magnification": 2.1572878148080696,
+            "magnitudes": {
+                "lens": {
+                    "F062": 25.31638290929369,
+                    "F087": 24.96369787259651,
+                    "F106": 23.9596060901365,
+                    "F129": 22.97223751280789,
+                    "F146": 22.29807037949136,
+                    "F158": 21.906108678706293,
+                    "F184": 21.45793326374795,
+                    "F213": 21.118396579379453
+                },
+                "lensed_source": {
+                    "F062": 25.500925653675434,
+                    "F087": 25.177803863752867,
+                    "F106": 25.00159434812006,
+                    "F129": 24.8952958657035,
+                    "F146": 24.766725445488536,
+                    "F158": 24.667238282726974,
+                    "F184": 24.465433844571177,
+                    "F213": 24.029905125404884
+                },
+                "source": {
+                    "F062": 26.33569587971921,
+                    "F087": 26.012574089796644,
+                    "F106": 25.836364574163838,
+                    "F129": 25.730066091747275,
+                    "F146": 25.601495671532312,
+                    "F158": 25.50200850877075,
+                    "F184": 25.300204070614953,
+                    "F213": 24.86467535144866
+                }
+            }
+        }
+
+    """
     def __init__(
             self,
             name,
@@ -25,6 +91,9 @@ class StrongLens(ABC):
             self.cosmo = kwargs_model['cosmo']
         else:
             raise ValueError("Set astropy.cosmology instance in kwargs_model['cosmo']")
+        
+        # check that brightnesses are provided somewhere
+        _ = self.validate_light_models()
 
         # fields to initialize: these can be computed on demand
         self.lens_cosmo = None
@@ -65,6 +134,32 @@ class StrongLens(ABC):
         if self.lens_cosmo is None:
             self.lens_cosmo = LensCosmo(self.z_lens, self.z_source, cosmo=self.cosmo)
         return self.lens_cosmo
+    
+    def validate_light_models(self):
+        """
+        Validates the presence of the lenstronomy amplitude ('amp') parameter in all lens and source light model keyword arguments. If magnitude information is not present in ``self.physical_params``, or if it is incomplete (missing 'lens' or 'source' magnitudes), the method ensures that each light model dictionary in ``self.kwargs_lens_light`` and ``self.kwargs_source`` contains an 'amp' key. If any light model is missing the 'amp' parameter, a ValueError is raised.
+
+        Returns
+        -------
+        amps_provided : bool
+            True if all required amplitude parameters are provided. False if magnitudes are provided for both the lens and source.
+
+        Raises
+        ------
+        ValueError
+            If any light model dictionary is missing the 'amp' parameter.
+        """
+        amps_provided = False
+
+        if ('magnitudes' not in self.physical_params) or ('magnitudes' in self.physical_params and ('lens' not in self.physical_params['magnitudes'] or 'source' not in self.physical_params['magnitudes'])):
+            for light_kwargs in self.kwargs_lens_light + self.kwargs_source:
+                if 'amp' not in light_kwargs:
+                    raise ValueError(f"Missing 'amp' in {light_kwargs}")
+            
+            # if loop completes without raising an error, then amps are provided
+            amps_provided = True
+        
+        return amps_provided
 
     @property
     def kwargs_lens(self):

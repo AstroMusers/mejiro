@@ -1,47 +1,23 @@
 from astropy.cosmology import default_cosmology
-from lenstronomy.Cosmo.lens_cosmo import LensCosmo
-from lenstronomy.LensModel.lens_model import LensModel
-from lenstronomy.LightModel.light_model import LightModel
 
 from mejiro.strong_lens import StrongLens
 
 
 class GalaxyGalaxy(StrongLens):
-    """
-    Class for galaxy-galaxy strong lenses.
 
-    At minimum, a unique name and the parameterization in lenstronomy (`kwargs_model` and `kwargs_params`) must be provided. If the light models have amplitudes (`amp`), they will be used. If not, the AB magnitudes with their corresponding filters must be provided in the `magnitudes` dictionary. 
-
-    Parameters
-    ----------
-    name : str
-        The name of the galaxy-galaxy strong lens. Should be unique.
-    coords : astropy.coordinates.SkyCoord or None
-        The coordinates of the system.
-    kwargs_model : dict
-        Dictionary in lenstronomy format containing model parameters.
-    kwargs_params : dict
-        Dictionary in lenstronomy format containing parameter values.
-    magnitudes : dict, optional
-        Dictionary containing magnitudes for lens and source, structured as
-        {'lens': {'band': mag, ...}, 'source': {'band': mag, ...}}.
-    """
     def __init__(
             self,
             name,
             coords,
             kwargs_model,
             kwargs_params,
-            physical_params={},
-            magnitudes={}
+            physical_params={}
     ):
         super().__init__(name=name,
                          coords=coords, 
                          kwargs_model=kwargs_model,
                          kwargs_params=kwargs_params,
                          physical_params=physical_params)
-        
-        self.magnitudes = magnitudes  # TODO validation that these must be provided if lenstronomy amplitudes aren't provided in the kwargs_params?
         
         # get redshifts
         self.z_source = kwargs_model['z_source']
@@ -58,7 +34,7 @@ class GalaxyGalaxy(StrongLens):
 
         Notes
         -----
-        The source position is extracted from the first element of `kwargs_source`.
+        The source position is extracted from the first element of ``kwargs_source``.
         """
         from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
 
@@ -69,6 +45,54 @@ class GalaxyGalaxy(StrongLens):
         return solver.image_position_from_source(sourcePos_x=source_x, 
                                                  sourcePos_y=source_y,
                                                  kwargs_lens=self.kwargs_lens)
+
+    @staticmethod   
+    def from_slsim(slsim_gglens):
+        # check that the input is reasonable
+        if slsim_gglens.source_number != 1:
+            raise ValueError("Only one source is supported for galaxy-galaxy lenses.")
+
+        cosmo = slsim_gglens.cosmo
+        z_lens = slsim_gglens.deflector_redshift
+        z_source = slsim_gglens.source_redshift_list[0]
+
+        # get the bands
+        bands = [k.split("_")[1] for k in slsim_gglens.deflector._deflector._deflector_dict.keys() if k.startswith("mag_")]
+
+        # get kwargs_model and kwargs_params
+        kwargs_model, kwargs_params = slsim_gglens.lenstronomy_kwargs(band=bands[0])
+
+        # add additional necessary key/value pairs to kwargs_model
+        kwargs_model['lens_redshift_list'] = [z_lens] * len(kwargs_params['kwargs_lens'])
+        kwargs_model['source_redshift_list'] = [z_source]
+        kwargs_model['cosmo'] = cosmo
+        kwargs_model['z_source'] = z_source
+
+        # populate magnitudes dictionary
+        lens_mags, source_mags, lensed_source_mags = {}, {}, {}
+        for band in bands:
+            lens_mags[band] = slsim_gglens.deflector_magnitude(band)
+            source_mags[band] = slsim_gglens.extended_source_magnitude(band, lensed=False)[0]
+            lensed_source_mags[band] = slsim_gglens.extended_source_magnitude(band, lensed=True)[0]
+        magnitudes = {
+            'lens': lens_mags,
+            'source': source_mags,
+            'lensed_source': lensed_source_mags,
+        }
+
+        # populate physical parameters dictionary
+        physical_params = {
+            'lens_stellar_mass': slsim_gglens.deflector_stellar_mass(),
+            'lens_velocity_dispersion': slsim_gglens.deflector_velocity_dispersion(),
+            'magnification': slsim_gglens.extended_source_magnification()[0],
+            'magnitudes': magnitudes
+        }
+
+        return GalaxyGalaxy(name=None,
+                            coords=None,
+                            kwargs_model=kwargs_model,
+                            kwargs_params=kwargs_params,
+                            physical_params=physical_params)
 
     
 class SampleGG(GalaxyGalaxy):
@@ -86,7 +110,6 @@ class SampleGG(GalaxyGalaxy):
             'source_light_model_list': ['SERSIC_ELLIPSE'],
             'source_redshift_list': [0.5876899931818929],
             'z_source': 0.5876899931818929,
-            'z_source_convention': 5
         }
         kwargs_params = {
             'kwargs_lens': [
@@ -116,7 +139,7 @@ class SampleGG(GalaxyGalaxy):
                 'center_y': 0.010633393703246008,
                 'e1': 0.023377277902774978,
                 'e2': 0.05349948216860632,
-                'magnitude': 17.5664222662219,
+                'magnitude': None,  # if this doesn't get updated by the imaging process, want it to error out
                 'n_sersic': 4.0
             }
             ],
@@ -128,7 +151,7 @@ class SampleGG(GalaxyGalaxy):
                 'center_y': -0.3505004565139597,
                 'e1': -0.06350855238708408,
                 'e2': -0.08420760408362458,
-                'magnitude': 21.434711611915137,
+                'magnitude': None,  # if this doesn't get updated by the imaging process, want it to error out
                 'n_sersic': 1.0
             }
             ]
@@ -175,12 +198,15 @@ class SampleGG(GalaxyGalaxy):
                 'V': 20
             }
         }
+        physical_params = {
+            'magnitudes': magnitudes,
+        }
         
         super().__init__(name=name,
                          coords=coords,
                          kwargs_model=kwargs_model, 
                          kwargs_params=kwargs_params,
-                         magnitudes=magnitudes)
+                         physical_params=physical_params)
 
 
 class SampleBELLS(GalaxyGalaxy):

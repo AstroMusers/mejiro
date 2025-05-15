@@ -61,7 +61,7 @@ class SyntheticImage:
         if self.num_pix % 2 == 0:
             self.num_pix += 1  # make sure that final image will have odd number of pixels on a side
         self.fov_arcsec = self.num_pix * self.pixel_scale  # adjust fov (may differ from user-provided input)
-        # TODO log these calculations and updates
+        if verbose: print(f'Scene size: {self.fov_arcsec} arcsec, {self.num_pix} pixels at pixel scale {self.pixel_scale} arcsec/pix')
 
         # set up pixel grid and coordinates
         x, y, self.ra_at_xy_0, self.dec_at_xy_0, x_at_radec_0, y_at_radec_0, self.Mpix2coord, self.Mcoord2pix = (
@@ -81,8 +81,11 @@ class SyntheticImage:
         self.pixel_grid = PixelGrid(**kwargs_pixel)
         self.coords = Coordinates(self.Mpix2coord, self.ra_at_xy_0, self.dec_at_xy_0)
 
-        # if AB magnitudes are provided, need to convert to lenstronomy amplitudes before ray-shooting
-        if self.strong_lens.magnitudes:
+        # check if lenstronomy amplitudes are provided
+        amps_provided = self.strong_lens.validate_light_models()
+            
+        # if not provided, convert magnitudes to lenstronomy amplitudes
+        if not amps_provided:
             # retrieve zero-point magnitude
             if instrument.name == 'Roman':
                 magnitude_zero_point = instrument.get_zeropoint_magnitude(self.band,
@@ -91,10 +94,10 @@ class SyntheticImage:
                 magnitude_zero_point = instrument.get_zeropoint_magnitude(self.band)
 
             # retrieve lens and source magnitudes
-            lens_magnitude = self.strong_lens.magnitudes['lens'][band]
-            source_magnitude = self.strong_lens.magnitudes['source'][band]
+            lens_magnitude = self.strong_lens.physical_params['magnitudes']['lens'][band]
+            source_magnitude = self.strong_lens.physical_params['magnitudes']['source'][band]
 
-            # make sure the right magnitude is set in the kwargs
+            # overwrite the magnitudes in kwargs_lens_light and kwargs_source
             self.strong_lens.kwargs_lens_light[0]['magnitude'] = lens_magnitude
             self.strong_lens.kwargs_source[0]['magnitude'] = source_magnitude
 
@@ -105,7 +108,7 @@ class SyntheticImage:
             self.strong_lens.kwargs_source = data_util.magnitude2amplitude(light_model_class=self.strong_lens.source_light_model,
                                                                   kwargs_light_mag=self.strong_lens.kwargs_source,
                                                                   magnitude_zero_point=magnitude_zero_point)
-
+            
         # set kwargs_numerics
         if not kwargs_numerics:
             kwargs_numerics = SyntheticImage.DEFAULT_KWARGS_NUMERICS

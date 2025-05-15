@@ -7,46 +7,6 @@ from slsim import lens as slsim_lens
 from mejiro.galaxy_galaxy import GalaxyGalaxy
 
 
-def slsim_lens_to_mejiro(slsim_lens, bands, cosmo):
-    kwargs_model, kwargs_params = slsim_lens.lenstronomy_kwargs(band=bands[0])
-
-    z_lens, z_source = slsim_lens.deflector_redshift, slsim_lens.source_redshift_list[0]  # TODO confirm that first element of source_redshift_list will give the appropriate source. for galaxy-galaxy lensing, this will be the case, so this is fine for now.
-    kwargs_lens = kwargs_params['kwargs_lens']
-
-    # add additional necessary key/value pairs to kwargs_model
-    kwargs_model['lens_redshift_list'] = [z_lens] * len(kwargs_lens)
-    kwargs_model['source_redshift_list'] = [z_source]
-    kwargs_model['cosmo'] = cosmo
-    kwargs_model['z_source'] = z_source
-    kwargs_model['z_source_convention'] = 6
-
-    # populate magnitudes dictionary
-    lens_mags, source_mags, lensed_source_mags = {}, {}, {}
-    for band in bands:
-        lens_mags[band] = slsim_lens.deflector_magnitude(band)
-        source_mags[band] = slsim_lens.extended_source_magnitude(band, lensed=False)[0]  # TODO first element
-        lensed_source_mags[band] = slsim_lens.extended_source_magnitude(band, lensed=True)[0]  # TODO confirm that first element of source_redshift_list will give the appropriate source. for galaxy-galaxy lensing, this will be the case, so this is fine for now.
-    magnitudes = {
-        'lens': lens_mags,
-        'source': source_mags,
-        'lensed_source': lensed_source_mags,
-    }
-
-    # populate physical parameters dictionary
-    physical_params = {
-        'lens_stellar_mass': slsim_lens.deflector_stellar_mass(),
-        'lens_velocity_dispersion': slsim_lens.deflector_velocity_dispersion(),
-        'magnification': slsim_lens.extended_source_magnification(),
-    }
-
-    return GalaxyGalaxy(name=None,
-                        coords=None,
-                        kwargs_model=kwargs_model,
-                        kwargs_params=kwargs_params,
-                        magnitudes=magnitudes,
-                        physical_params=physical_params,)
-
-
 def write_lens_pop_to_csv(output_path, gg_lenses, detectable_snr_list, bands, verbose=False):
     dictparaggln = {}
     dictparaggln['Candidate'] = {}
