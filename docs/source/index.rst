@@ -16,6 +16,9 @@ mejiro documentation
    :maxdepth: 1
    :caption: Documentation   
 
+   mejiro/strong_lens.rst
+   mejiro/synthetic_image.rst
+   mejiro/exposure.rst
    mejiro/analysis.rst
    mejiro/cosmo.rst
    mejiro/engines.rst
@@ -26,6 +29,7 @@ mejiro documentation
    :maxdepth: 1
    :caption: Appendices
 
+   appendices/known_issues.rst
    appendices/structure.rst
 
 Indices and tables
