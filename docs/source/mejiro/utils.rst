@@ -1,7 +1,7 @@
 Utilities
 #########
 
-These methods are low-level utilities that are used in other `mejiro` modules and scripts, but are not necessarily intended to be called directly by end users, with the exception of `mejiro.utils.lenstronomy_util` which can be useful for building the `kwargs_psf` argument of a `SyntheticImage`.
+These methods are low-level utilities that are used in other ``mejiro`` modules and scripts, but are not necessarily intended to be called directly by end users, with the exception of ``mejiro.utils.lenstronomy_util`` which can be useful for building the ``kwargs_psf`` argument of a ``SyntheticImage``.
 
 ``lenstronomy_util``
 ********************

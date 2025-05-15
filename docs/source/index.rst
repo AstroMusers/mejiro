@@ -6,7 +6,7 @@ mejiro documentation
 
 .. toctree::
    :maxdepth: 1
-   :caption: Getting started
+   :caption: Getting Started
 
    getting_started/installation.rst
    getting_started/running_mejiro.rst
@@ -14,7 +14,7 @@ mejiro documentation
    
 .. toctree::
    :maxdepth: 1
-   :caption: Documentation   
+   :caption: Documentation
 
    mejiro/strong_lens.rst
    mejiro/synthetic_image.rst
