@@ -14,7 +14,7 @@ dependencies:
   - scipy=1.11.4
   - tqdm
   - pip:
-    - lenstronomy==1.12.5
+    - lenstronomy==1.13.0
     - stpsf==2.0.0
     - pandeia-engine
     - pysiaf==0.24.1
