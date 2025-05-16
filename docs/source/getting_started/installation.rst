@@ -1,25 +1,16 @@
 Installation
 ############
 
-.. warning::
-    This project is under active development.
-
 Installing ``mejiro`` and its dependencies
 ******************************************
+
+Download ``mejiro`` from `GitHub <https://github.com/AstroMusers/mejiro>`__.
 
 Create a conda environment:
 
 .. code-block:: bash    
 
     conda env create -f environment.yml
-
-.. Install ``SLSim``:
-
-.. .. code-block:: bash  
-
-..     git clone https://github.com/LSST-strong-lensing/slsim.git
-..     cd slsim
-..     pip install -e .
 
 To simulate images from *Roman*, you will need to download the ``roman-technical-information`` repository `here <https://github.com/spacetelescope/roman-technical-information>`__. Then, set the environment variable ``ROMAN_TECHNICAL_INFORMATION_PATH`` to the path where you downloaded the repository, e.g., in your ``.bashrc``:
 
@@ -35,20 +26,8 @@ Optional setup: ``hwo-tools``
 Install `hwo-tools` by following the
 instructions `here <https://github.com/spacetelescope/hwo-tools/blob/main/README.md>`__.
 
-Optional setup: Pandeia
-========================
+.. Optional setup: Pandeia
+.. ========================
 
-Install Pandeia by following the
-instructions `here <https://outerspace.stsci.edu/display/PEN/Pandeia+Engine+Installation>`__.
-
-First-time setup
-****************
-
-1. Duplicate any yaml file in the ``config/machine`` directory and rename it, then update ``repo_dir`` and ``data_dir``
-   attributes to point to the directories where the local repository resides and output data should be written,
-   respectively.
-2. Copy ``setup/config.yaml`` to ``config/config.yaml``
-3. Modify the ``defaults.machine`` attribute in the file you just copied (``config/config.yaml``) to the name (without extension) of the yaml file created in step 1.
-
-.. warning::
-   Note that this ``hydra``-based configuration will be changed in v2.0.0.
+.. Install Pandeia by following the
+.. instructions `here <https://outerspace.stsci.edu/display/PEN/Pandeia+Engine+Installation>`__.

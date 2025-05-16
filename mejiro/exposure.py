@@ -73,6 +73,8 @@ class Exposure:
                 self.instrument_not_available_error(engine)
 
         elif engine == 'pandeia':
+            raise NotImplementedError('romanisim engine not yet implemented')
+        
             from mejiro.engines.pandeia_engine import PandeiaEngine
 
             # warn that PSF isn't gonna do anything
