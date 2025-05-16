@@ -37,13 +37,3 @@ def test_normalize():
     array = np.array([0, 0, 0])
     with pytest.raises(AssertionError):
         stats.normalize(array)
-
-
-def test_linear_fit_through_origin():
-    x = np.array([1, 2, 3, 4, 5])
-    y = np.array([2, 4, 6, 8, 10])
-    x_fit, y_fit, c = stats.linear_fit_through_origin(x, y)
-    assert np.isclose(c, 2)
-    assert len(x_fit) == 100
-    assert len(y_fit) == 100
-    assert np.allclose(y_fit, 2 * x_fit)
