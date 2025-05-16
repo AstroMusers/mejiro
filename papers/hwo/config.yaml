@@ -1,8 +1,0 @@
-# where the repository lives
-repo_dir: /nfshome/bwedig/mejiro
-
-# where output data should be written
-data_dir: /data/bwedig/mejiro
-
-# specify additional directories here to ensure consistency
-figure_dir: ${machine.repo_dir}/hwo/figures

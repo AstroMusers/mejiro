@@ -7,7 +7,7 @@ nice: 19
 verbose: True  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
 limit: null
 seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
-headroom_cores: 
+headroom_cores:
   script_00: 0
   script_01: 0
   script_02: 0
@@ -15,15 +15,15 @@ headroom_cores:
   script_04: 0
   script_05: 0
 survey:
-  runs: 180  # 540
-  area: 0.5  # 0.5
+  runs: 2
+  area: 0.1
   total_population: True
   bands: [ B, FUV, H, I, J, K, NUV, R, U, V ]
   deflector_cut_band: J
   deflector_cut_band_max: 27
   deflector_z_min: 0.01
   deflector_z_max: 6.0
-  source_cut_band: F129
+  source_cut_band: J
   source_cut_band_max: 28
   source_z_min: 0.01
   source_z_max: 10.0

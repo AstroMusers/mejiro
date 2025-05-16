@@ -1,59 +1,46 @@
-import numpy as np
 import pandas as pd
-import os
 from tqdm import tqdm
-from slsim import lens as slsim_lens
-
-from mejiro.galaxy_galaxy import GalaxyGalaxy
 
 
-def write_lens_pop_to_csv(output_path, gg_lenses, detectable_snr_list, bands, verbose=False):
-    dictparaggln = {}
-    dictparaggln['Candidate'] = {}
-    listnamepara = ['velodisp', 'massstel', 'angleins', 'redssour', 'redslens', 'magnsour', 'snr', 'numbimag',
-                    'maxmdistimag']  # 'xposlens', 'yposlens', 'xpossour', 'ypossour',
-    for nameband in bands:
-        listnamepara += ['magtlens%s' % nameband]
-        listnamepara += ['magtsour%s' % nameband]
-        listnamepara += ['magtsourMagnified%s' % nameband]
+def write_lens_population_to_csv(output_path, lens_population, snr_list, verbose=False):
+    """
+    Write list of SLSim galaxy-galaxy Lens objects to a CSV.
 
-    for namepara in listnamepara:
-        dictparaggln['Candidate'][namepara] = np.empty(len(gg_lenses))
+    Parameters
+    ----------
+    output_path : str
+        The file path where the CSV file will be saved.
+    lens_population : list
+        A list of SLSim galaxy-galaxy Lens objects.
+    snr_list : list
+        A list of signal-to-noise ratio (SNR) values corresponding to each system.
+    verbose : bool, optional
+        If True, prints progress and completion messages. Default is False.
+    """
+    # retrieve the bands
+    sample_gglens = lens_population[0]
+    bands = [k.split("_")[1] for k in sample_gglens.deflector._deflector._deflector_dict.keys() if k.startswith("mag_")]
 
-    df = pd.DataFrame(columns=listnamepara)
-
-    for i, (gg_lens, snr) in tqdm(enumerate(zip(gg_lenses, detectable_snr_list)), total=len(gg_lenses),
-                                  disable=not verbose):
-        dict = {
-            'velodisp': gg_lens.deflector_velocity_dispersion(),
-            'massstel': gg_lens.deflector_stellar_mass() * 1e-12,
-            'angleins': gg_lens.einstein_radius[0],
-            'redssour': gg_lens.source_redshift_list[0],  # TODO confirm that first element of source_redshift_list will give the appropriate source. for galaxy-galaxy lensing, this will be the case, so this is fine for now.
-            'redslens': gg_lens.deflector_redshift,
-            'magnsour': gg_lens.extended_source_magnification(),
-            'snr': snr
+    data = []
+    for gglens, snr in tqdm(zip(lens_population, snr_list), total=len(lens_population), disable=not verbose):
+        row = {
+            'vel_disp': gglens.deflector_velocity_dispersion(),
+            'm_star': gglens.deflector_stellar_mass(),
+            'theta_e': gglens.einstein_radius[0],
+            'z_lens': gglens.deflector_redshift,
+            'z_source': gglens.source_redshift_list[0],
+            'magnification': gglens.extended_source_magnification(),
+            'num_images': len(gglens.point_source_image_positions()[0]),
+            'snr': snr,
         }
 
-        posiimag = gg_lens.point_source_image_positions()
-        dict['numbimag'] = len(posiimag[0])
-        dict['maxmdistimag'] = 0  # slsim_lens.image_separation_from_positions(posiimag) TODO TEMP
+        for band in bands:
+            row[f'mag_{band}_lens'] = gglens.deflector_magnitude(band=band)
+            row[f'mag_{band}_source'] = gglens.extended_source_magnitude(band=band, lensed=False)[0]
+            row[f'mag_{band}_source_magnified'] = gglens.extended_source_magnitude(band=band, lensed=True)[0]
 
-        # TODO ypossour was throwing index 1 out of bounds. but I also don't need this info (for now) so maybe just delete
-        # posilens = gg_lens.deflector_position
-        # posisour = gg_lens.extended_source_image_positions()[0]
-        # dict['xposlens'] = posilens[0]
-        # dict['yposlens'] = posilens[1]
-        # dict['xpossour'] = posisour[0]
-        # dict['ypossour'] = posisour[1]
+        data.append(row)
 
-        for nameband in bands:
-            dict['magtlens%s' % nameband] = gg_lens.deflector_magnitude(band=nameband)
-            dict['magtsour%s' % nameband] = gg_lens.extended_source_magnitude(band=nameband, lensed=False)[0]
-            dict['magtsourMagnified%s' % nameband] = gg_lens.extended_source_magnitude(band=nameband, lensed=True)[0]
-
-        df.loc[i] = pd.Series(dict)
-
-    if verbose: print('Writing to %s..' % output_path)
-    if os.path.exists(output_path):
-        os.remove(output_path)
+    df = pd.DataFrame(data)
     df.to_csv(output_path, index=False)
+    if verbose: print(f'Wrote lens population to {output_path}.')

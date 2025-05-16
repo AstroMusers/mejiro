@@ -1,5 +1,5 @@
 mag_lim: 32
-fsky: 0.5 deg2  # 10
+fsky: 0.1 deg2
 z_range: !numpy.arange [ 0, 10.01, 0.1 ]
 M_star_blue: !astropy.modeling.models.Linear1D [ -0.9408582, -20.40492365 ]
 phi_star_blue: !astropy.modeling.models.Exponential1D [ 0.00370253, -9.73858 ]
@@ -33,7 +33,7 @@ tables:
       magnitudes: $blue.M
       coefficients: $blue.coeff
       filter: bessell-B
-    mag_b, mag_fuv, mag_h, mag_i, mag_j, mag_k, mag_nuv, mag_r, mag_u, mag_v: !skypy.galaxies.spectrum.kcorrect.apparent_magnitudes
+    mag_B, mag_FUV, mag_H, mag_I, mag_J, mag_K, mag_NUV, mag_R, mag_U, mag_V: !skypy.galaxies.spectrum.kcorrect.apparent_magnitudes
       coefficients: $blue.coeff
       filters: $filters
       redshift: $blue.z
@@ -78,7 +78,7 @@ tables:
       magnitudes: $red.M
       coefficients: $red.coeff
       filter: bessell-B
-    mag_b, mag_fuv, mag_h, mag_i, mag_j, mag_k, mag_nuv, mag_r, mag_u, mag_v: !skypy.galaxies.spectrum.kcorrect.apparent_magnitudes
+    mag_B, mag_FUV, mag_H, mag_I, mag_J, mag_K, mag_NUV, mag_R, mag_U, mag_V: !skypy.galaxies.spectrum.kcorrect.apparent_magnitudes
       coefficients: $red.coeff
       filters: $filters
       redshift: $red.z
