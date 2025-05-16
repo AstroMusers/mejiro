@@ -87,7 +87,6 @@ def main():
                 'source_light_model_list': output.model_settings['model']['source_light'],
                 'source_redshift_list': [z_source] * len(kwargs_source),
                 'z_source': z_source,
-                'z_source_convention': 5.
             }
             assert len(kwargs_model['lens_model_list']) == len(kwargs_model['lens_redshift_list'])
             assert len(kwargs_model['source_light_model_list']) == len(kwargs_model['source_redshift_list'])

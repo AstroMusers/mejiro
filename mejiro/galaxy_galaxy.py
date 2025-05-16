@@ -224,7 +224,6 @@ class SampleBELLS(GalaxyGalaxy):
             'source_light_model_list': ['SHAPELETS', 'SERSIC_ELLIPSE'],
             'source_redshift_list': [1.35, 1.35],
             'z_source': 1.35,
-            'z_source_convention': 5.0
         }
         kwargs_params = {
             'kwargs_lens': [
@@ -312,7 +311,6 @@ class SampleSL2S(GalaxyGalaxy):
             'source_light_model_list': ['SHAPELETS', 'SERSIC_ELLIPSE', 'SHAPELETS', 'SERSIC_ELLIPSE'],
             'source_redshift_list': [1.42, 1.42, 1.42, 1.42],
             'z_source': 1.42,
-            'z_source_convention': 5.0
         }
         kwargs_params = {
             'kwargs_lens': [

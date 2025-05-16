@@ -356,7 +356,6 @@ def run_slsim(tuple):
         kwargs_model['source_redshift_list'] = [z_source]
         kwargs_model['cosmo'] = cosmo
         kwargs_model['z_source'] = z_source
-        kwargs_model['z_source_convention'] = survey_params['source_z_max']
 
         # create dict to pickle
         gglens_dict = {
