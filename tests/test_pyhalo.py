@@ -74,6 +74,9 @@ def test_WDM():
 def test_SIDM():
     strong_lens = SampleGG()
 
+    # currently, the SPL_CORE model is not implemented in JAXtronomy
+    strong_lens.use_jax = False
+
     SIDM = preset_model_from_name('SIDM_core_collapse')
     mass_ranges_subhalos = [[6.0, 7.0], [7.0, 8.0], [8.0, 9.0], [9.0, 10.0]]
     mass_ranges_field_halos = [[6.0, 7.5], [7.5, 8.5], [8.5, 10.0]]

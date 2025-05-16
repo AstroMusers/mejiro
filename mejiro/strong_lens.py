@@ -26,6 +26,8 @@ class StrongLens(ABC):
             - 'lens_velocity_dispersion': the velocity dispersion of the lens galaxy in km/s.
             - 'magnification': the magnification of the source galaxy.
             - 'magnitudes': a dictionary of magnitudes for the lens and source galaxies, with keys 'lens' and 'source', respectively. Each value should be a dictionary with keys corresponding to the filter names (e.g., 'F062', 'F087', etc.) and values as the magnitudes in those filters.
+    use_jax : bool, or list of bool
+        Whether to use JAXtronomy for calculations. Default is False. See lenstronomy documentation for details: https://lenstronomy.readthedocs.io/en/latest/lenstronomy.LensModel.html#module-lenstronomy.LensModel.lens_model.
         
     Examples
     --------
@@ -78,13 +80,15 @@ class StrongLens(ABC):
             coords,
             kwargs_model,
             kwargs_params,
-            physical_params={}
+            physical_params,
+            use_jax
     ):
         self.name = name
         self.coords = coords
         self.kwargs_model = kwargs_model
         self.kwargs_params = kwargs_params
         self.physical_params = physical_params
+        self.use_jax = use_jax
 
         # set cosmology
         if 'cosmo' in kwargs_model:
@@ -251,7 +255,7 @@ class StrongLens(ABC):
 
     @property
     def lens_model(self):
-        return LensModel(self.lens_model_list)
+        return LensModel(self.lens_model_list, use_jax=self.use_jax)
     
     @property
     def lens_light_model(self):

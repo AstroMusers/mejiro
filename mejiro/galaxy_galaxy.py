@@ -11,13 +11,15 @@ class GalaxyGalaxy(StrongLens):
             coords,
             kwargs_model,
             kwargs_params,
-            physical_params={}
+            physical_params={},
+            use_jax=False
     ):
         super().__init__(name=name,
                          coords=coords, 
                          kwargs_model=kwargs_model,
                          kwargs_params=kwargs_params,
-                         physical_params=physical_params)
+                         physical_params=physical_params,
+                         use_jax=use_jax)
         
         # get redshifts
         self.z_source = kwargs_model['z_source']
@@ -206,7 +208,8 @@ class SampleGG(GalaxyGalaxy):
                          coords=coords,
                          kwargs_model=kwargs_model, 
                          kwargs_params=kwargs_params,
-                         physical_params=physical_params)
+                         physical_params=physical_params,
+                         use_jax=True)
 
 
 class SampleBELLS(GalaxyGalaxy):
@@ -293,7 +296,8 @@ class SampleBELLS(GalaxyGalaxy):
         super().__init__(name=name,
                          coords=coords,
                          kwargs_model=kwargs_model, 
-                         kwargs_params=kwargs_params)
+                         kwargs_params=kwargs_params,
+                         use_jax=[True, False])
 
 
 class SampleSL2S(GalaxyGalaxy):
@@ -439,5 +443,6 @@ class SampleSL2S(GalaxyGalaxy):
         super().__init__(name=name,
                          coords=coords,
                          kwargs_model=kwargs_model, 
-                         kwargs_params=kwargs_params)
+                         kwargs_params=kwargs_params,
+                         use_jax=[True, False])
         
