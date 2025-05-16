@@ -28,7 +28,7 @@ def main(config):
     pipeline_params = util.hydra_to_dict(config.pipeline)
 
     # set nice level
-    # os.nice(pipeline_params['nice'])
+    os.nice(pipeline_params['nice'])
 
     # script configuration options
     debugging = False
@@ -41,7 +41,7 @@ def main(config):
         'psf_cache_dir': os.path.join(config.machine.data_dir, 'cached_psfs')
     }
     subhalo_params = {
-        'masses': np.linspace(1e8, 1e10, 20),  # np.linspace(1e9, 1e10, 20),  # np.arange(1e8, 1e10, 1e9)
+        'masses': np.linspace(1e8, 1e10, 40),  # np.linspace(1e9, 1e10, 20),  # np.arange(1e8, 1e10, 1e9)
         'concentration': 10,
         'r_tidal': 0.5,
         'sigma_sub': 0.055,
@@ -76,7 +76,7 @@ def main(config):
     print(f'Collecting lenses from {pipeline_dir}')
     lens_list = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=True, verbose=True)
     og_count = len(lens_list)
-    lens_list = [lens for lens in lens_list if lens.snr > 115.47 and lens.snr != np.inf]
+    lens_list = [lens for lens in lens_list if lens.snr > 200 and lens.snr != np.inf]
     lens_list = sorted(lens_list, key=lambda x: x.snr, reverse=True)
     num_lenses = script_config['num_lenses']
     if num_lenses is not None:
