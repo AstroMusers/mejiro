@@ -15,7 +15,7 @@ headroom_cores:
   script_04: 0
   script_05: 0
 survey:
-  runs: 180  # 540
+  runs: 10  # 540
   area: 0.5  # 0.5
   total_population: True
   scas: &scas [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]

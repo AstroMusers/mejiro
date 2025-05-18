@@ -45,10 +45,9 @@ def main():
     config['survey']['cosmo'] = default_cosmology.get()
 
     # set up top directory for all pipeline output
+    pipeline_dir = os.path.join(data_dir, 'hwo_survey')
     if dev:
-        pipeline_dir = os.path.join(data_dir, 'hwo_survey_dev')
-    else:
-        pipeline_dir = os.path.join(data_dir, 'hwo_survey')
+        pipeline_dir += '_dev'        
     util.create_directory_if_not_exists(pipeline_dir)
 
     # set up output directory
@@ -112,7 +111,7 @@ def run_slsim(tuple):
     from mejiro.exposure import Exposure
     from mejiro.galaxy_galaxy import GalaxyGalaxy
     from mejiro.synthetic_image import SyntheticImage
-    from mejiro.utils import slsim_util, util, lenstronomy_util
+    from mejiro.utils import lenstronomy_util, slsim_util, util
     module_path = os.path.dirname(mejiro.__file__)
 
     # unpack tuple
@@ -125,6 +124,7 @@ def run_slsim(tuple):
     survey_config = config['survey']
     area = survey_config['area']
     bands = survey_config['bands']
+    cosmo = survey_config['cosmo']
     snr_band = snr_config['snr_band']
     snr_exposure_time = snr_config['snr_exposure_time']
     snr_fov_arcsec = snr_config['snr_fov_arcsec']
@@ -142,7 +142,7 @@ def run_slsim(tuple):
 
     # load HWO HRI filters
     _ = hwo.load_speclite_filters()
-    if verbose: print('Configured HWO filters.')
+    if verbose: print('Loaded HWO filter response curves')
 
     # load SkyPy config file
     skypy_config = os.path.join(module_path, 'data', 'hwo.yml')
@@ -153,7 +153,6 @@ def run_slsim(tuple):
     survey_area = float(config_file['fsky'][:-5])
     sky_area = Quantity(value=survey_area, unit='deg2')
     assert sky_area.value == area, f'Area mismatch: {sky_area.value} != {area}'
-    cosmo = survey_config['cosmo']
     if verbose: print(f'Surveying {sky_area.value} deg2 with bands {bands}')
 
     # define cuts on the intrinsic deflector and source populations (in addition to the skypy config file)
