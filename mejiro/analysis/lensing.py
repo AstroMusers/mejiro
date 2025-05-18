@@ -3,6 +3,44 @@ import numpy as np
 from mejiro.utils import util
 
 
+def get_alpha(lens_model, kwargs_lens, scene_size, pixel_scale):
+    """
+    Compute the deflection angle map for a given lens model over a 2D grid. The intended use case is:
+
+    .. code-block:: python
+
+        plt.quiver(*get_alpha(lens_model, kwargs_lens, scene_size, pixel_scale))
+        
+    """
+    xx, yy = util.build_meshgrid(scene_size, pixel_scale)
+    alpha_y, alpha_x = lens_model.alpha(xx.ravel(), yy.ravel(), kwargs_lens)
+    return xx, yy, alpha_y, alpha_x
+
+
+def get_potential(lens_model, kwargs_lens, scene_size, pixel_scale):
+    """
+    Compute the potential map for a given lens model over a 2D grid. The scene size is calculated from overall scene size and pixel scale to match how scene size is calculated in the SyntheticImage class. This way, the same parameters will yield arrays with the same shapes and can be directly compared.
+
+    Parameters
+    ----------
+    lens_model : object
+        See lenstronomy documentation.
+    kwargs_lens : list of dict
+        See lenstronomy documentation.
+    scene_size : float
+        The physical size of the scene in angular units (often, arcseconds).
+    pixel_scale : float
+        The size of each pixel.
+
+    Returns
+    -------
+    np.ndarray
+        A 2D array containing the potential values evaluated on a grid covering the scene.
+    """
+    xx, yy = util.build_meshgrid(scene_size, pixel_scale)
+    return lens_model.potential(xx.ravel(), yy.ravel(), kwargs_lens).reshape(xx.shape)
+
+
 def get_kappa(lens_model, kwargs_lens, scene_size, pixel_scale):
     """
     Compute the convergence (kappa) map for a given lens model over a 2D grid. The scene size is calculated from overall scene size and pixel scale to match how scene size is calculated in the SyntheticImage class. This way, the same parameters will yield arrays with the same shapes and can be directly compared.

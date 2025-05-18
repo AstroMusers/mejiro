@@ -1,4 +1,3 @@
-import numpy as np
 import pytest
 import matplotlib.pyplot as plt
 from pyHalo.preset_models import preset_model_from_name
