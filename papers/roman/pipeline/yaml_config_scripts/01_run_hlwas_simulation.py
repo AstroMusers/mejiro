@@ -46,7 +46,7 @@ def main():
     config['survey']['cosmo'] = default_cosmology.get()
 
     # set up top directory for all pipeline output
-    pipeline_dir = os.path.join(data_dir, 'pipeline')
+    pipeline_dir = os.path.join(data_dir, 'roman_hlwas')
     if dev:
         pipeline_dir += '_dev'
     util.create_directory_if_not_exists(pipeline_dir)
@@ -149,8 +149,8 @@ def run_slsim(tuple):
     util.create_directory_if_not_exists(lens_output_dir)
 
     # load Roman WFI filters
-    _ = roman.load_speclite_filters()
-    if verbose: print(f'Loaded Roman WFI filter response curves')
+    roman_filters = roman.load_speclite_filters(sca=sca_id)
+    if verbose: print(f'Loaded Roman WFI filter response curves: {roman_filters.names}')
 
     # load SkyPy config file
     cache_dir = os.path.join(module_path, 'data', f'roman_hlwas_skypy_configs_{area}')
@@ -309,8 +309,8 @@ def run_slsim(tuple):
             continue
 
         # criterion 2: extended source magnification
-        extended_source_magnification = candidate.extended_source_magnification()[0]
-        if snr < 50 and extended_source_magnification < survey_config['magnification']:
+        magnification = strong_lens.physical_params['magnification']
+        if snr < 50 and magnification < survey_config['magnification']:
             continue
 
         # if both criteria satisfied, consider detectable
@@ -334,7 +334,7 @@ def run_slsim(tuple):
             util.pickle(save_path, each)
 
         detectable_pop_csv = os.path.join(output_dir, f'detectable_pop_{run}_sca{sca_id}.csv')
-        slsim_util.write_lens_pop_to_csv(detectable_pop_csv, detectable_gglenses, detectable_snr_list, bands, verbose=verbose)
+        slsim_util.write_lens_population_to_csv(detectable_pop_csv, detectable_gglenses, detectable_snr_list, verbose=verbose)
 
         detectable_gglenses_pickle_path = os.path.join(output_dir, f'detectable_gglenses_{run}_sca{sca_id}.pkl')
         if verbose: print(f'Pickling detectable gglenses to {detectable_gglenses_pickle_path}')

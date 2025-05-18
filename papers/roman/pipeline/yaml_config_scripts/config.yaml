@@ -1,7 +1,7 @@
 repo_dir: &repo_dir /grad/bwedig/mejiro  # where the repository lives
 data_dir: &data_dir /data/bwedig/mejiro  # where output data should be written
 figure_dir: figures # !concat [*repo_dir, "/figures"]
-pipeline_dir: pipeline
+pipeline_dir: roman_hlwas
 dev: True
 nice: 19
 verbose: True  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
@@ -9,13 +9,13 @@ limit: null
 seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
 headroom_cores: 
   script_00: 0
-  script_01: 0
+  script_01: 28
   script_02: 0
   script_03: 0
   script_04: 0
   script_05: 0
 survey:
-  runs: 10  # 540
+  runs: 90  # 540
   area: 0.5  # 0.5
   total_population: True
   scas: &scas [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
