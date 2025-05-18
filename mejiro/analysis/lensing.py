@@ -10,11 +10,11 @@ def get_alpha(lens_model, kwargs_lens, scene_size, pixel_scale):
     .. code-block:: python
 
         plt.quiver(*get_alpha(lens_model, kwargs_lens, scene_size, pixel_scale))
-        
+
     """
     xx, yy = util.build_meshgrid(scene_size, pixel_scale)
-    alpha_y, alpha_x = lens_model.alpha(xx.ravel(), yy.ravel(), kwargs_lens)
-    return xx, yy, alpha_y, alpha_x
+    alpha_x, alpha_y = lens_model.alpha(xx.ravel(), yy.ravel(), kwargs_lens)
+    return xx, yy, alpha_x, alpha_y
 
 
 def get_potential(lens_model, kwargs_lens, scene_size, pixel_scale):
