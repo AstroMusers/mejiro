@@ -12,7 +12,7 @@ class GalaxyGalaxy(StrongLens):
             kwargs_model,
             kwargs_params,
             physical_params={},
-            use_jax=False
+            use_jax=None
     ):
         super().__init__(name=name,
                          coords=coords, 
@@ -209,7 +209,7 @@ class SampleGG(GalaxyGalaxy):
                          kwargs_model=kwargs_model, 
                          kwargs_params=kwargs_params,
                          physical_params=physical_params,
-                         use_jax=True)
+                         use_jax=[True, True, True])
 
 
 class SampleBELLS(GalaxyGalaxy):

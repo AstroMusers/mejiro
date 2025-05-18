@@ -27,7 +27,12 @@ class StrongLens(ABC):
             - 'magnification': the magnification of the source galaxy.
             - 'magnitudes': a dictionary of magnitudes for the lens and source galaxies, with keys 'lens' and 'source', respectively. Each value should be a dictionary with keys corresponding to the filter names (e.g., 'F062', 'F087', etc.) and values as the magnitudes in those filters.
     use_jax : bool, or list of bool
-        Whether to use JAXtronomy for calculations. Default is False. See lenstronomy documentation for details: https://lenstronomy.readthedocs.io/en/latest/lenstronomy.LensModel.html#module-lenstronomy.LensModel.lens_model.
+        Whether to use JAXtronomy for calculations. Default is None, then set to True in the constructor for all lens model element(s). See lenstronomy documentation for details: https://lenstronomy.readthedocs.io/en/latest/lenstronomy.LensModel.html#module-lenstronomy.LensModel.lens_model.
+
+    Notes
+    -----
+
+    - Note that JAXtronomy is utilized by default for all lens model elements. To disable this, either set `use_jax` to False (which will disable it for all lens model elements) or provide a list of booleans specifying which lens model(s) to disable JAXtronomy for.
         
     Examples
     --------
@@ -96,6 +101,17 @@ class StrongLens(ABC):
         else:
             raise ValueError("Set astropy.cosmology instance in kwargs_model['cosmo']")
         
+        # set JAXtronomy flag
+        if self.use_jax is None:
+            self.use_jax = [True] * len(self.lens_model_list)  # default to True for all lens models
+        elif isinstance(self.use_jax, list):
+            if len(self.use_jax) != len(self.lens_model_list):
+                raise ValueError("Length of use_jax list must match the number of lens models.")
+        elif isinstance(self.use_jax, bool):
+            self.use_jax = [self.use_jax] * len(self.lens_model_list)
+        else:
+            raise ValueError("use_jax must be a boolean or a list of booleans.")
+        
         # check that brightnesses are provided somewhere
         _ = self.validate_light_models()
 
@@ -103,7 +119,7 @@ class StrongLens(ABC):
         self.lens_cosmo = None
         self.realization = None
 
-    def add_realization(self, realization):
+    def add_realization(self, realization, use_jax=True):
         """
         Add a pyHalo dark matter subhalo realization to the mass model of the system. See the [pyHalo documentation](https://github.com/dangilman/pyHalo) for details.
 
@@ -125,6 +141,12 @@ class StrongLens(ABC):
         self.kwargs_lens += kwargs_halos
         self.lens_redshift_list += halo_redshift_list
         self.lens_model_list += halo_lens_model_list
+
+        # set JAXtronomy flag
+        if isinstance(self.use_jax, bool):
+            self.use_jax = [self.use_jax]
+        self.use_jax += [use_jax] * len(halo_lens_model_list) 
+        
     
     def get_lens_cosmo(self):
         """
