@@ -1,6 +1,14 @@
 Analysis
 ########
 
+``lensing``
+***********
+
+.. automodule:: mejiro.analysis.lensing
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 ``regions``
 ***********
 

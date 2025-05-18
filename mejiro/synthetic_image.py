@@ -208,7 +208,7 @@ class SyntheticImage:
 
     def get_image_positions(self, pixel=True):
         """
-        Calculate the image positions from the source position and lensing mass model. Wraps GalaxyGalaxy.get_image_positions(), with the added functionality of returning the positions in pixel coordinates.
+        Calculate the image positions from the source position and lensing mass model. Wraps ``GalaxyGalaxy.get_image_positions()``, with the added functionality of returning the positions in pixel coordinates.
 
         Parameters
         ----------

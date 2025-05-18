@@ -4,7 +4,7 @@ Installation
 Installing ``mejiro`` and its dependencies
 ******************************************
 
-Download ``mejiro`` from `GitHub <https://github.com/AstroMusers/mejiro>`__.
+Download ``mejiro`` from `GitHub <https://github.com/AstroMusers/mejiro>`__. Currently, ``mejiro`` is not available on PyPI.
 
 Create a conda environment:
 
@@ -12,7 +12,7 @@ Create a conda environment:
 
     conda env create -f environment.yml
 
-To simulate images from *Roman*, you will need to download the ``roman-technical-information`` repository `here <https://github.com/spacetelescope/roman-technical-information>`__. Then, set the environment variable ``ROMAN_TECHNICAL_INFORMATION_PATH`` to the path where you downloaded the repository, e.g., in your ``.bashrc``:
+To simulate images from *Roman*, you will need to download the ``roman-technical-information`` repository `here <https://github.com/spacetelescope/roman-technical-information>`__. Then, set the environment variable ``ROMAN_TECHNICAL_INFORMATION_PATH`` to the path where you downloaded the repository, e.g., in your ``.bashrc`` or ``.bash_profile``:
 
 .. code-block:: bash
 

@@ -10,7 +10,6 @@ mejiro documentation
 
    getting_started/installation.rst
    getting_started/running_mejiro.rst
-   getting_started/tutorials.rst
    
 .. toctree::
    :maxdepth: 1

@@ -27,7 +27,7 @@ class StrongLens(ABC):
             - 'magnification': the magnification of the source galaxy.
             - 'magnitudes': a dictionary of magnitudes for the lens and source galaxies, with keys 'lens' and 'source', respectively. Each value should be a dictionary with keys corresponding to the filter names (e.g., 'F062', 'F087', etc.) and values as the magnitudes in those filters.
     use_jax : bool, or list of bool
-        Whether to use JAXtronomy for calculations. Default is None, then set to True in the constructor for all lens model element(s). See lenstronomy documentation for details: https://lenstronomy.readthedocs.io/en/latest/lenstronomy.LensModel.html#module-lenstronomy.LensModel.lens_model.
+        Whether to use JAXtronomy for calculations. Default is None, then set to True in the constructor for all lens model element(s). See the `lenstronomy documentation <https://lenstronomy.readthedocs.io/en/latest/lenstronomy.LensModel.html#module-lenstronomy.LensModel.lens_model>`__ for details.
 
     Notes
     -----
@@ -121,7 +121,7 @@ class StrongLens(ABC):
 
     def add_realization(self, realization, use_jax=True):
         """
-        Add a pyHalo dark matter subhalo realization to the mass model of the system. See the [pyHalo documentation](https://github.com/dangilman/pyHalo) for details.
+        Add a pyHalo dark matter subhalo realization to the mass model of the system. See the `pyHalo documentation <https://github.com/dangilman/pyHalo>`__ for details.
 
         Parameters
         ----------
