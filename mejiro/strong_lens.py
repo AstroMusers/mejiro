@@ -146,7 +146,6 @@ class StrongLens(ABC):
         if isinstance(self.use_jax, bool):
             self.use_jax = [self.use_jax]
         self.use_jax += [use_jax] * len(halo_lens_model_list) 
-        
     
     def get_lens_cosmo(self):
         """
