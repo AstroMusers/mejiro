@@ -1,5 +1,7 @@
 import numpy as np
 
+from mejiro.utils import util
+
 
 def get_kappa(lens_model, kwargs_lens, scene_size, pixel_scale):
     """
@@ -19,17 +21,10 @@ def get_kappa(lens_model, kwargs_lens, scene_size, pixel_scale):
     Returns
     -------
     np.ndarray
-        A 2D array of shape (num_pix, num_pix) containing the convergence (kappa) values
-        evaluated on a grid covering the scene.
+        A 2D array containing the convergence (kappa) values evaluated on a grid covering the scene.
     """
-    num_pix = np.ceil(scene_size / pixel_scale).astype(int)
-    if num_pix % 2 == 0:
-        num_pix += 1
-
-    _r = np.linspace(-scene_size / 2, scene_size / 2, num_pix)
-    xx, yy = np.meshgrid(_r, _r)
-
-    return lens_model.kappa(xx.ravel(), yy.ravel(), kwargs_lens).reshape(num_pix, num_pix)
+    xx, yy = util.build_meshgrid(scene_size, pixel_scale)
+    return lens_model.kappa(xx.ravel(), yy.ravel(), kwargs_lens).reshape(xx.shape)
 
 
 def get_subhalo_mass_function(realization, bins=10):

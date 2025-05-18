@@ -7,6 +7,8 @@ from lenstronomy.ImSim.image_model import ImageModel
 from lenstronomy.Util import data_util
 from lenstronomy.Util import util as lenstronomy_util
 
+from mejiro.utils import util
+
 
 class SyntheticImage:
 
@@ -57,9 +59,7 @@ class SyntheticImage:
 
         # calculate size of scene
         self.pixel_scale = instrument.get_pixel_scale(self.band).value  # an Astropy Quantity with units arcsec / pix
-        self.num_pix = np.ceil(self.fov_arcsec / self.pixel_scale).astype(int)
-        if self.num_pix % 2 == 0:
-            self.num_pix += 1  # make sure that final image will have odd number of pixels on a side
+        self.num_pix = util.set_odd_num_pix(self.fov_arcsec, self.pixel_scale)  # make sure that final image will have odd number of pixels on a side
         self.fov_arcsec = self.num_pix * self.pixel_scale  # adjust fov (may differ from user-provided input)
         if verbose: print(f'Scene size: {self.fov_arcsec} arcsec, {self.num_pix} pixels at pixel scale {self.pixel_scale} arcsec/pix')
 
