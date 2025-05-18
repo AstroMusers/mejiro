@@ -297,8 +297,8 @@ def run_slsim(tuple):
             continue
 
         # criterion 2: extended source magnification
-        extended_source_magnification = candidate.extended_source_magnification()[0]
-        if snr < 50 and extended_source_magnification < survey_config['magnification']:
+        magnification = strong_lens.physical_params['magnification']
+        if snr < 50 and magnification < survey_config['magnification']:
             continue
 
         # if both criteria satisfied, consider detectable
