@@ -1,4 +1,3 @@
-import json
 import multiprocessing
 import os
 import random
@@ -8,7 +7,6 @@ import yaml
 from glob import glob
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-import numpy as np
 from tqdm import tqdm
 
 
@@ -30,22 +28,26 @@ def main():
     from mejiro.instruments.roman import Roman
     from mejiro.utils import util
 
-    # retrieve configuration parameters
-    dev = config['pipeline']['dev']
-    verbose = config['pipeline']['verbose']
-    data_dir = config['data_dir']
-    limit = config['pipeline']['limit']
-    synthetic_image_config = config['pipeline']['survey']['synthetic_image']
-
     # set nice level
-    os.nice(config['pipeline']['nice'])
+    os.nice(config['nice'])
+
+    # retrieve configuration parameters
+    dev = config['dev']
+    verbose = config['verbose']
+    data_dir = config['data_dir']
+    psf_cache_dir = config['psf_cache_dir']
+    limit = config['limit']
+    synthetic_image_config = config['synthetic_image']
+    psf_config = config['psf']
+
+    # set configuration parameters
+    psf_cache_dir = os.path.join(data_dir, psf_cache_dir)
+    psf_config['psf_cache_dir'] = psf_cache_dir
 
     # set up top directory for all pipeline output
+    pipeline_dir = os.path.join(data_dir, config['pipeline_dir'])
     if dev:
-        pipeline_dir = os.path.join(data_dir, 'pipeline_dev')
-    else:
-        pipeline_dir = os.path.join(data_dir, 'pipeline')
-    util.create_directory_if_not_exists(pipeline_dir)
+        pipeline_dir += '_dev'
 
     # tell script where the output of previous script is
     input_dir = os.path.join(pipeline_dir, PREV_SCRIPT_NAME)
@@ -88,7 +90,7 @@ def main():
         output_sca_dir = os.path.join(output_dir, f'sca{sca}')
 
         for uid in lens_uids:
-            tuple_list.append((uid, sca, roman, synthetic_image_config, input_sca_dir, output_sca_dir))
+            tuple_list.append((uid, sca, roman, synthetic_image_config, psf_config, input_sca_dir, output_sca_dir))
             i += 1
             if i == limit:
                 break
@@ -99,7 +101,7 @@ def main():
     # Define the number of processes
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count
-    process_count -= config['pipeline']['headroom_cores']['script_04']
+    process_count -= config['headroom_cores']['script_04']
     if count < process_count:
         process_count = count
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
@@ -118,11 +120,12 @@ def main():
 
 
 def create_synthetic_image(input):
+    from mejiro.engines.stpsf_engine import STPSFEngine
     from mejiro.synthetic_image import SyntheticImage
     from mejiro.utils import roman_util, util
 
     # unpack tuple
-    (uid, sca, roman, synthetic_image_config, input_dir, output_dir) = input
+    (uid, sca, roman, synthetic_image_config, psf_config, input_dir, output_dir) = input
 
     # unpack pipeline params
     bands = synthetic_image_config['bands']
@@ -130,11 +133,14 @@ def create_synthetic_image(input):
     pieces = synthetic_image_config['pieces']
     supersampling_factor = synthetic_image_config['supersampling_factor']
     supersampling_compute_mode = synthetic_image_config['supersampling_compute_mode']
-    divide_up_sca = synthetic_image_config['divide_up_sca']
+    divide_up_sca = psf_config['divide_up_sca']
+    psf_cache_dir = psf_config['psf_cache_dir']
+    num_pix = psf_config['num_pixes'][0]
 
     # load the lens based on uid
     lens = util.unpickle(os.path.join(input_dir, f'lens_with_subhalos_{uid}.pkl'))
-    assert lens.uid == uid, f'UID mismatch: {lens.uid} != {uid}'
+    lens_uid = lens.name.split('_')[2]
+    assert lens_uid == uid, f'UID mismatch: {lens_uid} != {uid}'
 
     # build kwargs_numerics
     kwargs_numerics = {
@@ -152,14 +158,18 @@ def create_synthetic_image(input):
 
     # generate synthetic images
     for band in bands:
+        # get PSF
+        kwargs_psf = STPSFEngine.get_roman_psf_kwargs(band, int(sca), detector_pos, oversample=supersampling_factor, num_pix=num_pix, check_cache=True, psf_cache_dir=psf_cache_dir, verbose=False)
+
         synthetic_image = SyntheticImage(strong_lens=lens,
                                      instrument=roman,
                                      band=band,
                                      fov_arcsec=fov_arcsec,
+                                     instrument_params=instrument_params,
                                      kwargs_numerics=kwargs_numerics,
+                                     kwargs_psf=kwargs_psf,
                                      pieces=pieces,
-                                     verbose=False,
-                                     instrument_params=instrument_params)
+                                     verbose=False)
         util.pickle(os.path.join(output_dir, f'SyntheticImage_{uid}_{band}.pkl'), synthetic_image)
 
 
