@@ -27,6 +27,7 @@ def main():
 
     # retrieve configuration parameters
     data_dir = config['data_dir']
+    psf_cache_dir = config['cached_psfs']
     psf_config = config['psf']
     oversamples = psf_config['oversamples']
     bands = psf_config['bands']
@@ -35,7 +36,7 @@ def main():
     num_pixes = psf_config['num_pixes']
 
     # Set directory for all output of this script
-    save_dir = os.path.join(data_dir, 'cached_psfs')
+    save_dir = os.path.join(data_dir, psf_cache_dir)
     util.create_directory_if_not_exists(save_dir)
     print(f'Saving PSFs to {save_dir}')
 

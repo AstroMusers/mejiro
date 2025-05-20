@@ -2,6 +2,7 @@ repo_dir: &repo_dir /grad/bwedig/mejiro  # where the repository lives
 data_dir: &data_dir /data/bwedig/mejiro  # where output data should be written
 figure_dir: figures # !concat [*repo_dir, "/figures"]
 pipeline_dir: roman_hlwas
+psf_cache_dir: cached_psfs
 dev: True
 nice: 19
 verbose: True  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
@@ -11,9 +12,9 @@ headroom_cores:
   script_00: 0
   script_01: 28
   script_02: 0
-  script_03: 0
-  script_04: 0
-  script_05: 0
+  script_03: 64
+  script_04: 64
+  script_05: 28
 survey:
   runs: 90  # 540
   area: 0.5  # 0.5
