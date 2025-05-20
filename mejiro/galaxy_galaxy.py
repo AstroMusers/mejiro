@@ -24,6 +24,44 @@ class GalaxyGalaxy(StrongLens):
         # get redshifts
         self.z_source = kwargs_model['z_source']
         self.z_lens = kwargs_model['lens_redshift_list'][0]
+
+    def get_main_halo_mass(self):
+        """
+        Retrieve the mass of the main halo from ``physical_params``, if present.
+
+        Returns
+        -------
+        float
+            The mass of the main halo.
+
+        Raises
+        ------
+        ValueError
+            If ``main_halo_mass`` is not found in ``self.physical_params``.
+        """
+        main_halo_mass = self.physical_params.get('main_halo_mass', None)
+        if main_halo_mass is None:
+            raise ValueError("Could not find `main_halo_mass` in physical_params")
+        return main_halo_mass
+
+    def get_einstein_radius(self):
+        """
+        Returns the Einstein radius from ``kwargs_lens`` if it has been suitably configured.
+
+        Returns
+        -------
+        float
+            The Einstein radius (``theta_E``) value extracted from ``self.kwargs_lens[0]``.
+
+        Raises
+        ------
+        ValueError
+            If the order of lens models is not as expected, or the main mass model does not have ``theta_E`` as a parameter, this method will not work and should be extended.
+        """
+        einstein_radius = self.kwargs_lens[0].get('theta_E', None)
+        if einstein_radius is None:
+            raise ValueError("Could not find `theta_E` in kwargs_lens")
+        return einstein_radius
         
     def get_image_positions(self):
         """
@@ -49,7 +87,7 @@ class GalaxyGalaxy(StrongLens):
                                                  kwargs_lens=self.kwargs_lens)
 
     @staticmethod   
-    def from_slsim(slsim_gglens):
+    def from_slsim(slsim_gglens, name=None, coords=None):
         # check that the input is reasonable
         if slsim_gglens.source_number != 1:
             raise ValueError("Only one source is supported for galaxy-galaxy lenses.")
@@ -90,8 +128,8 @@ class GalaxyGalaxy(StrongLens):
             'magnitudes': magnitudes
         }
 
-        return GalaxyGalaxy(name=None,
-                            coords=None,
+        return GalaxyGalaxy(name=name,
+                            coords=coords,
                             kwargs_model=kwargs_model,
                             kwargs_params=kwargs_params,
                             physical_params=physical_params)
