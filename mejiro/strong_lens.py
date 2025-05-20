@@ -285,3 +285,6 @@ class StrongLens(ABC):
     @property
     def source_light_model(self):
         return LightModel(self.source_light_model_list)
+    
+    def __str__(self):
+        return f"StrongLens(name={self.name}, coords={self.coords}, z_lens={getattr(self, 'z_lens', None)}, z_source={getattr(self, 'z_source', None)})"
