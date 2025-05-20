@@ -28,23 +28,21 @@ def main():
         sys.path.append(repo_dir)
     from mejiro.utils import util
 
-    # retrieve configuration parameters
-    dev = config['pipeline']['dev']
-    verbose = config['pipeline']['verbose']
-    data_dir = config['data_dir']
-    limit = config['pipeline']['limit']
-    scas = config['pipeline']['survey']['scas']
-    subhalo_config = config['pipeline']['survey']['subhalos']
-
     # set nice level
-    os.nice(config['pipeline']['nice'])
+    os.nice(config['nice'])
+
+    # retrieve configuration parameters
+    dev = config['dev']
+    verbose = config['verbose']
+    data_dir = config['data_dir']
+    limit = config['limit']
+    scas = config['survey']['scas']
+    subhalo_config = config['subhalos']
 
     # set up top directory for all pipeline output
+    pipeline_dir = os.path.join(data_dir, config['pipeline_dir'])
     if dev:
-        pipeline_dir = os.path.join(data_dir, 'pipeline_dev')
-    else:
-        pipeline_dir = os.path.join(data_dir, 'pipeline')
-    util.create_directory_if_not_exists(pipeline_dir)
+        pipeline_dir += '_dev'
 
     # tell script where the output of previous script is
     input_dir = os.path.join(pipeline_dir, PREV_SCRIPT_NAME)
@@ -57,7 +55,7 @@ def main():
     if verbose: print(f'Set up output directory {output_dir}')
 
     # open pickled lens list
-    pickles = glob(os.path.join(input_dir, 'hlwas_sim_detectable_lenses_sca*.pkl'))
+    pickles = glob(os.path.join(input_dir, f'{config["pipeline_dir"]}_detectable_lenses_sca*.pkl'))
     scas = [int(f.split('_')[-1].split('.')[0][3:]) for f in pickles]
     scas = sorted([str(sca).zfill(2) for sca in scas])
     for sca in scas:
@@ -65,7 +63,7 @@ def main():
     sca_dict = {}
     total = 0
     for sca in scas:
-        pickle_path = os.path.join(input_dir, f'hlwas_sim_detectable_lenses_sca{sca}.pkl')
+        pickle_path = os.path.join(input_dir, f'{config["pipeline_dir"]}_detectable_lenses_sca{sca}.pkl')
         lens_list = util.unpickle(pickle_path)
         sca_dict[sca] = lens_list
         total += len(lens_list)
@@ -83,7 +81,6 @@ def main():
             tuple_list.append((lens, subhalo_config, sca_dir))
 
     # implement limit if one exists
-    limit = config['pipeline']['limit']
     if limit is not None:
         if limit > count:
             limit = count
@@ -94,7 +91,7 @@ def main():
     # define the number of processes
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count
-    process_count -= config['pipeline']['headroom_cores']['script_03']
+    process_count -= config['headroom_cores']['script_03']
     if count < process_count:
         process_count = count
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
@@ -115,6 +112,7 @@ def main():
 def add(tuple):
     np.random.seed()
 
+    from mejiro.cosmo import cosmo
     from mejiro.utils import util
 
     # unpack tuple
@@ -127,7 +125,8 @@ def add(tuple):
     log_mlow = subhalo_config['log_mlow']
     log_mhigh = subhalo_config['log_mhigh']
 
-    log_m_host = np.log10(lens.main_halo_mass)
+    main_halo_mass = cosmo.stellar_to_main_halo_mass(lens.physical_params['lens_stellar_mass'], lens.z_lens, sample=True)
+    log_m_host = np.log10(main_halo_mass)
     kwargs_cosmo = util.get_kwargs_cosmo(lens.cosmo)
 
     # circumvent bug with pyhalo, sometimes fails when redshifts have more than 2 decimal places
@@ -149,19 +148,19 @@ def add(tuple):
                               LOS_normalization=los_normalization,
                               kwargs_cosmo=kwargs_cosmo)
     except Exception as e:
-        print(f'Failed to generate subhalos for lens {lens.uid}: {e}')
+        print(f'Failed to generate subhalos for lens {lens.name.split("_")[2]}: {e}')
         return
 
     # Add subhalos
-    lens.add_subhalos(cdm_realization)
+    lens.add_realization(cdm_realization)
 
     # Pickle the subhalo realization
     subhalo_dir = os.path.join(output_dir, 'subhalos')
     util.create_directory_if_not_exists(subhalo_dir)
-    util.pickle(os.path.join(subhalo_dir, f'subhalo_realization_{lens.uid}.pkl'), cdm_realization)
+    util.pickle(os.path.join(subhalo_dir, f'subhalo_realization_{lens.name.split("_")[2]}.pkl'), cdm_realization)
 
     # Pickle the lens with subhalos
-    pickle_target = os.path.join(output_dir, f'lens_with_subhalos_{lens.uid}.pkl')
+    pickle_target = os.path.join(output_dir, f'lens_with_subhalos_{lens.name.split("_")[2]}.pkl')
     util.pickle(pickle_target, lens)
 
 
