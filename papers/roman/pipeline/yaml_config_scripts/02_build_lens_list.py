@@ -21,25 +21,23 @@ def main():
     # enable use of local packages
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
+    from mejiro.galaxy_galaxy import GalaxyGalaxy
     from mejiro.utils import util
-    from mejiro.lenses import lens_util
-
-    # retrieve configuration parameters
-    dev = config['pipeline']['dev']
-    verbose = config['pipeline']['verbose']
-    data_dir = config['data_dir']
-    limit = config['pipeline']['limit']
-    scas = config['pipeline']['survey']['scas']
 
     # set nice level
-    os.nice(config['pipeline']['nice'])
+    os.nice(config['nice'])
+
+    # retrieve configuration parameters
+    dev = config['dev']
+    verbose = config['verbose']
+    data_dir = config['data_dir']
+    limit = config['limit']
+    scas = config['survey']['scas']
 
     # set up top directory for all pipeline output
+    pipeline_dir = os.path.join(data_dir, config['pipeline_dir'])
     if dev:
-        pipeline_dir = os.path.join(data_dir, 'pipeline_dev')
-    else:
-        pipeline_dir = os.path.join(data_dir, 'pipeline')
-    util.create_directory_if_not_exists(pipeline_dir)
+        pipeline_dir += '_dev'
 
     # tell script where the output of previous script is
     input_dir = os.path.join(pipeline_dir, PREV_SCRIPT_NAME)
@@ -57,7 +55,7 @@ def main():
         raise FileNotFoundError(f'No output files found. Check HLWAS simulation output directory ({input_dir}).')
 
     uid = 0
-    for sca in tqdm(scas):
+    for sca in tqdm(scas, desc="SCAs", position=0, leave=True):
         sca = str(sca).zfill(2)
 
         csvs = [f for f in input_files if f'sca{sca}' in f]
@@ -70,7 +68,7 @@ def main():
                 csvs]  # TODO I don't love string parsing that relies on file naming conventions
 
         lens_list = []
-        for _, run in enumerate(runs):
+        for run in tqdm(runs, desc="Runs", position=1, leave=False):
             # unpickle the lenses from the population survey and create lens objects
             lens_paths = glob(
                 input_dir + f'/run_{str(run).zfill(4)}_sca{sca}/detectable_lens_{str(run).zfill(4)}_*.pkl')
@@ -78,15 +76,16 @@ def main():
             if len(lens_paths) == 0:
                 continue
 
-            for _, lens_path in enumerate(lens_paths):
-                lens = lens_util.unpickle_lens(lens_path, str(uid).zfill(8))
+            for lens_path in tqdm(lens_paths, desc="Strong Lenses", position=2, leave=False):
+                slsim_lens = util.unpickle(lens_path)
+                mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=f'{config["pipeline_dir"]}_{str(uid).zfill(8)}')
                 uid += 1
-                lens_list.append(lens)
+                lens_list.append(mejiro_lens)
 
             if uid == limit:
                 break
 
-        pickle_target = os.path.join(output_dir, f'hlwas_sim_detectable_lenses_sca{sca}.pkl')
+        pickle_target = os.path.join(output_dir, f'{config["pipeline_dir"]}_detectable_lenses_sca{sca}.pkl')
         util.pickle(pickle_target, lens_list)
 
     if verbose: print(f'Pickled {uid} lenses to {output_dir}')
