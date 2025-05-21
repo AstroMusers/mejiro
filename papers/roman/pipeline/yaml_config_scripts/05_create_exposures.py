@@ -1,7 +1,5 @@
-import json
 import multiprocessing
 import os
-import random
 import sys
 import time
 import yaml
@@ -27,25 +25,22 @@ def main():
     # enable use of local packages
     if repo_dir not in sys.path:
         sys.path.append(repo_dir)
-    import mejiro
     from mejiro.utils import util
 
-    # retrieve configuration parameters
-    dev = config['pipeline']['dev']
-    verbose = config['pipeline']['verbose']
-    data_dir = config['data_dir']
-    limit = config['pipeline']['limit']
-    imaging_config = config['pipeline']['survey']['imaging']
-
     # set nice level
-    os.nice(config['pipeline']['nice'])
+    os.nice(config['nice'])
+
+    # retrieve configuration parameters
+    dev = config['dev']
+    verbose = config['verbose']
+    data_dir = config['data_dir']
+    limit = config['limit']
+    imaging_config = config['imaging']
 
     # set up top directory for all pipeline output
+    pipeline_dir = os.path.join(data_dir, config['pipeline_dir'])
     if dev:
-        pipeline_dir = os.path.join(data_dir, 'pipeline_dev')
-    else:
-        pipeline_dir = os.path.join(data_dir, 'pipeline')
-    util.create_directory_if_not_exists(pipeline_dir)
+        pipeline_dir += '_dev'
 
     # tell script where the output of previous script is
     input_dir = os.path.join(pipeline_dir, PREV_SCRIPT_NAME)
@@ -65,10 +60,6 @@ def main():
         os.makedirs(sca_dir, exist_ok=True)
         output_sca_dirs.append(sca_dir)
     if verbose: print(f'Set up output directories {output_sca_dirs}')  
-
-    # set PSF cache dir
-    psf_cache_dir = os.path.join(data_dir, 'cached_psfs')
-    if verbose: print(f'Retrieving PSFs from {psf_cache_dir}')
 
     # get lens UIDs, organized by SCA
     uid_dict = {}
@@ -93,7 +84,7 @@ def main():
     # determine number of processes
     cpu_count = multiprocessing.cpu_count()
     process_count = int(cpu_count / 2)
-    process_count -= config['pipeline']['headroom_cores']['script_05']
+    process_count -= config['headroom_cores']['script_05']
     if count < process_count:
         process_count = count
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
@@ -105,7 +96,7 @@ def main():
         output_sca_dir = os.path.join(output_dir, f'sca{sca}')
 
         for uid in lens_uids:
-            tuple_list.append((uid, imaging_config, input_sca_dir, output_sca_dir, psf_cache_dir))
+            tuple_list.append((uid, imaging_config, input_sca_dir, output_sca_dir))
             i += 1
             if i == limit:
                 break
@@ -131,7 +122,7 @@ def get_image(input):
     from mejiro.utils import util
 
     # unpack tuple
-    (uid, imaging_config, input_sca_dir, output_sca_dir, psf_cache_dir) = input
+    (uid, imaging_config, input_sca_dir, output_sca_dir) = input
 
     # unpack imaging config
     exposure_time = imaging_config['exposure_time']
@@ -152,14 +143,11 @@ def get_image(input):
     # create exposures
     calc_times = []
     for synth in synthetic_images:
-        exposure = Exposure(synthetic_image,
-                            exposure_time=exposure_time,
-                            engine=engine,
-                            engine_params=engine_params,
-                            psf=None,
-                            verbose=False,
-                            check_cache=True,
-                            psf_cache_dir=psf_cache_dir)
+        exposure = Exposure(synth,
+                        exposure_time=exposure_time,
+                        engine=engine,
+                        engine_params=engine_params,
+                        verbose=False)
         calc_times.append(exposure.calc_time)
     
         # pickle exposure
