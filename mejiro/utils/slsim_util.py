@@ -29,7 +29,7 @@ def write_lens_population_to_csv(output_path, lens_population, snr_list, verbose
             'theta_e': gglens.einstein_radius[0],
             'z_lens': gglens.deflector_redshift,
             'z_source': gglens.source_redshift_list[0],
-            'magnification': gglens.extended_source_magnification(),
+            'magnification': gglens.extended_source_magnification()[0],
             'num_images': len(gglens.point_source_image_positions()[0]),
             'snr': snr,
         }
