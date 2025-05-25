@@ -15,6 +15,9 @@ from glob import glob
 from tqdm import tqdm
 
 
+DATASET_VERSION = '1.0.1'
+
+
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
 def main(config):
     start = time.time()
@@ -48,7 +51,7 @@ def main(config):
     # create h5 file
     export_dir = os.path.join(data_dir, 'h5_export')
     util.create_directory_if_not_exists(export_dir)
-    filepath = os.path.join(export_dir, 'roman_hlwas_v_0_0_3.h5')
+    filepath = os.path.join(export_dir, f'roman_hlwas_v_{"_".join(DATASET_VERSION.split("."))}.h5')
     if os.path.exists(filepath):
         os.remove(filepath)
     f = h5py.File(filepath, 'a')  # append mode: read/write if exists, create otherwise
@@ -136,10 +139,10 @@ def main(config):
             for dset in [dataset_exposure]:  # dataset_synth,
                 dset.attrs['units'] = ('Counts/sec', 'Units of pixel values')
                 dset.attrs['filter'] = (band, 'Filter')
-                dset.attrs['source_magnitude'] = (str(lens.source_mags[band]), 'Unlensed source galaxy AB magnitude')
+                dset.attrs['source_magnitude'] = (str(lens.source_mags[band]), 'Unlensed source galaxy magnitude')
                 dset.attrs['lensed_source_magnitude'] = (
-                    str(lens.lensed_source_mags[band]), 'Lensed source galaxy AB magnitude')
-                dset.attrs['lens_magnitude'] = (str(lens.lens_mags[band]), 'Lens galaxy AB magnitude')
+                    str(lens.lensed_source_mags[band]), 'Lensed source galaxy magnitude')
+                dset.attrs['lens_magnitude'] = (str(lens.lens_mags[band]), 'Lens galaxy magnitude')
 
     # ---------------------------CREATE PSF DATASET--------------------------------
     # set detectors and detector_positions
