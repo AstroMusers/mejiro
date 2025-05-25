@@ -27,7 +27,7 @@ def main():
 
     # retrieve configuration parameters
     data_dir = config['data_dir']
-    psf_cache_dir = config['cached_psfs']
+    psf_cache_dir = config['psf_cache_dir']
     psf_config = config['psf']
     oversamples = psf_config['oversamples']
     bands = psf_config['bands']
