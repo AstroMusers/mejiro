@@ -17,6 +17,8 @@ def write_lens_population_to_csv(output_path, lens_population, snr_list, verbose
     verbose : bool, optional
         If True, prints progress and completion messages. Default is False.
     """
+    if verbose: print(f'Writing lens population to {output_path}...')
+
     # retrieve the bands
     sample_gglens = lens_population[0]
     bands = [k.split("_")[1] for k in sample_gglens.deflector._deflector._deflector_dict.keys() if k.startswith("mag_")]
