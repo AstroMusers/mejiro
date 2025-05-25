@@ -1,5 +1,5 @@
 mag_lim: 30
-fsky: 0.1 deg2
+fsky: 0.5 deg2
 z_range: !numpy.arange [ 0, 12.01, 0.1 ]
 M_star_blue: !astropy.modeling.models.Linear1D [ -0.9408582, -20.40492365 ]
 phi_star_blue: !astropy.modeling.models.Exponential1D [ 0.00370253, -9.73858 ]
@@ -8,7 +8,7 @@ M_star_red: !astropy.modeling.models.Linear1D [ -0.70798041, -20.37196157 ]
 phi_star_red: !astropy.modeling.models.Exponential1D [ 0.0035097, -1.41649 ]
 alpha_red: -0.5
 cosmology: !astropy.cosmology.default_cosmology.get [ ]
-filters: [ 'RomanSCA11-F062', 'RomanSCA11-F087', 'RomanSCA11-F106', 'RomanSCA11-F129', 'RomanSCA11-F158', 'RomanSCA11-F184', 'RomanSCA11-F146', 'RomanSCA11-F213' ]
+filters: [ 'RomanSCA12-F062', 'RomanSCA12-F087', 'RomanSCA12-F106', 'RomanSCA12-F129', 'RomanSCA12-F158', 'RomanSCA12-F184', 'RomanSCA12-F146', 'RomanSCA12-F213' ]
 tables:
   blue:
     z: !skypy.galaxies.redshift.schechter_lf_redshift
