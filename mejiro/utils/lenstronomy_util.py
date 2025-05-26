@@ -57,3 +57,20 @@ def get_gaussian_psf_kwargs(fwhm):
         'psf_type': 'GAUSSIAN', 
         'fwhm': fwhm,
     }
+
+def get_none_psf_kwargs():
+    """
+    Generate a dictionary for a None PSF that forms the keyword arguments for lenstronomy's PSF class.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the PSF type set to 'NONE'.
+
+    Examples
+    --------
+    >>> from lenstronomy.Data.psf import PSF
+    >>> psf_kwargs = get_none_psf_kwargs()
+    >>> psf = PSF(**psf_kwargs)
+    """
+    return {'psf_type': 'NONE'}
