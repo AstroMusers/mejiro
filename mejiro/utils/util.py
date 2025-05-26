@@ -12,6 +12,32 @@ from collections import ChainMap
 from glob import glob
 
 
+def get_gaussian_kernel(fwhm, size):
+    """
+    Generate a 2D Gaussian kernel using scipy.ndimage.gaussian_filter.
+
+    Parameters:
+    - fwhm: Full Width at Half Maximum of the Gaussian.
+    - size: The size of the generated 2D array (size x size).
+
+    Returns:
+    - 2D NumPy array representing the Gaussian kernel.
+    """
+    from scipy.ndimage import gaussian_filter
+
+    # Convert FWHM to standard deviation
+    sigma = fwhm / (2 * np.sqrt(2 * np.log(2)))
+
+    # Create an array with a single impulse in the center
+    impulse = np.zeros((size, size))
+    impulse[size // 2, size // 2] = 1
+
+    # Apply the Gaussian filter
+    gaussian_kernel = gaussian_filter(impulse, sigma=sigma)
+
+    return gaussian_kernel
+
+
 def build_meshgrid(scene_size, pixel_scale):
     """
     Build a meshgrid for a given scene size and pixel scale.
