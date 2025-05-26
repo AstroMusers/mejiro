@@ -29,6 +29,6 @@ echo 'Simulating images...'
 python3 05_create_exposures.py
 echo 'GalSim simulations complete.'
 
-# echo 'Generating h5 file...'
-# python3 06_h5_export.py
-# echo 'h5 file generation complete.'
+echo 'Generating h5 file...'
+python3 06_h5_export.py
+echo 'h5 file generation complete.'
