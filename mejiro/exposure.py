@@ -12,7 +12,6 @@ class Exposure:
                  exposure_time, 
                  engine='galsim', 
                  engine_params={}, 
-                 psf=None, 
                  verbose=True
                  ):
         
@@ -32,10 +31,11 @@ class Exposure:
 
             if self.synthetic_image.instrument_name == 'Roman':
                 # get exposure
-                results, self.psf, self.poisson_noise, self.reciprocity_failure, self.dark_noise, self.nonlinearity, self.ipc, self.read_noise = GalSimEngine.get_roman_exposure(
-                    synthetic_image, exposure_time, psf, engine_params, self.verbose)
+                results, self.sky_background, self.poisson_noise, self.reciprocity_failure, self.dark_noise, self.nonlinearity, self.ipc, self.read_noise = GalSimEngine.get_roman_exposure(
+                    synthetic_image, exposure_time, engine_params, self.verbose)
 
                 # sum noise
+                if self.sky_background is not None: self.noise += self.sky_background
                 if self.poisson_noise is not None: self.noise += self.poisson_noise
                 if self.reciprocity_failure is not None: self.noise += self.reciprocity_failure
                 if self.dark_noise is not None: self.noise += self.dark_noise
@@ -45,8 +45,8 @@ class Exposure:
 
             elif self.synthetic_image.instrument_name == 'HWO':
                 # get exposure
-                results, self.psf, self.sky_background, self.poisson_noise, self.dark_noise, self.read_noise = GalSimEngine.get_hwo_exposure(
-                    synthetic_image, exposure_time, psf, engine_params, self.verbose)
+                results, self.sky_background, self.poisson_noise, self.dark_noise, self.read_noise = GalSimEngine.get_hwo_exposure(
+                    synthetic_image, exposure_time, engine_params, self.verbose)
                 
                 # sum noise
                 if self.sky_background is not None: self.noise += self.sky_background
@@ -67,8 +67,7 @@ class Exposure:
 
             if self.synthetic_image.instrument_name == 'Roman':
                 # get exposure
-                results, self.psf, self.noise = LenstronomyEngine.get_roman_exposure(synthetic_image, exposure_time,
-                                                                                      psf, engine_params, self.verbose)
+                results, self.noise = LenstronomyEngine.get_roman_exposure(synthetic_image, exposure_time, engine_params, self.verbose)
             else:
                 self.instrument_not_available_error(engine)
 
@@ -77,13 +76,8 @@ class Exposure:
         
             from mejiro.engines.pandeia_engine import PandeiaEngine
 
-            # warn that PSF isn't gonna do anything
-            if psf is not None:
-                warnings.warn('PSF is not used in the Pandeia engine')
-
             # get exposure
-            results, self.psf, self.noise = PandeiaEngine.get_roman_exposure(synthetic_image, exposure_time, psf,
-                                                                              engine_params, self.verbose)
+            results, self.noise = PandeiaEngine.get_roman_exposure(synthetic_image, exposure_time, engine_params, self.verbose)
 
             # TODO temporarily set noise to zeros until I can grab the noise that Pandeia generates
             self.noise = np.zeros((self.synthetic_image.num_pix, self.synthetic_image.num_pix))
@@ -142,6 +136,38 @@ class Exposure:
         if savepath is not None:
             plt.savefig(savepath)
         plt.show()
+
+    # def detailed_plot(self, savepath=None):
+    #     import matplotlib.pyplot as plt
+
+    #     fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+    #     axs[0].imshow(np.log10(self.exposure), cmap='viridis')
+    #     axs[0].set_title(f'Exposure: {self.synthetic_image.instrument_name} {self.synthetic_image.band} band, {self.exposure_time} s')
+    #     axs[0].set_xlabel('x [Pixels]')
+    #     axs[0].set_ylabel('y [Pixels]')
+    #     cbar = fig.colorbar(axs[0].images[0], ax=axs[0])
+    #     cbar.set_label(r'log$_{10}$(Counts)')
+
+    #     if self.lens_exposure is not None:
+    #         axs[1].imshow(np.log10(self.lens_exposure), cmap='viridis')
+    #         axs[1].set_title('Lens Image')
+    #         axs[1].set_xlabel('x [Pixels]')
+    #         axs[1].set_ylabel('y [Pixels]')
+    #         cbar = fig.colorbar(axs[1].images[0], ax=axs[1])
+    #         cbar.set_label(r'log$_{10}$(Counts)')
+
+    #     if self.source_exposure is not None:
+    #         axs[2].imshow(np.log10(self.source_exposure), cmap='viridis')
+    #         axs[2].set_title('Source Image')
+    #         axs[2].set_xlabel('x [Pixels]')
+    #         axs[2].set_ylabel('y [Pixels]')
+    #         cbar = fig.colorbar(axs[2].images[0], ax=axs[2])
+    #         cbar.set_label(r'log$_{10}$(Counts)')
+
+    #     plt.tight_layout()
+    #     if savepath is not None:
+    #         plt.savefig(savepath)
+    #     plt.show()
 
     def instrument_not_available_error(self, engine):
         raise ValueError(

@@ -27,8 +27,7 @@ class LenstronomyEngine(Engine):
 
 
     @staticmethod
-    def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=defaults('Roman'),
-                        verbose=False, **kwargs):
+    def get_roman_exposure(synthetic_image, exposure_time, engine_params=defaults('Roman'), verbose=False):
         strong_lens = synthetic_image.strong_lens
         band = synthetic_image.band
 
@@ -37,11 +36,6 @@ class LenstronomyEngine(Engine):
                                     survey_mode='wide_area')
         roman_obs_config.obs['num_exposures'] = 1  # set number of exposures to 1 cf. 96
         roman_obs_config.obs['exposure_time'] = exposure_time
-
-        if psf is None:
-            psf = roman_obs_config.obs['kernel_point_source']
-        else:
-            roman_obs_config.obs['kernel_point_source'] = psf
 
         sim_api = SimAPI(numpix=synthetic_image.native_num_pix,
                         kwargs_single_band=roman_obs_config.kwargs_single_band(),
@@ -75,6 +69,6 @@ class LenstronomyEngine(Engine):
                                                     lens_light_add=False)
             lens_surface_brightness = util.replace_negatives_with_zeros(lens_surface_brightness)
             source_surface_brightness = util.replace_negatives_with_zeros(source_surface_brightness)
-            return total_image, lens_surface_brightness, source_surface_brightness, psf, noise
+            return total_image, lens_surface_brightness, source_surface_brightness, noise
         else:
-            return total_image, psf, noise
+            return total_image, noise

@@ -138,16 +138,15 @@ class GalSimEngine(Engine):
 
 
     @staticmethod
-    def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params={},
-                        verbose=False):
+    def get_roman_exposure(synthetic_image, exposure_time, engine_params={}, verbose=False):
+        from mejiro.instruments.roman import Roman
+        roman = Roman()
+
         # set engine params
         if not engine_params:
             engine_params = GalSimEngine.defaults('Roman')
         else:
             engine_params = GalSimEngine.validate_engine_params('Roman', engine_params)
-
-        # get detector and detector position
-        detector = synthetic_image.instrument_params['detector']
 
         # build rng
         rng = galsim.UniformDeviate(engine_params['rng_seed'])
@@ -156,9 +155,15 @@ class GalSimEngine(Engine):
         image = galsim.Image(array=synthetic_image.image * exposure_time, scale=synthetic_image.pixel_scale, xmin=0, ymin=0, copy=True)
 
         # add sky background
-        if engine_params['sky_background']:
-            image += GalSimEngine.get_roman_sky_background(synthetic_image.band, exposure_time,
-                                            num_pix=synthetic_image.num_pix)
+        if type(engine_params['sky_background']) is galsim.Image:
+            sky_background = engine_params['sky_background']
+            image += sky_background
+        elif type(engine_params['sky_background']) is bool:
+            if engine_params['sky_background']:
+                sky_background = GalSimEngine.get_roman_sky_background(roman, synthetic_image.band, exposure_time, synthetic_image.num_pix)
+                image += sky_background
+            else:
+                sky_background = None
 
         # integer number of photons are being detected, so quantize
         image.quantize()
@@ -265,7 +270,7 @@ class GalSimEngine(Engine):
         else:
             results = image
 
-        return results, psf, poisson_noise, reciprocity_failure, dark_noise, nonlinearity, ipc, read_noise
+        return results, sky_background, poisson_noise, reciprocity_failure, dark_noise, nonlinearity, ipc, read_noise
 
 
     @staticmethod
@@ -278,10 +283,7 @@ class GalSimEngine(Engine):
 
 
     @staticmethod
-    def get_roman_sky_background(band, exposure_time, num_pix):
-        from mejiro.instruments.roman import Roman
-        roman = Roman()
-
+    def get_roman_sky_background(roman, band, exposure_time, num_pix):
         # build Image
         sky_image = galsim.ImageD(num_pix, num_pix)
 
@@ -340,7 +342,7 @@ class GalSimEngine(Engine):
 
 
     @staticmethod
-    def get_hwo_exposure(synthetic_image, exposure_time, psf=None, engine_params={}, verbose=False):
+    def get_hwo_exposure(synthetic_image, exposure_time, engine_params={}, verbose=False):
         from mejiro.instruments.hwo import HWO
         hwo = HWO()
 
@@ -430,7 +432,7 @@ class GalSimEngine(Engine):
         else:
             results = image
 
-        return results, psf, sky_background, poisson_noise, dark_noise, read_noise
+        return results, sky_background, poisson_noise, dark_noise, read_noise
 
 
     @staticmethod
