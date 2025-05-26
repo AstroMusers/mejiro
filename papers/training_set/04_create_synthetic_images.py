@@ -163,16 +163,19 @@ def create_synthetic_image(input):
         # get PSF
         kwargs_psf = STPSFEngine.get_roman_psf_kwargs(band, int(sca), detector_pos, oversample=supersampling_factor, num_pix=num_pix, check_cache=True, psf_cache_dir=psf_cache_dir, verbose=False)
 
-        synthetic_image = SyntheticImage(strong_lens=lens,
-                                     instrument=roman,
-                                     band=band,
-                                     fov_arcsec=fov_arcsec,
-                                     instrument_params=instrument_params,
-                                     kwargs_numerics=kwargs_numerics,
-                                     kwargs_psf=kwargs_psf,
-                                     pieces=pieces,
-                                     verbose=False)
-        util.pickle(os.path.join(output_dir, f'SyntheticImage_{uid}_{band}.pkl'), synthetic_image)
+        try:
+            synthetic_image = SyntheticImage(strong_lens=lens,
+                                        instrument=roman,
+                                        band=band,
+                                        fov_arcsec=fov_arcsec,
+                                        instrument_params=instrument_params,
+                                        kwargs_numerics=kwargs_numerics,
+                                        kwargs_psf=kwargs_psf,
+                                        pieces=pieces,
+                                        verbose=False)
+            util.pickle(os.path.join(output_dir, f'SyntheticImage_{uid}_{band}.pkl'), synthetic_image)
+        except:
+            return
 
 
 if __name__ == '__main__':
