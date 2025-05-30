@@ -4,12 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mejiro"
-version = "1.0.0"
+dynamic = ["version"]
 authors = [
     { name = "Bryce Wedig", email = "b.t.wedig@wustl.edu" },
 ]
 readme = "README.md"
 license = { text = "MIT License" }
+
+[tool.setuptools.dynamic]
+version = {attr = "mejiro.__version__"}
 
 [project.urls]
 Documentation = "https://mejiro.readthedocs.io/en/latest/index.html"
@@ -19,3 +22,6 @@ Repository = "https://github.com/AstroMusers/mejiro"
 pythonpath = [
     "."
 ]
+
+[tool.setuptools.packages.find]
+include = ["mejiro", "mejiro.*"]

@@ -5,10 +5,12 @@
 /mejiro/data/cached_skypy_configs*
 /pandeia_docs
 .nfs*
-# config/config.yaml
 
 # docs
 docs/build
+
+# egg-info
+*.egg-info/
 
 # pytest
 .pytest_cache/
