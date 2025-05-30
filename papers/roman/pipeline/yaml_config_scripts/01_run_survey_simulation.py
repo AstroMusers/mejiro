@@ -1,3 +1,4 @@
+import argparse
 import multiprocessing
 import os
 import sys
@@ -17,11 +18,20 @@ import slsim.Deflectors as deflectors
 from tqdm import tqdm
 
 
-def main():
+def main(args):
     start = time.time()
 
+    # ensure the configuration file has a .yaml or .yml extension
+    if not args.config.endswith(('.yaml', '.yml')):
+        if os.path.exists(args.config + '.yaml'):
+            args.config += '.yaml'
+        elif os.path.exists(args.config + '.yml'):
+            args.config += '.yml'
+        else:
+            raise ValueError("The configuration file must be a YAML file with extension '.yaml' or '.yml'.")
+
     # read configuration file
-    with open('config.yaml', 'r') as f:
+    with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
     repo_dir = config['repo_dir']
 
@@ -142,10 +152,6 @@ def run_slsim(tuple):
     snr_detector = sca_id
     snr_detector_position = (2044, 2044)
 
-    # prepare a directory for this particular run
-    # lens_output_dir = os.path.join(output_dir, f'run_{run}_sca{sca_id}')
-    # util.create_directory_if_not_exists(lens_output_dir)
-
     # load Roman WFI filters
     roman_filters = roman.load_speclite_filters(sca=sca_id)
     if verbose: print(f'Loaded Roman WFI filter response curves: {roman_filters.names}')
@@ -225,6 +231,11 @@ def run_slsim(tuple):
         num_exceptions = 0
         for candidate in tqdm(total_lens_population, disable=verbose):
             strong_lens = GalaxyGalaxy.from_slsim(candidate)
+
+            # TODO temporary fix to make sure that there are two images formed
+            image_positions = strong_lens.get_image_positions()
+            if len(image_positions[0]) < 2:
+                continue
             
             kwargs_psf = STPSFEngine.get_roman_psf_kwargs(snr_band, snr_detector, snr_detector_position, oversample=snr_supersampling_factor, num_pix=101, check_cache=True, psf_cache_dir=psf_cache_dir, verbose=False)
 
@@ -326,6 +337,7 @@ def run_slsim(tuple):
         detectable_snr_list), f'Lengths of detectable_gglenses ({len(detectable_gglenses)}) and detectable_snr_list ({len(detectable_snr_list)}) do not match.'
 
     if len(detectable_gglenses) > 0:
+        # write the list of slsim gglenses to 
         detectable_gglenses_pickle_path = os.path.join(output_dir, f'detectable_gglenses_{run}_sca{sca_id}.pkl')
         if verbose: print(f'Pickling detectable gglenses to {detectable_gglenses_pickle_path}')
         util.pickle(detectable_gglenses_pickle_path, detectable_gglenses)
@@ -339,4 +351,7 @@ def run_slsim(tuple):
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description="Generate and cache Roman PSFs.")
+    parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    args = parser.parse_args()
+    main(args)

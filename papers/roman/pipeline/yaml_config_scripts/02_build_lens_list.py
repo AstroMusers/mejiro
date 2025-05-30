@@ -1,3 +1,4 @@
+import argparse
 import os
 import sys
 import time
@@ -10,11 +11,20 @@ PREV_SCRIPT_NAME = '01'
 SCRIPT_NAME = '02'
 
 
-def main():
+def main(args):
     start = time.time()
 
+    # ensure the configuration file has a .yaml or .yml extension
+    if not args.config.endswith(('.yaml', '.yml')):
+        if os.path.exists(args.config + '.yaml'):
+            args.config += '.yaml'
+        elif os.path.exists(args.config + '.yml'):
+            args.config += '.yml'
+        else:
+            raise ValueError("The configuration file must be a YAML file with extension '.yaml' or '.yml'.")
+
     # read configuration file
-    with open('config.yaml', 'r') as f:
+    with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
     repo_dir = config['repo_dir']
 
@@ -41,54 +51,42 @@ def main():
 
     # tell script where the output of previous script is
     input_dir = os.path.join(pipeline_dir, PREV_SCRIPT_NAME)
-    if verbose: print(f'Reading from {input_dir}')
+    detectable_gglens_pickles = sorted(glob(input_dir + '/detectable_gglenses_*.pkl'))
+    if len(detectable_gglens_pickles) == 0:
+        raise FileNotFoundError(f'No output files found. Check simulation output directory ({input_dir}).')
+    parsed_names = [os.path.basename(f).split("_")[3].split(".")[0] for f in detectable_gglens_pickles]
+    scas = sorted([int(d[3:]) for d in parsed_names])
+    scas = [str(sca).zfill(2) for sca in scas]
+    if verbose: print(f'Found SCA(s): {scas}')
 
     # set up output directory
     output_dir = os.path.join(pipeline_dir, SCRIPT_NAME)
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
-    if verbose: print(f'Set up output directory {output_dir}')
-
-    # make sure there are files to process
-    input_files = glob(input_dir + '/detectable_pop_*.csv')
-    if len(input_files) == 0:
-        raise FileNotFoundError(f'No output files found. Check HLWAS simulation output directory ({input_dir}).')
+    output_sca_dirs = []
+    for sca in scas:
+        sca_dir = os.path.join(output_dir, f'sca{sca}')
+        os.makedirs(sca_dir, exist_ok=True)
+        output_sca_dirs.append(sca_dir)
+    if verbose: print(f'Set up output directories {output_sca_dirs}')  
 
     uid = 0
     for sca in tqdm(scas, desc="SCAs", position=0, leave=True):
-        sca = str(sca).zfill(2)
+        sca_pickles = [f for f in detectable_gglens_pickles if f'sca{sca}' in f]
 
-        csvs = [f for f in input_files if f'sca{sca}' in f]
+        for pickled_list in tqdm(sca_pickles, desc="Runs", position=1, leave=False):
+            gglenses = util.unpickle(pickled_list)
 
-        if len(csvs) == 0:
-            continue
-
-        # get all runs associated with this SCA
-        runs = [int(f.split('_')[-2]) for f in
-                csvs]  # TODO I don't love string parsing that relies on file naming conventions
-
-        lens_list = []
-        for run in tqdm(runs, desc="Runs", position=1, leave=False):
-            # unpickle the lenses from the population survey and create lens objects
-            lens_paths = glob(
-                input_dir + f'/run_{str(run).zfill(4)}_sca{sca}/detectable_lens_{str(run).zfill(4)}_*.pkl')
-
-            if len(lens_paths) == 0:
-                continue
-
-            for lens_path in tqdm(lens_paths, desc="Strong Lenses", position=2, leave=False):
-                slsim_lens = util.unpickle(lens_path)
+            for slsim_lens in tqdm(gglenses, desc="Strong Lenses", position=2, leave=False):
                 mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=f'{config["pipeline_dir"]}_{str(uid).zfill(8)}')
+                mejiro_lens_pickle_target = os.path.join(output_dir, f'sca{sca}/lens_{str(uid).zfill(8)}.pkl')
+                util.pickle(mejiro_lens_pickle_target, mejiro_lens)
                 uid += 1
-                lens_list.append(mejiro_lens)
 
             if uid == limit:
                 break
 
-        pickle_target = os.path.join(output_dir, f'{config["pipeline_dir"]}_detectable_lenses_sca{sca}.pkl')
-        util.pickle(pickle_target, lens_list)
-
-    if verbose: print(f'Pickled {uid} lenses to {output_dir}')
+    if verbose: print(f'Pickled {uid} lens(es) to {output_dir}')
 
     stop = time.time()
     execution_time = util.print_execution_time(start, stop, return_string=True)
@@ -96,4 +94,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description="Generate and cache Roman PSFs.")
+    parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    args = parser.parse_args()
+    main(args)

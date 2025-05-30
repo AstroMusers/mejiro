@@ -1,3 +1,4 @@
+import argparse
 import galsim
 import getpass
 import h5py
@@ -18,11 +19,20 @@ PREV_SCRIPT_NAME = '05'
 SCRIPT_NAME = '06'
 
 
-def main():
+def main(args):
     start = time.time()
 
+    # ensure the configuration file has a .yaml or .yml extension
+    if not args.config.endswith(('.yaml', '.yml')):
+        if os.path.exists(args.config + '.yaml'):
+            args.config += '.yaml'
+        elif os.path.exists(args.config + '.yml'):
+            args.config += '.yml'
+        else:
+            raise ValueError("The configuration file must be a YAML file with extension '.yaml' or '.yml'.")
+
     # read configuration file
-    with open('config.yaml', 'r') as f:
+    with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
     repo_dir = config['repo_dir']
 
@@ -136,4 +146,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description="Generate and cache Roman PSFs.")
+    parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    args = parser.parse_args()
+    main(args)

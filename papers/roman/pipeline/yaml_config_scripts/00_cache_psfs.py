@@ -1,3 +1,4 @@
+import argparse
 import multiprocessing
 import os
 import sys
@@ -8,11 +9,20 @@ import numpy as np
 from tqdm import tqdm
 
 
-def main():
+def main(args):
     start = time.time()
 
+    # ensure the configuration file has a .yaml or .yml extension
+    if not args.config.endswith(('.yaml', '.yml')):
+        if os.path.exists(args.config + '.yaml'):
+            args.config += '.yaml'
+        elif os.path.exists(args.config + '.yml'):
+            args.config += '.yml'
+        else:
+            raise ValueError("The configuration file must be a YAML file with extension '.yaml' or '.yml'.")
+
     # read configuration file
-    with open('config.yaml', 'r') as f:
+    with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
     repo_dir = config['repo_dir']
 
@@ -35,12 +45,12 @@ def main():
     detector_positions = roman_util.divide_up_sca(psf_config['divide_up_sca'])
     num_pixes = psf_config['num_pixes']
 
-    # Set directory for all output of this script
+    # set directory for all output of this script
     save_dir = os.path.join(data_dir, psf_cache_dir)
     util.create_directory_if_not_exists(save_dir)
     print(f'Saving PSFs to {save_dir}')
 
-    # Determine which PSFs need to be generated
+    # determine which PSFs need to be generated
     psf_ids = []
     for oversample in oversamples:
         for num_pix in num_pixes:
@@ -62,13 +72,13 @@ def main():
 
     arg_list = [(psf_id_string, save_dir) for psf_id_string in psf_ids]
 
-    # Determine the number of processes
+    # determine the number of processes
     count = len(arg_list)
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count - config['headroom_cores']['script_00']
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s) to generate {count} PSF(s)')
 
-    # Process the tasks with ProcessPoolExecutor
+    # process the tasks with ProcessPoolExecutor
     with ProcessPoolExecutor(max_workers=process_count) as executor:
         futures = [executor.submit(generate_psf, args) for args in arg_list]
 
@@ -82,16 +92,19 @@ def main():
 def generate_psf(args):
     from mejiro.engines.stpsf_engine import STPSFEngine
 
-    # Unpack tuple
+    # unpack tuple
     psf_id, save_dir = args
 
-    # Generate PSF
+    # generate PSF
     webbpsf_psf = STPSFEngine.get_roman_psf_from_id(psf_id, check_cache=False, verbose=False)
 
-    # Save PSF
+    # save PSF
     psf_path = os.path.join(save_dir, f'{psf_id}.npy')
     np.save(psf_path, webbpsf_psf)
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description="Generate and cache Roman PSFs.")
+    parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    args = parser.parse_args()
+    main(args)

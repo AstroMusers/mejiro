@@ -1,3 +1,4 @@
+import argparse
 import multiprocessing
 import os
 import sys
@@ -15,11 +16,20 @@ PREV_SCRIPT_NAME = '02'
 SCRIPT_NAME = '03'
 
 
-def main():
+def main(args):
     start = time.time()
 
+    # ensure the configuration file has a .yaml or .yml extension
+    if not args.config.endswith(('.yaml', '.yml')):
+        if os.path.exists(args.config + '.yaml'):
+            args.config += '.yaml'
+        elif os.path.exists(args.config + '.yml'):
+            args.config += '.yml'
+        else:
+            raise ValueError("The configuration file must be a YAML file with extension '.yaml' or '.yml'.")
+
     # read configuration file
-    with open('config.yaml', 'r') as f:
+    with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
     repo_dir = config['repo_dir']
 
@@ -46,47 +56,46 @@ def main():
 
     # tell script where the output of previous script is
     input_dir = os.path.join(pipeline_dir, PREV_SCRIPT_NAME)
-    if verbose: print(f'Reading from {input_dir}')
+    input_sca_dirs = [os.path.basename(d) for d in glob(os.path.join(input_dir, 'sca*')) if os.path.isdir(d)]
+    scas = sorted([int(d[3:]) for d in input_sca_dirs])
+    scas = [str(sca).zfill(2) for sca in scas]
+    if verbose: print(f'Reading from {input_sca_dirs}')
 
     # set up output directory
     output_dir = os.path.join(pipeline_dir, SCRIPT_NAME)
     util.create_directory_if_not_exists(output_dir)
     util.clear_directory(output_dir)
-    if verbose: print(f'Set up output directory {output_dir}')
+    output_sca_dirs = []
+    for sca in scas:
+        sca_dir = os.path.join(output_dir, f'sca{sca}')
+        os.makedirs(sca_dir, exist_ok=True)
+        output_sca_dirs.append(sca_dir)
+    if verbose: print(f'Set up output directories {output_sca_dirs}')
 
-    # open pickled lens list
-    pickles = glob(os.path.join(input_dir, f'{config["pipeline_dir"]}_detectable_lenses_sca*.pkl'))
-    scas = [int(f.split('_')[-1].split('.')[0][3:]) for f in pickles]
-    scas = sorted([str(sca).zfill(2) for sca in scas])
+    # parse uids
+    uid_dict = {}
     for sca in scas:
-        os.makedirs(os.path.join(output_dir, f'sca{sca}'), exist_ok=True)
-    sca_dict = {}
-    total = 0
-    for sca in scas:
-        pickle_path = os.path.join(input_dir, f'{config["pipeline_dir"]}_detectable_lenses_sca{sca}.pkl')
-        lens_list = util.unpickle(pickle_path)
-        sca_dict[sca] = lens_list
-        total += len(lens_list)
-    count = total
-    if total == 0:
-        raise FileNotFoundError(f'No pickled lenses found. Check {input_dir}.')
-    print(f'Processing {total} lens(es)')
+        pickled_lenses = sorted(glob(input_dir + f'/sca{sca}/lens_*.pkl'))
+        lens_uids = [os.path.basename(i).split('_')[1].split('.')[0] for i in pickled_lenses]
+        uid_dict[sca] = lens_uids
+    count = 0
+    for sca, lens_uids in uid_dict.items():
+        count += len(lens_uids)
+    if limit is not None:
+        if verbose: print(f'Limiting to {limit} lens(es)')
+        lens_uids = lens_uids[:limit]
+        if limit < count:
+            count = limit
+    if verbose: print(f'Processing {count} lens(es)')
 
     # tuple the parameters
     tuple_list = []
-    for sca, lens_list in sca_dict.items():
-        sca_id = str(sca).zfill(2)
-        sca_dir = os.path.join(output_dir, f'sca{sca_id}')
-        for lens in lens_list:
-            tuple_list.append((lens, subhalo_config, sca_dir))
+    for i, (sca, lens_uids) in enumerate(uid_dict.items()):
+        input_sca_dir = os.path.join(input_dir, f'sca{sca}')
+        output_sca_dir = os.path.join(output_dir, f'sca{sca}')
 
-    # implement limit if one exists
-    if limit is not None:
-        if limit > count:
-            limit = count
-        tuple_list = tuple_list[:limit]
-        count = limit
-        print(f'Limiting to {limit} lens(es)')
+        for uid in lens_uids:
+            tuple_list.append((uid, subhalo_config, input_sca_dir, output_sca_dir))
 
     # define the number of processes
     cpu_count = multiprocessing.cpu_count()
@@ -116,7 +125,7 @@ def add(tuple):
     from mejiro.utils import util
 
     # unpack tuple
-    (lens, subhalo_config, output_dir) = tuple
+    (uid, subhalo_config, input_dir, output_dir) = tuple
 
     # unpack pipeline_params
     los_normalization = subhalo_config['los_normalization']
@@ -124,6 +133,11 @@ def add(tuple):
     sigma_sub = subhalo_config['sigma_sub']
     log_mlow = subhalo_config['log_mlow']
     log_mhigh = subhalo_config['log_mhigh']
+
+    # load the lens based on uid
+    lens = util.unpickle(os.path.join(input_dir, f'lens_{uid}.pkl'))
+    lens_uid = lens.name.split('_')[2]
+    assert lens_uid == uid, f'UID mismatch: {lens_uid} != {uid}'
 
     main_halo_mass = cosmo.stellar_to_main_halo_mass(lens.physical_params['lens_stellar_mass'], lens.z_lens, sample=True)
     log_m_host = np.log10(main_halo_mass)
@@ -160,9 +174,12 @@ def add(tuple):
     util.pickle(os.path.join(subhalo_dir, f'subhalo_realization_{lens.name.split("_")[2]}.pkl'), cdm_realization)
 
     # Pickle the lens with subhalos
-    pickle_target = os.path.join(output_dir, f'lens_with_subhalos_{lens.name.split("_")[2]}.pkl')
+    pickle_target = os.path.join(output_dir, f'lens_{lens.name.split("_")[2]}.pkl')
     util.pickle(pickle_target, lens)
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description="Generate and cache Roman PSFs.")
+    parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    args = parser.parse_args()
+    main(args)

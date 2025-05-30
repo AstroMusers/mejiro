@@ -1,3 +1,4 @@
+import argparse
 import multiprocessing
 import os
 import random
@@ -14,11 +15,20 @@ PREV_SCRIPT_NAME = '03'
 SCRIPT_NAME = '04'
 
 
-def main():
+def main(args):
     start = time.time()
 
+    # ensure the configuration file has a .yaml or .yml extension
+    if not args.config.endswith(('.yaml', '.yml')):
+        if os.path.exists(args.config + '.yaml'):
+            args.config += '.yaml'
+        elif os.path.exists(args.config + '.yml'):
+            args.config += '.yml'
+        else:
+            raise ValueError("The configuration file must be a YAML file with extension '.yaml' or '.yml'.")
+
     # read configuration file
-    with open('config.yaml', 'r') as f:
+    with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
     repo_dir = config['repo_dir']
 
@@ -65,23 +75,25 @@ def main():
         sca_dir = os.path.join(output_dir, f'sca{sca}')
         os.makedirs(sca_dir, exist_ok=True)
         output_sca_dirs.append(sca_dir)
-    if verbose: print(f'Set up output directories {output_sca_dirs}')  
+    if verbose: print(f'Set up output directories {output_sca_dirs}')
 
     # build instrument
     roman = Roman()
 
+    # parse uids
     uid_dict = {}
     for sca in scas:
-        pickled_lenses = sorted(glob(input_dir + f'/sca{sca}/lens_with_subhalos_*.pkl'))
-        lens_uids = [os.path.basename(i).split('_')[3].split('.')[0] for i in pickled_lenses]
+        pickled_lenses = sorted(glob(input_dir + f'/sca{sca}/lens_*.pkl'))
+        lens_uids = [os.path.basename(i).split('_')[1].split('.')[0] for i in pickled_lenses]
         uid_dict[sca] = lens_uids
-
     count = 0
     for sca, lens_uids in uid_dict.items():
         count += len(lens_uids)
-
-    if limit is not None and limit < count:
-        count = limit
+    if limit is not None:
+        lens_uids = lens_uids[:limit]
+        if limit < count:
+            count = limit
+    if verbose: print(f'Processing {count} lens(es)')
 
     # tuple the parameters
     tuple_list = []
@@ -138,7 +150,7 @@ def create_synthetic_image(input):
     num_pix = psf_config['num_pixes'][0]
 
     # load the lens based on uid
-    lens = util.unpickle(os.path.join(input_dir, f'lens_with_subhalos_{uid}.pkl'))
+    lens = util.unpickle(os.path.join(input_dir, f'lens_{uid}.pkl'))
     lens_uid = lens.name.split('_')[2]
     assert lens_uid == uid, f'UID mismatch: {lens_uid} != {uid}'
 
@@ -161,17 +173,23 @@ def create_synthetic_image(input):
         # get PSF
         kwargs_psf = STPSFEngine.get_roman_psf_kwargs(band, int(sca), detector_pos, oversample=supersampling_factor, num_pix=num_pix, check_cache=True, psf_cache_dir=psf_cache_dir, verbose=False)
 
-        synthetic_image = SyntheticImage(strong_lens=lens,
-                                     instrument=roman,
-                                     band=band,
-                                     fov_arcsec=fov_arcsec,
-                                     instrument_params=instrument_params,
-                                     kwargs_numerics=kwargs_numerics,
-                                     kwargs_psf=kwargs_psf,
-                                     pieces=pieces,
-                                     verbose=False)
-        util.pickle(os.path.join(output_dir, f'SyntheticImage_{uid}_{band}.pkl'), synthetic_image)
+        try:
+            synthetic_image = SyntheticImage(strong_lens=lens,
+                                        instrument=roman,
+                                        band=band,
+                                        fov_arcsec=fov_arcsec,
+                                        instrument_params=instrument_params,
+                                        kwargs_numerics=kwargs_numerics,
+                                        kwargs_psf=kwargs_psf,
+                                        pieces=pieces,
+                                        verbose=False)
+            util.pickle(os.path.join(output_dir, f'SyntheticImage_{uid}_{band}.pkl'), synthetic_image)
+        except:
+            return
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description="Generate and cache Roman PSFs.")
+    parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    args = parser.parse_args()
+    main(args)
