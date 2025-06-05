@@ -21,9 +21,9 @@ from mejiro.utils import util
 
 
 class StrongLens:
-    def __init__(self, kwargs_model, kwargs_params, lens_mags, source_mags, lensed_source_mags=None,
+    def __init__(self, kwargs_model, kwargs_params, band=None, lens_mags=None, source_mags=None, lensed_source_mags=None,
                  lens_stellar_mass=None, lens_vel_disp=None, magnification=None, snr=None, masked_snr_array=None,
-                 uid=None, sca=None, num_images=None):
+                 uid=None, sca=None, num_images=None, verbose=False):
         # set z_source convention default
         self.z_source_convention = 6
 
@@ -35,6 +35,7 @@ class StrongLens:
         self.uid = uid
         self.sca = sca
         self.num_images = num_images
+        self.verbose = verbose
 
         # get redshifts
         self.z_lens = kwargs_model['lens_redshift_list'][0]
@@ -66,13 +67,32 @@ class StrongLens:
         else:
             self.main_halo_mass = None
 
-        # set magnitudes in each band
-        self.lens_mags = lens_mags
-        self.source_mags = source_mags
-        self.lensed_source_mags = lensed_source_mags
+        # check if lenstronomy amps are provided for all light model components
+        amps_provided = True
+        for light_params in kwargs_params['kwargs_lens_light'] + kwargs_params['kwargs_source']:  # TODO this doesn't include the others such as kwargs_ps or kwargs_special because not sure how to handle those yet
+            if 'amp' not in light_params:
+                amps_provided = False
+        
+        self.kwargs_lens_light_amp_dict, self.kwargs_source_amp_dict = {}, {}
+        if amps_provided:
+            if verbose:
+                print('Amplitudes provided in kwargs_params.')
+            self.kwargs_lens_light_amp_dict[band] = kwargs_params['kwargs_lens_light']
+            self.kwargs_source_amp_dict[band] = kwargs_params['kwargs_source']
 
-        # confirm that magnitudes are set up correctly
-        self._validate_mags(self.lens_mags, self.source_mags)
+            self.band = band  # TODO TEMP
+        else:
+            if verbose:
+                print('Amplitudes not provided in kwargs_params. Converting magnitudes to lenstronomy amps.')
+            if lens_mags is None or source_mags is None:
+                raise ValueError('Lens and source magnitudes must be provided if amps are not provided in kwargs_params.')
+            # set magnitudes in each band
+            self.lens_mags = lens_mags
+            self.source_mags = source_mags
+            self.lensed_source_mags = lensed_source_mags
+
+            # confirm that magnitudes are set up correctly
+            self._validate_mags(self.lens_mags, self.source_mags)
 
         # set light kwargs dicts and set kwargs_lens
         self._unpack_kwargs_params(kwargs_params)
@@ -104,7 +124,6 @@ class StrongLens:
         self.redshift_list_macro = deepcopy(self.lens_redshift_list)
 
         # additional fields to initialize
-        self.kwargs_lens_light_amp_dict, self.kwargs_source_amp_dict = {}, {}
         self.oversample_factor = None
         self.side = None
         self.num_pix = None
@@ -113,6 +132,9 @@ class StrongLens:
         self.detector, self.detector_position = None, None
         self.galsim_rng = None
         self.ra, self.dec = None, None
+
+    def __reduce__(self):
+        return (self.__class__, (self.kwargs_model, self.kwargs_params, self.band, self.uid))  # TODO TEMP
 
     def get_lenstronomy_kwargs(self, band):
         # TODO finish
@@ -225,13 +247,16 @@ class StrongLens:
     def get_image_positions(self, pixel_coordinates=True):
         from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
 
-        try:
-            first_key = next(iter(self.kwargs_source_dict))  # get first key from source dict
-        except StopIteration:
-            raise ValueError("kwargs_source_dict is empty.")
+        # TODO TEMP
+        # try:
+        #     first_key = next(iter(self.kwargs_source_dict))  # get first key from source dict
+        # except StopIteration:
+        #     raise ValueError("kwargs_source_dict is empty.")
 
-        source_x = self.kwargs_source_dict[first_key]['center_x']
-        source_y = self.kwargs_source_dict[first_key]['center_y']
+        # source_x = self.kwargs_source_dict[first_key]['center_x'] TODO TEMP
+        # source_y = self.kwargs_source_dict[first_key]['center_y'] TODO TEMP
+        source_x = self.kwargs_source_amp_dict[self.band][0]['center_x']
+        source_y = self.kwargs_source_amp_dict[self.band][0]['center_y']
 
         solver = LensEquationSolver(self.lens_model_class)
         image_x, image_y = solver.image_position_from_source(sourcePos_x=source_x, sourcePos_y=source_y,
@@ -477,7 +502,7 @@ class StrongLens:
         for band, mag in mag_dict.items():
             kwargs_light_band = deepcopy(kwargs_light[0])
             kwargs_light_band['magnitude'] = mag
-            kwargs_light_dict[band] = kwargs_light_band
+            kwargs_light_dict[band] = [kwargs_light_band]
         return kwargs_light_dict
 
     @staticmethod
@@ -572,8 +597,8 @@ class StrongLens:
         # set light dicts
         kwargs_lens_light = kwargs_params['kwargs_lens_light']
         kwargs_source = kwargs_params['kwargs_source']
-        self.kwargs_lens_light_dict = self._build_kwargs_light_dict(self.lens_mags, kwargs_lens_light)
-        self.kwargs_source_dict = self._build_kwargs_light_dict(self.source_mags, kwargs_source)
+        # self.kwargs_lens_light_dict = self._build_kwargs_light_dict(self.lens_mags, kwargs_lens_light) TODO TEMP
+        # self.kwargs_source_dict = self._build_kwargs_light_dict(self.source_mags, kwargs_source) TODO TEMP
 
     def _unpack_kwargs_model(self, kwargs_model):
         # get model lists, which are required(TODO ?)

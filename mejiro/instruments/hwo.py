@@ -1,25 +1,35 @@
+import importlib.metadata
+import os
 import numpy as np
+import syotools
+import lenstronomy.Util.data_util as data_util
 from astropy import units as u
+from astropy.units import Quantity
 from fractions import Fraction
 from syotools.models import Camera, Telescope
+from glob import glob
 
-from mejiro.instruments.instrument_base import InstrumentBase
+from mejiro.instruments.instrument import Instrument
 
 
-class HWO(InstrumentBase):
+class HWO(Instrument):
     """
-    Habitable Worlds Observatory (HWO) instrument class
+    Habitable Worlds Observatory (HWO) High-Resolution Imager (HRI) class
 
     Parameters
     ----------
     eac : str
-        Exploratory Analytic Case (EAC), possible mission architectures. Options are 'EAC1', 'EAC2', and 'EAC3'. Default is 'EAC1'. For more details, see https://pcos.gsfc.nasa.gov/physpag/meetings/HEAD2024/presentations/6_Burns_HWO.pdf
-    """
+        Exploratory Analytic Case (EAC), possible mission architectures. Options are 'EAC1', 'EAC2', and 'EAC3'. Default is 'EAC1'. For more details, see https://pcos.gsfc.nasa.gov/physpag/meetings/HEAD2024/presentations/6_Burns_HWO.pdf.
 
+    Attributes
+    ----------
+    TODO
+    """
     def __init__(self, eac='EAC1'):
         self.telescope = Telescope()
         self.telescope.set_from_json(eac)
         self.camera = Camera()
+        self.telescope.add_camera(self.camera)
 
         name = 'HWO'
         bands = self.camera.bandnames
@@ -31,116 +41,72 @@ class HWO(InstrumentBase):
             engines
         )
 
-        # set aperture
-        assert self.telescope.recover(
-            'aperture').unit == u.m, "Aperture must be in units of meters"  # check that aperture is in meters
-        self.aperture = self.telescope.recover('aperture').value  # meters
+        # record versions of dependencies
+        try:
+            self.versions['syotools'] = importlib.metadata.version('syotools')
+        except importlib.metadata.PackageNotFoundError:
+            raise importlib.metadata.PackageNotFoundError("syotools package not found. Please install syotools.")
 
-        self.pivotwave = self._set_camera_attribute_from_hwo_tools('pivotwave', u.nm)
-        self.ab_zeropoint = {b: zp for b, zp in zip(self.bands,
-                                                    [35548., 24166., 15305., 12523., 10018., 8609., 6975., 4373., 3444.,
-                                                     2482.])}  # TODO update
-        self.aperture_correction = self._set_camera_attribute_from_hwo_tools('ap_corr')
-        self.bandpass_r = self._set_camera_attribute_from_hwo_tools('bandpass_r')
-
-        # calculate derived bandpass
-        self.derived_bandpass = {band: (self.pivotwave[band] / self.bandpass_r[band]) for band in self.bands}
-
+        # set attributes
         self.gain = 1.
+        self.stray_light_fraction = 0.1
+        self.aperture = self.telescope.recover('aperture')
+        self.effective_aperture = self.telescope.effective_aperture
+        self.pixel_scale = self.get_attribute_from_syotools(self.camera, 'pixel_size', u.arcsec / u.pix)
+        self.dark_current = self.get_attribute_from_syotools(self.camera, 'dark_current', u.electron / (u.pix * u.second))
+        self.read_noise = self.get_attribute_from_syotools(self.camera, 'detector_rn', u.electron ** Fraction(1, 2) / u.pix ** Fraction(1, 2))
+        self.psf_fwhm = self.get_attribute_from_syotools(self.camera, 'fwhm_psf', u.arcsec, check_unit=False)  # TODO temporary override of unit check
+        self.thermal_background = {
+            'B': Quantity(0.0, 'ct / pix'),
+            'FUV': Quantity(0.0, 'ct / pix'),
+            'H': Quantity(0.0, 'ct / pix'),
+            'I': Quantity(0.0, 'ct / pix'),
+            'J': Quantity(0.0, 'ct / pix'),
+            'K': Quantity(0.0, 'ct / pix'),
+            'NUV': Quantity(0.0, 'ct / pix'),
+            'R': Quantity(0.0, 'ct / pix'),
+            'U': Quantity(0.0, 'ct / pix'),
+            'V': Quantity(0.0, 'ct / pix'),
+        }   # TODO these aren't real values, just placeholders
 
-        # set noise parameters
-        self.dark_current = self._set_camera_attribute_from_hwo_tools('dark_current', u.electron / (u.pix * u.second))
-        self.read_noise = self._set_camera_attribute_from_hwo_tools('detector_rn',
-                                                                    u.electron ** Fraction(1, 2) / u.pix ** Fraction(1,
-                                                                                                                     2))
+        # calculate zeropoints: https://jt-astro.science/luvoir_simtools/hdi_etc/SNR_equation.pdf
+        aperture_cm = self.aperture.to(u.cm).value  # get telescope aperture diameter in cm
+        bandwidth = {band: bp for band, bp in zip(self.bands, self.camera.recover('derived_bandpass'))}
+        flux_zp = {band: bp for band, bp in zip(self.bands, self.camera.recover('ab_zeropoint'))}
+        self.zeropoints = {band: (-1 / 0.4) * np.log10(4 / (np.pi * flux_zp[band].value * (aperture_cm ** 2) * bandwidth[band].value)) for band in self.bands}
 
-        # private attributes
-        self._pixel_size = np.array(
-            [0.016, 0.016, 0.016, 0.016, 0.016, 0.016, 0.016, 0.04, 0.04, 0.04])  # set by aperture in method below
+        # calculate sky level
+        sky_level_mag_per_arcsec2 = {band: value for band, value in self.get_attribute_from_syotools(self.camera, 'sky_sigma', None).items()}
+        self.sky_level = {band: data_util.magnitude2cps(mag_per_arcsec2, magnitude_zero_point=self.get_zeropoint_magnitude(band)) * (self.get_pixel_scale(band) ** 2).value * u.Unit('ct / pix') for band, mag_per_arcsec2 in sky_level_mag_per_arcsec2.items()}
 
-        # methods
-        self._set_pixel_scale()  # TODO update
-        self._set_psf_fwhm()  # TODO update
 
-    def validate_instrument_params(self, params):
-        # TODO implement this
-        pass
+    def get_attribute_from_syotools(self, syotools_object, attribute, unit, check_unit=True):
+        values = syotools_object.recover(attribute)
+        
+        if type(values) == list:
+            # some syotools attributes are formatted as lists
+            values = Quantity(values[0], values[1])
 
-    def _set_camera_attribute_from_hwo_tools(self, attribute, unit=None):
-        if type(self.camera.recover(attribute)) == u.Quantity:
-            values = self.camera.recover(attribute).value
-        elif type(self.camera.recover(attribute)) == list:
-            values = self.camera.recover(attribute)
-        else:
-            raise ValueError(f"Cannot recover {attribute} of type {type(self.camera.recover(attribute))}")
+        # make sure that there's a value for each band
+        if len(self.bands) != len(values):
+            raise ValueError(f"Length of {attribute} does not match number of bands")
 
-        assert len(self.bands) == len(values), f"Length of {attribute} does not match number of bands"
-        if unit is not None:
-            assert self.camera.recover(attribute).unit == unit, f"Unit of {attribute} must be {unit}"
+        # check units
+        if check_unit:
+            if type(values) == u.Quantity and unit is not None and values.unit != unit:
+                raise ValueError(f"Unit of {attribute} must be {unit}, not {values.unit}")
 
         return {band: value for band, value in zip(self.bands, values)}
-
-    def _set_pixel_scale(self):  # TODO update
-        pixel_scale_list = []
-        for band, pw in self.pivotwave.items():
-            pixel_scale = 1.22 * (pw * 0.000000001) * 206264.8062 / self.aperture / 2.
-            pixel_scale_list.append(pixel_scale)
-
-        # this enforces the rule that the pixel sizes are set at the shortest wavelength in each channel 
-        for i in range(0, 2):
-            pixel_scale_list[i] = 1.22 * (
-                    self.pivotwave['U'] * 0.000000001) * 206264.8062 / self.aperture / 2.  # UV set at U
-        for i in range(2, len(pixel_scale_list) - 3):
-            pixel_scale_list[i] = 1.22 * (
-                    self.pivotwave['U'] * 0.000000001) * 206264.8062 / self.aperture / 2.  # Opt set at U
-        for i in range(len(pixel_scale_list) - 3, len(pixel_scale_list)):
-            pixel_scale_list[i] = 1.22 * (
-                    self.pivotwave['J'] * 0.000000001) * 206264.8062 / self.aperture / 2.  # NIR set at J
-
-        self.pixel_scale = {band: pixel_scale for band, pixel_scale in zip(self.bands, pixel_scale_list)}
-
-    def _set_psf_fwhm(self):
-        diff_limit = 1.22 * (500. * 0.000000001) * 206264.8062 / self.aperture
-
-        self.fwhm_psf = {}
-        for band, pw in self.pivotwave.items():
-            fwhm_psf = 1.22 * pw * 0.000000001 * 206264.8062 / self.aperture
-
-            if fwhm_psf < diff_limit:
-                fwhm_psf = diff_limit
-
-            self.fwhm_psf[band] = fwhm_psf
-
-    def get_pixel_scale(self, band):
-        return self.pixel_scale[band]
-
-    def get_psf_fwhm(self, band):
-        return self.fwhm_psf[band]
-
-    def get_zeropoint_magnitude(self, band):
-        """
-        Return zeropoint AB magnitude in given band
-
-        Source: https://jt-astro.science/luvoir_simtools/hdi_etc/SNR_equation.pdf
-        """
-        # get telescope aperture diameter in cm
-        aperture = self.aperture * 100
-
-        # get band-specific parameters
-        bandwidth = self.derived_bandpass[band]  # TODO is this correct?
-        flux_zp = self.ab_zeropoint[band]
-
-        # calculate zeropoint magnitude
-        zp_mag = (-1 / 0.4) * np.log10(4 / (np.pi * flux_zp * (aperture ** 2) * bandwidth))
-
-        return zp_mag
+    
+    def get_sky_level(self, band):
+        return self.sky_level[band]
 
     def get_noise(self, band):
         """
         Estimate noise per pixel per second in given band. For now, sum of dark current and read noise.
         """
         dark_current = self.dark_current[band]
-        read_noise = self.read_noise[band]
+        read_noise = self.read_noise[band]  # TODO the units aren't right for this sum to work
 
         return dark_current + read_noise
 
@@ -149,24 +115,28 @@ class HWO(InstrumentBase):
 
     def get_read_noise(self, band):
         return self.read_noise[band]
+    
+    # implement abstract methods
+    def get_pixel_scale(self, band):
+        return self.pixel_scale[band]
+    
+    def get_psf_fwhm(self, band):
+        return self.psf_fwhm[band]
+    
+    def get_thermal_background(self, band):
+        return self.thermal_background[band]
+    
+    def get_zeropoint_magnitude(self, band):
+        return self.zeropoints[band]
+    
+    @staticmethod
+    def load_speclite_filters():
+        import mejiro
+        module_path = os.path.dirname(mejiro.__file__)
+        filters = sorted(glob(os.path.join(module_path, 'data', 'hwo_filter_response', f'HRI-*.ecsv')))
 
-    def get_bands(self):
-        return self.camera.recover('bandnames')
-
-    def _get_index(self, band):
-        """
-        hwo-tools provides parameters in lists, so to get value for a particular band, we need the index of that band.
-        """
-        # handle if provided in lower case
-        band = band.upper()
-
-        # check if band is in camera bandnames
-        # bands = self.camera.bandnames
-        bands = self.bands
-        if band not in bands:
-            raise ValueError(f"Band {band} not in {bands}")
-
-        return bands.index(band)
+        from speclite.filters import load_filters
+        return load_filters(*filters)
 
     @staticmethod
     def default_params():

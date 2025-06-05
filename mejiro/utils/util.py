@@ -1,5 +1,6 @@
 import datetime
 import json
+from astropy.table import QTable, Table
 import numpy as np
 import os
 import pandas as pd
@@ -9,6 +10,108 @@ import warnings
 import yaml
 from collections import ChainMap
 from glob import glob
+
+
+def get_gaussian_kernel(fwhm, size):
+    """
+    Generate a 2D Gaussian kernel using scipy.ndimage.gaussian_filter.
+
+    Parameters:
+    - fwhm: Full Width at Half Maximum of the Gaussian.
+    - size: The size of the generated 2D array (size x size).
+
+    Returns:
+    - 2D NumPy array representing the Gaussian kernel.
+    """
+    from scipy.ndimage import gaussian_filter
+
+    # Convert FWHM to standard deviation
+    sigma = fwhm / (2 * np.sqrt(2 * np.log(2)))
+
+    # Create an array with a single impulse in the center
+    impulse = np.zeros((size, size))
+    impulse[size // 2, size // 2] = 1
+
+    # Apply the Gaussian filter
+    gaussian_kernel = gaussian_filter(impulse, sigma=sigma)
+
+    return gaussian_kernel
+
+
+def build_meshgrid(scene_size, pixel_scale):
+    """
+    Build a meshgrid for a given scene size and pixel scale.
+
+    Parameters
+    ----------
+    scene_size : float
+        The physical size of the scene in angular units (often, arcseconds).
+    pixel_scale : float
+        The size of each pixel.
+
+    Returns
+    -------
+    numpy.ndarray
+        A 2D array of shape (num_pix, num_pix) containing the meshgrid coordinates.
+    """
+    num_pix = set_odd_num_pix(scene_size, pixel_scale)
+    _r = np.linspace(-scene_size / 2, scene_size / 2, num_pix)
+    return np.meshgrid(_r, _r)
+
+
+def set_odd_num_pix(scene_size, pixel_scale):
+    """
+    Set the number of pixels to be odd for a given scene size and pixel scale.
+
+    Parameters
+    ----------
+    scene_size : float
+        The physical size of the scene in angular units (often, arcseconds).
+    pixel_scale : float
+        The size of each pixel.
+
+    Returns
+    -------
+    int
+        The number of pixels, guaranteed to be odd.
+    """
+    num_pix = np.ceil(scene_size / pixel_scale).astype(int)
+    if num_pix % 2 == 0:
+        num_pix += 1
+    return num_pix
+
+
+def print_key_structure(d, indent=0):
+    """
+    Print the structure of a dictionary, showing keys and nested keys.
+
+    Parameters
+    ----------
+    d : dict
+        The dictionary whose structure is to be printed.
+    indent : int, optional
+        The indentation level for nested keys. Default is 0.
+
+    Returns
+    -------
+    None
+
+    Examples
+    --------
+    >>> d = {'a': 1, 'b': {'c': 2, 'd': {'e': 3}}}
+    >>> print_key_structure(d)
+    a
+    b
+      c
+      d
+        e
+    """
+    if not isinstance(d, dict):
+        raise TypeError("Input must be a dictionary")
+    for key, value in d.items():
+        print(' ' * indent + str(key))
+        if isinstance(value, dict):
+            print_key_structure(value, indent + 2)
 
 
 def smallest_non_negative_element(array):
@@ -883,3 +986,97 @@ def delete_if_exists(path):
     """
     if os.path.exists(path):
         os.remove(path)
+
+
+def _handle_glob(path):
+    """
+    Handle glob pattern matching for file paths.
+
+    Parameters
+    ----------
+    path : str
+        The glob pattern to match file paths.
+
+    Returns
+    -------
+    str
+        The single file path that matches the glob pattern.
+
+    Raises
+    ------
+    FileNotFoundError
+        If no files are found matching the glob pattern.
+    FileExistsError
+        If multiple files are found matching the glob pattern.
+    """
+    filepaths = sorted(glob(path))
+
+    if len(filepaths) == 0:
+        raise FileNotFoundError(f"No files found matching {path}.")
+    elif len(filepaths) > 1:
+        raise FileExistsError(f"Multiple files found matching {path}: {filepaths}.")
+    else:
+        return filepaths[0]
+
+
+def return_qtable(path):
+    """
+    Reads a QTable from a given file path.
+
+    Parameters
+    ----------
+    path : str
+        The file path or pattern to read the QTable from.
+
+    Returns
+    -------
+    Astropy.table.QTable
+        The QTable read from the specified file path.
+    """
+    filepath = _handle_glob(path)
+    return QTable.read(filepath)
+
+
+def return_table(path):
+    """
+    Reads a table from the given file path.
+
+    Parameters
+    ----------
+    path : str
+        The file path or pattern to read the table from.
+
+    Returns
+    -------
+    Astropy.table.Table
+        The table read from the specified file path.
+    """
+    filepath = _handle_glob(path)
+    return Table.read(filepath)
+
+
+def return_yaml(path):
+    """
+    Reads a YAML file from the given path and returns its contents as a dictionary.
+
+    Parameters
+    ----------
+    path : str
+        The path to the YAML file. This can include glob patterns.
+
+    Returns
+    -------
+    dict
+        The contents of the YAML file as a dictionary.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the file does not exist.
+    yaml.YAMLError
+        If there is an error parsing the YAML file.
+    """
+    filepath = _handle_glob(path)
+    with open(filepath, 'r', encoding='utf-8') as file:
+        data = yaml.safe_load(file)
+    return data

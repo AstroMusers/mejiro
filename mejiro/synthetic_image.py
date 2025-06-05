@@ -5,66 +5,191 @@ from lenstronomy.Data.pixel_grid import PixelGrid
 from lenstronomy.Data.psf import PSF
 from lenstronomy.ImSim.image_model import ImageModel
 from lenstronomy.Util import data_util
-from lenstronomy.Util import util as len_util
+from lenstronomy.Util import util as lenstronomy_util
+
+from mejiro.utils import util
 
 
 class SyntheticImage:
-    def __init__(self, strong_lens, instrument, band, arcsec, oversample=5,
-                 kwargs_numerics={}, pieces=False, verbose=True,
-                 instrument_params={}):
 
-        # assert band is valid for instrument
-        assert band in instrument.bands, f'Band "{band}" not valid for instrument {instrument.name}'
+    DEFAULT_KWARGS_NUMERICS = {
+        'supersampling_factor': 5,  # super sampling factor of (partial) high resolution ray-tracing
+        'compute_mode': 'regular',  # 'regular' or 'adaptive'
+        'supersampling_convolution': True,  # bool, if True, performs the supersampled convolution (either on regular or adaptive grid)
+        'supersampling_kernel_size': None,  # size of the higher resolution kernel region (can be smaller than the original kernel). None leads to use the full size
+        'flux_evaluate_indexes': None,  # bool mask, if None, it will evaluate all (sub) pixels
+        'supersampled_indexes': None,  # bool mask of pixels to be computed in supersampled grid (only for adaptive mode)
+        'compute_indexes': None,  # bool mask of pixels to be computed the PSF response (flux being added to). Only used for adaptive mode and can be set =likelihood mask.
+        'point_source_supersampling_factor': 5,
+    }
+    DEFAULT_KWARGS_PSF = {
+        'psf_type': 'NONE'
+    }
 
-        # default instrument params if none, else validate
+    def __init__(self, 
+                 strong_lens,
+                 instrument,
+                 band,
+                 fov_arcsec=5,
+                 instrument_params={},
+                 kwargs_numerics={},
+                 kwargs_psf={},
+                 pieces=False,
+                 verbose=True
+                 ):
+        
+        # check band is valid for instrument
+        if band not in instrument.bands:
+            raise ValueError(f'Band "{band}" not valid for instrument {instrument.name}')
+        
+        # set up instrument params 
         if not instrument_params:
-            self.instrument_params = instrument.default_params()
+            instrument_params = instrument.default_params()
         else:
-            self.instrument_params = instrument.validate_instrument_params(instrument_params)
-
+            instrument_params = instrument.validate_instrument_params(instrument_params)
+        
+        # set up attributes
         self.strong_lens = strong_lens
-        self.instrument = instrument
+        self.instrument_name = instrument.name
+        self.instrument_params = instrument_params
         self.band = band
-        self.verbose = verbose
+        self.fov_arcsec = fov_arcsec
         self.pieces = pieces
+        self.verbose = verbose
 
-        self._set_up_pixel_grid(arcsec, oversample)
+        # calculate size of scene
+        self.pixel_scale = instrument.get_pixel_scale(self.band).value  # an Astropy Quantity with units arcsec / pix
+        self.num_pix = util.set_odd_num_pix(self.fov_arcsec, self.pixel_scale)  # make sure that final image will have odd number of pixels on a side
+        self.fov_arcsec = self.num_pix * self.pixel_scale  # adjust fov (may differ from user-provided input)
+        if verbose: print(f'Scene size: {self.fov_arcsec} arcsec, {self.num_pix} pixels at pixel scale {self.pixel_scale} arcsec/pix')
 
-        # if kwargs_numerics is empty, use default values; defaulting dictionary in init gives weirdness
+        # set up pixel grid and coordinates
+        x, y, self.ra_at_xy_0, self.dec_at_xy_0, x_at_radec_0, y_at_radec_0, self.Mpix2coord, self.Mcoord2pix = (
+            lenstronomy_util.make_grid_with_coordtransform(
+                numPix=self.num_pix,
+                deltapix=self.pixel_scale,
+                subgrid_res=1,
+                left_lower=False,
+                inverse=False))
+        kwargs_pixel = {
+            'nx': self.num_pix,
+            'ny': self.num_pix,
+            'ra_at_xy_0': self.ra_at_xy_0,
+            'dec_at_xy_0': self.dec_at_xy_0,
+            'transform_pix2angle': self.Mpix2coord
+        }
+        self.pixel_grid = PixelGrid(**kwargs_pixel)
+        self.coords = Coordinates(self.Mpix2coord, self.ra_at_xy_0, self.dec_at_xy_0)
+
+        # check if lenstronomy amplitudes are provided
+        amps_provided = self.strong_lens.validate_light_models()
+            
+        # if not provided, convert magnitudes to lenstronomy amplitudes
+        if not amps_provided:
+            # retrieve zero-point magnitude
+            if instrument.name == 'Roman':
+                magnitude_zero_point = instrument.get_zeropoint_magnitude(self.band,
+                                                                                    self.instrument_params['detector'])
+            elif instrument.name == 'HWO':
+                magnitude_zero_point = instrument.get_zeropoint_magnitude(self.band)
+
+            # retrieve lens and source magnitudes
+            lens_magnitude = self.strong_lens.physical_params['magnitudes']['lens'][band]
+            source_magnitude = self.strong_lens.physical_params['magnitudes']['source'][band]
+
+            # overwrite the magnitudes in kwargs_lens_light and kwargs_source
+            self.strong_lens.kwargs_lens_light[0]['magnitude'] = lens_magnitude
+            self.strong_lens.kwargs_source[0]['magnitude'] = source_magnitude
+
+            # convert magnitudes to lenstronomy amplitudes
+            self.strong_lens.kwargs_lens_light = data_util.magnitude2amplitude(light_model_class=self.strong_lens.lens_light_model,
+                                                                  kwargs_light_mag=self.strong_lens.kwargs_lens_light,
+                                                                  magnitude_zero_point=magnitude_zero_point)
+            self.strong_lens.kwargs_source = data_util.magnitude2amplitude(light_model_class=self.strong_lens.source_light_model,
+                                                                  kwargs_light_mag=self.strong_lens.kwargs_source,
+                                                                  magnitude_zero_point=magnitude_zero_point)
+            
+        # set kwargs_numerics
         if not kwargs_numerics:
-            kwargs_numerics = {'supersampling_factor': 3, 'compute_mode': 'adaptive'}
-        else:
-            # TODO validate
-            pass
-
-        # build adaptive grid
+            kwargs_numerics = SyntheticImage.DEFAULT_KWARGS_NUMERICS
+        elif 'compute_mode' not in kwargs_numerics:
+            kwargs_numerics['compute_mode'] = 'regular'
         if kwargs_numerics['compute_mode'] == 'adaptive' and 'supersampled_indexes' not in kwargs_numerics.keys():
             if self.verbose: print('Building adaptive grid')
             self.supersampled_indexes = self.build_adaptive_grid(pad=40)
             kwargs_numerics['supersampled_indexes'] = self.supersampled_indexes
+        if kwargs_numerics['supersampling_factor'] < 5 and verbose:
+            warnings.warn('Supersampling factor less than 5 may not be sufficient for accurate results, especially when convolving with a non-trivial PSF')
+        self.kwargs_numerics = kwargs_numerics            
 
-        if self.verbose:
-            print(
-                f'Computing with \'{kwargs_numerics["compute_mode"]}\' mode and supersampling factor {kwargs_numerics["supersampling_factor"]}')
-            if kwargs_numerics['compute_mode'] == 'adaptive':
-                print(f'Adaptive grid: {self.supersampled_indexes.shape}')
+        # set kwargs_psf
+        if not kwargs_psf:
+            kwargs_psf = SyntheticImage.DEFAULT_KWARGS_PSF
+        self.psf_class = PSF(**kwargs_psf)
 
-        self._calculate_surface_brightness(kwargs_numerics, pieces)
+        # ray-shoot
+        image_model = ImageModel(data_class=self.pixel_grid,
+                                 psf_class=self.psf_class,
+                                 lens_model_class=self.strong_lens.lens_model,
+                                 source_model_class=self.strong_lens.source_light_model,
+                                 lens_light_model_class=self.strong_lens.lens_light_model,
+                                 kwargs_numerics=kwargs_numerics)
+        self.image = image_model.image(kwargs_lens=self.strong_lens.kwargs_lens,
+                                       kwargs_source=self.strong_lens.kwargs_source,
+                                       kwargs_lens_light=self.strong_lens.kwargs_lens_light,
+                                       kwargs_ps=self.strong_lens.kwargs_ps,
+                                       kwargs_extinction=self.strong_lens.kwargs_extinction,
+                                       kwargs_special=self.strong_lens.kwargs_special,
+                                       unconvolved=False, 
+                                       source_add=True, 
+                                       lens_light_add=True, 
+                                       point_source_add=True)
 
-        if self.verbose: print(
-            f'Initialized SyntheticImage for StrongLens {self.strong_lens.uid} by {self.instrument.name} in {self.band} band')
+        if self.pieces:
+            self.lens_surface_brightness = image_model.lens_surface_brightness(kwargs_lens_light=self.strong_lens.kwargs_lens_light, unconvolved=False)
+            self.source_surface_brightness = image_model.source_surface_brightness(kwargs_source=self.strong_lens.kwargs_source, kwargs_lens=self.strong_lens.kwargs_lens, kwargs_extinction=self.strong_lens.kwargs_extinction, kwargs_special=self.strong_lens.kwargs_special, unconvolved=False)
+        else:
+            self.lens_surface_brightness, self.source_surface_brightness = None, None
 
     def build_adaptive_grid(self, pad):
+        """
+        Builds an adaptive grid mask based on the distance of image positions from the center of the scene. To ensure that the mask includes the image positions, the pad value should be at least two pixels but ideally much larger in order to capture the vast majority of the lensed source's flux.
+
+        Parameters
+        ----------
+        pad : int
+            Padding value to extend the minimum and maximum radii of the grid mask. Must be non-negative.
+
+        Returns
+        -------
+        numpy.ndarray
+            A boolean mask array where `True` indicates grid points within the adaptive grid range
+            and `False` indicates points outside the range.
+
+        Raises
+        ------
+        ValueError
+            If the image positions cannot be calculated or are empty.
+
+        Notes
+        -----
+        - The grid is centered around the scene, and the distances are calculated relative to the 
+          lens center adjusted by the pixel scale.
+        - The adaptive grid range is determined by the minimum and maximum radii of the image positions,
+          adjusted by the padding value.
+        - The range is clamped to ensure it does not exceed the bounds of the scene dimensions.
+        """
+        if pad < 0 or not isinstance(pad, (int)):
+            raise ValueError(f"Padding value must be a non-negative integer.")
+
         image_positions = self.get_image_positions()
         if len(image_positions) == 0 or len(image_positions[0]) == 0 or len(image_positions[1]) == 0:
-            raise ValueError(f"Image positions are empty: {image_positions}")
+            raise ValueError(f"Failed to calculate image positions: {image_positions}")
 
+        # calculate how far the images are from the center of the scene
         image_radii = []
         for x, y in zip(image_positions[0], image_positions[1]):
             image_radii.append(np.sqrt((x - (self.num_pix // 2)) ** 2 + (y - (self.num_pix // 2)) ** 2))
-
-        if len(image_radii) == 0:
-            raise ValueError(f"Image radii list is empty: {image_radii}")
 
         x = np.linspace(-self.num_pix // 2, self.num_pix // 2, self.num_pix)
         y = np.linspace(-self.num_pix // 2, self.num_pix // 2, self.num_pix)
@@ -81,135 +206,54 @@ class SyntheticImage:
 
         return (distance >= min) & (distance <= max)
 
-    def get_image_positions(self):
-        from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
+    def get_image_positions(self, pixel=True):
+        """
+        Calculate the image positions from the source position and lensing mass model. Wraps ``GalaxyGalaxy.get_image_positions()``, with the added functionality of returning the positions in pixel coordinates.
 
-        try:
-            first_key = next(iter(self.strong_lens.kwargs_source_dict))  # get first key from source dict
-        except StopIteration:
-            raise ValueError("kwargs_source_dict is empty.")
+        Parameters
+        ----------
+        pixel : bool, optional
+            If True, the image positions are returned in pixel coordinates. 
+            If False, the image positions are returned in lenstronomy's default angular coordinates. Default is True.
 
-        source_x = self.strong_lens.kwargs_source_dict[first_key]['center_x']
-        source_y = self.strong_lens.kwargs_source_dict[first_key]['center_y']
+        Returns
+        -------
+        Tuple of arrays
+            ([x coordinates], [y coordinates]) of the image positions in lenstronomy "angle" units (often, arcseconds).
+        """
+        image_x, image_y = self.strong_lens.get_image_positions()
 
-        solver = LensEquationSolver(self.strong_lens.lens_model_class)
-        image_x, image_y = solver.image_position_from_source(sourcePos_x=source_x, sourcePos_y=source_y,
-                                                             kwargs_lens=self.strong_lens.kwargs_lens)
-
-        if self.coords is None:
-            self._set_up_pixel_grid()
-
-        return self.coords.map_coord2pix(ra=image_x, dec=image_y)
-
-    def _set_up_pixel_grid(self, arcsec, oversample):
-        # validation for oversample
-        self.oversample = int(oversample)
-        assert self.oversample >= 1, 'Oversampling factor must be greater than 1'
-        assert self.oversample % 2 == 1, 'Oversampling factor must be an odd integer'
-        if oversample < 5:
-            warnings.warn(
-                'Oversampling factor less than 5 may not be sufficient for accurate results, especially when convolving with a non-trivial PSF')
-
-        # "native" refers to the final output, as opposed to the oversampled grid that the intermediary calculations are performed on for better accuracy
-        self.native_pixel_scale = self.instrument.get_pixel_scale(self.band)
-        self.native_num_pix = np.ceil(arcsec / self.native_pixel_scale).astype(int)
-
-        # make sure that final image will have odd number of pixels on a side
-        if self.native_num_pix % 2 == 0:
-            self.native_num_pix += 1
-
-        # these parameters are for the oversampled grid
-        self.pixel_scale = self.native_pixel_scale / self.oversample
-        self.num_pix = self.native_num_pix * self.oversample
-
-        # finally, adjust arcseconds (may differ from user-provided input)
-        self.arcsec = self.native_num_pix * self.native_pixel_scale
-
-        if self.verbose: print(
-            f'Computing on pixel grid of size {self.num_pix}x{self.num_pix} ({self.arcsec}\"x{self.arcsec}\") with pixel scale {self.pixel_scale} arcsec/pixel (natively {self.native_pixel_scale} arcsec/pixel oversampled by factor {self.oversample})')
-
-        _, _, self.ra_at_xy_0, self.dec_at_xy_0, _, _, self.Mpix2coord, self.Mcoord2pix = (
-            len_util.make_grid_with_coordtransform(
-                numPix=self.num_pix,
-                deltapix=self.pixel_scale,
-                subgrid_res=1,
-                left_lower=False,
-                inverse=False))
-
-        kwargs_pixel = {'nx': self.num_pix, 'ny': self.num_pix,  # number of pixels per axis
-                        'ra_at_xy_0': self.ra_at_xy_0,
-                        'dec_at_xy_0': self.dec_at_xy_0,
-                        'transform_pix2angle': self.Mpix2coord}
-
-        self.pixel_grid = PixelGrid(**kwargs_pixel)
-        self.coords = Coordinates(self.Mpix2coord, self.ra_at_xy_0, self.dec_at_xy_0)
-
-    def _calculate_surface_brightness(self, kwargs_numerics, pieces=False, kwargs_psf=None):
-        # define PSF, e.g. kwargs_psf = {'psf_type': 'NONE'}, {'psf_type': 'GAUSSIAN', 'fwhm': psf_fwhm}
-        if kwargs_psf is None:
-            kwargs_psf = {'psf_type': 'NONE'}
-        psf_class = PSF(**kwargs_psf)
-
-        # convert from physical to lensing units if necessary e.g. sigma_v specified instead of theta_E
-        if 'theta_E' not in self.strong_lens.kwargs_lens[0]:
-            self.strong_lens._mass_physical_to_lensing_units()
-
-        # to create ImageModel, need LensModel and LightModel objects
-        self.strong_lens._set_classes()
-
-        image_model = ImageModel(data_class=self.pixel_grid,
-                                 psf_class=psf_class,
-                                 # TODO does this need to be passed in? I never want to convolve with a PSF at this stage
-                                 lens_model_class=self.strong_lens.lens_model_class,
-                                 source_model_class=self.strong_lens.source_model_class,
-                                 lens_light_model_class=self.strong_lens.lens_light_model_class,
-                                 kwargs_numerics=kwargs_numerics)
-
-        self._convert_magnitudes_to_lenstronomy_amps()
-        kwargs_lens_light_amp = [self.strong_lens.kwargs_lens_light_amp_dict[self.band]]
-        kwargs_source_amp = [self.strong_lens.kwargs_source_amp_dict[self.band]]
-
-        self.image = image_model.image(kwargs_lens=self.strong_lens.kwargs_lens,
-                                       kwargs_source=kwargs_source_amp,
-                                       kwargs_lens_light=kwargs_lens_light_amp,
-                                       unconvolved=True)
-
-        if pieces:
-            self.lens_surface_brightness = image_model.lens_surface_brightness(kwargs_lens_light_amp, unconvolved=True)
-            self.source_surface_brightness = image_model.source_surface_brightness(kwargs_source_amp,
-                                                                                   self.strong_lens.kwargs_lens,
-                                                                                   unconvolved=True)
+        if pixel:
+            if self.coords is None:
+                self._set_up_pixel_grid()
+            return self.coords.map_coord2pix(ra=image_x, dec=image_y)
         else:
-            self.lens_surface_brightness, self.source_surface_brightness = None, None
+            return image_x, image_y
+        
+    def plot(self, savepath=None):
+        """
+        Quickly visualize the synthetic image.
 
-    def _convert_magnitudes_to_lenstronomy_amps(self):
-        if self.instrument.name == 'Roman':
-            self.magnitude_zero_point = self.instrument.get_zeropoint_magnitude(self.band,
-                                                                                self.instrument_params['detector'])
-        elif self.instrument.name == 'HWO':
-            self.magnitude_zero_point = self.instrument.get_zeropoint_magnitude(self.band)
+        Parameters
+        ----------
+        savepath : str, optional
+            The file path where the plot will be saved. If None, the plot 
+            will not be saved. Default is None.
 
-        kwargs_lens_light_amp = data_util.magnitude2amplitude(self.strong_lens.lens_light_model_class,
-                                                              [self.strong_lens.kwargs_lens_light_dict[self.band]],
-                                                              self.magnitude_zero_point)
+        Notes
+        -----
+        The image is displayed using a logarithmic scale (base 10).
+        """
+        import matplotlib.pyplot as plt
 
-        kwargs_source_amp = data_util.magnitude2amplitude(self.strong_lens.source_model_class,
-                                                          [self.strong_lens.kwargs_source_dict[self.band]],
-                                                          self.magnitude_zero_point)
-
-        self.strong_lens.kwargs_lens_light_amp_dict[self.band] = kwargs_lens_light_amp[0]
-        self.strong_lens.kwargs_source_amp_dict[self.band] = kwargs_source_amp[0]
-
-    def set_native_coords(self):
-        _, _, self.ra_at_xy_0_native, self.dec_at_xy_0_native, _, _, self.Mpix2coord_native, self.Mcoord2pix_native = (
-            len_util.make_grid_with_coordtransform(
-                numPix=np.ceil(self.arcsec / self.native_pixel_scale).astype(int),
-                deltapix=self.native_pixel_scale,
-                subgrid_res=1,
-                left_lower=False,
-                inverse=False))
-        self.coords_native = Coordinates(self.Mpix2coord_native, self.ra_at_xy_0_native, self.dec_at_xy_0_native)
-
-    # TODO resample method to change oversample factor
-    # should just re-run _calculate_surface_brightness with new oversample factor instead of doing some kind of interpolation
-    # def resample():
+        plt.imshow(np.log10(self.image))
+        plt.title(f'{self.strong_lens.name}: {self.instrument_name} {self.band} band {self.image.shape}')
+        cbar = plt.colorbar()
+        cbar.set_label(r'log$_{10}$(Counts)')
+        plt.xlabel('x [Pixels]')
+        plt.ylabel('y [Pixels]')
+        plt.tight_layout()
+        if savepath is not None:
+            plt.savefig(savepath)
+        plt.show()
+        

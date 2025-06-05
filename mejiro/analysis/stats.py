@@ -4,7 +4,11 @@ from scipy.optimize import curve_fit
 
 def chi_square(a, b):
     """
-    Compute the chi-square statistic between two arrays.
+    Compute the chi-square statistic between two arrays:
+
+    .. math::
+
+        \\chi^2 = \\sum_{i} \\frac{\\left(A_{i} - B_{i}\\right)^2}{B_{i}}
 
     Parameters
     ----------
@@ -60,35 +64,3 @@ def normalize(array):
     sum = np.sum(array)
     assert sum != 0, 'Sum of elements is zero'
     return array / sum
-
-
-def linear_fit_through_origin(x, y):
-    """
-    Perform a linear fit through the origin.
-
-    Parameters
-    ----------
-    x : numpy.ndarray
-        Independent variable data.
-    y : numpy.ndarray
-        Dependent variable data.
-
-    Returns
-    -------
-    x_fit : numpy.ndarray
-        Fitted x values.
-    y_fit : numpy.ndarray
-        Fitted y values.
-    c : float
-        Slope of the fitted line.
-    """
-
-    def fit_func(x, c):
-        return c * x
-
-    params = curve_fit(fit_func, x, y)
-    c = params[0][0]
-    x_fit = np.linspace(x[0], x[-1], 100)
-    y_fit = c * x_fit
-
-    return x_fit, y_fit, c

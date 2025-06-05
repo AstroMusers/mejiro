@@ -1,8 +1,6 @@
 Running ``mejiro``
 ##################
 
-Update pipeline parameters in ``config/config.yaml`` and ensure ``defaults.machine`` points to the name (without extension) of the yaml file created during the first-time setup. The bash script ``execute_pipeline.sh`` will execute the pipeline end-to-end:
+Get started by checking out the example notebooks in the ``examples`` directory.
 
-.. code-block:: bash    
-
-    time bash execute_pipeline.sh
+To reproduce results from a paper using ``mejiro``, find the directory for the paper in the ``papers`` directory which will contain notebooks and scripts.

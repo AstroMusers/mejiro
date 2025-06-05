@@ -1,0 +1,76 @@
+repo_dir: &repo_dir /grad/bwedig/mejiro  # where the repository lives
+data_dir: &data_dir /data/bwedig/mejiro  # where output data should be written
+figure_dir: figures # !concat [*repo_dir, "/figures"]
+pipeline_dir: pipeline
+dev: True
+nice: 19
+verbose: True  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
+limit: null
+seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
+headroom_cores:
+  script_00: 0
+  script_01: 0
+  script_02: 0
+  script_03: 0
+  script_04: 0
+  script_05: 0
+survey:
+  runs: 2
+  area: 0.1
+  total_population: True
+  bands: [ B, FUV, H, I, J, K, NUV, R, U, V ]
+  deflector_cut_band: J
+  deflector_cut_band_max: 27
+  deflector_z_min: 0.01
+  deflector_z_max: 6.0
+  source_cut_band: J
+  source_cut_band_max: 28
+  source_z_min: 0.01
+  source_z_max: 10.0
+  min_image_separation: 0.3  # arcseconds
+  max_image_separation: 10.0  # arcseconds
+  mag_arc_limit_band: J
+  mag_arc_limit: 25  # this takes pressure off of SNR criterion, so set as high as possible without missing anything
+  magnification: 3
+snr:
+  snr_subtract_lens: False
+  snr_add_subhalos: False
+  snr_exposure_time: 120
+  snr_band: J
+  snr_threshold: 20
+  snr_fov_arcsec: 5
+  snr_supersampling_factor: &snr_supersampling_factor 1
+  snr_supersampling_compute_mode: adaptive  # regular
+  snr_supersampling_radius: 2.
+  snr_adaptive_pad: 40  # number of pixels to pad radii of annular adaptive grid below and above minimum and maximum image positions
+  snr_per_pixel_threshold: 1
+  # - zodi_multiplier: 1.5  # multiplied with minimum zodiacal light
+subhalos:
+  log_mlow: 6
+  log_mhigh: 10
+  subhalo_cone: 10.  # 6.
+  los_normalization: 0.
+  r_tidal: 0.5  # see Section 3.1 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract 
+  sigma_sub: 0.055  # see Section 6.3 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract 
+synthetic_image:
+  fov_arcsec: 5
+  supersampling_factor: &supersampling_factor 5
+  supersampling_compute_mode: adaptive
+  bands: [ J ]
+  pieces: False
+imaging:
+  exposure_time: 120
+  engine: galsim
+  engine_params:
+    rng_seed: 42
+    sky_background: True
+    detector_effects: True
+    poisson_noise: True
+    reciprocity_failure: True
+    dark_noise: True
+    nonlinearity: True
+    ipc: True
+    read_noise: True
+  rgb_bands: [ K, J, V ]  # in RGB order
+  rgb_stretch: 3
+  rgb_q: 3

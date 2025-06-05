@@ -1,208 +1,26 @@
+import pytest
+
 from mejiro.exposure import Exposure
 from mejiro.instruments.hwo import HWO
-from mejiro.lenses.test import SampleStrongLens
+from mejiro.galaxy_galaxy import SampleGG, SampleSL2S, SampleBELLS
 from mejiro.synthetic_image import SyntheticImage
+from mejiro.utils import lenstronomy_util
 
 
-def test_hwo_imaging():
+@pytest.mark.parametrize("strong_lens", [SampleGG(), SampleSL2S(), SampleBELLS()])
+def test_hwo_imaging(strong_lens):
+    # TODO generate CDM realization with LOS and add to strong_lens
+    
     hwo = HWO()
-    lens = SampleStrongLens()
-    band = 'J'
-    scene_size = 5  # arcsec
-    oversample = 5
-    exposure_time = 1000
+    kwargs_psf = lenstronomy_util.get_gaussian_psf_kwargs(hwo.get_psf_fwhm('J'))
 
-    synthetic_image = SyntheticImage(strong_lens=lens,
-                                     instrument=hwo,
-                                     band=band,
-                                     arcsec=scene_size,
-                                     oversample=oversample,
-                                     verbose=False)
-
-    assert synthetic_image.image is not None
-    assert synthetic_image.lens_surface_brightness is None
-    assert synthetic_image.source_surface_brightness is None
-
-    # TODO update with filter-specific values
-    # assert synthetic_image.pixel_scale == 0.008
-    # assert synthetic_image.native_pixel_scale == 0.04
-    # assert synthetic_image.num_pix == 625
-    # assert synthetic_image.native_num_pix == 125
-    # assert synthetic_image.arcsec == 5.0
-    # assert synthetic_image.image.shape == (625, 625)
+    synthetic_image = SyntheticImage(strong_lens=strong_lens,
+                                    instrument=hwo,
+                                    band='J',
+                                    kwargs_numerics={'supersampling_factor': 1},
+                                    kwargs_psf=kwargs_psf,
+                                    verbose=False)
 
     exposure = Exposure(synthetic_image,
-                        exposure_time=exposure_time,
+                        exposure_time=1000,
                         verbose=False)
-
-    assert exposure.exposure is not None
-    assert exposure.lens_exposure is None
-    assert exposure.source_exposure is None
-
-    # TODO checks on the images
-
-
-def test_hwo_sky_background_off():
-    hwo = HWO()
-    lens = SampleStrongLens()
-    band = 'J'
-    scene_size = 5  # arcsec
-    oversample = 5
-    exposure_time = 1000
-
-    synthetic_image = SyntheticImage(strong_lens=lens,
-                                     instrument=hwo,
-                                     band=band,
-                                     arcsec=scene_size,
-                                     oversample=oversample,
-                                     verbose=False)
-
-    engine_params = {
-        'sky_background': False
-    }
-
-    exposure = Exposure(synthetic_image,
-                        exposure_time=exposure_time,
-                        engine_params=engine_params,
-                        verbose=False)
-
-    # TODO checks on the images
-
-
-def test_hwo_all_detector_effects_off():
-    hwo = HWO()
-    lens = SampleStrongLens()
-    band = 'J'
-    scene_size = 5  # arcsec
-    oversample = 5
-    exposure_time = 1000
-
-    synthetic_image = SyntheticImage(strong_lens=lens,
-                                     instrument=hwo,
-                                     band=band,
-                                     arcsec=scene_size,
-                                     oversample=oversample,
-                                     verbose=False)
-
-    engine_params = {
-        'detector_effects': False
-    }
-
-    exposure = Exposure(synthetic_image,
-                        exposure_time=exposure_time,
-                        engine_params=engine_params,
-                        verbose=False)
-
-    # TODO checks on the images
-
-
-def test_hwo_poisson_noise_off():
-    hwo = HWO()
-    lens = SampleStrongLens()
-    band = 'J'
-    scene_size = 5  # arcsec
-    oversample = 5
-    exposure_time = 1000
-
-    synthetic_image = SyntheticImage(strong_lens=lens,
-                                     instrument=hwo,
-                                     band=band,
-                                     arcsec=scene_size,
-                                     oversample=oversample,
-                                     verbose=False)
-
-    engine_params = {
-        'poisson_noise': False
-    }
-
-    exposure = Exposure(synthetic_image,
-                        exposure_time=exposure_time,
-                        engine_params=engine_params,
-                        verbose=False)
-
-    # TODO checks on the images
-
-
-def test_hwo_dark_noise_off():
-    hwo = HWO()
-    lens = SampleStrongLens()
-    band = 'J'
-    scene_size = 5  # arcsec
-    oversample = 5
-    exposure_time = 1000
-
-    synthetic_image = SyntheticImage(strong_lens=lens,
-                                     instrument=hwo,
-                                     band=band,
-                                     arcsec=scene_size,
-                                     oversample=oversample,
-                                     verbose=False)
-
-    engine_params = {
-        'dark_noise': False
-    }
-
-    exposure = Exposure(synthetic_image,
-                        exposure_time=exposure_time,
-                        engine_params=engine_params,
-                        verbose=False)
-
-    # TODO checks on the images
-
-
-def test_hwo_read_noise_off():
-    hwo = HWO()
-    lens = SampleStrongLens()
-    band = 'J'
-    scene_size = 5  # arcsec
-    oversample = 5
-    exposure_time = 1000
-
-    synthetic_image = SyntheticImage(strong_lens=lens,
-                                     instrument=hwo,
-                                     band=band,
-                                     arcsec=scene_size,
-                                     oversample=oversample,
-                                     verbose=False)
-
-    engine_params = {
-        'read_noise': False
-    }
-
-    exposure = Exposure(synthetic_image,
-                        exposure_time=exposure_time,
-                        engine_params=engine_params,
-                        verbose=False)
-
-    # TODO checks on the images
-
-
-def test_hwo_pieces():
-    hwo = HWO()
-    lens = SampleStrongLens()
-    band = 'J'
-    scene_size = 5  # arcsec
-    oversample = 5
-    exposure_time = 1000
-
-    synthetic_image = SyntheticImage(strong_lens=lens,
-                                     instrument=hwo,
-                                     band=band,
-                                     arcsec=scene_size,
-                                     oversample=oversample,
-                                     pieces=True,
-                                     verbose=False)
-
-    assert synthetic_image.image is not None
-    assert synthetic_image.lens_surface_brightness is not None
-    assert synthetic_image.source_surface_brightness is not None
-
-    exposure = Exposure(synthetic_image,
-                        exposure_time=exposure_time,
-                        verbose=False)
-
-    assert exposure.exposure is not None
-    assert exposure.lens_exposure is not None
-    assert exposure.source_exposure is not None
-
-    # TODO checks on the images

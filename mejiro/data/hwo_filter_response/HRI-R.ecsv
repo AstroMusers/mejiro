@@ -1,0 +1,33 @@
+# %ECSV 1.0
+# ---
+# datatype:
+# - {name: wavelength, unit: Angstrom, datatype: float64}
+# - {name: response, datatype: float64}
+# meta:
+#   __serialized_columns__:
+#     wavelength:
+#       __class__: astropy.units.quantity.Quantity
+#       unit: !astropy.units.Unit {unit: Angstrom}
+#       value: !astropy.table.SerializedColumn {name: wavelength}
+#   band_name: R
+#   group_name: HRI
+# schema: astropy-2.0
+wavelength response
+6875.0 0.0
+6975.0 0.8
+7075.0 0.8
+7175.0 0.8
+7275.0 0.8
+7375.0 0.8
+7475.0 0.8
+7575.0 0.8
+7675.0 0.8
+7775.0 0.8
+7875.0 0.8
+7975.0 0.8
+8075.0 0.8
+8175.0 0.8
+8275.0 0.8
+8375.0 0.8
+8475.0 0.8
+8625.0 0.0
