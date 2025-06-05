@@ -1,6 +1,6 @@
 # mejiro
 
-[![Documentation Status](https://readthedocs.org/projects/mejiro/badge/?version=latest)](https://readthedocs.org/projects/mejiro/badge/?version=latest)
+[![Documentation Status](https://readthedocs.org/projects/mejiro/badge/?version=latest)](https://mejiro.readthedocs.io/en/latest/)
 [![ApJ](https://img.shields.io/badge/ApJ-10.3847/1538--4357/adc24f-3c5492)](https://doi.org/10.3847/1538-4357/adc24f)
 [![arXiv](https://img.shields.io/badge/arXiv-2506.03390-b31b1b.svg)](https://arxiv.org/abs/2506.03390)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15377389.svg)](https://doi.org/10.5281/zenodo.15377389)
