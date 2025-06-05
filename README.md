@@ -23,7 +23,7 @@ Install `mejiro` v1.0.0 by running:
 ```
 git clone https://github.com/AstroMusers/mejiro.git --branch v1.0.0
 cd mejiro
-pip install .
+pip install -e .
 ```
 
 # Usage
@@ -41,7 +41,7 @@ Note that some of these figures require supplemental data, which might be genera
 
 # Citation
 
-If you use `mejiro`, please cite [Wedig et al. 2025](https://doi.org/10.3847/1538-4357/adc24f).
+If you use `mejiro`, please cite [Wedig et al. 2025](https://doi.org/10.3847/1538-4357/adc24f) and link to [this GitHub repository](https://github.com/AstroMusers/mejiro). Additional citation information can be found in [`CITATION.cff`](/CITATION.cff).
 
 # Acknowledgement
 

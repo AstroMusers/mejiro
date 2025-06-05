@@ -18,6 +18,12 @@ authors:
     given-names: Tansu
     affiliation: Washington University in St. Louis
     email: tansu@wustl.edu
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.15377388
+    description: Zenodo
 repository-code: 'https://github.com/AstroMusers/mejiro'
 url: 'https://mejiro.readthedocs.io/en/latest/'
 license: MIT
+version: v1.0.0
+date-released: '2025-06-05'
