@@ -29,9 +29,11 @@ pip install -e .
 # Usage
 
 > [!WARNING]
-> Please note that `mejiro` >= v2.0.0 involves significant updates, including a new data model. v1.0.0 is intended only for reproducing the results of [Wedig et al. 2025](https://doi.org/10.3847/1538-4357/adc24f).
+> Please note that `mejiro` >= v2.0.0 involves significant updates, including a new data model and updated dependencies. v1.0.0 is intended only for reproducing the results of [Wedig et al. 2025](https://doi.org/10.3847/1538-4357/adc24f).
 
-See the pipeline walkthrough notebook: `examples/pipeline_walkthrough.ipynb`.
+To see how `mejiro` v1.0.0 works, see the pipeline walkthrough notebook: `examples/pipeline_walkthrough.ipynb`.
+
+To view the data products from [Wedig et al. 2025](https://doi.org/10.3847/1538-4357/adc24f) found on [Zenodo](https://doi.org/10.5281/zenodo.15512464), see `examples/view_dataset.ipynb` and `examples/access_subhalos.ipynb`.
 
 To reproduce figures from [Wedig et al. 2025](https://doi.org/10.3847/1538-4357/adc24f), run the corresponding notebook in `paper/figure_notebooks`. For example, to produce the figure below, run `scenes_across_detectors.ipynb`.
 
