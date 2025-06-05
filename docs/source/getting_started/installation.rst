@@ -4,7 +4,13 @@ Installation
 Installing ``mejiro`` and its dependencies
 ******************************************
 
-Download ``mejiro`` from `GitHub <https://github.com/AstroMusers/mejiro>`__. Currently, ``mejiro`` is not available on PyPI.
+Install ``mejiro`` from `GitHub <https://github.com/AstroMusers/mejiro>`__ using the commands below. Currently, ``mejiro`` is not available on PyPI.
+
+.. code-block:: bash
+
+    git clone https://github.com/AstroMusers/mejiro.git
+    cd mejiro
+    pip install -e .
 
 Create a conda environment:
 
