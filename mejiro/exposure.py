@@ -83,8 +83,15 @@ class Exposure:
             self.noise = np.zeros((self.synthetic_image.num_pix, self.synthetic_image.num_pix))
 
         elif engine == 'romanisim':
-            raise NotImplementedError('romanisim engine not yet implemented')
-            # TODO from mejiro.engines import romanisim_engine
+            # raise NotImplementedError('romanisim engine not yet implemented')
+            
+            from mejiro.engines.romanisim_engine import RomanISimEngine
+
+            if self.synthetic_image.instrument_name == 'Roman':
+                results, self.noise = RomanISimEngine.get_roman_exposure(synthetic_image, exposure_time, engine_params, self.verbose)
+                
+            else:
+                self.instrument_not_available_error(engine)
 
         else:
             raise ValueError(f'Engine "{engine}" not recognized')
@@ -121,7 +128,7 @@ class Exposure:
         end = time.time()
         self.calc_time = end - start
         if self.verbose:
-            print(f'Exposure calculation time with {self.engine} engine: {util.calculate_execution_time(start, end)}')
+            print(f'Exposure calculation time with {self.engine} engine: {util.calculate_execution_time(start, end, unit="s")}')
 
     def plot(self, savepath=None):
         import matplotlib.pyplot as plt
