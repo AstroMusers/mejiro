@@ -768,32 +768,49 @@ def print_execution_time(start, stop, return_string=False):
         return execution_time
 
 
-def calculate_execution_time(start, stop):
+def calculate_execution_time(start, stop, unit='hms'):
     """
     Calculate the execution time between two given timestamps.
 
     Parameters
     ----------
     start : float
-        The start timestamp.
+        The start timestamp (in seconds, e.g., from time.time()).
     stop : float
-        The stop timestamp.
+        The stop timestamp (in seconds, e.g., from time.time()).
+    unit : str, optional
+        The unit for the output. Use 'hms' for hours:minutes:seconds (default),
+        or 's' for seconds.
 
     Returns
     -------
     str
-        The execution time in the format "H:MM:SS".
+        The execution time as a formatted string. If unit='hms', returns "H:MM:SS".
+        If unit='s', returns the time in seconds as a string.
+
+    Raises
+    ------
+    ValueError
+        If the unit is not 'hms' or 's'.
 
     Examples
     --------
+    >>> import time
     >>> start = time.time()
     >>> # Some code to measure execution time
     >>> stop = time.time()
     >>> calculate_execution_time(start, stop)
     '0:00:05'
-
+    >>> calculate_execution_time(start, stop, unit='s')
+    '5.123 s'
     """
-    return str(datetime.timedelta(seconds=round(stop - start)))
+    if unit.lower() not in ['hms', 's']:
+        raise ValueError("Unit must be either 'hms' or 's'")
+    
+    if unit.lower() == 's':
+        return str(round(stop - start, 3)) + ' s'
+    elif unit.lower() == 'hms': 
+        return str(datetime.timedelta(seconds=round(stop - start)))
 
 
 def pickle(path, thing):
