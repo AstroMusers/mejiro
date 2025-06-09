@@ -1,6 +1,7 @@
 from astropy.cosmology import default_cosmology
 
 from mejiro.strong_lens import StrongLens
+from mejiro.cosmo import cosmo
 
 
 class GalaxyGalaxy(StrongLens):
@@ -27,7 +28,12 @@ class GalaxyGalaxy(StrongLens):
 
     def get_main_halo_mass(self):
         """
-        Retrieve the mass of the main halo from ``physical_params``, if present.
+        Returns the mass of the main halo for this lens system.
+
+        This method first attempts to retrieve the main halo mass from the ``physical_params`` dictionary
+        using the ``main_halo_mass`` key. If this value is not present, it will attempt to estimate the
+        main halo mass using the stellar mass (``lens_stellar_mass``) and the lens redshift (``z_lens``)
+        via the ``cosmo.stellar_to_main_halo_mass`` method, if available.
 
         Returns
         -------
@@ -37,11 +43,15 @@ class GalaxyGalaxy(StrongLens):
         Raises
         ------
         ValueError
-            If ``main_halo_mass`` is not found in ``self.physical_params``.
+            If neither ``main_halo_mass`` nor ``lens_stellar_mass`` are present in ``physical_params``.
         """
         main_halo_mass = self.physical_params.get('main_halo_mass', None)
         if main_halo_mass is None:
-            raise ValueError("Could not find `main_halo_mass` in physical_params")
+            lens_stellar_mass = self.physical_params.get('lens_stellar_mass', None)
+            if lens_stellar_mass is not None:
+                main_halo_mass = cosmo.stellar_to_main_halo_mass(stellar_mass=lens_stellar_mass, z=self.z_lens, sample=True)
+            else:
+                raise ValueError("Could not find `main_halo_mass` or `lens_stellar_mass` in physical_params")
         return main_halo_mass
 
     def get_einstein_radius(self):
@@ -331,11 +341,15 @@ class SampleBELLS(GalaxyGalaxy):
             }
             ]
         }
+        physical_params = {
+            'main_halo_mass': 10 ** 13.3
+        }
         
         super().__init__(name=name,
                          coords=coords,
                          kwargs_model=kwargs_model, 
                          kwargs_params=kwargs_params,
+                         physical_params=physical_params,
                          use_jax=[True, False])
 
 
@@ -478,10 +492,14 @@ class SampleSL2S(GalaxyGalaxy):
             }
             ]
         }
+        physical_params = {
+            'main_halo_mass': 10 ** 13.3
+        }
         
         super().__init__(name=name,
                          coords=coords,
                          kwargs_model=kwargs_model, 
                          kwargs_params=kwargs_params,
+                         physical_params=physical_params,
                          use_jax=[True, False])
         
