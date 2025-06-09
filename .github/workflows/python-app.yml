@@ -14,11 +14,18 @@ permissions:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Check out roman-technical-information repository
+      uses: actions/checkout@v4
+      with:
+        repository: spacetelescope/roman-technical-information
+        path: roman-technical-information
+    - name: Set environment variable
+      run: echo "ROMAN_TECHNICAL_INFORMATION_PATH=${{ github.workspace }}/roman-technical-information" >> $GITHUB_ENV
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
