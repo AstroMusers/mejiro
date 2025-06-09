@@ -130,11 +130,21 @@ class Exposure:
         if self.verbose:
             print(f'Exposure calculation time with {self.engine} engine: {util.calculate_execution_time(start, end, unit="s")}')
 
-    def plot(self, savepath=None):
+    def get_snr(self, snr_per_pixel_threshold=1):
+        from mejiro.analysis.snr_calculation import get_snr
+
+        return get_snr(self, snr_per_pixel_threshold=snr_per_pixel_threshold, verbose=self.verbose)[0]
+
+    def plot(self, show_snr=False, savepath=None):
         import matplotlib.pyplot as plt
 
         plt.imshow(np.log10(self.exposure))
-        plt.title(f'{self.synthetic_image.strong_lens.name}: {self.synthetic_image.instrument_name} {self.synthetic_image.band} band, {self.exposure_time} s exposure {self.exposure.shape}')
+
+        title = f'{self.synthetic_image.strong_lens.name}\n{self.synthetic_image.instrument_name} {self.synthetic_image.band} band, {self.exposure_time} s exposure {self.exposure.shape}'
+        if show_snr:
+            snr = self.get_snr()
+            title += f'\nSNR: {snr:.2f}'
+        plt.title(title)
         cbar = plt.colorbar()
         cbar.set_label(r'log$_{10}$(Counts)')
         plt.xlabel('x [Pixels]')
