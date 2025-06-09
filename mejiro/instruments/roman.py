@@ -39,7 +39,7 @@ class Roman(Instrument):
     def __init__(self):
         name = 'Roman'
         bands = ['F062', 'F087', 'F106', 'F129', 'F158', 'F184', 'F213', 'F146']
-        engines = ['galsim', 'lenstronomy', 'pandeia', 'romanisim']
+        engines = ['galsim', 'romanisim']
 
         super().__init__(
             name,
