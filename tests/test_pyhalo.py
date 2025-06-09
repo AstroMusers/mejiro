@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 from pyHalo.preset_models import preset_model_from_name
 
 from mejiro.galaxy_galaxy import SampleBELLS, SampleSL2S, SampleGG
@@ -9,7 +10,7 @@ from mejiro.synthetic_image import SyntheticImage
 @pytest.mark.parametrize("strong_lens", [SampleGG(), SampleSL2S(), SampleBELLS()])
 def test_CDM(strong_lens):
     CDM = preset_model_from_name('CDM')
-    realization = CDM(round(strong_lens.z_lens, 2), round(strong_lens.z_source, 2), cone_opening_angle_arcsec=5)
+    realization = CDM(round(strong_lens.z_lens, 2), round(strong_lens.z_source, 2), cone_opening_angle_arcsec=5, log_m_host=np.log10(strong_lens.get_main_halo_mass()))
 
     strong_lens.add_realization(realization)
 
@@ -56,7 +57,7 @@ def test_single_halo(strong_lens):
 @pytest.mark.parametrize("strong_lens", [SampleGG(), SampleSL2S(), SampleBELLS()])
 def test_WDM(strong_lens):
     WDM = preset_model_from_name('WDM')
-    realization = WDM(round(strong_lens.z_lens, 2), round(strong_lens.z_source, 2), log_mc=7, cone_opening_angle_arcsec=5)
+    realization = WDM(round(strong_lens.z_lens, 2), round(strong_lens.z_source, 2), log_mc=7, cone_opening_angle_arcsec=5, log_m_host=np.log10(strong_lens.get_main_halo_mass()))
 
     strong_lens.add_realization(realization)
 
@@ -76,7 +77,7 @@ def test_SIDM(strong_lens):
     mass_ranges_field_halos = [[6.0, 7.5], [7.5, 8.5], [8.5, 10.0]]
     collapse_fraction_subhalos = [0.9, 0.7, 0.5, 0.2]
     collapse_fraction_fieldhalos = [0.3, 0.2, 0.1]
-    realization = SIDM(round(strong_lens.z_lens, 2), round(strong_lens.z_source, 2), mass_ranges_subhalos, mass_ranges_field_halos, collapse_fraction_subhalos, collapse_fraction_fieldhalos, cone_opening_angle_arcsec=5)
+    realization = SIDM(round(strong_lens.z_lens, 2), round(strong_lens.z_source, 2), mass_ranges_subhalos, mass_ranges_field_halos, collapse_fraction_subhalos, collapse_fraction_fieldhalos, cone_opening_angle_arcsec=5, log_m_host=np.log10(strong_lens.get_main_halo_mass()))
 
     strong_lens.add_realization(realization, use_jax=False)  # JAXtronomy doesn't support SPL_CORE profiles yet
 
