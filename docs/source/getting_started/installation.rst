@@ -24,6 +24,8 @@ To simulate images from *Roman*, you will need to download the ``roman-technical
 
     export ROMAN_TECHNICAL_INFORMATION_PATH="/{your_path}/roman-technical-information"
 
+To simulate images from *HWO*, `follow these instructions <https://github.com/spacetelescope/syotools>`__ for ``syotools`` to set the environment variables ``PYSYN_CDBS`` and ``SCI_ENG_DIR``.
+
 To generate PSFs with ``STPSF`` (formerly ``WebbPSF``), follow the instructions `here <https://stpsf.readthedocs.io/en/latest/installation.html>`__ to download the required data files and set environment variables.
 
 .. Optional setup: Pandeia
