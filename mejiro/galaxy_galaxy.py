@@ -240,6 +240,7 @@ class SampleGG(GalaxyGalaxy):
         }
         physical_params = {
             'magnitudes': magnitudes,
+            'main_halo_mass': 1e13
         }
         
         super().__init__(name=name,
