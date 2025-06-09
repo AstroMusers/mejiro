@@ -38,7 +38,7 @@ survey:
 snr:
   snr_subtract_lens: False
   snr_add_subhalos: False
-  snr_exposure_time: 642
+  snr_exposure_time: 146  # 642
   snr_band: F158
   snr_threshold: 20
   snr_fov_arcsec: 10
@@ -49,6 +49,7 @@ snr:
   snr_per_pixel_threshold: 1
   # - zodi_multiplier: 1.5  # multiplied with minimum zodiacal light
 subhalos:
+  fraction: 0.01  # fraction of systems to add substructure to
   log_mlow: 6
   log_mhigh: 12
   subhalo_cone: 10.  # 6.
@@ -68,7 +69,7 @@ psf:
   divide_up_sca: 5  # this sets the detector positions, e.g., 5 means 25 positions on each detector
   num_pixes: [101]  # this needs to be a list
 imaging:
-  exposure_time: 642
+  exposure_time: 146  # 642
   engine: galsim
   engine_params:
     rng_seed: 42

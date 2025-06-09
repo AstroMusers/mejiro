@@ -50,6 +50,7 @@ snr:
   snr_per_pixel_threshold: 1
   # - zodi_multiplier: 1.5  # multiplied with minimum zodiacal light
 subhalos:
+  fraction: 0.5  # fraction of systems to add substructure to
   log_mlow: 6
   log_mhigh: 10
   subhalo_cone: 10.  # 6.

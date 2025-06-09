@@ -97,6 +97,14 @@ def main(args):
         for uid in lens_uids:
             tuple_list.append((uid, subhalo_config, input_sca_dir, output_sca_dir))
 
+    # add subhalos to a subset of systems
+    if subhalo_config['fraction'] < 1.0:
+        if verbose: print(f'Adding subhalos to {subhalo_config["fraction"] * 100}% of the systems')
+        np.random.seed(config['seed'])
+        np.random.shuffle(tuple_list)
+        count = int(len(tuple_list) * subhalo_config['fraction'])
+        tuple_list = tuple_list[:count]
+
     # define the number of processes
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count
@@ -136,7 +144,7 @@ def add(tuple):
 
     # load the lens based on uid
     lens = util.unpickle(os.path.join(input_dir, f'lens_{uid}.pkl'))
-    lens_uid = lens.name.split('_')[2]
+    lens_uid = lens.name.split('_')[-1].split('.')[0]
     assert lens_uid == uid, f'UID mismatch: {lens_uid} != {uid}'
 
     main_halo_mass = cosmo.stellar_to_main_halo_mass(lens.physical_params['lens_stellar_mass'], lens.z_lens, sample=True)
