@@ -47,7 +47,7 @@ def get_snr(exposure, snr_per_pixel_threshold=1, verbose=False):
     if verbose: print(f'Using structure: {structure}')
 
     labeled_array, num_regions = ndimage.label(masked_snr_array.filled(0), structure=structure)
-    if verbose: print(f'Identified {num_regions} regions')
+    if verbose: print(f'Identified {num_regions} region(s)')
 
     # calculate the SNR for each region
     snrs = []
