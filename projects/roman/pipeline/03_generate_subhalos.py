@@ -158,8 +158,22 @@ def add(tuple):
     # get Einstein radius
     einstein_radius = lens.get_einstein_radius()
 
-    try:
-        cdm_realization = CDM(z_lens,
+    # try:
+    #     cdm_realization = CDM(z_lens,
+    #                           z_source,
+    #                           sigma_sub=sigma_sub,
+    #                           log_mlow=log_mlow,
+    #                           log_mhigh=log_mhigh,
+    #                           log_m_host=log_m_host,
+    #                           r_tidal=r_tidal,
+    #                           cone_opening_angle_arcsec=einstein_radius * 3,
+    #                           LOS_normalization=los_normalization,
+    #                           kwargs_cosmo=kwargs_cosmo)
+    # except Exception as e:
+    #     print(f'Failed to generate subhalos for lens {lens.name.split("_")[2]}: {e}')
+    #     return
+
+    cdm_realization = CDM(z_lens,
                               z_source,
                               sigma_sub=sigma_sub,
                               log_mlow=log_mlow,
@@ -169,9 +183,6 @@ def add(tuple):
                               cone_opening_angle_arcsec=einstein_radius * 3,
                               LOS_normalization=los_normalization,
                               kwargs_cosmo=kwargs_cosmo)
-    except Exception as e:
-        print(f'Failed to generate subhalos for lens {lens.name.split("_")[2]}: {e}')
-        return
 
     # Add subhalos
     lens.add_realization(cdm_realization)

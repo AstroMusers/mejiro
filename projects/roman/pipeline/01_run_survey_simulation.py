@@ -17,6 +17,16 @@ import slsim.Pipelines as pipelines
 import slsim.Deflectors as deflectors
 from tqdm import tqdm
 
+import mejiro
+from mejiro.utils import util
+from mejiro.instruments.roman import Roman
+from mejiro.analysis import snr_calculation
+from mejiro.exposure import Exposure
+from mejiro.galaxy_galaxy import GalaxyGalaxy
+from mejiro.engines.stpsf_engine import STPSFEngine
+from mejiro.synthetic_image import SyntheticImage
+from mejiro.utils import slsim_util, util
+
 
 def main(args):
     start = time.time()
@@ -34,12 +44,6 @@ def main(args):
     with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
     repo_dir = config['repo_dir']
-
-    # enable use of local packages
-    if repo_dir not in sys.path:
-        sys.path.append(repo_dir)
-    from mejiro.utils import util
-    from mejiro.instruments.roman import Roman
 
     # set nice level
     os.nice(config['nice'])
@@ -119,13 +123,6 @@ def run_slsim(tuple):
     # a legacy function but prevents duplicate runs
     np.random.seed()
 
-    import mejiro
-    from mejiro.analysis import snr_calculation
-    from mejiro.exposure import Exposure
-    from mejiro.galaxy_galaxy import GalaxyGalaxy
-    from mejiro.engines.stpsf_engine import STPSFEngine
-    from mejiro.synthetic_image import SyntheticImage
-    from mejiro.utils import slsim_util, util
     module_path = os.path.dirname(mejiro.__file__)
 
     # unpack tuple

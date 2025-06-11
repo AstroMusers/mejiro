@@ -8,6 +8,9 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 import numpy as np
 from tqdm import tqdm
 
+from mejiro.utils import roman_util, util
+from mejiro.engines.stpsf_engine import STPSFEngine
+
 
 def main(args):
     start = time.time()
@@ -25,12 +28,6 @@ def main(args):
     with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
     repo_dir = config['repo_dir']
-
-    # enable use of local packages
-    if repo_dir not in sys.path:
-        sys.path.append(repo_dir)
-    from mejiro.utils import roman_util, util
-    from mejiro.engines.stpsf_engine import STPSFEngine
 
     # set nice level
     os.nice(config['nice'])
@@ -90,8 +87,6 @@ def main(args):
 
 
 def generate_psf(args):
-    from mejiro.engines.stpsf_engine import STPSFEngine
-
     # unpack tuple
     psf_id, save_dir = args
 

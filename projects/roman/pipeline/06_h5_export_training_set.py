@@ -3,16 +3,17 @@ import galsim
 import getpass
 import h5py
 import lenstronomy
-import numpy as np
 import os
 import platform
-import sys
 import time
 import yaml
 import stpsf
 from datetime import datetime
 from glob import glob
 from tqdm import tqdm
+
+import mejiro
+from mejiro.utils import util
 
 
 PREV_SCRIPT_NAME = '05'
@@ -34,13 +35,6 @@ def main(args):
     # read configuration file
     with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
-    repo_dir = config['repo_dir']
-
-    # enable use of local packages
-    if repo_dir not in sys.path:
-        sys.path.append(repo_dir)
-    import mejiro
-    from mejiro.utils import util
 
     # set nice level
     os.nice(config['nice'])

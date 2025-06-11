@@ -16,16 +16,16 @@ headroom_cores:
   script_04: 64
   script_05: 28
 survey:
-  runs: 18  # 540
-  area: 0.1  # 0.5
-  skypy_config: roman_deep
+  runs: 4  # 540
+  area: 0.5  # 0.5  # 0.1
+  skypy_config: roman_wide
   total_population: True
   scas: &scas [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
   bands: [F062, F087, F106, F129, F158, F184, F213, F146]
   deflector_cut_band: F158
   deflector_cut_band_max: 28.5
   deflector_z_min: 0.01
-  deflector_z_max: 5.0
+  deflector_z_max: 4.0
   source_cut_band: F158
   source_cut_band_max: 28.5
   source_z_min: 0.01
@@ -38,7 +38,7 @@ survey:
 snr:
   snr_subtract_lens: False
   snr_add_subhalos: False
-  snr_exposure_time: 146  # 642
+  snr_exposure_time: 642  # 642
   snr_band: F158
   snr_threshold: 20
   snr_fov_arcsec: 10
@@ -49,7 +49,7 @@ snr:
   snr_per_pixel_threshold: 1
   # - zodi_multiplier: 1.5  # multiplied with minimum zodiacal light
 subhalos:
-  fraction: 0.01  # fraction of systems to add substructure to
+  fraction: 0.5  # fraction of systems to add substructure to
   log_mlow: 6
   log_mhigh: 12
   subhalo_cone: 10.  # 6.
@@ -69,7 +69,7 @@ psf:
   divide_up_sca: 5  # this sets the detector positions, e.g., 5 means 25 positions on each detector
   num_pixes: [101]  # this needs to be a list
 imaging:
-  exposure_time: 146  # 642
+  exposure_time: 642  # 642
   engine: galsim
   engine_params:
     rng_seed: 42
@@ -84,3 +84,6 @@ imaging:
   rgb_bands: [ F184, F129, F106 ]  # in RGB order
   rgb_stretch: 3
   rgb_q: 3
+output:
+  output_dir: *data_dir
+  version: 0.1
