@@ -113,17 +113,23 @@ class Exposure:
             else:
                 self.exposure, self.lens_exposure, self.source_exposure = results, None, None
 
-        Exposure.crop_edge_effects(self.exposure, pad=3)  # crop off edge effects (e.g., IPC)
+        # crop off edge effects (e.g., IPC)
+        Exposure.crop_edge_effects(self.exposure, pad=3)
+
+        # check for negative pixels
         if np.any(self.exposure < 0):
             warnings.warn(f'Negative pixel values in final image. Setting {np.sum(self.exposure < 0)} pixels to 0')
+            self.exposure[self.exposure < 0] = 0
 
         if self.synthetic_image.pieces:
             Exposure.crop_edge_effects(self.lens_exposure, pad=3)
             Exposure.crop_edge_effects(self.source_exposure, pad=3)
             if np.any(self.lens_exposure < 0):
                 warnings.warn(f'Negative pixel values in lens image. Setting {np.sum(self.exposure < 0)} pixels to 0')
+                self.lens_exposure[self.lens_exposure < 0] = 0
             if np.any(self.source_exposure < 0):
                 warnings.warn(f'Negative pixel values in source image. Setting {np.sum(self.exposure < 0)} pixels to 0')
+                self.source_exposure[self.source_exposure < 0] = 0
 
         end = time.time()
         self.calc_time = end - start
