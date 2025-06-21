@@ -4,6 +4,8 @@ from lenstronomy.Cosmo.lens_cosmo import LensCosmo
 from lenstronomy.LensModel.lens_model import LensModel
 from lenstronomy.LightModel.light_model import LightModel
 
+from mejiro.analysis import regions
+
 
 class StrongLens(ABC):
     """
@@ -119,6 +121,48 @@ class StrongLens(ABC):
         # fields to initialize: these can be computed on demand
         self.lens_cosmo = None
         self.realization = None
+
+    def get_f_sub(self, fov_arcsec=5, num_pix=100, plot=False):
+        if self.realization is None:
+            raise ValueError("No realization has been added. Use `add_realization()` to add a pyHalo realization.")
+
+        einstein_radius = self.get_einstein_radius()
+        r_in = (einstein_radius - 0.2) / (fov_arcsec / num_pix)  # units of pixels
+        r_out = (einstein_radius + 0.2) / (fov_arcsec / num_pix)  # units of pixels
+
+        halo_lens_model_list, _, _, _ = self.realization.lensing_quantities(add_mass_sheet_correction=False)
+        macrolens_lens_model_list = self.lens_model_list[:-len(halo_lens_model_list)]
+        lens_model_macro = LensModel(lens_model_list=macrolens_lens_model_list,
+                                        z_lens=self.z_lens,
+                                        z_source=self.z_source,
+                                        lens_redshift_list=self.z_lens * len(macrolens_lens_model_list),
+                                        cosmo=self.cosmo,
+                                        multi_plane=False)
+        _r = np.linspace(-fov_arcsec / 2, fov_arcsec / 2, num_pix)
+        xx, yy = np.meshgrid(_r, _r)
+        macrolens_kappa = lens_model_macro.kappa(xx.ravel(), yy.ravel(), self.kwargs_lens[:-len(halo_lens_model_list)]).reshape(num_pix, num_pix)
+        subhalo_kappa = self.get_realization_kappa(fov_arcsec=5, num_pix=100, add_mass_sheet_correction=False)
+
+        mask = regions.annular_mask(num_pix, num_pix, (num_pix // 2, num_pix // 2), r_in, r_out)
+        masked_kappa_subhalos = np.ma.masked_array(subhalo_kappa, mask=~mask)
+        masked_kappa_macro = np.ma.masked_array(macrolens_kappa, mask=~mask)
+        f_sub = masked_kappa_subhalos.compressed().sum() / masked_kappa_macro.compressed().sum()
+
+        if plot:
+            import matplotlib.pyplot as plt
+            _, ax = plt.subplots(1, 2, figsize=(6, 3), constrained_layout=True)
+            ax[0].imshow(masked_kappa_subhalos, cmap='bwr')
+            ax[1].imshow(masked_kappa_macro, cmap='bwr')
+            ax[0].set_title(
+                r'$\sum_n \int_{\mathrm{annulus}}d^2\theta\,\kappa_n=$' + f'{masked_kappa_subhalos.compressed().sum():.6f}')
+            ax[1].set_title(
+                r'$\int_{\mathrm{annulus}}d^2\theta\,\kappa_{\mathrm{host}}=$' + f'{masked_kappa_macro.compressed().sum():.6f}')
+            for a in ax: a.axis('off')
+            plt.suptitle(r'$f_{\mathrm{sub}}=$' + f'{f_sub:.6f}')
+            return f_sub, ax
+        else:
+            return f_sub, None
+
 
     def get_kappa(self, fov_arcsec=5, num_pix=100):
         """
