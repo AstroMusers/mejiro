@@ -11,7 +11,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from tqdm import tqdm
 
 
-PREV_SCRIPT_NAME = '02'  # '03'
+PREV_SCRIPT_NAME = '03'  # '03'
 SCRIPT_NAME = '04'
 
 
@@ -171,7 +171,14 @@ def create_synthetic_image(input):
     # generate synthetic images
     for band in bands:
         # get PSF
-        kwargs_psf = STPSFEngine.get_roman_psf_kwargs(band, int(sca), detector_pos, oversample=supersampling_factor, num_pix=num_pix, check_cache=True, psf_cache_dir=psf_cache_dir, verbose=False)
+        kwargs_psf = STPSFEngine.get_roman_psf_kwargs(band=band, 
+                                                    detector=int(sca), 
+                                                    detector_position=detector_pos, 
+                                                    oversample=supersampling_factor, 
+                                                    num_pix=num_pix, 
+                                                    check_cache=True, 
+                                                    psf_cache_dir=psf_cache_dir, 
+                                                    verbose=False)
 
         try:
             synthetic_image = SyntheticImage(strong_lens=lens,

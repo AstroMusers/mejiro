@@ -158,22 +158,8 @@ def add(tuple):
     # get Einstein radius
     einstein_radius = lens.get_einstein_radius()
 
-    # try:
-    #     cdm_realization = CDM(z_lens,
-    #                           z_source,
-    #                           sigma_sub=sigma_sub,
-    #                           log_mlow=log_mlow,
-    #                           log_mhigh=log_mhigh,
-    #                           log_m_host=log_m_host,
-    #                           r_tidal=r_tidal,
-    #                           cone_opening_angle_arcsec=einstein_radius * 3,
-    #                           LOS_normalization=los_normalization,
-    #                           kwargs_cosmo=kwargs_cosmo)
-    # except Exception as e:
-    #     print(f'Failed to generate subhalos for lens {lens.name.split("_")[2]}: {e}')
-    #     return
-
-    cdm_realization = CDM(z_lens,
+    try:
+        cdm_realization = CDM(z_lens,
                               z_source,
                               sigma_sub=sigma_sub,
                               log_mlow=log_mlow,
@@ -183,6 +169,20 @@ def add(tuple):
                               cone_opening_angle_arcsec=einstein_radius * 3,
                               LOS_normalization=los_normalization,
                               kwargs_cosmo=kwargs_cosmo)
+    except Exception as e:
+        print(f'Failed to generate subhalos for lens {lens_uid}: {e}')
+        return
+
+    # cdm_realization = CDM(z_lens,
+    #                           z_source,
+    #                           sigma_sub=sigma_sub,
+    #                           log_mlow=log_mlow,
+    #                           log_mhigh=log_mhigh,
+    #                           log_m_host=log_m_host,
+    #                           r_tidal=r_tidal,
+    #                           cone_opening_angle_arcsec=einstein_radius * 3,
+    #                           LOS_normalization=los_normalization,
+    #                           kwargs_cosmo=kwargs_cosmo)
 
     # Add subhalos
     lens.add_realization(cdm_realization)
@@ -190,10 +190,10 @@ def add(tuple):
     # Pickle the subhalo realization
     subhalo_dir = os.path.join(output_dir, 'subhalos')
     util.create_directory_if_not_exists(subhalo_dir)
-    util.pickle(os.path.join(subhalo_dir, f'subhalo_realization_{lens.name.split("_")[2]}.pkl'), cdm_realization)
+    util.pickle(os.path.join(subhalo_dir, f'subhalo_realization_{str(uid).zfill(8)}.pkl'), cdm_realization)
 
     # Pickle the lens with subhalos
-    pickle_target = os.path.join(output_dir, f'lens_{lens.name.split("_")[2]}.pkl')
+    pickle_target = os.path.join(output_dir, f'lens_{str(uid).zfill(8)}.pkl')
     util.pickle(pickle_target, lens)
 
 

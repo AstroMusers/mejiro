@@ -1,6 +1,6 @@
 #!/bin/bash
 
-config="roman_hlwas_wide"  # training_set, roman_hlwas
+config="roman_hlwas_medium"  # training_set, roman_hlwas
 
 # escape if error encountered
 set -e
