@@ -1,3 +1,4 @@
+import numpy as np
 from abc import ABC, abstractmethod
 from lenstronomy.Cosmo.lens_cosmo import LensCosmo
 from lenstronomy.LensModel.lens_model import LensModel
@@ -118,6 +119,77 @@ class StrongLens(ABC):
         # fields to initialize: these can be computed on demand
         self.lens_cosmo = None
         self.realization = None
+
+    def get_kappa(self, fov_arcsec=5, num_pix=100):
+        """
+        Computes the convergence (kappa) map of the lens model over a specified field of view.
+
+        Parameters
+        ----------
+        fov_arcsec : float, optional
+            The field of view in arcseconds. Default is 5.
+        num_pix : int, optional
+            The number of pixels along each axis for the output grid. Default is 100.
+
+        Returns
+        -------
+        kappa_map : ndarray
+            A 2D array of shape (num_pix, num_pix) representing the convergence (kappa) values
+            computed over the grid.
+
+        Notes
+        -----
+        The method creates a square grid centered at (0, 0) in arcseconds, evaluates the lens model's
+        convergence at each grid point, and returns the resulting map.
+        """
+        _r = np.linspace(-fov_arcsec / 2, fov_arcsec / 2, num_pix)
+        xx, yy = np.meshgrid(_r, _r)
+        return self.lens_model.kappa(xx.ravel(), yy.ravel(), self.kwargs_lens).reshape(num_pix, num_pix)
+
+    def get_realization_kappa(self, fov_arcsec=5, num_pix=100, add_mass_sheet_correction=False):
+        """
+        Computes the convergence (kappa) map for the current realization over a specified field of view.
+
+        Parameters
+        ----------
+        fov_arcsec : float, optional
+            The field of view in arcseconds for the kappa map. Default is 5.
+        num_pix : int, optional
+            The number of pixels per side for the output kappa map. Default is 100.
+        add_mass_sheet_correction : bool, optional
+            Whether to include the mass sheet correction in the realization. Default is False.
+
+        Returns
+        -------
+        kappa_map : numpy.ndarray
+            A 2D array of shape (num_pix, num_pix) representing the convergence (kappa) map.
+
+        Raises
+        ------
+        ValueError
+            If no realization has been added prior to calling this method.
+
+        Notes
+        -----
+        This method requires a pyHalo realization to be added using `add_realization()`.
+        """
+        if self.realization is None:
+            raise ValueError("No realization has been added. Use `add_realization()` to add a pyHalo realization.")
+
+        halo_lens_model_list, halo_redshift_array, kwargs_halos, _ = self.realization.lensing_quantities(add_mass_sheet_correction=add_mass_sheet_correction)
+        halo_redshift_list = list(halo_redshift_array)
+
+        lens_model_realization = LensModel(lens_model_list=halo_lens_model_list,
+                                          z_lens=self.z_lens,
+                                          z_source=self.z_source,
+                                          lens_redshift_list=halo_redshift_list,
+                                          cosmo=self.cosmo,
+                                          multi_plane=True)
+
+        _r = np.linspace(-fov_arcsec / 2, fov_arcsec / 2, num_pix)
+        xx, yy = np.meshgrid(_r, _r)
+        return lens_model_realization.kappa(xx.ravel(), yy.ravel(), kwargs_halos).reshape(num_pix, num_pix)
+
 
     def add_realization(self, realization, use_jax=True):
         """
