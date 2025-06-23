@@ -246,13 +246,46 @@ class SyntheticImage:
         """
         import matplotlib.pyplot as plt
 
-        plt.imshow(np.log10(self.image))
+        plt.imshow(np.log10(self.image), origin='lower')
         plt.title(f'{self.strong_lens.name}: {self.instrument_name} {self.band} band {self.image.shape}')
         cbar = plt.colorbar()
         cbar.set_label(r'log$_{10}$(Counts)')
         plt.xlabel('x [Pixels]')
         plt.ylabel('y [Pixels]')
         plt.tight_layout()
+        if savepath is not None:
+            plt.savefig(savepath)
+        plt.show()
+
+    def overplot_subhalos(self, savepath=None):
+        if self.strong_lens.realization is None:
+            raise ValueError('No realization has been added to this StrongLens object.')
+
+        import matplotlib.pyplot as plt
+        from matplotlib.lines import Line2D
+
+        for halo in self.strong_lens.realization.halos:
+            if halo.mass > 1e8:
+                plt.scatter(*self.coords.map_coord2pix(halo.x, halo.y), marker='.', color='#FF9500')
+            elif halo.mass > 1e7:
+                plt.scatter(*self.coords.map_coord2pix(halo.x, halo.y), marker='.', color='#00B945')
+            else:
+                plt.scatter(*self.coords.map_coord2pix(halo.x, halo.y), marker='.', color='#0C5DA5')
+
+        plt.imshow(np.log10(self.image), origin='lower', cmap='binary')
+        plt.title(f'{self.strong_lens.name}: {self.instrument_name} {self.band} band {self.image.shape}')
+        cbar = plt.colorbar()
+        cbar.set_label(r'log$_{10}$(Counts)')
+        plt.xlabel('x [Pixels]')
+        plt.ylabel('y [Pixels]')
+        plt.tight_layout()
+
+        custom_legend_labels = [r'$> 10^8 \,M_\odot$', r'$10^7 - 10^8 \,M_\odot$', r'$< 10^7 \,M_\odot$']
+        custom_colors = ['#FF9500', '#00B945', '#0C5DA5']
+        custom_markers = ['.'] * 3
+        custom_lines = [Line2D([0], [0], color=custom_colors[i], marker=custom_markers[i], lw=4, linestyle='None') for i in range(len(custom_colors))]
+        plt.legend(custom_lines, custom_legend_labels)
+
         if savepath is not None:
             plt.savefig(savepath)
         plt.show()

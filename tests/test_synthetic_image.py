@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+from pyHalo.preset_models import preset_model_from_name
 
 from mejiro.instruments.roman import Roman
 from mejiro.galaxy_galaxy import SampleGG, SampleSL2S, SampleBELLS
@@ -175,4 +176,25 @@ def test_plot():
                                      kwargs_psf={},
                                      pieces=False,
                                      verbose=False)
-    synthetic_image.plot()     
+    synthetic_image.plot()  
+
+
+def test_overplot_subhalos():
+    strong_lens = SampleGG()
+    synthetic_image = SyntheticImage(strong_lens=strong_lens,
+                                         instrument=Roman(),
+                                         band='F129',
+                                         fov_arcsec=5,
+                                         instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                                         kwargs_numerics={},
+                                         kwargs_psf={},
+                                         pieces=False,
+                                         verbose=False)
+    with pytest.raises(ValueError):
+        synthetic_image.overplot_subhalos()
+
+    CDM = preset_model_from_name('CDM')
+    realization = CDM(round(strong_lens.z_lens, 2), round(strong_lens.z_source, 2), cone_opening_angle_arcsec=5, log_m_host=np.log10(strong_lens.get_main_halo_mass()))
+    strong_lens.add_realization(realization)
+
+    synthetic_image.overplot_subhalos()
