@@ -25,6 +25,13 @@ mejiro documentation
 
 .. toctree::
    :maxdepth: 1
+   :caption: Data Products
+
+   data_products/the_roman_view.rst
+   data_products/roman_data_challenge.rst
+
+.. toctree::
+   :maxdepth: 1
    :caption: Appendices
 
    appendices/known_issues.rst
