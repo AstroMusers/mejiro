@@ -1,5 +1,5 @@
 Instruments
-###########
+===========
 
 ``mejiro`` currently supports simulating the Roman Space Telescope ("Roman") and the Habitable Worlds Observatory (HWO). ``mejiro``'s Roman imaging wraps ``GalSim`` and ``STPSF`` with instrument parameters from ``roman-technical-information`` and its HWO imaging wraps ``GalSim`` with instrument parameters from ``hwo-tools`` and ``syotools``.
 

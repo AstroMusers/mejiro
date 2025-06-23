@@ -1,5 +1,5 @@
 Engines
-#######
+=======
 
 ``mejiro`` wraps various image simulation packages to provide a consistent interface for simulating images. Each wrapped package is referred to as an "engine." The following engines are currently supported:
 
