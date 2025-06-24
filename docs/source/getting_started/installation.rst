@@ -16,7 +16,7 @@ To simulate images from *Roman*, you will need to download the ``roman-technical
 
 .. code-block:: bash
 
-    export ROMAN_TECHNICAL_INFORMATION_PATH="/{your_path}/roman-technical-information"
+    export ROMAN_TECHNICAL_INFORMATION_PATH="/{your_path}"
 
 To simulate images from *HWO*, `follow these instructions <https://github.com/spacetelescope/syotools>`__ for ``syotools`` to set the environment variables ``PYSYN_CDBS`` and ``SCI_ENG_DIR``.
 
