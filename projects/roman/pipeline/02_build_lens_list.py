@@ -55,8 +55,8 @@ def main(args):
     if len(detectable_gglens_pickles) == 0:
         raise FileNotFoundError(f'No output files found. Check simulation output directory ({input_dir}).')
     parsed_names = [os.path.basename(f).split("_")[3].split(".")[0] for f in detectable_gglens_pickles]
-    scas = sorted([int(d[3:]) for d in parsed_names])
-    scas = [str(sca).zfill(2) for sca in scas]
+    scas = [int(d[3:]) for d in parsed_names]
+    scas = sorted(set([str(sca).zfill(2) for sca in scas]))
     if verbose: print(f'Found SCA(s): {scas}')
 
     # set up output directory
