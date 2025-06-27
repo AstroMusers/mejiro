@@ -51,26 +51,36 @@ class GalaxyGalaxy(StrongLens):
         
     def get_image_positions(self):
         """
-        Calculate the image positions from the source position and lensing mass model.
+        Returns the extended source image positions.
 
         Returns
         -------
-        Tuple of arrays
-            ([x coordinates], [y coordinates]) of the image positions in lenstronomy "angle" units (often, arcseconds).
+        tuple of numpy.ndarray
+            A tuple containing arrays of x and y coordinates of the image positions in lenstronomy angle units (typically arcseconds).
 
         Notes
         -----
-        The source position is extracted from the first element of ``kwargs_source``.
+        - The source position is taken from the first element of ``kwargs_source``.
+        - Uses lenstronomy's LensEquationSolver to solve the lens equation.
+        - The solver is chosen automatically: "analytical" if supported by the lens model, otherwise "lenstronomy".
+        - The search window and minimum distance are set based on the Einstein radius.
         """
-        from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver
+        from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver, analytical_lens_model_support
 
         source_x = self.kwargs_source[0]['center_x']
         source_y = self.kwargs_source[0]['center_y']
 
-        solver = LensEquationSolver(self.lens_model)
-        return solver.image_position_from_source(sourcePos_x=source_x, 
-                                                 sourcePos_y=source_y,
-                                                 kwargs_lens=self.kwargs_lens)
+        lens_eqn_solver = LensEquationSolver(self.lens_model)
+        solver = "analytical" if analytical_lens_model_support(self.lens_model_list) else "lenstronomy"
+        
+        return lens_eqn_solver.image_position_from_source(
+            source_x,
+            source_y,
+            self.kwargs_lens,
+            solver=solver,
+            search_window=self.get_einstein_radius() * 6,
+            min_distance=self.get_einstein_radius() * 6 / 200,
+        )
 
     @staticmethod   
     def from_slsim(slsim_gglens, name=None, coords=None):
