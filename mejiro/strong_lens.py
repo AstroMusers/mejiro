@@ -5,6 +5,7 @@ from lenstronomy.LensModel.lens_model import LensModel
 from lenstronomy.LightModel.light_model import LightModel
 
 from mejiro.analysis import regions
+from mejiro.cosmo import cosmo
 
 
 class StrongLens(ABC):
@@ -234,7 +235,6 @@ class StrongLens(ABC):
         xx, yy = np.meshgrid(_r, _r)
         return lens_model_realization.kappa(xx.ravel(), yy.ravel(), kwargs_halos).reshape(num_pix, num_pix)
 
-
     def add_realization(self, realization, use_jax=True):
         """
         Add a pyHalo dark matter subhalo realization to the mass model of the system. See the `pyHalo documentation <https://github.com/dangilman/pyHalo>`__ for details.
@@ -262,6 +262,70 @@ class StrongLens(ABC):
         if isinstance(self.use_jax, bool):
             self.use_jax = [self.use_jax]
         self.use_jax += [use_jax] * len(halo_lens_model_list) 
+
+    def get_velocity_dispersion(self):
+        """
+        Get the velocity dispersion of the lensing galaxy in km/s.
+
+        Returns
+        -------
+        float
+            The velocity dispersion of the lensing galaxy in km/s.
+
+        Raises
+        ------
+        ValueError
+            If 'lens_velocity_dispersion' is not present in `self.physical_params`.
+        """
+        if 'lens_velocity_dispersion' not in self.physical_params:
+            raise ValueError("Velocity dispersion not found in physical_params. Please provide 'lens_velocity_dispersion' in physical_params.")
+        return self.physical_params['lens_velocity_dispersion']
+
+    def get_stellar_mass(self):
+        """
+        Get the stellar mass of the lensing galaxy in solar masses.
+
+        Returns
+        -------
+        float
+            The stellar mass of the lensing galaxy in solar masses.
+
+        Raises
+        ------
+        ValueError
+            If 'lens_stellar_mass' is not present in `self.physical_params`.
+        """
+        if 'lens_stellar_mass' not in self.physical_params:
+            raise ValueError("Stellar mass not found in physical_params. Please provide 'lens_stellar_mass' in physical_params.")
+        return self.physical_params['lens_stellar_mass']
+
+    def get_main_halo_mass(self):
+        """
+        Returns the main halo mass of the lensing galaxy in solar masses.
+
+        This method first attempts to retrieve the main halo mass from the ``physical_params`` dictionary
+        using the ``main_halo_mass`` key. If this value is not present, it will attempt to estimate the
+        main halo mass using the stellar mass (``lens_stellar_mass``) and the lens redshift (``z_lens``)
+        via the ``cosmo.stellar_to_main_halo_mass`` method, if available.
+
+        Returns
+        -------
+        float
+            The mass of the main halo in solar masses.
+
+        Raises
+        ------
+        ValueError
+            If neither ``main_halo_mass`` nor ``lens_stellar_mass`` are present in ``physical_params``.
+        """
+        main_halo_mass = self.physical_params.get('main_halo_mass', None)
+        if main_halo_mass is None:
+            lens_stellar_mass = self.physical_params.get('lens_stellar_mass', None)
+            if lens_stellar_mass is not None:
+                main_halo_mass = cosmo.stellar_to_main_halo_mass(stellar_mass=lens_stellar_mass, z=self.z_lens, sample=True)
+            else:
+                raise ValueError("Could not find `main_halo_mass` or `lens_stellar_mass` in physical_params")
+        return main_halo_mass
     
     def get_lens_cosmo(self):
         """
