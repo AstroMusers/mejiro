@@ -170,19 +170,9 @@ def add(tuple):
                               LOS_normalization=los_normalization,
                               kwargs_cosmo=kwargs_cosmo)
     except Exception as e:
+        util.pickle(os.path.join(os.path.dirname(output_dir), f'failed_lens_{str(uid).zfill(8)}.pkl'), lens)
         print(f'Failed to generate subhalos for lens {lens_uid}: {e}')
         return
-
-    # cdm_realization = CDM(z_lens,
-    #                           z_source,
-    #                           sigma_sub=sigma_sub,
-    #                           log_mlow=log_mlow,
-    #                           log_mhigh=log_mhigh,
-    #                           log_m_host=log_m_host,
-    #                           r_tidal=r_tidal,
-    #                           cone_opening_angle_arcsec=einstein_radius * 3,
-    #                           LOS_normalization=los_normalization,
-    #                           kwargs_cosmo=kwargs_cosmo)
 
     # Add subhalos
     lens.add_realization(cdm_realization)
