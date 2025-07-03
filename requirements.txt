@@ -50,6 +50,7 @@ fonttools==4.57.0
 fqdn==1.5.1
 future==1.0.0
 GalSim==2.5.1
+ghp-import==2.1.0
 gwcs==0.24.0
 h11==0.16.0
 h2==4.2.0
@@ -104,11 +105,15 @@ llvmlite==0.44.0
 looseversion==1.3.0
 LSSTDESC.Coord==1.3.0
 lxml==5.4.0
+Markdown==3.8
 MarkupSafe==3.0.2
 matplotlib==3.10.1
 matplotlib-inline==0.1.7
 mcfit==0.0.22
+mejiro==2.0.0
+mergedeep==1.3.4
 mistune==3.1.3
+mkdocs-get-deps==0.2.0
 ml_dtypes==0.5.1
 more-itertools==10.7.0
 mpmath==1.3.0
@@ -133,6 +138,7 @@ pandeia.engine==2025.3
 pandocfilters==1.5.0
 Parsley==1.3
 parso==0.8.4
+pathspec==0.12.1
 pexpect==4.9.0
 photutils==2.0.2
 pickleshare==0.7.5
@@ -166,6 +172,7 @@ pytz==2025.2
 pyvo==1.6.2
 pyxdg==0.28
 PyYAML==6.0.2
+pyyaml_env_tag==1.1
 pyzmq==26.4.0
 rad==0.22.0
 referencing==0.36.2
@@ -203,7 +210,7 @@ sphinxcontrib-qthelp==2.0.0
 sphinxcontrib-serializinghtml==2.0.0
 stack_data==0.6.3
 stdlib-list==0.11.1
-stpsf==2.0.0
+stpsf==2.1.0
 stsynphot==1.4.0
 synphot==1.5.0
 syotools==1.1.13
@@ -221,6 +228,7 @@ typing_utils==0.1.0
 tzdata==2025.2
 uri-template==1.3.0
 urllib3==2.4.0
+watchdog==6.0.0
 wcwidth==0.2.13
 webbpsf==2.0.0
 webcolors==24.11.1

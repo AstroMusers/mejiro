@@ -16,7 +16,7 @@ dependencies:
   - pip:
     - lenstronomy==1.13.0
     - jaxtronomy==0.0.9.1
-    - stpsf==2.0.0
+    - stpsf==2.1.0
     - pandeia-engine
     - pysiaf==0.24.1
     - syotools==1.1.13  # for HWO imaging
