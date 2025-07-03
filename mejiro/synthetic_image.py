@@ -247,7 +247,7 @@ class SyntheticImage:
         import matplotlib.pyplot as plt
 
         plt.imshow(np.log10(self.image), origin='lower')
-        plt.title(f'{self.strong_lens.name}: {self.instrument_name} {self.band} band {self.image.shape}')
+        plt.title(f'{self.strong_lens.name} (' + r'$z_{l}=$' + f'{self.strong_lens.z_lens:.2f}, ' + r'$z_{s}=$' + f'{self.strong_lens.z_source:.2f}' + f')\n{self.instrument_name} {self.band}')
         cbar = plt.colorbar()
         cbar.set_label(r'log$_{10}$(Counts)')
         plt.xlabel('x [Pixels]')

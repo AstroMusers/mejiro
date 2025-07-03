@@ -146,7 +146,7 @@ class Exposure:
 
         plt.imshow(np.log10(self.exposure))
 
-        title = f'{self.synthetic_image.strong_lens.name}\n{self.synthetic_image.instrument_name} {self.synthetic_image.band} band, {self.exposure_time} s exposure {self.exposure.shape}'
+        title = f'{self.synthetic_image.strong_lens.name} (' + r'$z_{l}=$' + f'{self.synthetic_image.strong_lens.z_lens:.2f}, ' + r'$z_{s}=$' + f'{self.synthetic_image.strong_lens.z_source:.2f}' + f')\n{self.synthetic_image.instrument_name} {self.synthetic_image.band}, {self.exposure_time} s'
         if show_snr:
             snr = self.get_snr()
             title += f'\nSNR: {snr:.2f}'

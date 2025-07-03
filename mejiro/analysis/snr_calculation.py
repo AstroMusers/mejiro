@@ -44,7 +44,7 @@ def get_snr(exposure, snr_per_pixel_threshold=1, verbose=False):
                     [[0, 1, 0],
                      [1, 1, 1],
                      [0, 1, 0]])
-    if verbose: print(f'Using structure: {structure}')
+    if verbose: print(f'Using structure\n{structure}')
 
     labeled_array, num_regions = ndimage.label(masked_snr_array.filled(0), structure=structure)
     if verbose: print(f'Identified {num_regions} region(s)')
