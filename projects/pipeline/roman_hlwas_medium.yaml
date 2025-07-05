@@ -1,0 +1,90 @@
+repo_dir: &repo_dir /grad/bwedig/mejiro  # where the repository lives
+data_dir: &data_dir /data/bwedig/mejiro  # where output data should be written
+figure_dir: figures # !concat [*repo_dir, "/figures"]
+pipeline_dir: roman_hlwas_medium
+psf_cache_dir: cached_psfs
+dev: False
+nice: 19  # 19
+verbose: True  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
+limit: null
+seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
+headroom_cores: 
+  script_00: 0
+  script_01: 28
+  script_02: 0
+  script_03: 64
+  script_04: 64
+  script_05: 28
+instrument: roman
+survey:
+  runs: 1998  # 540
+  area: 0.5  # 0.5  # 0.1
+  skypy_config: roman_wide
+  total_population: False
+  scas: &scas [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+  bands: [F062, F087, F106, F129, F158, F184, F213, F146]
+  deflector_cut_band: F129
+  deflector_cut_band_max: 27
+  deflector_z_min: 0.01
+  deflector_z_max: 3.0
+  source_cut_band: F129
+  source_cut_band_max: 27
+  source_z_min: 0.01
+  source_z_max: 6.0
+  min_image_separation: 0.3  # arcseconds
+  max_image_separation: 10.0  # arcseconds
+  mag_arc_limit_band: F129
+  mag_arc_limit: 25  # this takes pressure off of SNR criterion, so set as high as possible without missing anything
+  magnification: 3
+imaging:
+  exposure_time: &exposure_time 510  # 642
+  engine: galsim
+  engine_params:
+    rng_seed: 42
+    sky_background: True
+    detector_effects: True
+    poisson_noise: True
+    reciprocity_failure: True
+    dark_noise: True
+    nonlinearity: True
+    ipc: True
+    read_noise: True
+  rgb_bands: [ F184, F129, F106 ]  # in RGB order
+  rgb_stretch: 3
+  rgb_q: 3
+snr:
+  snr_subtract_lens: False
+  snr_add_subhalos: False
+  snr_exposure_time: *exposure_time  # 642
+  snr_band: F129
+  snr_threshold: 25
+  snr_fov_arcsec: 10
+  snr_supersampling_factor: &snr_supersampling_factor 5
+  snr_supersampling_compute_mode: adaptive  # regular
+  snr_supersampling_radius: 2.
+  snr_adaptive_pad: 40  # number of pixels to pad radii of annular adaptive grid below and above minimum and maximum image positions
+  snr_per_pixel_threshold: 1
+  # - zodi_multiplier: 1.5  # multiplied with minimum zodiacal light
+subhalos:
+  fraction: 1.  # 0.5  # fraction of systems to add substructure to
+  log_mlow: 6
+  log_mhigh: 12
+  subhalo_cone: 10.  # 6.
+  los_normalization: 1.
+  r_tidal: 0.5  # see Section 3.1 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract 
+  sigma_sub: 0.055  # see Section 6.3 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract 
+synthetic_image:
+  fov_arcsec: 10
+  supersampling_factor: &supersampling_factor 5
+  supersampling_compute_mode: adaptive
+  bands: [ F106, F129, F158 ]
+  pieces: True
+psf:
+  oversamples: [*snr_supersampling_factor, *supersampling_factor]  # this needs to be a list
+  bands: [F087, F106, F129, F158, F184]
+  detectors: *scas
+  divide_up_sca: 5  # this sets the detector positions, e.g., 5 means 25 positions on each detector
+  num_pixes: [101]  # this needs to be a list
+output:
+  output_dir: *data_dir
+  version: 0.1

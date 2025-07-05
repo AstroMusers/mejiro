@@ -1,4 +1,5 @@
 import argparse
+import importlib
 import multiprocessing
 import os
 import sys
@@ -19,13 +20,12 @@ from tqdm import tqdm
 
 import mejiro
 from mejiro.utils import util
-from mejiro.instruments.roman import Roman
 from mejiro.analysis import snr_calculation
 from mejiro.exposure import Exposure
 from mejiro.galaxy_galaxy import GalaxyGalaxy
 from mejiro.engines.stpsf_engine import STPSFEngine
 from mejiro.synthetic_image import SyntheticImage
-from mejiro.utils import slsim_util, util
+from mejiro.utils import lenstronomy_util, slsim_util, util
 
 
 def main(args):
@@ -43,7 +43,6 @@ def main(args):
     # read configuration file
     with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
-    repo_dir = config['repo_dir']
 
     # set nice level
     os.nice(config['nice'])
@@ -85,14 +84,14 @@ def main(args):
     # get psf cache directory
     psf_cache_dir = os.path.join(data_dir, 'cached_psfs')
 
-    # load Roman instrument
-    roman = Roman()
+    # load instrument
+    instrument = initialize_instrument_class(config['instrument'])
 
     # tuple the parameters
     tuple_list = []
     for run in range(runs):
         sca_id = str(scas[run % len(scas)]).zfill(2)
-        tuple_list.append((str(run).zfill(4), sca_id, config, output_dir, debug_dir, psf_cache_dir, roman))
+        tuple_list.append((str(run).zfill(4), sca_id, config, output_dir, debug_dir, psf_cache_dir, instrument))
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -126,7 +125,7 @@ def run_slsim(tuple):
     module_path = os.path.dirname(mejiro.__file__)
 
     # unpack tuple
-    run, sca_id, config, output_dir, debug_dir, psf_cache_dir, roman = tuple
+    run, sca_id, config, output_dir, debug_dir, psf_cache_dir, instrument = tuple
 
     # retrieve configuration parameters
     dev = config['dev']
@@ -149,9 +148,13 @@ def run_slsim(tuple):
     snr_detector = sca_id
     snr_detector_position = (2044, 2044)
 
-    # load Roman WFI filters
-    roman_filters = roman.load_speclite_filters(sca=sca_id)
-    if verbose: print(f'Loaded Roman WFI filter response curves: {roman_filters.names}')
+    # load filters
+    if instrument.name == 'Roman':
+        filter_args = {'sca': sca_id}
+    elif instrument.name == 'HWO':
+        filter_args = {}
+    speclite_filters = instrument.load_speclite_filters(**filter_args)
+    if verbose: print(f'Loaded {instrument.name} filter response curve(s): {speclite_filters.names}')
 
     # load SkyPy config file
     cache_dir = os.path.join(module_path, 'data', 'skypy', config['survey']['skypy_config'])
@@ -224,6 +227,13 @@ def run_slsim(tuple):
 
         # compute SNRs and save
         if verbose: print(f'Computing SNRs for {len(total_lens_population)} lenses')
+
+        if instrument.name == 'Roman':
+            kwargs_psf = STPSFEngine.get_roman_psf_kwargs(snr_band, snr_detector, snr_detector_position, oversample=snr_supersampling_factor, num_pix=101, check_cache=True, psf_cache_dir=psf_cache_dir, verbose=False)
+        elif instrument.name == 'HWO':
+            hwo_psf_fwhm = instrument.get_psf_fwhm(snr_band)
+            kwargs_psf = lenstronomy_util.get_gaussian_psf_kwargs(hwo_psf_fwhm)
+
         snr_list = []
         num_exceptions = 0
         for candidate in tqdm(total_lens_population, disable=verbose):
@@ -234,13 +244,13 @@ def run_slsim(tuple):
             if len(image_positions[0]) < 2:
                 continue
             
-            kwargs_psf = STPSFEngine.get_roman_psf_kwargs(snr_band, snr_detector, snr_detector_position, oversample=snr_supersampling_factor, num_pix=101, check_cache=True, psf_cache_dir=psf_cache_dir, verbose=False)
+            
 
             # TODO do something with the substract lens flag
             # TODO do something with the add subhalos flag
 
             synthetic_image = SyntheticImage(strong_lens=strong_lens,
-                                            instrument=roman,
+                                            instrument=instrument,
                                             band=snr_band,
                                             fov_arcsec=snr_fov_arcsec,
                                             instrument_params={'detector': snr_detector, 'detector_position': snr_detector_position},
@@ -281,20 +291,23 @@ def run_slsim(tuple):
     if verbose: print(f'Number of detectable lenses from first set of criteria: {len(lens_population)}')
 
     # apply additional detectability criteria
+    if instrument.name == 'Roman':
+        kwargs_psf = STPSFEngine.get_roman_psf_kwargs(snr_band, snr_detector, snr_detector_position, oversample=snr_supersampling_factor, num_pix=101, check_cache=True, psf_cache_dir=psf_cache_dir, verbose=False)
+    elif instrument.name == 'HWO':
+        hwo_psf_fwhm = instrument.get_psf_fwhm(snr_band)
+        kwargs_psf = lenstronomy_util.get_gaussian_psf_kwargs(hwo_psf_fwhm)
     limit = config['limit']
     detectable_gglenses, detectable_snr_list, masked_snr_array_list = [], [], []
     k = 0
     for candidate in tqdm(lens_population, disable=not verbose):
         # criterion 1: SNR
         strong_lens = GalaxyGalaxy.from_slsim(candidate)
-            
-        kwargs_psf = STPSFEngine.get_roman_psf_kwargs(snr_band, snr_detector, snr_detector_position, oversample=snr_supersampling_factor, num_pix=101, check_cache=True, psf_cache_dir=psf_cache_dir, verbose=False)
 
         # TODO do something with the substract lens flag
         # TODO do something with the add subhalos flag
 
         synthetic_image = SyntheticImage(strong_lens=strong_lens,
-                                        instrument=roman,
+                                        instrument=instrument,
                                         band=snr_band,
                                         fov_arcsec=snr_fov_arcsec,
                                         instrument_params={'detector': snr_detector, 'detector_position': snr_detector_position},
@@ -345,6 +358,25 @@ def run_slsim(tuple):
         if verbose: print(f'No detectable lenses found for run {run}, SCA{sca_id}')
     
     return len(detectable_gglenses)
+
+
+def initialize_instrument_class(instrument_name):
+    base_module_path = "mejiro.instruments"
+    class_map = {
+        "hwo": "HWO",
+        "roman": "Roman"
+    }
+
+    if instrument_name.lower() not in class_map:
+        raise ValueError(f"Unknown instrument: {instrument_name}")
+
+    module_path = f"{base_module_path}.{instrument_name.lower()}"
+    module = importlib.import_module(module_path)
+    class_name = class_map[instrument_name.lower()]
+    cls = getattr(module, class_name)
+    instance = cls()
+    
+    return instance
 
 
 if __name__ == '__main__':
