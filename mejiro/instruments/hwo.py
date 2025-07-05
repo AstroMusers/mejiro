@@ -122,6 +122,11 @@ class HWO(Instrument):
     
     def get_psf_fwhm(self, band):
         return self.psf_fwhm[band]
+
+    def get_psf_kwargs(self, band):
+        from mejiro.utils import lenstronomy_util
+        psf_fwhm = self.get_psf_fwhm(band)
+        return lenstronomy_util.get_gaussian_psf_kwargs(psf_fwhm)
     
     def get_thermal_background(self, band):
         return self.thermal_background[band]

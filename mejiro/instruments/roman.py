@@ -102,6 +102,10 @@ class Roman(Instrument):
         if self.psf_fwhm is None:
             self.psf_fwhm = util.return_qtable(os.path.join(self.roman_technical_information_path, FILTER_PARAMS_PATH))
         return self.psf_fwhm[self.psf_fwhm['filter'] == band]['PSF_FWHM']
+
+    def get_psf_kwargs(self, band, detector=1, detector_position=(2044, 2044), oversample=5, num_pix=101, check_cache=True, psf_cache_dir=None, verbose=False):
+        from mejiro.engines.stpsf_engine import STPSFEngine
+        return STPSFEngine.get_roman_psf_kwargs(band, roman_util.get_sca_int(detector), detector_position, oversample, num_pix, check_cache, psf_cache_dir, verbose)
     
     def get_thermal_background(self, band):
         if self.thermal_background is None:

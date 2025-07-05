@@ -31,6 +31,23 @@ class Instrument(ABC):
         pass
 
     @abstractmethod
+    def get_psf_kwargs(self, band, **kwargs):
+        """
+        Get the keyword arguments for generating the Point Spread Function (PSF) for a given band.
+
+        Parameters
+        ----------
+        band : str
+            The name of the band, e.g., 'F129' for Roman or 'J' for HWO.
+
+        Returns
+        -------
+        dict
+            Keyword arguments for generating the PSF.
+        """
+        pass
+
+    @abstractmethod
     def get_psf_fwhm(self, band):
         """
         Get the Full Width at Half Maximum (FWHM) of the Point Spread Function (PSF) for a given band in arcsec.
