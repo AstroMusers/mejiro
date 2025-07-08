@@ -1,7 +1,7 @@
 repo_dir: &repo_dir /grad/bwedig/mejiro  # where the repository lives
 data_dir: &data_dir /data/bwedig/mejiro  # where output data should be written
 figure_dir: figures # !concat [*repo_dir, "/figures"]
-pipeline_dir: hwo_dev
+pipeline_dir: hwo
 psf_cache_dir: cached_psfs
 dev: False
 nice: 19  # 19
@@ -17,27 +17,27 @@ headroom_cores:
   script_05: 28
 instrument: hwo
 survey:
-  runs: 2  # 540
+  runs: 50  # 540
   area: 0.1  # 0.5  # 0.1
-  skypy_config: hwo_dev
-  total_population: False
+  skypy_config: hwo
+  total_population: True
   scas: &scas []
   bands: [J]
   deflector_cut_band: J
-  deflector_cut_band_max: 27
+  deflector_cut_band_max: 30
   deflector_z_min: 0.01
-  deflector_z_max: 3.0
+  deflector_z_max: 5.0
   source_cut_band: J
-  source_cut_band_max: 27
+  source_cut_band_max: 30
   source_z_min: 0.01
-  source_z_max: 6.0
-  min_image_separation: 0.3  # arcseconds
+  source_z_max: 10.0
+  min_image_separation: 0.2  # arcseconds
   max_image_separation: 10.0  # arcseconds
   mag_arc_limit_band: J
-  mag_arc_limit: 25  # this takes pressure off of SNR criterion, so set as high as possible without missing anything
+  mag_arc_limit: 30  # this takes pressure off of SNR criterion, so set as high as possible without missing anything
   magnification: 3
 imaging:
-  exposure_time: &exposure_time 510  # 642
+  exposure_time: &exposure_time 1000  # 642
   engine: galsim
   engine_params:
     rng_seed: 42

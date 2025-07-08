@@ -6,10 +6,12 @@ class Instrument(ABC):
             self,
             name,
             bands,
+            num_detectors,
             engines
     ):
         self.name = name
         self.bands = bands
+        self.num_detectors = num_detectors
         self.engines = engines
         self.versions = {}
 

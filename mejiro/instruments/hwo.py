@@ -33,11 +33,13 @@ class HWO(Instrument):
 
         name = 'HWO'
         bands = self.camera.bandnames
+        num_detectors = 1
         engines = ['galsim']
 
         super().__init__(
             name,
             bands,
+            num_detectors,
             engines
         )
 
@@ -123,7 +125,7 @@ class HWO(Instrument):
     def get_psf_fwhm(self, band):
         return self.psf_fwhm[band]
 
-    def get_psf_kwargs(self, band):
+    def get_psf_kwargs(self, band, **kwargs):
         from mejiro.utils import lenstronomy_util
         psf_fwhm = self.get_psf_fwhm(band)
         return lenstronomy_util.get_gaussian_psf_kwargs(psf_fwhm)

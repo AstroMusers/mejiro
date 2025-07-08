@@ -2,7 +2,6 @@ import argparse
 import importlib
 import multiprocessing
 import os
-import sys
 import time
 import yaml
 from glob import glob
@@ -23,9 +22,8 @@ from mejiro.utils import util
 from mejiro.analysis import snr_calculation
 from mejiro.exposure import Exposure
 from mejiro.galaxy_galaxy import GalaxyGalaxy
-from mejiro.engines.stpsf_engine import STPSFEngine
 from mejiro.synthetic_image import SyntheticImage
-from mejiro.utils import lenstronomy_util, slsim_util, util
+from mejiro.utils import slsim_util, util
 
 
 def main(args):
@@ -90,7 +88,10 @@ def main(args):
     # tuple the parameters
     tuple_list = []
     for run in range(runs):
-        sca_id = str(scas[run % len(scas)]).zfill(2)
+        if scas:
+            sca_id = str(scas[run % instrument.num_detectors]).zfill(2)
+        else:
+            sca_id = None
         tuple_list.append((str(run).zfill(4), sca_id, config, output_dir, debug_dir, psf_cache_dir, instrument))
 
     # split up the lenses into batches based on core count
@@ -156,10 +157,17 @@ def run_slsim(tuple):
     speclite_filters = instrument.load_speclite_filters(**filter_args)
     if verbose: print(f'Loaded {instrument.name} filter response curve(s): {speclite_filters.names}')
 
+    print(sca_id)
+
     # load SkyPy config file
     cache_dir = os.path.join(module_path, 'data', 'skypy', config['survey']['skypy_config'])
-    skypy_config = os.path.join(cache_dir,
+    if instrument.name == 'Roman':
+        skypy_config = os.path.join(cache_dir,
                                 f'{config["survey"]["skypy_config"]}_sca{sca_id}.yml')  # TODO TEMP: there should be one source of truth for this, and if necessary, some code should update the cache behind the scenes
+    elif instrument.name == 'HWO':
+        skypy_config = os.path.join(cache_dir, config['survey']['skypy_config'] + '.yml')
+    else:
+        raise ValueError(f"SkyPy configuration file retrieval not implemented for {instrument.name}.")
     config_file = util.load_skypy_config(skypy_config)  # read skypy config file to get survey area
     if verbose: print(f'Loaded SkyPy configuration file {skypy_config}')
 
@@ -214,6 +222,19 @@ def run_slsim(tuple):
     )
     if verbose: print('Defined galaxy population')
 
+    # get PSF parameters for SNR calculation
+    instrument_psf_kwargs = {
+        'band': snr_band,
+        'detector': snr_detector,
+        'detector_position': snr_detector_position,
+        'oversample': 5,
+        'num_pix': 101,
+        'check_cache': True,
+        'psf_cache_dir': psf_cache_dir,
+        'verbose': False
+    }
+    kwargs_psf = instrument.get_psf_kwargs(**instrument_psf_kwargs)
+
     # draw the total lens population
     if survey_config['total_population']:
         if verbose: print('Identifying lenses...')
@@ -227,13 +248,6 @@ def run_slsim(tuple):
 
         # compute SNRs and save
         if verbose: print(f'Computing SNRs for {len(total_lens_population)} lenses')
-
-        if instrument.name == 'Roman':
-            kwargs_psf = STPSFEngine.get_roman_psf_kwargs(snr_band, snr_detector, snr_detector_position, oversample=snr_supersampling_factor, num_pix=101, check_cache=True, psf_cache_dir=psf_cache_dir, verbose=False)
-        elif instrument.name == 'HWO':
-            hwo_psf_fwhm = instrument.get_psf_fwhm(snr_band)
-            kwargs_psf = lenstronomy_util.get_gaussian_psf_kwargs(hwo_psf_fwhm)
-
         snr_list = []
         num_exceptions = 0
         for candidate in tqdm(total_lens_population, disable=verbose):
@@ -243,8 +257,6 @@ def run_slsim(tuple):
             image_positions = strong_lens.get_image_positions()
             if len(image_positions[0]) < 2:
                 continue
-            
-            
 
             # TODO do something with the substract lens flag
             # TODO do something with the add subhalos flag
@@ -291,11 +303,6 @@ def run_slsim(tuple):
     if verbose: print(f'Number of detectable lenses from first set of criteria: {len(lens_population)}')
 
     # apply additional detectability criteria
-    if instrument.name == 'Roman':
-        kwargs_psf = STPSFEngine.get_roman_psf_kwargs(snr_band, snr_detector, snr_detector_position, oversample=snr_supersampling_factor, num_pix=101, check_cache=True, psf_cache_dir=psf_cache_dir, verbose=False)
-    elif instrument.name == 'HWO':
-        hwo_psf_fwhm = instrument.get_psf_fwhm(snr_band)
-        kwargs_psf = lenstronomy_util.get_gaussian_psf_kwargs(hwo_psf_fwhm)
     limit = config['limit']
     detectable_gglenses, detectable_snr_list, masked_snr_array_list = [], [], []
     k = 0
