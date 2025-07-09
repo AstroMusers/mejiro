@@ -7,10 +7,11 @@ from mejiro.instruments.instrument import Instrument
 from mejiro.utils import roman_util, util
 
 
-ZEROPOINT_PATH = 'data/WideFieldInstrument/Imaging/ZeroPoints/Roman_zeropoints_*.ecsv'
-ZODIACAL_LIGHT_PATH = 'data/WideFieldInstrument/Imaging/ZodiacalLight/zodiacal_light.ecsv'
-THERMAL_BACKGROUND_PATH = 'data/WideFieldInstrument/Imaging/Backgrounds/internal_thermal_backgrounds.ecsv'
-FILTER_PARAMS_PATH = 'data/WideFieldInstrument/Imaging/FiltersSummary/filter_parameters.ecsv'
+IMAGING_PATH = 'data/WideFieldInstrument/Imaging/'
+ZEROPOINT_PATH = IMAGING_PATH + 'ZeroPoints/Roman_zeropoints_*.ecsv'
+ZODIACAL_LIGHT_PATH = IMAGING_PATH + 'ZodiacalLight/zodiacal_light.ecsv'
+THERMAL_BACKGROUND_PATH = IMAGING_PATH + 'Backgrounds/internal_thermal_backgrounds.ecsv'
+FILTER_PARAMS_PATH = IMAGING_PATH + 'FiltersSummary/filter_parameters.ecsv'
 
 
 class Roman(Instrument):
@@ -121,12 +122,12 @@ class Roman(Instrument):
         return self.zeropoints[(self.zeropoints['element'] == band) & (self.zeropoints['detector'] == f'WFI{str(sca_number).zfill(2)}')]['ABMag']
     
     @staticmethod
-    def load_speclite_filters(sca=1):
-        sca_string = roman_util.get_sca_string(sca)
+    def load_speclite_filters(detector='sca01'):
+        detector_string = roman_util.get_sca_string(detector)
 
         import mejiro
         module_path = os.path.dirname(mejiro.__file__)
-        filters = sorted(glob(os.path.join(module_path, 'data', 'roman_filter_response', f'Roman{sca_string}-*.ecsv')))
+        filters = sorted(glob(os.path.join(module_path, 'data', 'roman_filter_response', f'Roman{detector_string}-*.ecsv')))
 
         from speclite.filters import load_filters
         return load_filters(*filters[:8])

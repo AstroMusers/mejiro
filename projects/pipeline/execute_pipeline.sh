@@ -1,6 +1,6 @@
 #!/bin/bash
 
-config="hwo"  # training_set, roman_hlwas_medium
+config="roman_dev"  # training_set, roman_hlwas_medium, hwo, hwo_dev
 
 # escape if error encountered
 set -e
@@ -10,9 +10,9 @@ set -e
 # python3 00_cache_psfs.py --config $config
 # echo 'Cached PSFs.'
 
-echo 'Running survey simulation...'
-python3 01_run_survey_simulation.py --config $config
-echo 'Identified detectable strong lenses.'
+# echo 'Running survey simulation...'
+# python3 01_run_survey_simulation.py --config $config
+# echo 'Identified detectable strong lenses.'
 
 echo 'Building lens list from SkyPy...'
 python3 02_build_lens_list.py --config $config
@@ -32,10 +32,10 @@ echo 'Simulating images...'
 python3 05_create_exposures.py --config $config
 echo 'GalSim simulations complete.'
 
-# echo 'Generating h5 file...'
-# if [ $config == "training_set" ]; then
-#     python3 06_h5_export_training_set.py --config $config
-# else
-#     python3 06_h5_export.py --config $config
-# fi
-# echo 'h5 file generation complete.'
+echo 'Generating h5 file...'
+if [ $config == "training_set" ]; then
+    python3 06_h5_export_training_set.py --config $config
+else
+    python3 06_h5_export.py --config $config
+fi
+echo 'h5 file generation complete.'

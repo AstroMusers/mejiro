@@ -27,7 +27,6 @@ def main(args):
     # read configuration file
     with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
-    repo_dir = config['repo_dir']
 
     # set nice level
     os.nice(config['nice'])
@@ -39,7 +38,7 @@ def main(args):
     oversamples = psf_config['oversamples']
     bands = psf_config['bands']
     detectors = psf_config['detectors']
-    detector_positions = roman_util.divide_up_sca(psf_config['divide_up_sca'])
+    detector_positions = roman_util.divide_up_sca(psf_config['divide_up_detector'])
     num_pixes = psf_config['num_pixes']
 
     # set directory for all output of this script

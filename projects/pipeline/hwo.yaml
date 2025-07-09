@@ -21,7 +21,7 @@ survey:
   area: 0.1  # 0.5  # 0.1
   skypy_config: hwo
   total_population: True
-  scas: &scas []
+  detectors: &detectors []
   bands: [J]
   deflector_cut_band: J
   deflector_cut_band_max: 30

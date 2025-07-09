@@ -1,5 +1,4 @@
 import argparse
-import importlib
 import multiprocessing
 import os
 import time
@@ -23,7 +22,7 @@ from mejiro.analysis import snr_calculation
 from mejiro.exposure import Exposure
 from mejiro.galaxy_galaxy import GalaxyGalaxy
 from mejiro.synthetic_image import SyntheticImage
-from mejiro.utils import slsim_util, util
+from mejiro.utils import pipeline_util, roman_util, slsim_util, util
 
 
 def main(args):
@@ -50,11 +49,14 @@ def main(args):
     verbose = config['verbose']
     data_dir = config['data_dir']
     runs = config['survey']['runs']
-    scas = config['survey']['scas']
+    detectors = config['survey']['detectors']
     area = config['survey']['area']
 
     # set configuration parameters
     config['survey']['cosmo'] = default_cosmology.get()
+
+    # load instrument
+    instrument = pipeline_util.initialize_instrument_class(config['instrument'])
 
     # set up top directory for all pipeline output
     pipeline_dir = os.path.join(data_dir, config['pipeline_dir'])
@@ -82,17 +84,14 @@ def main(args):
     # get psf cache directory
     psf_cache_dir = os.path.join(data_dir, 'cached_psfs')
 
-    # load instrument
-    instrument = initialize_instrument_class(config['instrument'])
-
     # tuple the parameters
     tuple_list = []
     for run in range(runs):
-        if scas:
-            sca_id = str(scas[run % instrument.num_detectors]).zfill(2)
+        if instrument.num_detectors > 1:
+            detector = detectors[run % instrument.num_detectors]
         else:
-            sca_id = None
-        tuple_list.append((str(run).zfill(4), sca_id, config, output_dir, debug_dir, psf_cache_dir, instrument))
+            detector = None
+        tuple_list.append((str(run).zfill(4), detector, config, output_dir, debug_dir, psf_cache_dir, instrument))
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -126,7 +125,7 @@ def run_slsim(tuple):
     module_path = os.path.dirname(mejiro.__file__)
 
     # unpack tuple
-    run, sca_id, config, output_dir, debug_dir, psf_cache_dir, instrument = tuple
+    run, detector, config, output_dir, debug_dir, psf_cache_dir, instrument = tuple
 
     # retrieve configuration parameters
     dev = config['dev']
@@ -146,24 +145,33 @@ def run_slsim(tuple):
         'supersampling_factor': snr_supersampling_factor,
         'compute_mode': snr_supersampling_compute_mode,
     }
-    snr_detector = sca_id
+    snr_detector = detector
     snr_detector_position = (2044, 2044)
+
+    # set run identifier
+    if instrument.name == 'Roman':
+        run_id = f'{run}_{roman_util.get_sca_string(detector).lower()}'
+    elif instrument.name == 'HWO':
+        run_id = str(run).zfill(4)
+    else:
+        raise ValueError(f"Run identifier not implemented for {instrument.name}.")
 
     # load filters
     if instrument.name == 'Roman':
-        filter_args = {'sca': sca_id}
+        detector_string = roman_util.get_sca_string(detector).lower()
+        filter_args = {'detector': detector_string}
     elif instrument.name == 'HWO':
         filter_args = {}
+    else:
+        raise ValueError(f"Speclite filter loading not implemented for {instrument.name}.")
     speclite_filters = instrument.load_speclite_filters(**filter_args)
     if verbose: print(f'Loaded {instrument.name} filter response curve(s): {speclite_filters.names}')
-
-    print(sca_id)
 
     # load SkyPy config file
     cache_dir = os.path.join(module_path, 'data', 'skypy', config['survey']['skypy_config'])
     if instrument.name == 'Roman':
         skypy_config = os.path.join(cache_dir,
-                                f'{config["survey"]["skypy_config"]}_sca{sca_id}.yml')  # TODO TEMP: there should be one source of truth for this, and if necessary, some code should update the cache behind the scenes
+                                f'{config["survey"]["skypy_config"]}_{detector_string}.yml')  # TODO TEMP: there should be one source of truth for this, and if necessary, some code should update the cache behind the scenes
     elif instrument.name == 'HWO':
         skypy_config = os.path.join(cache_dir, config['survey']['skypy_config'] + '.yml')
     else:
@@ -288,7 +296,7 @@ def run_slsim(tuple):
         if verbose: print(f'Percentage of exceptions: {num_exceptions / len(total_lens_population) * 100:.2f}%')
 
         # save other params to CSV
-        total_pop_csv = os.path.join(output_dir, f'total_pop_{run}_sca{sca_id}.csv')
+        total_pop_csv = os.path.join(output_dir, f'total_pop_{run_id}.csv')
         if verbose: print(f'Writing total population to {total_pop_csv}')
         slsim_util.write_lens_population_to_csv(total_pop_csv, total_lens_population, snr_list, verbose=verbose)
 
@@ -354,36 +362,18 @@ def run_slsim(tuple):
         detectable_snr_list), f'Lengths of detectable_gglenses ({len(detectable_gglenses)}) and detectable_snr_list ({len(detectable_snr_list)}) do not match.'
 
     if len(detectable_gglenses) > 0:
-        # write the list of slsim gglenses to 
-        detectable_gglenses_pickle_path = os.path.join(output_dir, f'detectable_gglenses_{run}_sca{sca_id}.pkl')
+        # pickle the list of slsim gglenses
+        detectable_gglenses_pickle_path = os.path.join(output_dir, f'detectable_gglenses_{run_id}.pkl')
         if verbose: print(f'Pickling detectable gglenses to {detectable_gglenses_pickle_path}')
         util.pickle(detectable_gglenses_pickle_path, detectable_gglenses)
 
-        detectable_pop_csv = os.path.join(output_dir, f'detectable_pop_{run}_sca{sca_id}.csv')
+        # write the parameters of detectable lenses to CSV
+        detectable_pop_csv = os.path.join(output_dir, f'detectable_pop_{run_id}.csv')
         slsim_util.write_lens_population_to_csv(detectable_pop_csv, detectable_gglenses, detectable_snr_list, verbose=verbose)
     else:
-        if verbose: print(f'No detectable lenses found for run {run}, SCA{sca_id}')
+        if verbose: print(f'No detectable lenses found for run {run}')
     
     return len(detectable_gglenses)
-
-
-def initialize_instrument_class(instrument_name):
-    base_module_path = "mejiro.instruments"
-    class_map = {
-        "hwo": "HWO",
-        "roman": "Roman"
-    }
-
-    if instrument_name.lower() not in class_map:
-        raise ValueError(f"Unknown instrument: {instrument_name}")
-
-    module_path = f"{base_module_path}.{instrument_name.lower()}"
-    module = importlib.import_module(module_path)
-    class_name = class_map[instrument_name.lower()]
-    cls = getattr(module, class_name)
-    instance = cls()
-    
-    return instance
 
 
 if __name__ == '__main__':

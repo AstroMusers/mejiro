@@ -61,7 +61,7 @@ def get_sca_string(sca):
         return f'SCA{str(int(sca)).zfill(2)}'
     elif type(sca) is str:
         # might provide int 1 or string 01 or string SCA01
-        if sca.startswith('SCA'):
+        if sca.startswith('SCA') or sca.startswith('sca'):
             end = sca[3:]
             # TODO check that `end` is valid, e.g., not SCA01X
             return f'SCA{str(int(end)).zfill(2)}'
