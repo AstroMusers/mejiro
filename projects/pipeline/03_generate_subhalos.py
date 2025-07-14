@@ -125,7 +125,7 @@ def add(tuple):
         return
 
     # add subhalos
-    lens.add_realization(cdm_realization)
+    lens.add_realization(cdm_realization, use_jax=False)
 
     # pickle the subhalo realization
     subhalo_dir = os.path.join(pipeline.output_dir, 'subhalos')

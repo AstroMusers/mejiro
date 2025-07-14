@@ -22,9 +22,9 @@ echo 'Adding subhalos with PyHalo...'
 python3 03_generate_subhalos.py --config $config
 echo 'Added subhalos.'
 
-# echo 'Building models...'
-# python3 04_create_synthetic_images.py --config $config
-# echo 'Built models.'
+echo 'Building models...'
+python3 04_create_synthetic_images.py --config $config
+echo 'Built models.'
 
 # echo 'Simulating images...'
 # python3 05_create_exposures.py --config $config

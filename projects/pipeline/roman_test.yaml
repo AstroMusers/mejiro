@@ -6,7 +6,7 @@ psf_cache_dir: cached_psfs
 dev: False
 nice: 19  # 19
 verbose: True  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
-limit: 100
+limit: null
 seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
 headroom_cores: 
   script_00: 0

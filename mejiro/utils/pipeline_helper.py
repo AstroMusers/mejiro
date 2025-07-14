@@ -47,6 +47,8 @@ class PipelineHelper:
         util.clear_directory(self.output_dir)
 
     def retrieve_roman_sca_input(self):
+        self.validate_instrument('roman')
+
         # get input directories
         input_sca_dirs = [os.path.basename(d) for d in glob(os.path.join(self.input_dir, 'sca*')) if os.path.isdir(d)]
         if self.verbose: print(f'Reading from {input_sca_dirs}')
@@ -57,7 +59,20 @@ class PipelineHelper:
 
         return input_sca_dirs, scas
 
+    def parse_sca_from_filename(self, filename):
+        self.validate_instrument('roman')
+
+        # extract SCA from filename
+        dirname = os.path.dirname(filename)
+        sca = dirname.split('/')[-1]
+        if sca.startswith('sca'):
+            return int(sca[3:])
+        else:
+            raise ValueError(f'Invalid SCA format in filename: {filename}')
+
     def create_roman_sca_output_directories(self):
+        self.validate_instrument('roman')
+
         output_sca_dirs = []
         for sca in self.detectors:
             sca_dir = os.path.join(self.output_dir, f'sca{str(sca).zfill(2)}')
@@ -67,6 +82,8 @@ class PipelineHelper:
         return output_sca_dirs
 
     def retrieve_roman_pickles(self, prefix, suffix, extension):
+        self.validate_instrument('roman')
+
         filename_pattern = f'{prefix}_{self.name}_*'
         if suffix:
             filename_pattern += f'_{suffix}'
@@ -74,6 +91,8 @@ class PipelineHelper:
         return sorted(glob(os.path.join(self.input_dir, 'sca*', filename_pattern)))
 
     def retrieve_hwo_pickles(self, prefix='', suffix='', extension='.pkl'):
+        self.validate_instrument('hwo')
+
         filename_pattern = f'{prefix}_{self.name}_*'
         if suffix:
             filename_pattern += f'_{suffix}'
@@ -95,3 +114,6 @@ class PipelineHelper:
         class_name = class_map[self.instrument_name.lower()]
         cls = getattr(module, class_name)
         return cls()
+
+    def validate_instrument(self, instrument_name):
+        assert self.instrument_name == instrument_name, f"This method is only for the {instrument_name} instrument."

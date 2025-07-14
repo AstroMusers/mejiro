@@ -2,17 +2,23 @@ import argparse
 import multiprocessing
 import os
 import random
-import sys
 import time
 import yaml
 from glob import glob
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
+import numpy as np
 from tqdm import tqdm
+
+from mejiro.engines.stpsf_engine import STPSFEngine
+from mejiro.synthetic_image import SyntheticImage
+from mejiro.utils import roman_util, util
+from mejiro.utils.pipeline_helper import PipelineHelper
 
 
 PREV_SCRIPT_NAME = '03'  # '03'
 SCRIPT_NAME = '04'
+SUPPORTED_INSTRUMENTS = ['roman', 'hwo']
 
 
 def main(args):
@@ -30,87 +36,39 @@ def main(args):
     # read configuration file
     with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
-    repo_dir = config['repo_dir']
-
-    # enable use of local packages
-    if repo_dir not in sys.path:
-        sys.path.append(repo_dir)
-    from mejiro.instruments.roman import Roman
-    from mejiro.utils import util
 
     # set nice level
     os.nice(config['nice'])
 
     # retrieve configuration parameters
-    dev = config['dev']
-    verbose = config['verbose']
-    data_dir = config['data_dir']
-    psf_cache_dir = config['psf_cache_dir']
-    limit = config['limit']
     synthetic_image_config = config['synthetic_image']
     psf_config = config['psf']
 
-    # set configuration parameters
-    psf_cache_dir = os.path.join(data_dir, psf_cache_dir)
-    psf_config['psf_cache_dir'] = psf_cache_dir
+    # initialize PipeLineHelper
+    pipeline = PipelineHelper(config, PREV_SCRIPT_NAME, SCRIPT_NAME)
 
-    # set up top directory for all pipeline output
-    pipeline_dir = os.path.join(data_dir, config['pipeline_dir'])
-    if dev:
-        pipeline_dir += '_dev'
+    # set input and output directories
+    if pipeline.instrument_name == 'roman':
+        input_pickles = pipeline.retrieve_roman_pickles(prefix='lens', suffix='', extension='.pkl')
+        pipeline.create_roman_sca_output_directories()
+    elif pipeline.instrument_name == 'hwo':
+        input_pickles = pipeline.retrieve_hwo_pickles(prefix='lens', suffix='', extension='.pkl')
+    else:
+        raise ValueError(f'Unknown instrument {pipeline.instrument_name}. Supported instruments are {SUPPORTED_INSTRUMENTS}.')
 
-    # tell script where the output of previous script is
-    input_dir = os.path.join(pipeline_dir, PREV_SCRIPT_NAME)
-    input_sca_dirs = [os.path.basename(d) for d in glob(os.path.join(input_dir, 'sca*')) if os.path.isdir(d)]
-    scas = sorted([int(d[3:]) for d in input_sca_dirs])
-    scas = [str(sca).zfill(2) for sca in scas]
-    if verbose: print(f'Reading from {input_sca_dirs}')
-
-    # set up output directory
-    output_dir = os.path.join(pipeline_dir, SCRIPT_NAME)
-    util.create_directory_if_not_exists(output_dir)
-    util.clear_directory(output_dir)
-    output_sca_dirs = []
-    for sca in scas:
-        sca_dir = os.path.join(output_dir, f'sca{sca}')
-        os.makedirs(sca_dir, exist_ok=True)
-        output_sca_dirs.append(sca_dir)
-    if verbose: print(f'Set up output directories {output_sca_dirs}')
-
-    # build instrument
-    roman = Roman()
-
-    # parse uids
-    uid_dict = {}
-    for sca in scas:
-        pickled_lenses = sorted(glob(input_dir + f'/sca{sca}/lens_*.pkl'))
-        lens_uids = [os.path.basename(i).split('_')[1].split('.')[0] for i in pickled_lenses]
-        uid_dict[sca] = lens_uids
-    count = 0
-    for sca, lens_uids in uid_dict.items():
-        count += len(lens_uids)
-    if limit is not None:
-        lens_uids = lens_uids[:limit]
-        if limit < count:
-            count = limit
-    if verbose: print(f'Processing {count} lens(es)')
+    # limit the number of systems to process, if limit imposed
+    count = len(input_pickles)
+    if pipeline.limit is not None and pipeline.limit < count:
+        if pipeline.verbose: print(f'Limiting to {pipeline.limit} lens(es)')
+        input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
+        if pipeline.limit < count:
+            count = pipeline.limit
+    if pipeline.verbose: print(f'Processing {count} lens(es)')
 
     # tuple the parameters
-    tuple_list = []
-    for i, (sca, lens_uids) in enumerate(uid_dict.items()):
-        input_sca_dir = os.path.join(input_dir, f'sca{sca}')
-        output_sca_dir = os.path.join(output_dir, f'sca{sca}')
+    tuple_list = [(pipeline, synthetic_image_config, psf_config, input_pickle) for input_pickle in input_pickles]
 
-        for uid in lens_uids:
-            tuple_list.append((uid, sca, roman, synthetic_image_config, psf_config, input_sca_dir, output_sca_dir))
-            i += 1
-            if i == limit:
-                break
-        else:
-            continue
-        break
-
-    # Define the number of processes
+    # define the number of processes
     cpu_count = multiprocessing.cpu_count()
     process_count = cpu_count
     process_count -= config['headroom_cores']['script_04']
@@ -118,7 +76,7 @@ def main(args):
         process_count = count
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
-    # Submit tasks to the executor
+    # submit tasks to the executor
     with ProcessPoolExecutor(max_workers=process_count) as executor:
         futures = {executor.submit(create_synthetic_image, task): task for task in tuple_list}
 
@@ -128,16 +86,12 @@ def main(args):
     stop = time.time()
     execution_time = util.print_execution_time(start, stop, return_string=True)
     util.write_execution_time(execution_time, SCRIPT_NAME,
-                              os.path.join(pipeline_dir, 'execution_times.json'))
+                              os.path.join(pipeline.pipeline_dir, 'execution_times.json'))
 
 
 def create_synthetic_image(input):
-    from mejiro.engines.stpsf_engine import STPSFEngine
-    from mejiro.synthetic_image import SyntheticImage
-    from mejiro.utils import roman_util, util
-
     # unpack tuple
-    (uid, sca, roman, synthetic_image_config, psf_config, input_dir, output_dir) = input
+    (pipeline, synthetic_image_config, psf_config, input_pickle) = input
 
     # unpack pipeline params
     bands = synthetic_image_config['bands']
@@ -145,14 +99,11 @@ def create_synthetic_image(input):
     pieces = synthetic_image_config['pieces']
     supersampling_factor = synthetic_image_config['supersampling_factor']
     supersampling_compute_mode = synthetic_image_config['supersampling_compute_mode']
-    divide_up_detector = psf_config['divide_up_detector']
-    psf_cache_dir = psf_config['psf_cache_dir']
     num_pix = psf_config['num_pixes'][0]
+    divide_up_detector = psf_config.get('divide_up_detector')  # Roman-specific parameter, not required for HWO
 
-    # load the lens based on uid
-    lens = util.unpickle(os.path.join(input_dir, f'lens_{uid}.pkl'))
-    lens_uid = lens.name.split('_')[-1].split('.')[0]
-    assert lens_uid == uid, f'UID mismatch: {lens_uid} != {uid}'
+    # unpickle the lens
+    lens = util.unpickle(input_pickle)
 
     # build kwargs_numerics
     kwargs_numerics = {
@@ -160,29 +111,39 @@ def create_synthetic_image(input):
         "compute_mode": supersampling_compute_mode
     }
 
+    get_psf_args = {}
+    instrument_params = {}
+
     # set detector and pick random position
-    possible_detector_positions = roman_util.divide_up_sca(divide_up_detector)
-    detector_pos = random.choice(possible_detector_positions)
-    instrument_params = {
-        'detector': int(sca),
-        'detector_position': detector_pos
-    }
+    if pipeline.instrument_name == 'roman':
+        possible_detector_positions = roman_util.divide_up_sca(divide_up_detector)
+        detector_position = random.choice(possible_detector_positions)
+        instrument_params['detector'] = pipeline.parse_sca_from_filename(input_pickle)
+        instrument_params['detector_position'] = detector_position
+        get_psf_args |= instrument_params
+
+        sca_string = roman_util.get_sca_string(instrument_params['detector'])
+        output_dir = os.path.join(pipeline.output_dir, sca_string)
+    else:
+        output_dir = pipeline.output_dir
 
     # generate synthetic images
     for band in bands:
         # get PSF
-        kwargs_psf = STPSFEngine.get_roman_psf_kwargs(band=band, 
-                                                    detector=int(sca), 
-                                                    detector_position=detector_pos, 
-                                                    oversample=supersampling_factor, 
-                                                    num_pix=num_pix, 
-                                                    check_cache=True, 
-                                                    psf_cache_dir=psf_cache_dir, 
-                                                    verbose=False)
+        get_psf_args |= {
+            'band': band,
+            'oversample': supersampling_factor,
+            'num_pix': num_pix,
+            'check_cache': True,
+            'psf_cache_dir': pipeline.psf_cache_dir,
+            'verbose': False,
+        }
+        kwargs_psf = pipeline.instrument.get_psf_kwargs(**get_psf_args)
 
+        # build and pickle synthetic image
         try:
             synthetic_image = SyntheticImage(strong_lens=lens,
-                                        instrument=roman,
+                                        instrument=pipeline.instrument,
                                         band=band,
                                         fov_arcsec=fov_arcsec,
                                         instrument_params=instrument_params,
@@ -190,13 +151,16 @@ def create_synthetic_image(input):
                                         kwargs_psf=kwargs_psf,
                                         pieces=pieces,
                                         verbose=False)
-            util.pickle(os.path.join(output_dir, f'SyntheticImage_{uid}_{band}.pkl'), synthetic_image)
-        except:
+            util.pickle(os.path.join(output_dir, f'SyntheticImage_{lens.name}_{band}.pkl'), synthetic_image)
+        except Exception as e:
+            failed_pickle_path = os.path.join(output_dir, f'failed_{lens.name}_{band}.pkl')
+            util.pickle(failed_pickle_path, lens)
+            print(f'Error creating synthetic image for lens {lens.name} in band {band}: {e}. Pickling to {failed_pickle_path}')
             return
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Generate and cache Roman PSFs.")
+    parser = argparse.ArgumentParser(description="Generate synthetic images")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
     args = parser.parse_args()
     main(args)
