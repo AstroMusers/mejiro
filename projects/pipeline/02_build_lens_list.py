@@ -68,7 +68,7 @@ def main(args):
 
                 for slsim_lens in tqdm(gglenses, desc="Strong Lenses", position=2, leave=False):
                     mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=f'{pipeline.name}_{str(uid).zfill(8)}')
-                    mejiro_lens_pickle_target = os.path.join(pipeline.output_dir, f'sca{sca}/lens_{str(uid).zfill(8)}.pkl')
+                    mejiro_lens_pickle_target = os.path.join(pipeline.output_dir, f'sca{sca}/lens_{mejiro_lens.name}.pkl')
                     util.pickle(mejiro_lens_pickle_target, mejiro_lens)
                     uid += 1
 
@@ -81,7 +81,7 @@ def main(args):
 
             for slsim_lens in tqdm(gglenses, desc="Strong Lenses", position=2, leave=False):
                 mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=f'{pipeline.name}_{str(uid).zfill(8)}')
-                mejiro_lens_pickle_target = os.path.join(pipeline.output_dir, f'lens_{str(uid).zfill(8)}.pkl')
+                mejiro_lens_pickle_target = os.path.join(pipeline.output_dir, f'lens_{mejiro_lens.name}.pkl')
                 util.pickle(mejiro_lens_pickle_target, mejiro_lens)
                 uid += 1
 

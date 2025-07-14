@@ -67,14 +67,14 @@ class PipelineHelper:
         return output_sca_dirs
 
     def retrieve_roman_pickles(self, prefix, suffix, extension):
-        filename_pattern = f'{prefix}_*'
+        filename_pattern = f'{prefix}_{self.name}_*'
         if suffix:
             filename_pattern += f'_{suffix}'
         filename_pattern += f'{extension}'
         return sorted(glob(os.path.join(self.input_dir, 'sca*', filename_pattern)))
 
     def retrieve_hwo_pickles(self, prefix='', suffix='', extension='.pkl'):
-        filename_pattern = f'{prefix}_*'
+        filename_pattern = f'{prefix}_{self.name}_*'
         if suffix:
             filename_pattern += f'_{suffix}'
         filename_pattern += f'{extension}'
