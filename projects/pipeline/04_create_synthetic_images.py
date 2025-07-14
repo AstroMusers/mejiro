@@ -145,7 +145,7 @@ def create_synthetic_image(input):
     pieces = synthetic_image_config['pieces']
     supersampling_factor = synthetic_image_config['supersampling_factor']
     supersampling_compute_mode = synthetic_image_config['supersampling_compute_mode']
-    divide_up_sca = psf_config['divide_up_sca']
+    divide_up_detector = psf_config['divide_up_detector']
     psf_cache_dir = psf_config['psf_cache_dir']
     num_pix = psf_config['num_pixes'][0]
 
@@ -161,7 +161,7 @@ def create_synthetic_image(input):
     }
 
     # set detector and pick random position
-    possible_detector_positions = roman_util.divide_up_sca(divide_up_sca)
+    possible_detector_positions = roman_util.divide_up_sca(divide_up_detector)
     detector_pos = random.choice(possible_detector_positions)
     instrument_params = {
         'detector': int(sca),

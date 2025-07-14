@@ -25,12 +25,15 @@ class PipelineHelper:
         #         value = PipelineHelper(value)
         #     setattr(self, key, value)
 
+        # set pipeline name
+        self.name = config['pipeline_label']
+
         # load instrument
         self.instrument_name = config['instrument'].lower()
         self.instrument = self.initialize_instrument_class()
 
         # set up top directory for all pipeline output
-        self.pipeline_dir = os.path.join(self.data_dir, self.config['pipeline_dir'])
+        self.pipeline_dir = os.path.join(self.data_dir, self.config['pipeline_label'])
         if self.dev:
             self.pipeline_dir += '_dev'
 
@@ -61,6 +64,20 @@ class PipelineHelper:
             output_sca_dirs.append(sca_dir)
         if self.verbose: print(f'Set up output directories {output_sca_dirs}')
         return output_sca_dirs
+
+    def retrieve_roman_pickles(self, prefix, suffix, extension):
+        filename_pattern = f'{prefix}_*'
+        if suffix:
+            filename_pattern += f'_{suffix}'
+        filename_pattern += f'{extension}'
+        return sorted(glob(os.path.join(self.input_dir, 'sca*', filename_pattern)))
+
+    def retrieve_hwo_pickles(self, prefix='', suffix='', extension='.pkl'):
+        filename_pattern = f'{prefix}_*'
+        if suffix:
+            filename_pattern += f'_{suffix}'
+        filename_pattern += f'{extension}'
+        return sorted(glob(os.path.join(self.input_dir, filename_pattern)))
     
     def initialize_instrument_class(self):
         base_module_path = "mejiro.instruments"

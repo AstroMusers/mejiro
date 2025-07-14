@@ -1,7 +1,7 @@
 repo_dir: &repo_dir /grad/bwedig/mejiro  # where the repository lives
 data_dir: &data_dir /data/bwedig/mejiro  # where output data should be written
 figure_dir: figures # !concat [*repo_dir, "/figures"]
-pipeline_dir: training_set
+pipeline_label: training_set
 psf_cache_dir: cached_psfs
 dev: True
 nice: 19

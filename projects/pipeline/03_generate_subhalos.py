@@ -1,7 +1,6 @@
 import argparse
 import multiprocessing
 import os
-import sys
 import time
 import yaml
 from glob import glob
@@ -11,9 +10,14 @@ import numpy as np
 from pyHalo.PresetModels.cdm import CDM
 from tqdm import tqdm
 
+from mejiro.cosmo import cosmo
+from mejiro.utils import util
+from mejiro.utils.pipeline_helper import PipelineHelper
+
 
 PREV_SCRIPT_NAME = '02'
 SCRIPT_NAME = '03'
+SUPPORTED_INSTRUMENTS = ['roman', 'hwo']
 
 
 def main(args):
@@ -31,79 +35,43 @@ def main(args):
     # read configuration file
     with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
-    repo_dir = config['repo_dir']
-
-    # enable use of local packages
-    if repo_dir not in sys.path:
-        sys.path.append(repo_dir)
-    from mejiro.utils import util
 
     # set nice level
     os.nice(config['nice'])
 
     # retrieve configuration parameters
-    dev = config['dev']
     verbose = config['verbose']
-    data_dir = config['data_dir']
-    limit = config['limit']
-    scas = config['survey']['scas']
     subhalo_config = config['subhalos']
 
-    # set up top directory for all pipeline output
-    pipeline_dir = os.path.join(data_dir, config['pipeline_dir'])
-    if dev:
-        pipeline_dir += '_dev'
+    # initialize PipeLineHelper
+    pipeline = PipelineHelper(config, PREV_SCRIPT_NAME, SCRIPT_NAME)
 
-    # tell script where the output of previous script is
-    input_dir = os.path.join(pipeline_dir, PREV_SCRIPT_NAME)
-    input_sca_dirs = [os.path.basename(d) for d in glob(os.path.join(input_dir, 'sca*')) if os.path.isdir(d)]
-    scas = sorted([int(d[3:]) for d in input_sca_dirs])
-    scas = [str(sca).zfill(2) for sca in scas]
-    if verbose: print(f'Reading from {input_sca_dirs}')
-
-    # set up output directory
-    output_dir = os.path.join(pipeline_dir, SCRIPT_NAME)
-    util.create_directory_if_not_exists(output_dir)
-    util.clear_directory(output_dir)
-    output_sca_dirs = []
-    for sca in scas:
-        sca_dir = os.path.join(output_dir, f'sca{sca}')
-        os.makedirs(sca_dir, exist_ok=True)
-        output_sca_dirs.append(sca_dir)
-    if verbose: print(f'Set up output directories {output_sca_dirs}')
-
-    # parse uids
-    uid_dict = {}
-    for sca in scas:
-        pickled_lenses = sorted(glob(input_dir + f'/sca{sca}/lens_*.pkl'))
-        lens_uids = [os.path.basename(i).split('_')[1].split('.')[0] for i in pickled_lenses]
-        uid_dict[sca] = lens_uids
-    count = 0
-    for sca, lens_uids in uid_dict.items():
-        count += len(lens_uids)
-    if limit is not None:
-        if verbose: print(f'Limiting to {limit} lens(es)')
-        lens_uids = lens_uids[:limit]
-        if limit < count:
-            count = limit
-    if verbose: print(f'Processing {count} lens(es)')
-
-    # tuple the parameters
-    tuple_list = []
-    for i, (sca, lens_uids) in enumerate(uid_dict.items()):
-        input_sca_dir = os.path.join(input_dir, f'sca{sca}')
-        output_sca_dir = os.path.join(output_dir, f'sca{sca}')
-
-        for uid in lens_uids:
-            tuple_list.append((uid, subhalo_config, input_sca_dir, output_sca_dir))
+    # set input and output directories
+    if pipeline.instrument_name == 'roman':
+        input_pickles = pipeline.retrieve_roman_pickles(prefix='lens', suffix='', extension='.pkl')
+        pipeline.create_roman_sca_output_directories()
+    elif pipeline.instrument_name == 'hwo':
+        input_pickles = pipeline.retrieve_hwo_pickles(prefix='lens', suffix='', extension='.pkl')
 
     # add subhalos to a subset of systems
     if subhalo_config['fraction'] < 1.0:
         if verbose: print(f'Adding subhalos to {subhalo_config["fraction"] * 100}% of the systems')
         np.random.seed(config['seed'])
-        np.random.shuffle(tuple_list)
-        count = int(len(tuple_list) * subhalo_config['fraction'])
-        tuple_list = tuple_list[:count]
+        np.random.shuffle(input_pickles)
+        count = int(len(input_pickles) * subhalo_config['fraction'])
+        input_pickles = input_pickles[:count]
+
+    # limit the number of systems to process, if limit imposed
+    count = len(input_pickles)
+    if pipeline.limit is not None and pipeline.limit < count:
+        if verbose: print(f'Limiting to {pipeline.limit} lens(es)')
+        input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
+        if pipeline.limit < count:
+            count = pipeline.limit
+    if verbose: print(f'Processing {count} lens(es)')
+
+    # tuple the parameters
+    tuple_list = [(pipeline, subhalo_config, input_pickle) for input_pickle in input_pickles]
 
     # define the number of processes
     cpu_count = multiprocessing.cpu_count()
@@ -123,67 +91,50 @@ def main(args):
     stop = time.time()
     execution_time = util.print_execution_time(start, stop, return_string=True)
     util.write_execution_time(execution_time, SCRIPT_NAME,
-                              os.path.join(pipeline_dir, 'execution_times.json'))
+                              os.path.join(pipeline.pipeline_dir, 'execution_times.json'))
 
 
 def add(tuple):
     np.random.seed()
 
-    from mejiro.cosmo import cosmo
-    from mejiro.utils import util
-
     # unpack tuple
-    (uid, subhalo_config, input_dir, output_dir) = tuple
+    (pipeline, subhalo_config, input_pickle) = tuple
 
-    # unpack pipeline_params
-    los_normalization = subhalo_config['los_normalization']
-    r_tidal = subhalo_config['r_tidal']
-    sigma_sub = subhalo_config['sigma_sub']
-    log_mlow = subhalo_config['log_mlow']
-    log_mhigh = subhalo_config['log_mhigh']
+    # load the lens
+    lens = util.unpickle(input_pickle)
 
-    # load the lens based on uid
-    lens = util.unpickle(os.path.join(input_dir, f'lens_{uid}.pkl'))
-    lens_uid = lens.name.split('_')[-1].split('.')[0]
-    assert lens_uid == uid, f'UID mismatch: {lens_uid} != {uid}'
-
+    # convert stellar mass to main halo mass
     main_halo_mass = cosmo.stellar_to_main_halo_mass(lens.physical_params['lens_stellar_mass'], lens.z_lens, sample=True)
-    log_m_host = np.log10(main_halo_mass)
-    kwargs_cosmo = util.get_kwargs_cosmo(lens.cosmo)
-
-    # circumvent bug with pyhalo, sometimes fails when redshifts have more than 2 decimal places
-    z_lens = round(lens.z_lens, 2)
-    z_source = round(lens.z_source, 2)
-
-    # get Einstein radius
-    einstein_radius = lens.get_einstein_radius()
 
     try:
-        cdm_realization = CDM(z_lens,
-                              z_source,
-                              sigma_sub=sigma_sub,
-                              log_mlow=log_mlow,
-                              log_mhigh=log_mhigh,
-                              log_m_host=log_m_host,
-                              r_tidal=r_tidal,
-                              cone_opening_angle_arcsec=einstein_radius * 3,
-                              LOS_normalization=los_normalization,
-                              kwargs_cosmo=kwargs_cosmo)
+        cdm_realization = CDM(z_lens=round(lens.z_lens, 2),  # circumvent bug with pyhalo, sometimes fails when redshifts have more than 2 decimal places
+                              z_source=round(lens.z_source, 2),
+                              sigma_sub=subhalo_config['sigma_sub'],
+                              log_mlow=subhalo_config['log_mlow'],
+                              log_mhigh=subhalo_config['log_mhigh'],
+                              log_m_host=np.log10(main_halo_mass),
+                              r_tidal=subhalo_config['r_tidal'],
+                              cone_opening_angle_arcsec=lens.get_einstein_radius() * 3,
+                              LOS_normalization=subhalo_config['los_normalization'],
+                              kwargs_cosmo=util.get_kwargs_cosmo(lens.cosmo))
     except Exception as e:
-        util.pickle(os.path.join(os.path.dirname(output_dir), f'failed_lens_{str(uid).zfill(8)}.pkl'), lens)
-        print(f'Failed to generate subhalos for lens {lens_uid}: {e}')
+        util.pickle(os.path.join(os.path.dirname(pipeline.output_dir), f'failed_{lens.name}.pkl'), lens)
+        print(f'Failed to generate subhalos for lens {os.path.basename(input_pickle)}: {e}')
         return
 
-    # Add subhalos
+    # add subhalos
     lens.add_realization(cdm_realization)
 
-    # Pickle the subhalo realization
-    subhalo_dir = os.path.join(output_dir, 'subhalos')
+    # pickle the subhalo realization
+    subhalo_dir = os.path.join(pipeline.output_dir, 'subhalos')
     util.create_directory_if_not_exists(subhalo_dir)
-    util.pickle(os.path.join(subhalo_dir, f'subhalo_realization_{str(uid).zfill(8)}.pkl'), cdm_realization)
+    util.pickle(os.path.join(subhalo_dir, f'subhalo_realization_{lens.name}.pkl'), cdm_realization)
 
-    # Pickle the lens with subhalos
-    pickle_target = os.path.join(output_dir, f'lens_{str(uid).zfill(8)}.pkl')
+    # pickle the lens with subhalos
+    if pipeline.instrument_name == 'roman':
+        sca_string = os.path.dirname(input_pickle).split('/')[-1]
+        pipeline.output_dir = os.path.join(pipeline.output_dir, sca_string)
+    pickle_target = os.path.join(pipeline.output_dir, f'lens_{lens.name}.pkl')
     util.pickle(pickle_target, lens)
 
 

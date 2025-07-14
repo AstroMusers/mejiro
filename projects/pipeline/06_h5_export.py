@@ -177,7 +177,7 @@ def main(args):
     # ---------------------------CREATE PSF DATASET--------------------------------
     # set detectors and detector_positions
     detectors = psf_config['detectors']
-    detector_positions = roman_util.divide_up_sca(psf_config['divide_up_sca'])
+    detector_positions = roman_util.divide_up_sca(psf_config['divide_up_detector'])
 
     # hard-coded PSF params, for now
     psf_pixels = 101

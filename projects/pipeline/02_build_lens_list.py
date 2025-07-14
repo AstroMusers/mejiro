@@ -69,19 +69,20 @@ def main(args):
                 gglenses = util.unpickle(pickled_list)
 
                 for slsim_lens in tqdm(gglenses, desc="Strong Lenses", position=2, leave=False):
-                    mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=f'{pipeline.pipeline_dir}_{str(uid).zfill(8)}')
+                    mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=f'{pipeline.name}_{str(uid).zfill(8)}')
                     mejiro_lens_pickle_target = os.path.join(pipeline.output_dir, f'sca{sca}/lens_{str(uid).zfill(8)}.pkl')
                     util.pickle(mejiro_lens_pickle_target, mejiro_lens)
                     uid += 1
 
                 if uid == limit:
                     break
+
     elif pipeline.instrument_name == 'hwo':
         for pickled_list in tqdm(detectable_gglens_pickles, desc="Runs", position=1, leave=False):
             gglenses = util.unpickle(pickled_list)
 
             for slsim_lens in tqdm(gglenses, desc="Strong Lenses", position=2, leave=False):
-                mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=f'{pipeline.pipeline_dir}_{str(uid).zfill(8)}')
+                mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=f'{pipeline.name}_{str(uid).zfill(8)}')
                 mejiro_lens_pickle_target = os.path.join(pipeline.output_dir, f'lens_{str(uid).zfill(8)}.pkl')
                 util.pickle(mejiro_lens_pickle_target, mejiro_lens)
                 uid += 1
