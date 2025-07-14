@@ -19,6 +19,7 @@ class PipelineHelper:
         self.data_dir = config['data_dir']
         self.limit = config['limit']
         self.detectors = config['survey']['detectors']
+        self.psf_cache_dir = os.path.join(self.data_dir, config['psf_cache_dir'])
 
         # for key, value in self.config.items():
         #     if isinstance(value, dict):

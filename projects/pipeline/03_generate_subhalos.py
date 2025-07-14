@@ -40,7 +40,6 @@ def main(args):
     os.nice(config['nice'])
 
     # retrieve configuration parameters
-    verbose = config['verbose']
     subhalo_config = config['subhalos']
 
     # initialize PipeLineHelper
@@ -52,10 +51,12 @@ def main(args):
         pipeline.create_roman_sca_output_directories()
     elif pipeline.instrument_name == 'hwo':
         input_pickles = pipeline.retrieve_hwo_pickles(prefix='lens', suffix='', extension='.pkl')
+    else:
+        raise ValueError(f'Unknown instrument {pipeline.instrument_name}. Supported instruments are {SUPPORTED_INSTRUMENTS}.')
 
     # add subhalos to a subset of systems
     if subhalo_config['fraction'] < 1.0:
-        if verbose: print(f'Adding subhalos to {subhalo_config["fraction"] * 100}% of the systems')
+        if pipeline.verbose: print(f'Adding subhalos to {subhalo_config["fraction"] * 100}% of the systems')
         np.random.seed(config['seed'])
         np.random.shuffle(input_pickles)
         count = int(len(input_pickles) * subhalo_config['fraction'])
@@ -64,11 +65,11 @@ def main(args):
     # limit the number of systems to process, if limit imposed
     count = len(input_pickles)
     if pipeline.limit is not None and pipeline.limit < count:
-        if verbose: print(f'Limiting to {pipeline.limit} lens(es)')
+        if pipeline.verbose: print(f'Limiting to {pipeline.limit} lens(es)')
         input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
         if pipeline.limit < count:
             count = pipeline.limit
-    if verbose: print(f'Processing {count} lens(es)')
+    if pipeline.verbose: print(f'Processing {count} lens(es)')
 
     # tuple the parameters
     tuple_list = [(pipeline, subhalo_config, input_pickle) for input_pickle in input_pickles]
@@ -118,8 +119,9 @@ def add(tuple):
                               LOS_normalization=subhalo_config['los_normalization'],
                               kwargs_cosmo=util.get_kwargs_cosmo(lens.cosmo))
     except Exception as e:
-        util.pickle(os.path.join(os.path.dirname(pipeline.output_dir), f'failed_{lens.name}.pkl'), lens)
-        print(f'Failed to generate subhalos for lens {os.path.basename(input_pickle)}: {e}')
+        failed_pickle_path = os.path.join(pipeline.output_dir, f'failed_{lens.name}.pkl')
+        util.pickle(failed_pickle_path, lens)
+        print(f'Failed to generate subhalos for {lens.name}: {e}. Pickling to {failed_pickle_path}')
         return
 
     # add subhalos
@@ -139,7 +141,7 @@ def add(tuple):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Generate and cache Roman PSFs.")
+    parser = argparse.ArgumentParser(description="Generate dark matter substructure realizations")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
     args = parser.parse_args()
     main(args)

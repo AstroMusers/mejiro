@@ -35,8 +35,6 @@ def main(args):
     os.nice(config['nice'])
 
     # retrieve configuration parameters
-    verbose = config['verbose']
-    limit = config['limit']
     scas = config['survey']['detectors']
 
     # initialize PipeLineHelper
@@ -50,7 +48,7 @@ def main(args):
         parsed_names = [os.path.basename(f).split("_")[3].split(".")[0] for f in detectable_gglens_pickles]
         scas = [int(d[3:]) for d in parsed_names]
         scas = sorted(set([str(sca).zfill(2) for sca in scas]))
-        if verbose: print(f'Found SCA(s): {scas}')
+        if pipeline.verbose: print(f'Found SCA(s): {scas}')
     elif pipeline.instrument_name == 'hwo':
         pass
     else:
@@ -74,7 +72,7 @@ def main(args):
                     util.pickle(mejiro_lens_pickle_target, mejiro_lens)
                     uid += 1
 
-                if uid == limit:
+                if uid == pipeline.limit:
                     break
 
     elif pipeline.instrument_name == 'hwo':
@@ -87,10 +85,10 @@ def main(args):
                 util.pickle(mejiro_lens_pickle_target, mejiro_lens)
                 uid += 1
 
-            if uid == limit:
+            if uid == pipeline.limit:
                 break
 
-    if verbose: print(f'Pickled {uid} lens(es) to {pipeline.output_dir}')
+    if pipeline.verbose: print(f'Pickled {uid} lens(es) to {pipeline.output_dir}')
 
     stop = time.time()
     execution_time = util.print_execution_time(start, stop, return_string=True)

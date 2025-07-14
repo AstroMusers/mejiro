@@ -377,7 +377,7 @@ def run_slsim(tuple):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Generate and cache Roman PSFs.")
+    parser = argparse.ArgumentParser(description="Simulate survey and identify detectable systems")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
     args = parser.parse_args()
     main(args)
