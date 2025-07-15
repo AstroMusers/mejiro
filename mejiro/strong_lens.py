@@ -1,5 +1,6 @@
 import numpy as np
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from lenstronomy.Cosmo.lens_cosmo import LensCosmo
 from lenstronomy.LensModel.lens_model import LensModel
 from lenstronomy.LightModel.light_model import LightModel
@@ -122,6 +123,10 @@ class StrongLens(ABC):
         # fields to initialize: these can be computed on demand
         self.lens_cosmo = None
         self.realization = None
+        self.kwargs_lens_macromodel = None
+        self.lens_redshift_list_macromodel = None
+        self.lens_model_list_macromodel = None
+        self.lens_model_macromodel = None
 
     def get_f_sub(self, fov_arcsec=5, num_pix=100, plot=False):
         if self.realization is None:
@@ -246,6 +251,12 @@ class StrongLens(ABC):
         """
         self.realization = realization
 
+        # before adding the realization, save the macromodel parameters
+        self.kwargs_lens_macromodel = deepcopy(self.kwargs_lens)
+        self.lens_redshift_list_macromodel = deepcopy(self.lens_redshift_list)
+        self.lens_model_list_macromodel = deepcopy(self.lens_model_list)
+        self.lens_model_macromodel = deepcopy(self.lens_model)
+
         # get lenstronomy lensing quantities
         halo_lens_model_list, halo_redshift_array, kwargs_halos, _ = realization.lensing_quantities(
             add_mass_sheet_correction=True)
@@ -258,10 +269,19 @@ class StrongLens(ABC):
         self.lens_redshift_list += halo_redshift_list
         self.lens_model_list += halo_lens_model_list
 
-        # set JAXtronomy flag
-        if isinstance(self.use_jax, bool):
-            self.use_jax = [self.use_jax]
-        self.use_jax += [use_jax] * len(halo_lens_model_list) 
+        # use JAXtronomy for supported lens models
+        from jaxtronomy.LensModel.profile_list_base import _JAXXED_MODELS
+        if isinstance(use_jax, bool):
+            if use_jax:
+                for halo_lens_model in halo_lens_model_list:
+                    if halo_lens_model in _JAXXED_MODELS:
+                        self.use_jax.append(True)
+                    else:
+                        self.use_jax.append(False)
+            else:
+                self.use_jax += [False] * len(halo_lens_model_list)
+        else:
+            raise ValueError("use_jax must be a boolean.")
 
     def get_velocity_dispersion(self):
         """
@@ -465,6 +485,30 @@ class StrongLens(ABC):
     @property
     def source_light_model(self):
         return LightModel(self.source_light_model_list)
+
+    # @property
+    # def lens_model_macromodel(self):
+    #     if self.lens_model_macromodel is None:
+    #         raise ValueError("This value is only populated when a substructure realization is added.")
+    #     return LensModel(self.lens_model_list_macromodel, use_jax=self.use_jax)
+
+    # @property
+    # def lens_model_list_macromodel(self):
+    #     if self.lens_model_list_macromodel is None:
+    #         raise ValueError("This value is only populated when a substructure realization is added.")
+    #     return self.lens_model_list_macromodel
+
+    # @property
+    # def kwargs_lens_macromodel(self):
+    #     if self.kwargs_lens_macromodel is None:
+    #         raise ValueError("This value is only populated when a substructure realization is added.")
+    #     return self.kwargs_lens_macromodel
+
+    # @property
+    # def lens_redshift_list_macromodel(self):
+    #     if self.lens_redshift_list_macromodel is None:
+    #         raise ValueError("This value is only populated when a substructure realization is added.")
+    #     return self.lens_redshift_list_macromodel
     
     def __str__(self):
         return f"StrongLens(name={self.name}, coords={self.coords}, z_lens={getattr(self, 'z_lens', None)}, z_source={getattr(self, 'z_source', None)})"

@@ -55,18 +55,18 @@ imaging:
 snr:
   snr_subtract_lens: False
   snr_add_subhalos: False
-  snr_exposure_time: *exposure_time  # 642
+  snr_exposure_time: *exposure_time
   snr_band: F129
-  snr_threshold: 25
-  snr_fov_arcsec: 10
-  snr_supersampling_factor: &snr_supersampling_factor 5
-  snr_supersampling_compute_mode: adaptive  # regular
+  snr_threshold: 20
+  snr_fov_arcsec: 6
+  snr_supersampling_factor: &snr_supersampling_factor 1
+  snr_supersampling_compute_mode: adaptive  # regular, adaptive
   snr_supersampling_radius: 2.
   snr_adaptive_pad: 40  # number of pixels to pad radii of annular adaptive grid below and above minimum and maximum image positions
   snr_per_pixel_threshold: 1
   # - zodi_multiplier: 1.5  # multiplied with minimum zodiacal light
 subhalos:
-  fraction: 1.  # 0.5  # fraction of systems to add substructure to
+  fraction: 0.5  # 0.5  # fraction of systems to add substructure to
   log_mlow: 6
   log_mhigh: 12
   subhalo_cone: 10.  # 6.
@@ -74,8 +74,8 @@ subhalos:
   r_tidal: 0.5  # see Section 3.1 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract 
   sigma_sub: 0.055  # see Section 6.3 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract 
 synthetic_image:
-  fov_arcsec: 10
-  supersampling_factor: &supersampling_factor 5
+  fov_arcsec: 6
+  supersampling_factor: &supersampling_factor 1
   supersampling_compute_mode: adaptive
   bands: [ F106, F129, F158 ]
   pieces: True

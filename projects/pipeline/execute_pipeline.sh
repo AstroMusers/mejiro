@@ -1,6 +1,6 @@
 #!/bin/bash
 
-config="roman_dev"  # training_set, roman_hlwas_medium, hwo, hwo_dev
+config="roman_hlwas_medium"  # training_set, roman_hlwas_medium
 
 # escape if error encountered
 set -e
@@ -10,9 +10,9 @@ set -e
 # python3 00_cache_psfs.py --config $config
 # echo 'Cached PSFs.'
 
-# echo 'Running survey simulation...'
-# python3 01_run_survey_simulation.py --config $config
-# echo 'Identified detectable strong lenses.'
+echo 'Running survey simulation...'
+python3 01_run_survey_simulation.py --config $config
+echo 'Identified detectable strong lenses.'
 
 echo 'Building lens list from SkyPy...'
 python3 02_build_lens_list.py --config $config

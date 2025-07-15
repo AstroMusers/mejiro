@@ -6,9 +6,9 @@ config="roman_test"
 set -e
 
 # execute Python scripts sequentially
-echo 'Caching PSFs...'
-python3 00_cache_psfs.py --config $config
-echo 'Cached PSFs.'
+# echo 'Caching PSFs...'
+# python3 00_cache_psfs.py --config $config
+# echo 'Cached PSFs.'
 
 echo 'Running survey simulation...'
 python3 01_run_survey_simulation.py --config $config

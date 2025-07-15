@@ -1,6 +1,7 @@
 import argparse
 import multiprocessing
 import os
+import shutil
 import time
 import yaml
 from glob import glob
@@ -54,14 +55,6 @@ def main(args):
     else:
         raise ValueError(f'Unknown instrument {pipeline.instrument_name}. Supported instruments are {SUPPORTED_INSTRUMENTS}.')
 
-    # add subhalos to a subset of systems
-    if subhalo_config['fraction'] < 1.0:
-        if pipeline.verbose: print(f'Adding subhalos to {subhalo_config["fraction"] * 100}% of the systems')
-        np.random.seed(config['seed'])
-        np.random.shuffle(input_pickles)
-        count = int(len(input_pickles) * subhalo_config['fraction'])
-        input_pickles = input_pickles[:count]
-
     # limit the number of systems to process, if limit imposed
     count = len(input_pickles)
     if pipeline.limit is not None and pipeline.limit < count:
@@ -71,8 +64,19 @@ def main(args):
             count = pipeline.limit
     if pipeline.verbose: print(f'Processing {count} lens(es)')
 
+    # add subhalos to a subset of systems
+    if subhalo_config['fraction'] < 1.0:
+        if pipeline.verbose: print(f'Adding subhalos to {subhalo_config["fraction"] * 100}% of the systems')
+        np.random.seed(config['seed'])
+        mask = np.zeros(count, dtype=bool)
+        num_true = int(np.round(subhalo_config['fraction'] * count))
+        mask[:num_true] = True
+        np.random.shuffle(mask)
+    else:
+        mask = np.ones(count, dtype=bool)
+
     # tuple the parameters
-    tuple_list = [(pipeline, subhalo_config, input_pickle) for input_pickle in input_pickles]
+    tuple_list = [(pipeline, subhalo_config, input_pickle, add_subhalos) for input_pickle, add_subhalos in zip(input_pickles, mask)]
 
     # define the number of processes
     cpu_count = multiprocessing.cpu_count()
@@ -99,45 +103,53 @@ def add(tuple):
     np.random.seed()
 
     # unpack tuple
-    (pipeline, subhalo_config, input_pickle) = tuple
+    (pipeline, subhalo_config, input_pickle, add_subhalos) = tuple
 
-    # load the lens
-    lens = util.unpickle(input_pickle)
+    if add_subhalos:
+        # load the lens
+        lens = util.unpickle(input_pickle)
 
-    # convert stellar mass to main halo mass
-    main_halo_mass = cosmo.stellar_to_main_halo_mass(lens.physical_params['lens_stellar_mass'], lens.z_lens, sample=True)
+        # convert stellar mass to main halo mass
+        main_halo_mass = cosmo.stellar_to_main_halo_mass(lens.physical_params['lens_stellar_mass'], lens.z_lens, sample=True)
 
-    try:
-        cdm_realization = CDM(z_lens=round(lens.z_lens, 2),  # circumvent bug with pyhalo, sometimes fails when redshifts have more than 2 decimal places
-                              z_source=round(lens.z_source, 2),
-                              sigma_sub=subhalo_config['sigma_sub'],
-                              log_mlow=subhalo_config['log_mlow'],
-                              log_mhigh=subhalo_config['log_mhigh'],
-                              log_m_host=np.log10(main_halo_mass),
-                              r_tidal=subhalo_config['r_tidal'],
-                              cone_opening_angle_arcsec=lens.get_einstein_radius() * 3,
-                              LOS_normalization=subhalo_config['los_normalization'],
-                              kwargs_cosmo=util.get_kwargs_cosmo(lens.cosmo))
-    except Exception as e:
-        failed_pickle_path = os.path.join(pipeline.output_dir, f'failed_{lens.name}.pkl')
-        util.pickle(failed_pickle_path, lens)
-        print(f'Failed to generate subhalos for {lens.name}: {e}. Pickling to {failed_pickle_path}')
-        return
+        try:
+            cdm_realization = CDM(z_lens=round(lens.z_lens, 2),  # circumvent bug with pyhalo, sometimes fails when redshifts have more than 2 decimal places
+                                z_source=round(lens.z_source, 2),
+                                sigma_sub=subhalo_config['sigma_sub'],
+                                log_mlow=subhalo_config['log_mlow'],
+                                log_mhigh=subhalo_config['log_mhigh'],
+                                log_m_host=np.log10(main_halo_mass),
+                                r_tidal=subhalo_config['r_tidal'],
+                                cone_opening_angle_arcsec=lens.get_einstein_radius() * 3,
+                                LOS_normalization=subhalo_config['los_normalization'],
+                                kwargs_cosmo=util.get_kwargs_cosmo(lens.cosmo))
+        except Exception as e:
+            failed_pickle_path = os.path.join(pipeline.output_dir, f'failed_{lens.name}.pkl')
+            util.pickle(failed_pickle_path, lens)
+            print(f'Failed to generate subhalos for {lens.name}: {e}. Pickling to {failed_pickle_path}')
+            return
 
-    # add subhalos
-    lens.add_realization(cdm_realization, use_jax=False)
+        # add subhalos
+        lens.add_realization(cdm_realization)
 
-    # pickle the subhalo realization
-    subhalo_dir = os.path.join(pipeline.output_dir, 'subhalos')
-    util.create_directory_if_not_exists(subhalo_dir)
-    util.pickle(os.path.join(subhalo_dir, f'subhalo_realization_{lens.name}.pkl'), cdm_realization)
+        # pickle the subhalo realization
+        subhalo_dir = os.path.join(pipeline.output_dir, 'subhalos')
+        util.create_directory_if_not_exists(subhalo_dir)
+        util.pickle(os.path.join(subhalo_dir, f'subhalo_realization_{lens.name}.pkl'), cdm_realization)
 
-    # pickle the lens with subhalos
-    if pipeline.instrument_name == 'roman':
-        sca_string = os.path.dirname(input_pickle).split('/')[-1]
-        pipeline.output_dir = os.path.join(pipeline.output_dir, sca_string)
-    pickle_target = os.path.join(pipeline.output_dir, f'lens_{lens.name}.pkl')
-    util.pickle(pickle_target, lens)
+        # pickle the lens with subhalos
+        if pipeline.instrument_name == 'roman':
+            sca_string = os.path.dirname(input_pickle).split('/')[-1]
+            pipeline.output_dir = os.path.join(pipeline.output_dir, sca_string)
+        pickle_target = os.path.join(pipeline.output_dir, f'lens_{lens.name}.pkl')
+        util.pickle(pickle_target, lens)
+    else:
+        # if not adding subhalos, just copy the input pickle to the output directory
+        if pipeline.instrument_name == 'roman':
+            sca_string = os.path.dirname(input_pickle).split('/')[-1]
+            pipeline.output_dir = os.path.join(pipeline.output_dir, sca_string)
+        target = os.path.join(pipeline.output_dir, os.path.basename(input_pickle))
+        shutil.copy2(input_pickle, target)
 
 
 if __name__ == '__main__':

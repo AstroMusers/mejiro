@@ -49,9 +49,16 @@ class GalaxyGalaxy(StrongLens):
             raise ValueError("Magnification not found in physical_params. Please provide 'magnification' in physical_params.")
         return self.physical_params['magnification']
         
-    def get_image_positions(self):
+    def get_image_positions(self, ignore_substructure=True):
+        
         """
-        Returns the extended source image positions.
+        Compute and return the extended source image positions.
+
+        Parameters
+        ----------
+        ignore_substructure : bool, optional
+            If True (default), ignores substructure in the lens model when computing image positions.
+            If False, includes substructure in the calculation.
 
         Returns
         -------
@@ -64,14 +71,19 @@ class GalaxyGalaxy(StrongLens):
         - Uses lenstronomy's LensEquationSolver to solve the lens equation.
         - The solver is chosen automatically: "analytical" if supported by the lens model, otherwise "lenstronomy".
         - The search window and minimum distance are set based on the Einstein radius.
+        - If a lens model realization exists and `ignore_substructure` is True, only the macromodel is used for the calculation.
         """
         from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver, analytical_lens_model_support
 
         source_x = self.kwargs_source[0]['center_x']
         source_y = self.kwargs_source[0]['center_y']
 
-        lens_eqn_solver = LensEquationSolver(self.lens_model)
-        solver = "analytical" if analytical_lens_model_support(self.lens_model_list) else "lenstronomy"
+        if self.realization and ignore_substructure:
+            lens_eqn_solver = LensEquationSolver(self.lens_model_macromodel)
+            solver = "analytical" if analytical_lens_model_support(self.lens_model_list_macromodel) else "lenstronomy"
+        else:
+            lens_eqn_solver = LensEquationSolver(self.lens_model)
+            solver = "analytical" if analytical_lens_model_support(self.lens_model_list) else "lenstronomy"
         
         return lens_eqn_solver.image_position_from_source(
             source_x,

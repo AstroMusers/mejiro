@@ -206,12 +206,15 @@ class SyntheticImage:
 
         return (distance >= min) & (distance <= max)
 
-    def get_image_positions(self, pixel=True):
+    def get_image_positions(self, ignore_substructure=True, pixel=True):
         """
-        Calculate the image positions from the source position and lensing mass model. Wraps ``GalaxyGalaxy.get_image_positions()``, with the added functionality of returning the positions in pixel coordinates.
+        Calculate the image positions from the source position and lensing mass model. Wraps ``GalaxyGalaxy.get_image_positions()``, with the added functionality of returning the positions in pixel coordinates based on the pixel grid defined for this synthetic image.
 
         Parameters
         ----------
+        ignore_substructure : bool, optional
+            If True (default), ignores substructure in the lens model when computing image positions.
+            If False, includes substructure in the calculation.
         pixel : bool, optional
             If True, the image positions are returned in pixel coordinates. 
             If False, the image positions are returned in lenstronomy's default angular coordinates. Default is True.
@@ -221,7 +224,7 @@ class SyntheticImage:
         Tuple of arrays
             ([x coordinates], [y coordinates]) of the image positions in lenstronomy "angle" units (often, arcseconds).
         """
-        image_x, image_y = self.strong_lens.get_image_positions()
+        image_x, image_y = self.strong_lens.get_image_positions(ignore_substructure=ignore_substructure)
 
         if pixel:
             if self.coords is None:

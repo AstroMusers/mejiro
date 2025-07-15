@@ -122,7 +122,7 @@ def create_synthetic_image(input):
         instrument_params['detector_position'] = detector_position
         get_psf_args |= instrument_params
 
-        sca_string = roman_util.get_sca_string(instrument_params['detector'])
+        sca_string = roman_util.get_sca_string(instrument_params['detector']).lower()
         output_dir = os.path.join(pipeline.output_dir, sca_string)
     else:
         output_dir = pipeline.output_dir
