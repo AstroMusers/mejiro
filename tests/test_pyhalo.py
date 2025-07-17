@@ -88,4 +88,28 @@ def test_SIDM(strong_lens):
                                      instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
                                      pieces=False,
                                      verbose=False)
+
+
+@pytest.mark.parametrize("strong_lens", [SampleGG(), SampleSL2S(), SampleBELLS()])
+def test_ULDM(strong_lens):
+    ULDM = preset_model_from_name('ULDM')
+    realization = ULDM(round(strong_lens.z_lens, 2), 
+                       round(strong_lens.z_source, 2), 
+                       log10_m_uldm=-22,
+                       cone_opening_angle_arcsec=5, 
+                       log_m_host=np.log10(strong_lens.get_main_halo_mass()),
+                       flucs_shape='ring',
+                       flucs_args={'angle': 0.0, 'rmin': 0.9, 'rmax': 1.1},
+                       log10_fluc_amplitude=-1.6, 
+                       n_cut=1000000)
+
+    strong_lens.add_realization(realization)
+
+    synthetic_image = SyntheticImage(strong_lens=strong_lens,
+                                     instrument=Roman(),
+                                     band='F129',
+                                     fov_arcsec=5,
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                                     pieces=False,
+                                     verbose=False)
     
