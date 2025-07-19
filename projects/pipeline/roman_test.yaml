@@ -8,6 +8,8 @@ nice: 19  # 19
 verbose: True  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
 limit: null
 seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
+cores:
+  script_01: 10
 headroom_cores: 
   script_00: 0
   script_01: 28

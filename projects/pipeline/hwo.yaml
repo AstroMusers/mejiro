@@ -4,10 +4,12 @@ figure_dir: figures # !concat [*repo_dir, "/figures"]
 pipeline_label: hwo
 psf_cache_dir: cached_psfs
 dev: False
-nice: 19  # 19
+nice: 9  # 19
 verbose: True  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
 limit: null
 seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
+cores:
+  script_01: 28
 headroom_cores: 
   script_00: 0
   script_01: 28
@@ -17,27 +19,27 @@ headroom_cores:
   script_05: 28
 instrument: hwo
 survey:
-  runs: 50  # 540
+  runs: 1000  # 540
   area: 0.1  # 0.5  # 0.1
   skypy_config: hwo
-  total_population: True
+  total_population: False
   detectors: &detectors [1]
   bands: [J]
   deflector_cut_band: J
   deflector_cut_band_max: 30
   deflector_z_min: 0.01
-  deflector_z_max: 5.0
+  deflector_z_max: 2.0
   source_cut_band: J
   source_cut_band_max: 30
   source_z_min: 0.01
-  source_z_max: 10.0
-  min_image_separation: 0.2  # arcseconds
+  source_z_max: 3.0
+  min_image_separation: 0.1  # arcseconds
   max_image_separation: 10.0  # arcseconds
   mag_arc_limit_band: J
   mag_arc_limit: 30  # this takes pressure off of SNR criterion, so set as high as possible without missing anything
   magnification: 3
 imaging:
-  exposure_time: &exposure_time 1000  # 642
+  exposure_time: &exposure_time 7200  # 642
   engine: galsim
   engine_params:
     rng_seed: 42
@@ -52,9 +54,9 @@ imaging:
 snr:
   snr_subtract_lens: False
   snr_add_subhalos: False
-  snr_exposure_time: *exposure_time  # 642
+  snr_exposure_time: *exposure_time
   snr_band: J
-  snr_threshold: 25
+  snr_threshold: 200
   snr_fov_arcsec: 10
   snr_supersampling_factor: &snr_supersampling_factor 5
   snr_supersampling_compute_mode: adaptive  # regular

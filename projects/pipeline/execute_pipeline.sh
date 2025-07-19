@@ -1,6 +1,6 @@
 #!/bin/bash
 
-config="roman_hlwas_medium"  # training_set, roman_hlwas_medium
+config="hwo"  # training_set, roman_hlwas_medium
 
 # escape if error encountered
 set -e
@@ -32,10 +32,10 @@ echo 'Simulating images...'
 python3 05_create_exposures.py --config $config
 echo 'GalSim simulations complete.'
 
-echo 'Generating h5 file...'
-if [ $config == "training_set" ]; then
-    python3 06_h5_export_training_set.py --config $config
-else
-    python3 06_h5_export.py --config $config
-fi
-echo 'h5 file generation complete.'
+# echo 'Generating h5 file...'
+# if [ $config == "training_set" ]; then
+#     python3 06_h5_export_training_set.py --config $config
+# else
+#     python3 06_h5_export.py --config $config
+# fi
+# echo 'h5 file generation complete.'

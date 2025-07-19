@@ -95,8 +95,7 @@ def main(args):
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
-    process_count = int(cpu_count / 2)  # GalSim needs headroom
-    process_count -= config['headroom_cores']['script_01']  # subtract off any additional cores
+    process_count = config['cores']['script_01']
     count = runs
     if count < process_count:
         process_count = count
@@ -221,6 +220,9 @@ def run_slsim(tuple):
         cosmo=cosmo,
         sky_area=sky_area,
         catalog_type="skypy",
+        source_size=None,
+        extendedsource_type="catalog_source",
+        extendedsource_kwargs={"catalog_path": "/data/bwedig/COSMOS", "catalog_type": "COSMOS"}
     )
     lens_pop = LensPop(
         deflector_population=lens_galaxies,
@@ -316,7 +318,11 @@ def run_slsim(tuple):
     k = 0
     for candidate in tqdm(lens_population, disable=not verbose):
         # criterion 1: SNR
-        strong_lens = GalaxyGalaxy.from_slsim(candidate)
+        try:
+            strong_lens = GalaxyGalaxy.from_slsim(candidate)
+        except:
+            print(f'Error processing candidate {candidate["name"]}')
+            continue
 
         # TODO do something with the substract lens flag
         # TODO do something with the add subhalos flag
