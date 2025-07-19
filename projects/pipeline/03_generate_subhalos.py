@@ -80,8 +80,9 @@ def main(args):
 
     # define the number of processes
     cpu_count = multiprocessing.cpu_count()
-    process_count = cpu_count
-    process_count -= config['headroom_cores']['script_03']
+    # process_count = cpu_count
+    # process_count -= config['headroom_cores']['script_03']
+    process_count = config['cores']['script_03']
     if count < process_count:
         process_count = count
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')

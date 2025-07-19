@@ -4,39 +4,40 @@ figure_dir: figures # !concat [*repo_dir, "/figures"]
 pipeline_label: hwo
 psf_cache_dir: cached_psfs
 dev: False
-nice: 9  # 19
+nice: 19  # 19
 verbose: True  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
 limit: null
 seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
 cores:
   script_01: 28
+  script_03: 28
+  script_04: 28
 headroom_cores: 
   script_00: 0
   script_01: 28
-  script_02: 0
   script_03: 64
   script_04: 64
   script_05: 28
 instrument: hwo
 survey:
-  runs: 1000  # 540
+  runs: 2500  # 540
   area: 0.1  # 0.5  # 0.1
   skypy_config: hwo
   total_population: False
   detectors: &detectors [1]
   bands: [J]
   deflector_cut_band: J
-  deflector_cut_band_max: 30
+  deflector_cut_band_max: 25
   deflector_z_min: 0.01
   deflector_z_max: 2.0
   source_cut_band: J
-  source_cut_band_max: 30
+  source_cut_band_max: 29
   source_z_min: 0.01
   source_z_max: 3.0
   min_image_separation: 0.1  # arcseconds
   max_image_separation: 10.0  # arcseconds
   mag_arc_limit_band: J
-  mag_arc_limit: 30  # this takes pressure off of SNR criterion, so set as high as possible without missing anything
+  mag_arc_limit: 28  # this takes pressure off of SNR criterion, so set as high as possible without missing anything
   magnification: 3
 imaging:
   exposure_time: &exposure_time 7200  # 642
