@@ -7,23 +7,23 @@ from pprint import pprint
 import numpy as np
 import astropy.cosmology as astropy_cosmo
 import pandas as pd
-from dolphin.analysis.output import Output
 from tqdm import tqdm
+
+import mejiro
+from mejiro.galaxy_galaxy import GalaxyGalaxy
+from mejiro.utils import util
 
 
 def main():
-    # enable use of local modules
-    repo_dir = '/grad/bwedig/mejiro'
-    if repo_dir not in sys.path:
-        sys.path.append(repo_dir)
-    from mejiro.galaxy_galaxy import GalaxyGalaxy
-    from mejiro.utils import util
-
     # set up directories to save output to
     data_dir = '/data/bwedig/mejiro'
     save_dir = os.path.join(data_dir, 'hwo', 'dinos')
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
+
+    dolphin_001_path = '/data/bwedig/dolphin-0.0.1'
+    sys.path.append(dolphin_001_path)
+    from dolphin.analysis.output import Output
 
     # lists of dinos systems to process
     Double_SLACS = ['SDSSJ0029-0055', 'SDSSJ0037-0942', 'SDSSJ0819+4534', 'SDSSJ0903+4116', 'SDSSJ0936+0913',
@@ -52,14 +52,14 @@ def main():
     sl2s = Double_SL2S + Single_SL2S
     bells = Double_BELLS + Single_BELLS
 
-    dinos_df = pd.read_csv(os.path.join(repo_dir, 'hwo', 'data', 'dinos_i_tan_et_al_2024', 'dinos_i.csv'))
+    dinos_df = pd.read_csv('/grad/bwedig/mejiro/projects/hwo/data/dinos_i_tan_et_al_2024/dinos_i.csv')
 
     for system_name in tqdm(slacs + sl2s + bells):
         try:
             # get system information from CSV
             row = dinos_df[dinos_df['Lens system'] == system_name].iloc[0]
 
-            output = Output('/nfsdata1/bwedig/dinos_i_outputs')
+            output = Output('/data/bwedig/dinos-i/2_dolphin_modelling')
             _ = output.load_output(system_name, model_id='dinos_i')
             _ = output.plot_model_overview(lens_name=system_name, model_id='dinos_i')
 
