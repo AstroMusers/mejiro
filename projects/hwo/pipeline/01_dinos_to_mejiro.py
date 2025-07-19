@@ -16,12 +16,13 @@ from mejiro.utils import util
 
 def main():
     # set up directories to save output to
-    data_dir = '/data/bwedig/mejiro'
-    save_dir = os.path.join(data_dir, 'hwo', 'dinos')
+    # data_dir = '/data/bwedig'
+    data_dir = '/nfsdata1/bwedig'
+    save_dir = os.path.join(data_dir, 'mejiro', 'hwo', 'dinos')
     util.create_directory_if_not_exists(save_dir)
     util.clear_directory(save_dir)
 
-    dolphin_001_path = '/data/bwedig/dolphin-0.0.1'
+    dolphin_001_path = os.path.join(data_dir, 'dolphin-0.0.1')
     sys.path.append(dolphin_001_path)
     from dolphin.analysis.output import Output
 
@@ -59,7 +60,8 @@ def main():
             # get system information from CSV
             row = dinos_df[dinos_df['Lens system'] == system_name].iloc[0]
 
-            output = Output('/data/bwedig/dinos-i/2_dolphin_modelling')
+            # output = Output('/data/bwedig/dinos-i/2_dolphin_modelling')
+            output = Output('/nfsdata1/bwedig/dinos_i_outputs')
             _ = output.load_output(system_name, model_id='dinos_i')
             _ = output.plot_model_overview(lens_name=system_name, model_id='dinos_i')
 
