@@ -21,11 +21,6 @@ class PipelineHelper:
         self.detectors = config['survey']['detectors']
         self.psf_cache_dir = os.path.join(self.data_dir, config['psf_cache_dir'])
 
-        # for key, value in self.config.items():
-        #     if isinstance(value, dict):
-        #         value = PipelineHelper(value)
-        #     setattr(self, key, value)
-
         # set pipeline name
         self.name = config['pipeline_label']
 
@@ -45,6 +40,14 @@ class PipelineHelper:
         self.output_dir = os.path.join(self.pipeline_dir, self.script_name)
         util.create_directory_if_not_exists(self.output_dir)
         util.clear_directory(self.output_dir)
+
+    def calculate_process_count(self, count):
+        import multiprocessing
+        cpu_count = multiprocessing.cpu_count()
+        process_count = self.config['cores'][f'script_{self.script_name}']
+        if count < process_count:
+            process_count = count
+        print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
 
     def retrieve_roman_sca_input(self):
         self.validate_instrument('roman')

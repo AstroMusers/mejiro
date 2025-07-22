@@ -6,12 +6,13 @@ psf_cache_dir: cached_psfs
 dev: False
 nice: 19  # 19
 verbose: True  # debugging mode will print statements to console and save output to a different directory (pipeline_dev)
-limit: null
+limit: 1000
 seed: 42  # use with e.g. tf.random.set_seed(config.seed), np.random.seed(config.seed)
 cores:
   script_01: 28
   script_03: 28
   script_04: 28
+  script_05: 28
 headroom_cores: 
   script_00: 0
   script_01: 28
@@ -74,7 +75,7 @@ subhalos:
   r_tidal: 0.5  # see Section 3.1 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract 
   sigma_sub: 0.055  # see Section 6.3 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract 
 synthetic_image:
-  fov_arcsec: 10
+  fov_arcsec: 5
   supersampling_factor: &supersampling_factor 5
   supersampling_compute_mode: adaptive
   bands: [ J ]

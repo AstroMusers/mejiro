@@ -1,5 +1,4 @@
 import argparse
-import multiprocessing
 import os
 import shutil
 import time
@@ -78,17 +77,8 @@ def main(args):
     # tuple the parameters
     tuple_list = [(pipeline, subhalo_config, input_pickle, add_subhalos) for input_pickle, add_subhalos in zip(input_pickles, mask)]
 
-    # define the number of processes
-    cpu_count = multiprocessing.cpu_count()
-    # process_count = cpu_count
-    # process_count -= config['headroom_cores']['script_03']
-    process_count = config['cores']['script_03']
-    if count < process_count:
-        process_count = count
-    print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
-
     # submit tasks to the executor
-    with ProcessPoolExecutor(max_workers=process_count) as executor:
+    with ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(count)) as executor:
         futures = {executor.submit(add, task): task for task in tuple_list}
 
         for future in tqdm(as_completed(futures), total=len(futures)):

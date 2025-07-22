@@ -1,5 +1,4 @@
 import argparse
-import multiprocessing
 import os
 import random
 import time
@@ -16,7 +15,7 @@ from mejiro.utils import roman_util, util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
 
-PREV_SCRIPT_NAME = '03'  # '03'
+PREV_SCRIPT_NAME = '03'
 SCRIPT_NAME = '04'
 SUPPORTED_INSTRUMENTS = ['roman', 'hwo']
 
@@ -68,17 +67,8 @@ def main(args):
     # tuple the parameters
     tuple_list = [(pipeline, synthetic_image_config, psf_config, input_pickle) for input_pickle in input_pickles]
 
-    # define the number of processes
-    cpu_count = multiprocessing.cpu_count()
-    # process_count = cpu_count
-    # process_count -= config['headroom_cores']['script_04']
-    process_count = config['cores']['script_04']
-    if count < process_count:
-        process_count = count
-    print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
-
     # submit tasks to the executor
-    with ProcessPoolExecutor(max_workers=process_count) as executor:
+    with ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(count)) as executor:
         futures = {executor.submit(create_synthetic_image, task): task for task in tuple_list}
 
         for future in tqdm(as_completed(futures), total=len(futures)):
