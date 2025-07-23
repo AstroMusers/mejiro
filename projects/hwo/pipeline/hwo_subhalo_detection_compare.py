@@ -208,7 +208,7 @@ def main():
 
     script_config = {
         'snr_quantile': 0.95,
-        'num_lenses': 500,  # None
+        'num_lenses': 2,  # None
         'num_positions': 1,
         'rng_seed': 42,
     }
@@ -248,7 +248,7 @@ def main():
                 'band': band,
                 'scene_size': 5,  # arcsec
                 'oversample': 5,
-                'exposure_time': 14400
+                'exposure_time': 1e6
             }
 
             # set up directories to save output to
