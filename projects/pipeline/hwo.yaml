@@ -13,6 +13,7 @@ cores:
   script_03: 28
   script_04: 28
   script_05: 28
+  script_snr: 2
 headroom_cores: 
   script_00: 0
   script_01: 28
