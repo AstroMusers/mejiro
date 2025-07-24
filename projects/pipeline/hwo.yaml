@@ -77,9 +77,9 @@ subhalos:
   sigma_sub: 0.055  # see Section 6.3 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract 
 synthetic_image:
   fov_arcsec: 5
-  supersampling_factor: &supersampling_factor 5
-  supersampling_compute_mode: adaptive
-  bands: [ J ]
+  supersampling_factor: &supersampling_factor 1
+  supersampling_compute_mode: regular
+  bands: [ J, H, K ]
   pieces: True
 psf:
   oversamples: [*snr_supersampling_factor, *supersampling_factor]  # this needs to be a list

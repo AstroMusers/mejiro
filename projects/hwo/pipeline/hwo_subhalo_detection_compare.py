@@ -207,9 +207,9 @@ def main():
     os.nice(19)
 
     script_config = {
-        'snr_quantile': 0.95,
-        'num_lenses': 2,  # None
-        'num_positions': 1,
+        'snr_quantile': 0.99,
+        'num_lenses': 200,  # None
+        'num_positions': 4,
         'rng_seed': 42,
     }
 
@@ -217,22 +217,33 @@ def main():
     # lens_list = util.unpickle_all('/data/bwedig/mejiro/hwo/dinos_good')
     lens_list = util.unpickle_all('/data/bwedig/mejiro/hwo/02')
     print(f'Loaded {len(lens_list)} strong lenses')
-    og_count = len(lens_list)
+
+    name_snr_pairs = util.unpickle('/data/bwedig/mejiro/hwo/snr/name_snr_pairs.pkl')
+    snr_dict = dict(name_snr_pairs)
+
+    # Sort lenses by SNR, matching on exposure.synthetic_image.strong_lens.name
+    sorted_lenses = sorted(
+        lens_list,
+        key=lambda lens: snr_dict.get(lens.name, -np.inf),
+        reverse=True
+    )
+
+    og_count = len(sorted_lenses)
     num_lenses = script_config['num_lenses']
     if num_lenses is not None:
-        repeats = int(np.ceil(num_lenses / len(lens_list)))
+        repeats = int(np.ceil(num_lenses / len(sorted_lenses)))
         print(f'Repeating lenses {repeats} time(s)')
-        lens_list *= repeats
-        lens_list = lens_list[:num_lenses]
-    print(f'Processing {len(lens_list)} lens(es) of {og_count}')
+        sorted_lenses *= repeats
+        sorted_lenses = sorted_lenses[:num_lenses]
+    print(f'Processing {len(sorted_lenses)} lens(es) of {og_count}')
 
     # num_permutations = len(subhalo_params['masses']) * len(lens_list)
-    num_to_save = np.min([len(lens_list), 10])
-    idx_to_save = np.random.choice(len(lens_list), size=num_to_save, replace=False).tolist()
+    num_to_save = np.min([len(sorted_lenses), 10])
+    idx_to_save = np.random.choice(len(sorted_lenses), size=num_to_save, replace=False).tolist()
 
     params_list = []
-    eacs = [1, 2, 3]
-    bands = ['I', 'J']
+    eacs = [1, 2, 3]  # 
+    bands = ['I', 'K']  # 
     for band in bands:
         for eac in eacs:
             start = time.time()
@@ -246,9 +257,9 @@ def main():
             }
             imaging_params = {
                 'band': band,
-                'scene_size': 5,  # arcsec
+                'scene_size': 6,  # arcsec
                 'oversample': 5,
-                'exposure_time': 1e6
+                'exposure_time': 1e7 # 36000
             }
 
             # set up directories to save output to
@@ -262,7 +273,7 @@ def main():
             # generate instrument
             hwo = HWO(eac=f'EAC{eac}')
 
-            params_list += [(run, lens, hwo, script_config, imaging_params, subhalo_params, save_dir, image_save_dir, idx_to_save) for run, lens in enumerate(lens_list)]
+            params_list += [(run, lens, hwo, script_config, imaging_params, subhalo_params, save_dir, image_save_dir, idx_to_save) for run, lens in enumerate(sorted_lenses)]
 
     print(f'Processing {len(params_list)} lens(es) with {len(eacs)} EAC(s) and {len(bands)} band(s)')
 
