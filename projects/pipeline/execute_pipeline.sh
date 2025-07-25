@@ -32,6 +32,10 @@ echo 'Simulating images...'
 python3 05_create_exposures.py --config $config
 echo 'GalSim simulations complete.'
 
+echo 'Calculating SNRs...'
+python3 calculate_snrs.py --config $config
+echo 'SNR calculation complete.'
+
 # echo 'Generating h5 file...'
 # if [ $config == "training_set" ]; then
 #     python3 06_h5_export_training_set.py --config $config
