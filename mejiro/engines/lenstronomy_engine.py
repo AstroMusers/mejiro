@@ -1,3 +1,4 @@
+import numpy as np
 from lenstronomy.SimulationAPI.sim_api import SimAPI
 
 from mejiro.engines.engine import Engine
@@ -6,42 +7,46 @@ from mejiro.utils import util
 
 class LenstronomyEngine(Engine):
     @staticmethod
-    def defaults(instrument_name):
-        defaults = {
-            'kwargs_numerics': {
-                'supersampling_factor': 1,
-                'compute_mode': 'regular'
-            },
-            'noise': True,
-        }
-        if instrument_name.lower() == 'roman':
-            defaults |= {
+    def defaults(engine_params, instrument_name):
+        if 'kwargs_numerics' not in engine_params:
+            engine_params |= {
+                    'kwargs_numerics': {
+                    'supersampling_factor': 1,
+                    'compute_mode': 'regular'
+                }
+            }
+        if 'noise' not in engine_params:
+            engine_params |= {
+                'noise': True
+            }
+        if instrument_name.lower() == 'roman' and 'obs_config_kwargs' not in engine_params:
+            engine_params |= {
                 'obs_config_kwargs': {
                     'band': 'F129', 
                     'psf_type': 'PIXEL', 
                     'survey_mode': 'wide_area'
                 }
             }
-        elif instrument_name.lower() == 'hst':
-            defaults |= {
+        elif instrument_name.lower() == 'hst' and 'obs_config_kwargs' not in engine_params:
+            engine_params |= {
                 'obs_config_kwargs': {
                     'band': 'WFC3_F160W', 
                     'psf_type': 'PIXEL', 
                     'coadd_years': None
                 }
             }
-        elif instrument_name.lower() == 'lsst':
-            defaults |= {
+        elif instrument_name.lower() == 'lsst' and 'obs_config_kwargs' not in engine_params:
+            engine_params |= {
                 'obs_config_kwargs': {
-                    'band': 'r', 
+                    'band': 'i', 
                     'psf_type': 'GAUSSIAN', 
                     'coadd_years': 10
                 }
             }
-        else:
-            Engine().instrument_not_supported(instrument_name)
+        # else:
+        #     Engine().instrument_not_supported(instrument_name)
 
-        return defaults
+        return engine_params
 
 
     @staticmethod
@@ -52,8 +57,7 @@ class LenstronomyEngine(Engine):
 
     @staticmethod
     def get_exposure(synthetic_image, exposure_time, engine_params=None, verbose=False):
-        if engine_params is None:
-            engine_params = LenstronomyEngine.defaults(synthetic_image.instrument_name)
+        engine_params = LenstronomyEngine.defaults(engine_params, synthetic_image.instrument_name)
 
         strong_lens = synthetic_image.strong_lens
 
@@ -98,9 +102,14 @@ class LenstronomyEngine(Engine):
                                   lens_light_add=True,
                                   point_source_add=True)
 
-        if engine_params['noise']:
+        if isinstance(engine_params['noise'], bool) and engine_params['noise']:
             noise = sim_api.noise_for_model(model=total_image)
             total_image += noise
+        elif isinstance(engine_params['noise'], (list, tuple, np.ndarray)):
+            noise = engine_params['noise']
+            total_image += noise
+        else:
+            noise = None
 
         # if any unphysical negative pixels exist, set them to minimum value
         total_image = util.replace_negatives(total_image, util.smallest_non_negative_element(total_image))

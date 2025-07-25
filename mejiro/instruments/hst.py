@@ -16,7 +16,7 @@ class HST(Instrument):
         name = 'HST'
         bands = ['F438W', 'F475W', 'F606W', 'F814W']
         num_detectors = 1
-        engines = ['galsim']
+        engines = ['lenstronomy']
 
         super().__init__(
             name,

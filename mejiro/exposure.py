@@ -67,8 +67,10 @@ class Exposure:
 
             # get exposure
             results, self.noise = LenstronomyEngine.get_exposure(
-                synthetic_image, 
-                exposure_time)
+                synthetic_image=synthetic_image, 
+                exposure_time=exposure_time,
+                engine_params=engine_params,
+                verbose=verbose)
             # TODO conditional for supported instruments
 
         elif engine == 'pandeia':

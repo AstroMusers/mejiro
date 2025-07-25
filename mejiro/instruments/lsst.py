@@ -16,7 +16,7 @@ class LSST(Instrument):
         name = 'LSST'
         bands = ['u', 'g', 'r', 'i', 'z', 'y']
         num_detectors = 1
-        engines = ['galsim']
+        engines = ['lenstronomy']
 
         super().__init__(
             name,
