@@ -90,7 +90,7 @@ class SyntheticImage:
             if instrument.name == 'Roman':
                 magnitude_zero_point = instrument.get_zeropoint_magnitude(self.band,
                                                                                     self.instrument_params['detector'])
-            elif instrument.name == 'HWO':
+            else:
                 magnitude_zero_point = instrument.get_zeropoint_magnitude(self.band)
 
             # retrieve lens and source magnitudes

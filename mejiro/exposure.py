@@ -65,11 +65,11 @@ class Exposure:
 
             self.noise = np.zeros_like(self.synthetic_image.image)
 
-            if self.synthetic_image.instrument_name == 'Roman':
-                # get exposure
-                results, self.noise = LenstronomyEngine.get_roman_exposure(synthetic_image, exposure_time, engine_params, self.verbose)
-            else:
-                self.instrument_not_available_error(engine)
+            # get exposure
+            results, self.noise = LenstronomyEngine.get_exposure(
+                synthetic_image, 
+                exposure_time)
+            # TODO conditional for supported instruments
 
         elif engine == 'pandeia':
             raise NotImplementedError('Pandeia engine not yet implemented')
