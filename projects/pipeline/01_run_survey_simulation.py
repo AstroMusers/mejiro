@@ -163,8 +163,17 @@ def run_slsim(tuple):
         filter_args = {}
     else:
         raise ValueError(f"Speclite filter loading not implemented for {instrument.name}.")
-    speclite_filters = instrument.load_speclite_filters(**filter_args)
-    if verbose: print(f'Loaded {instrument.name} filter response curve(s): {speclite_filters.names}')
+    # speclite_filters = instrument.load_speclite_filters(**filter_args)
+    # if verbose: print(f'Loaded {instrument.name} filter response curve(s): {speclite_filters.names}')
+    hwo_filters = sorted(glob(os.path.join(module_path, 'data', 'hwo_filter_response', f'*.ecsv')))
+    roman_filters = sorted(glob(os.path.join(module_path, 'data', 'roman_filter_response', f'RomanSCA01-*.ecsv')))[:8]
+    hst_filters = sorted(glob(os.path.join(module_path, 'data', 'hst_filter_response', f'WFC3_UVIS-*.ecsv')))
+    lsst_filters = ['lsst2023-*']
+    filters = hwo_filters + roman_filters + hst_filters + lsst_filters
+    # print(filters)
+    from speclite.filters import load_filters
+    speclite_filters = load_filters(*filters)
+    if verbose: print(f'Loaded filter response curve(s): {speclite_filters.names}')
 
     # load SkyPy config file
     cache_dir = os.path.join(module_path, 'data', 'skypy', config['survey']['skypy_config'])

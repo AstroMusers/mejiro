@@ -15,7 +15,7 @@ from mejiro.utils import roman_util, util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
 
-PREV_SCRIPT_NAME = '03'
+PREV_SCRIPT_NAME = '02'
 SCRIPT_NAME = '04'
 SUPPORTED_INSTRUMENTS = ['roman', 'hwo']
 
