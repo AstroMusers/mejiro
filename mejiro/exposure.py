@@ -146,7 +146,7 @@ class Exposure:
     def plot(self, show_snr=False, savepath=None):
         import matplotlib.pyplot as plt
 
-        plt.imshow(np.log10(self.exposure))
+        plt.imshow(np.log10(self.exposure), origin='lower')
 
         title = f'{self.synthetic_image.strong_lens.name} (' + r'$z_{l}=$' + f'{self.synthetic_image.strong_lens.z_lens:.2f}, ' + r'$z_{s}=$' + f'{self.synthetic_image.strong_lens.z_source:.2f}' + f')\n{self.synthetic_image.instrument_name} {self.synthetic_image.band}, {self.exposure_time} s'
         if show_snr:
