@@ -6,6 +6,7 @@ import os
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from copy import deepcopy
+from matplotlib.colors import CenteredNorm
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.concentration_models import preset_concentration_models
 from pyHalo.single_realization import SingleHalo
@@ -16,7 +17,7 @@ from mejiro.analysis import stats
 from mejiro.synthetic_image import SyntheticImage
 from mejiro.exposure import Exposure
 from mejiro.plots import plot_util
-from mejiro.utils import util
+from mejiro.utils import lenstronomy_util, util
 from mejiro.instruments.hwo import HWO
 
 
@@ -34,9 +35,10 @@ def process_lens(params):
         'supersampling_factor': oversample,
         'compute_mode': 'adaptive',
     }
+    kwargs_psf = lenstronomy_util.get_gaussian_psf_kwargs(hwo.get_psf_fwhm(band))
 
-    detectable_halos = []
-    results = {}
+    detectable_halos, undetectable_halos = [], []
+    # results = {}
 
     # generate and add subhalos
     # realization = lens.generate_cdm_subhalos()
@@ -48,6 +50,7 @@ def process_lens(params):
                                         band=band,
                                         fov_arcsec=scene_size,
                                         kwargs_numerics=kwargs_numerics,
+                                        kwargs_psf=kwargs_psf,
                                         pieces=True,
                                         verbose=False)
     
@@ -56,8 +59,8 @@ def process_lens(params):
     image_distance = np.sqrt(image_x ** 2 + image_y ** 2)
     # more_distant_image_index = np.argmax(image_distance)
     image_index = np.random.randint(0, len(image_distance))
-    halo_x = image_x[image_index]
-    halo_y = image_y[image_index]
+    halo_x = image_x[image_index] + np.random.uniform(-0.1, 0.1)
+    halo_y = image_y[image_index] + np.random.uniform(-0.1, 0.1)
 
     try:
         engine_params = {
@@ -88,27 +91,29 @@ def process_lens(params):
     rv = chi2(dof)
     threshold_chi2 = rv.isf(0.001)
 
-    for m200 in masses:
-        mass_key = f'{int(m200)}'
-        results[mass_key] = []
+    mass_indices = np.linspace(0, len(masses) - 1, 4, dtype=int).tolist()
 
-        chi_square_list = []
+    pyhalo_lens_cosmo = LensCosmo(lens.z_lens, lens.z_source)
+    astropy_class = pyhalo_lens_cosmo.cosmo
+    c_model, kwargs_concentration_model = preset_concentration_models('DIEMERJOYCE19')
+    kwargs_concentration_model['scatter'] = True
+    kwargs_concentration_model['cosmo'] = astropy_class
+    concentration_model = c_model(**kwargs_concentration_model)
+    truncation_model = None
+    kwargs_halo_model = {
+        'truncation_model': truncation_model,
+        'concentration_model': concentration_model,
+        'kwargs_density_profile': {}
+    }
+
+    chi_square_list = []
+    for mass_idx, m200 in enumerate(masses):
+        # mass_key = f'{int(m200)}'
+        # results[mass_key] = []
 
         center_x = halo_x
         center_y = halo_y
-
-        pyhalo_lens_cosmo = LensCosmo(lens.z_lens, lens.z_source)
-        astropy_class = pyhalo_lens_cosmo.cosmo
-        c_model, kwargs_concentration_model = preset_concentration_models('DIEMERJOYCE19')
-        kwargs_concentration_model['scatter'] = False
-        kwargs_concentration_model['cosmo'] = astropy_class
-        concentration_model = c_model(**kwargs_concentration_model)
-        truncation_model = None
-        kwargs_halo_model = {
-            'truncation_model': truncation_model,
-            'concentration_model': concentration_model,
-            'kwargs_density_profile': {}
-        }
+        
         single_halo = SingleHalo(halo_mass=m200,
                                     x=center_x, y=center_y,
                                     mdef='NFW',
@@ -126,6 +131,7 @@ def process_lens(params):
                                 band=band,
                                 fov_arcsec=scene_size,
                                 kwargs_numerics=kwargs_numerics,
+                                kwargs_psf=kwargs_psf,
                                 verbose=False)
         try:
             engine_params = {
@@ -153,9 +159,13 @@ def process_lens(params):
 
         chi_square_list.append(chi_square)
         if chi_square > threshold_chi2:
+            # print(f'{lens.name}: Detected subhalo mass {m200:.2e} with {chi_square:.2f} > {threshold_chi2:.2f}, {c:.2f}')
             detectable_halos.append((lens.z_lens, m200, c))
+        else:
+            # print(f'{lens.name}: Undetected subhalo mass {m200:.2e} with {chi_square:.2f} < {threshold_chi2:.2f}, {c:.2f}')
+            undetectable_halos.append((lens.z_lens, m200, c))
 
-        if run in idx_to_save:
+        if run in idx_to_save and mass_idx in mass_indices:
             _, ax = plt.subplots(2, 3, figsize=(15, 10))
             residual = masked_exposure_with_subhalo - masked_exposure_no_subhalo
             vmax = plot_util.get_limit(residual)
@@ -172,9 +182,7 @@ def process_lens(params):
             ax[0, 2].set_title(
                 r'$\chi^2=$ ' + f'{chi_square:.2f}, ' + r'$\chi_{3\sigma}^2=$ ' + f'{threshold_chi2:.2f}')
 
-            synth_residual = synth.image - synth_no_subhalo.image
-            vmax_synth = plot_util.get_limit(synth_residual)
-            ax10 = ax[1, 0].imshow(synth_residual, cmap='bwr', vmin=-vmax_synth, vmax=vmax_synth)
+            ax10 = ax[1, 0].imshow(synth.image - synth_no_subhalo.image, cmap='bwr', norm=CenteredNorm()) # 
             ax11 = ax[1, 1].imshow(np.log10(exposure.exposure), cmap='cubehelix')
             ax12 = ax[1, 2].imshow(snr_array)
 
@@ -191,16 +199,17 @@ def process_lens(params):
 
             plt.suptitle(
                 f'StrongLens {lens.name}, Image Shape: {exposure.exposure.shape}')
-            plt.savefig(os.path.join(image_save_dir, f'{lens.name}_{run}.png'))
+            plt.savefig(os.path.join(image_save_dir, f'{lens.name}_{run}_mass{mass_idx}.png'))
             plt.close()
 
-        pvals = [rv.sf(chi) for chi in chi_square_list]
-        results[mass_key] = pvals
+        # pvals = [rv.sf(chi) for chi in chi_square_list]
+        # results[mass_key] = pvals
 
-    util.pickle(os.path.join(save_dir, f'results_{lens.name}_{run}.pkl'), results)
+    # util.pickle(os.path.join(save_dir, f'results_{lens.name}_{run}.pkl'), results)
     util.pickle(os.path.join(save_dir, f'detectable_halos_{lens.name}_{run}.pkl'), detectable_halos)
+    util.pickle(os.path.join(save_dir, f'undetectable_halos_{lens.name}_{run}.pkl'), undetectable_halos)
 
-    return lens.name, results, detectable_halos
+    return lens.name, detectable_halos
 
 
 def main():
@@ -208,8 +217,8 @@ def main():
 
     script_config = {
         'snr_quantile': 0.99,
-        'num_lenses': 200,  # None
-        'num_positions': 4,
+        'num_lenses': 1000,  # None
+        'num_positions': 1,
         'rng_seed': 42,
     }
 
@@ -243,23 +252,23 @@ def main():
 
     params_list = []
     eacs = [1, 2, 3]  # 
-    bands = ['I', 'K']  # 
+    bands = ['J']  # 
     for band in bands:
         for eac in eacs:
             start = time.time()
 
             # script configuration options
             subhalo_params = {
-                'masses': np.logspace(4, 10, 100),
+                'masses': np.logspace(4, 10, 1000),
                 'r_tidal': 0.5,
                 'sigma_sub': 0.055,
                 'los_normalization': 0.
             }
             imaging_params = {
                 'band': band,
-                'scene_size': 6,  # arcsec
-                'oversample': 5,
-                'exposure_time': 1e7 # 36000
+                'scene_size': 8,  # arcsec
+                'oversample': 1,
+                'exposure_time': 1e8 # 14400
             }
 
             # set up directories to save output to
@@ -289,7 +298,7 @@ def main():
 
         for future in tqdm(as_completed(futures), total=len(futures)):
             # try:
-            lens_name, results, detectable_halos = future.result()
+            lens_name, detectable_halos = future.result()
                 # if results is not None and detectable_halos is not None:
                 #     print(f'Processed StrongLens {lens_name}')
             # except Exception as e:
