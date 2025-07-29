@@ -83,7 +83,7 @@ class LenstronomyEngine(Engine):
             # Engine().instrument_not_supported(synthetic_image.instrument_name)
             pass
         # obs_config.obs['num_exposures'] = 1  # set number of exposures to 1 cf. 96
-        # obs_config.obs['exposure_time'] = exposure_time
+        obs_config.obs['exposure_time'] = exposure_time
 
         sim_api = SimAPI(numpix=synthetic_image.num_pix,
                         kwargs_single_band=obs_config.kwargs_single_band(),
