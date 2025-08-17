@@ -127,10 +127,10 @@ class Exposure:
             Exposure.crop_edge_effects(self.lens_exposure, pad=3)
             Exposure.crop_edge_effects(self.source_exposure, pad=3)
             if np.any(self.lens_exposure < 0):
-                warnings.warn(f'Negative pixel values in lens image. Setting {np.sum(self.exposure < 0)} pixels to 0')
+                warnings.warn(f'Negative pixel values in lens image. Setting {np.sum(self.lens_exposure < 0)} pixels to 0')
                 self.lens_exposure[self.lens_exposure < 0] = 0
             if np.any(self.source_exposure < 0):
-                warnings.warn(f'Negative pixel values in source image. Setting {np.sum(self.exposure < 0)} pixels to 0')
+                warnings.warn(f'Negative pixel values in source image. Setting {np.sum(self.source_exposure < 0)} pixels to 0')
                 self.source_exposure[self.source_exposure < 0] = 0
 
         end = time.time()
