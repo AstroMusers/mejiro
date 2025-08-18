@@ -10,7 +10,7 @@ from pprint import pprint
 import numpy as np
 from astropy.cosmology import default_cosmology
 from astropy.units import Quantity
-from slsim.lens_pop import LensPop
+from slsim.Lenses.lens_pop import LensPop
 import slsim.Sources as sources
 import slsim.Pipelines as pipelines
 import slsim.Deflectors as deflectors
@@ -163,16 +163,16 @@ def run_slsim(tuple):
         filter_args = {}
     else:
         raise ValueError(f"Speclite filter loading not implemented for {instrument.name}.")
-    # speclite_filters = instrument.load_speclite_filters(**filter_args)
-    # if verbose: print(f'Loaded {instrument.name} filter response curve(s): {speclite_filters.names}')
-    hwo_filters = sorted(glob(os.path.join(module_path, 'data', 'hwo_filter_response', f'*.ecsv')))
-    roman_filters = sorted(glob(os.path.join(module_path, 'data', 'roman_filter_response', f'RomanSCA01-*.ecsv')))[:8]
-    hst_filters = sorted(glob(os.path.join(module_path, 'data', 'hst_filter_response', f'WFC3_UVIS-*.ecsv')))
-    lsst_filters = ['lsst2023-*']
-    filters = hwo_filters + roman_filters + hst_filters + lsst_filters
+    speclite_filters = instrument.load_speclite_filters(**filter_args)
+    if verbose: print(f'Loaded {instrument.name} filter response curve(s): {speclite_filters.names}')
+    # hwo_filters = sorted(glob(os.path.join(module_path, 'data', 'hwo_filter_response', f'*.ecsv')))
+    # roman_filters = sorted(glob(os.path.join(module_path, 'data', 'roman_filter_response', f'RomanSCA01-*.ecsv')))[:8]
+    # hst_filters = sorted(glob(os.path.join(module_path, 'data', 'hst_filter_response', f'WFC3_UVIS-*.ecsv')))
+    # lsst_filters = ['lsst2023-*']
+    # filters = hwo_filters + roman_filters + hst_filters + lsst_filters
     # print(filters)
-    from speclite.filters import load_filters
-    speclite_filters = load_filters(*filters)
+    # from speclite.filters import load_filters
+    # speclite_filters = load_filters(*filters)
     if verbose: print(f'Loaded filter response curve(s): {speclite_filters.names}')
 
     # load SkyPy config file
@@ -230,8 +230,8 @@ def run_slsim(tuple):
         sky_area=sky_area,
         catalog_type="skypy",
         source_size=None,
-        extendedsource_type="catalog_source",
-        extendedsource_kwargs={"catalog_path": "/data/bwedig/COSMOS", "catalog_type": "COSMOS"}
+        # extendedsource_type="catalog_source",
+        # extendedsource_kwargs={"catalog_path": "/data/bwedig/COSMOS", "catalog_type": "COSMOS"}
     )
     lens_pop = LensPop(
         deflector_population=lens_galaxies,

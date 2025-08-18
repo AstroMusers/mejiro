@@ -132,7 +132,7 @@ class GalaxyGalaxy(StrongLens):
         physical_params = {
             'lens_stellar_mass': slsim_gglens.deflector_stellar_mass(),
             'lens_velocity_dispersion': slsim_gglens.deflector_velocity_dispersion(),
-            'magnification': slsim_gglens.extended_source_magnification()[0],
+            'magnification': slsim_gglens.extended_source_magnification[0],
             'magnitudes': magnitudes
         }
 
