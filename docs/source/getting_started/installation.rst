@@ -12,7 +12,7 @@ Install ``mejiro`` from `GitHub <https://github.com/AstroMusers/mejiro>`__ using
     cd mejiro
     conda env create -f environment.yml  
 
-To simulate images from *Roman*, you will need to download the ``roman-technical-information`` repository `here <https://github.com/spacetelescope/roman-technical-information>`__. Then, set the environment variable ``ROMAN_TECHNICAL_INFORMATION_PATH`` to the path where you downloaded the repository, e.g., in your ``.bashrc`` or ``.bash_profile``:
+To simulate images from *Roman*, you will need to download the ``roman-technical-information`` repository `here <https://github.com/RomanSpaceTelescope/roman-technical-information/>`__. Then, set the environment variable ``ROMAN_TECHNICAL_INFORMATION_PATH`` to the path where you downloaded the repository, e.g., in your ``.bashrc`` or ``.bash_profile``:
 
 .. code-block:: bash
 

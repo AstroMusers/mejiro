@@ -28,7 +28,7 @@ jobs:
     - name: Check out roman-technical-information repository
       uses: actions/checkout@v4
       with:
-        repository: spacetelescope/roman-technical-information
+        repository: RomanSpaceTelescope/roman-technical-information
         path: roman-technical-information
     - name: Set environment variable
       run: echo "ROMAN_TECHNICAL_INFORMATION_PATH=${{ github.workspace }}/roman-technical-information" >> $GITHUB_ENV
