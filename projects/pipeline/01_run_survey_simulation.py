@@ -14,6 +14,7 @@ from slsim.Lenses.lens_pop import LensPop
 import slsim.Sources as sources
 import slsim.Pipelines as pipelines
 import slsim.Deflectors as deflectors
+from slsim.Pipelines.sl_hammocks_pipeline import SLHammocksPipeline
 from tqdm import tqdm
 
 import mejiro
@@ -23,6 +24,9 @@ from mejiro.exposure import Exposure
 from mejiro.galaxy_galaxy import GalaxyGalaxy
 from mejiro.synthetic_image import SyntheticImage
 from mejiro.utils import pipeline_util, roman_util, slsim_util, util
+
+import warnings
+# warnings.filterwarnings("ignore", category=UserWarning)
 
 
 def main(args):
@@ -88,7 +92,7 @@ def main(args):
     tuple_list = []
     for run in range(runs):
         if instrument.num_detectors > 1:
-            detector = detectors[run % instrument.num_detectors]
+            detector = detectors[run % len(detectors)]
         else:
             detector = None
         tuple_list.append((str(run).zfill(4), detector, config, output_dir, debug_dir, psf_cache_dir, instrument))
@@ -134,6 +138,10 @@ def run_slsim(tuple):
     area = survey_config['area']
     bands = survey_config['bands']
     cosmo = survey_config['cosmo']
+    use_slhammocks_pipeline = survey_config['use_slhammocks_pipeline']
+    use_real_galaxies = survey_config['use_real_galaxies']
+    catalog_path = survey_config.get('catalog_path')
+    catalog_type = survey_config.get('catalog_type')
     snr_band = snr_config['snr_band']
     snr_exposure_time = snr_config['snr_exposure_time']
     snr_fov_arcsec = snr_config['snr_fov_arcsec']
@@ -215,14 +223,39 @@ def run_slsim(tuple):
         filters=None,
         cosmo=cosmo
     )
-    lens_galaxies = deflectors.AllLensGalaxies(
-        red_galaxy_list=galaxy_simulation_pipeline.red_galaxies,
-        blue_galaxy_list=galaxy_simulation_pipeline.blue_galaxies,
-        kwargs_cut=kwargs_deflector_cut,
-        kwargs_mass2light={},
-        cosmo=cosmo,
-        sky_area=sky_area,
-    )
+    if use_slhammocks_pipeline:
+        halo_galaxy_pipeline = SLHammocksPipeline(
+            slhammocks_config=None,
+            sky_area=sky_area,
+            cosmo=cosmo,
+            z_min=survey_config['deflector_z_min'],
+            z_max=survey_config['deflector_z_max'],
+            loghm_min=13,
+            loghm_max=16,
+        )
+        lens_galaxies = deflectors.CompoundLensHalosGalaxies(
+            halo_galaxy_list=halo_galaxy_pipeline.halo_galaxies,
+            kwargs_cut=kwargs_deflector_cut,
+            kwargs_mass2light={},
+            cosmo=cosmo,
+            sky_area=sky_area,
+        )
+    else:
+        lens_galaxies = deflectors.AllLensGalaxies(
+            red_galaxy_list=galaxy_simulation_pipeline.red_galaxies,
+            blue_galaxy_list=galaxy_simulation_pipeline.blue_galaxies,
+            kwargs_cut=kwargs_deflector_cut,
+            kwargs_mass2light={},
+            cosmo=cosmo,
+            sky_area=sky_area,
+        )
+    real_galaxy_kwargs = {
+        "extended_source_type": "catalog_source",
+        "extendedsource_kwargs": {
+            "catalog_path": catalog_path, 
+            "catalog_type": catalog_type
+        }
+    } if use_real_galaxies else {}
     source_galaxies = sources.Galaxies(
         galaxy_list=galaxy_simulation_pipeline.blue_galaxies,
         kwargs_cut=kwargs_source_cut,
@@ -230,8 +263,7 @@ def run_slsim(tuple):
         sky_area=sky_area,
         catalog_type="skypy",
         source_size=None,
-        # extendedsource_type="catalog_source",
-        # extendedsource_kwargs={"catalog_path": "/data/bwedig/COSMOS", "catalog_type": "COSMOS"}
+        **real_galaxy_kwargs
     )
     lens_pop = LensPop(
         deflector_population=lens_galaxies,
