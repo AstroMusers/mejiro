@@ -54,7 +54,7 @@ def main(args):
     dataset_config = config['output']
 
     # set up top directory for all pipeline output
-    pipeline_dir = os.path.join(data_dir, config['pipeline_dir'])
+    pipeline_dir = os.path.join(data_dir, config['pipeline_label'])
     if dev:
         pipeline_dir += '_dev'
 
