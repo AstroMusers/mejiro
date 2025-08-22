@@ -61,10 +61,10 @@ class Roman(Instrument):
             with open(version_path, 'r', encoding='utf-8') as file:
                 lines = file.readlines()
 
-            if len(lines) >= 2:
-                self.versions['roman-technical-information'] = lines[1].strip()
+            if len(lines) == 1:
+                self.versions['roman-technical-information'] = lines[0].strip()
             else:
-                raise IndexError("Error reading version number from VERSION.md: not enough lines.")
+                raise IndexError(f"Error reading version number from VERSION.md due to unexpected format: {lines}.")
         except FileNotFoundError:
             raise FileNotFoundError(f"VERSION.md not found in {self.roman_technical_information_path}.")
         
