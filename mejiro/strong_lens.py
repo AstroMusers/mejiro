@@ -282,6 +282,99 @@ class StrongLens(ABC):
                 self.use_jax += [False] * len(halo_lens_model_list)
         else:
             raise ValueError("use_jax must be a boolean.")
+        
+    def get_lens_magnitude(self, band):
+        """
+        Returns
+        -------
+        float
+            Magnitude of the lens in the specified photometric band.
+        """
+        return self.get_magnitude('lens', band)
+    
+    def get_source_magnitude(self, band):
+        """
+        Returns the magnitude of the source in the specified photometric band.
+
+        Parameters
+        ----------
+        band : str
+            The name of the photometric band for which to retrieve the source magnitude.
+
+        Returns
+        -------
+        float
+            The magnitude of the source in the specified band.
+        """
+        return self.get_magnitude('source', band)
+    
+    def get_lensed_source_magnitude(self, band):
+        """
+        Returns the magnitude of the lensed source in the specified photometric band.
+
+        Parameters
+        ----------
+        band : str
+            The name of the photometric band for which to retrieve the lensed source magnitude.
+
+        Returns
+        -------
+        float
+            The magnitude of the lensed source in the specified band.
+        """
+        return self.get_magnitude('lensed_source', band)
+
+    def get_magnitude(self, kind, band):
+        """
+        Retrieve the magnitude value for a specified kind and photometric band from the physical parameters dictionary.
+
+        Parameters
+        ----------
+        kind : str
+            Options are 'lens', 'source', 'lensed_source'.
+        band : str
+            e.g., 'F129' (Roman), 'J' (HWO), etc.
+
+        Returns
+        -------
+        float
+            Magnitude
+
+        Raises
+        ------
+        ValueError
+            If magnitudes are not provided in the `physical_params` dictionary.
+            If the specified kind is not present in the magnitudes.
+            If the specified band is not present for the given kind.
+        """
+        if self.physical_params.get('magnitudes') is None:
+            raise ValueError("Magnitudes are not provided in the `physical_params` dictionary.")
+        if self.physical_params['magnitudes'].get(kind) is None:
+            raise ValueError(f"{kind} magnitudes are not provided in the `physical_params` dictionary.")
+        if self.physical_params['magnitudes'][kind].get(band) is None:
+            raise ValueError(f"{kind} magnitudes for band {band} are not provided in the `physical_params` dictionary.")
+        return self.physical_params['magnitudes'][kind][band]
+
+    def get_einstein_radius(self):
+        """
+        Get the Einstein radius in angular units (often, arcseconds).
+
+        Retrieves the value of 'theta_E' from the first element of the `kwargs_lens` list.
+        Raises a ValueError if 'theta_E' is not present in the first element.
+
+        Returns
+        -------
+        float
+            The Einstein radius (`theta_E`) of the lens.
+
+        Raises
+        ------
+        ValueError
+            If 'theta_E' is not found in the first element of `kwargs_lens`.
+        """
+        if 'theta_E' not in self.kwargs_lens[0]:
+            raise ValueError(f"Einstein radius not found in first element of `kwargs_lens`: {self.kwargs_lens}")
+        return self.kwargs_lens[0]['theta_E']
 
     def get_velocity_dispersion(self):
         """
