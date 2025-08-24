@@ -46,7 +46,7 @@ def main(args):
         config = yaml.load(f, Loader=yaml.SafeLoader)
 
     # set nice level
-    os.nice(config['nice'])
+    os.nice(config.get('nice', 0))
 
     # retrieve configuration parameters
     dev = config['dev']
@@ -123,7 +123,7 @@ def main(args):
 
 def run_slsim(tuple):
     # a legacy function but prevents duplicate runs
-    np.random.seed()
+    np.random.seed(config.get('seed', 42))
 
     module_path = os.path.dirname(mejiro.__file__)
 

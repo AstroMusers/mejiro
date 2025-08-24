@@ -29,7 +29,7 @@ def main(args):
         config = yaml.load(f, Loader=yaml.SafeLoader)
 
     # set nice level
-    os.nice(config['nice'])
+    os.nice(config.get('nice', 0))
 
     # retrieve configuration parameters
     data_dir = config['data_dir']
@@ -48,7 +48,7 @@ def main(args):
 
     # determine which PSFs need to be generated
     psf_ids = []
-    for oversample in oversamples:
+    for oversample in set(oversamples):
         for num_pix in num_pixes:
             for band in bands:
                 for detector in detectors:

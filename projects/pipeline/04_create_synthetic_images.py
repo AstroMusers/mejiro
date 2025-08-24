@@ -15,7 +15,7 @@ from mejiro.utils import roman_util, util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
 
-PREV_SCRIPT_NAME = '03'
+PREV_SCRIPT_NAME = '02'
 SCRIPT_NAME = '04'
 SUPPORTED_INSTRUMENTS = ['roman', 'hwo']
 
@@ -37,7 +37,7 @@ def main(args):
         config = yaml.load(f, Loader=yaml.SafeLoader)
 
     # set nice level
-    os.nice(config['nice'])
+    os.nice(config.get('nice', 0))
 
     # retrieve configuration parameters
     synthetic_image_config = config['synthetic_image']

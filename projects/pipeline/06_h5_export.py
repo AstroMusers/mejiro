@@ -39,7 +39,7 @@ def main(args):
         config = yaml.load(f, Loader=yaml.SafeLoader)
 
     # set nice level
-    os.nice(config['nice'])
+    os.nice(config.get('nice', 0))
 
     # retrieve configuration parameters
     dev = config['dev']
