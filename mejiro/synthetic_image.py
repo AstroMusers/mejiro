@@ -94,8 +94,8 @@ class SyntheticImage:
                 magnitude_zero_point = instrument.get_zeropoint_magnitude(self.band)
 
             # retrieve lens and source magnitudes
-            lens_magnitude = self.strong_lens.physical_params['magnitudes']['lens'][band]
-            source_magnitude = self.strong_lens.physical_params['magnitudes']['source'][band]
+            lens_magnitude = self.strong_lens.get_lens_magnitude(band)
+            source_magnitude = self.strong_lens.get_source_magnitude(band)
 
             # overwrite the magnitudes in kwargs_lens_light and kwargs_source
             self.strong_lens.kwargs_lens_light[0]['magnitude'] = lens_magnitude
@@ -255,7 +255,6 @@ class SyntheticImage:
         cbar.set_label(r'log$_{10}$(Counts)')
         plt.xlabel('x [Pixels]')
         plt.ylabel('y [Pixels]')
-        plt.tight_layout()
         if savepath is not None:
             plt.savefig(savepath)
         plt.show()
@@ -281,7 +280,6 @@ class SyntheticImage:
         cbar.set_label(r'log$_{10}$(Counts)')
         plt.xlabel('x [Pixels]')
         plt.ylabel('y [Pixels]')
-        plt.tight_layout()
 
         custom_legend_labels = [r'$> 10^8 \,M_\odot$', r'$10^7 - 10^8 \,M_\odot$', r'$< 10^7 \,M_\odot$']
         custom_colors = ['#FF9500', '#00B945', '#0C5DA5']

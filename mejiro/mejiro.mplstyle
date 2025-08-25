@@ -5,7 +5,6 @@ figure.figsize : 7, 5
 figure.constrained_layout.use : True
 font.family : serif
 font.serif : Computer Modern Roman
-savefig.bbox : tight
 savefig.dpi: 600
 text.usetex : True
 text.latex.preamble : \usepackage{amsmath} \usepackage{amssymb}
