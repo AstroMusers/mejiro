@@ -3,19 +3,17 @@ import os
 import random
 import time
 import yaml
-from glob import glob
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
 from tqdm import tqdm
 
-from mejiro.engines.stpsf_engine import STPSFEngine
 from mejiro.synthetic_image import SyntheticImage
 from mejiro.utils import roman_util, util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
 
-PREV_SCRIPT_NAME = '02'
+PREV_SCRIPT_NAME = '03'
 SCRIPT_NAME = '04'
 SUPPORTED_INSTRUMENTS = ['roman', 'hwo']
 
@@ -87,9 +85,9 @@ def create_synthetic_image(input):
     # unpack pipeline params
     bands = synthetic_image_config['bands']
     fov_arcsec = synthetic_image_config['fov_arcsec']
-    pieces = synthetic_image_config['pieces']
-    supersampling_factor = synthetic_image_config['supersampling_factor']
     supersampling_compute_mode = synthetic_image_config['supersampling_compute_mode']
+    supersampling_factor = synthetic_image_config['supersampling_factor']
+    pieces = synthetic_image_config['pieces']
     num_pix = psf_config['num_pixes'][0]
     divide_up_detector = psf_config.get('divide_up_detector')  # Roman-specific parameter, not required for HWO
 

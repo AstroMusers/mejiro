@@ -3,7 +3,6 @@ import os
 import shutil
 import time
 import yaml
-from glob import glob
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np

@@ -26,7 +26,7 @@ from mejiro.synthetic_image import SyntheticImage
 from mejiro.utils import pipeline_util, roman_util, slsim_util, util
 
 import warnings
-# warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 
 def main(args):
@@ -122,24 +122,23 @@ def main(args):
 
 
 def run_slsim(tuple):
-    # a legacy function but prevents duplicate runs
-    np.random.seed(config.get('seed', 42))
-
     module_path = os.path.dirname(mejiro.__file__)
 
     # unpack tuple
     run, detector, config, output_dir, debug_dir, psf_cache_dir, instrument = tuple
 
+    # a legacy function but prevents duplicate runs
+    np.random.seed()
+
     # retrieve configuration parameters
-    dev = config['dev']
     snr_config = config['snr']
     verbose = config['verbose']
     survey_config = config['survey']
     area = survey_config['area']
     bands = survey_config['bands']
     cosmo = survey_config['cosmo']
+    use_real_sources = survey_config['use_real_sources']
     use_slhammocks_pipeline = survey_config['use_slhammocks_pipeline']
-    use_real_galaxies = survey_config['use_real_galaxies']
     catalog_path = survey_config.get('catalog_path')
     catalog_type = survey_config.get('catalog_type')
     snr_band = snr_config['snr_band']
@@ -255,7 +254,7 @@ def run_slsim(tuple):
             "catalog_path": catalog_path, 
             "catalog_type": catalog_type
         }
-    } if use_real_galaxies else {}
+    } if use_real_sources else {}
     source_galaxies = sources.Galaxies(
         galaxy_list=galaxy_simulation_pipeline.blue_galaxies,
         kwargs_cut=kwargs_source_cut,

@@ -1,9 +1,7 @@
 import importlib
 import os
 from glob import glob
-from tqdm import tqdm
 
-from mejiro.galaxy_galaxy import GalaxyGalaxy
 from mejiro.utils import util
 
 
@@ -83,6 +81,17 @@ class PipelineHelper:
             output_sca_dirs.append(sca_dir)
         if self.verbose: print(f'Set up output directories {output_sca_dirs}')
         return output_sca_dirs
+    
+    def parse_roman_uids(self, prefix, suffix, extension):
+        uids = set()
+
+        roman_pickles = self.retrieve_roman_pickles(prefix=prefix, suffix=suffix, extension=extension)
+        for f in roman_pickles:
+            basename = os.path.basename(f)
+            uid = basename.split("_")[-2]
+            uids.add(uid)
+
+        return sorted(uids)
 
     def retrieve_roman_pickles(self, prefix, suffix, extension):
         self.validate_instrument('roman')

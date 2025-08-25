@@ -2,7 +2,6 @@ import argparse
 import os
 import time
 import yaml
-from glob import glob
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
@@ -116,7 +115,7 @@ def get_image(input):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Generate and cache Roman PSFs.")
+    parser = argparse.ArgumentParser(description="Generate exposures.")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
     args = parser.parse_args()
     main(args)
