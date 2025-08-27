@@ -157,7 +157,6 @@ class Exposure:
         cbar.set_label(r'log$_{10}$(Counts)')
         plt.xlabel('x [Pixels]')
         plt.ylabel('y [Pixels]')
-        plt.tight_layout()
         if savepath is not None:
             plt.savefig(savepath)
         plt.show()
