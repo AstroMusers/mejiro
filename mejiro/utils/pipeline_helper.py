@@ -16,6 +16,7 @@ class PipelineHelper:
         self.verbose = config['verbose']
         self.data_dir = config['data_dir']
         self.limit = config['limit']
+        self.runs = config['survey']['runs']
         self.detectors = config['survey']['detectors']
         self.psf_cache_dir = os.path.join(self.data_dir, config['psf_cache_dir'])
 
@@ -74,8 +75,13 @@ class PipelineHelper:
     def create_roman_sca_output_directories(self):
         self.validate_instrument('roman')
 
+        # for a case where e.g. only 2 runs but 18 detectors, only create 2 folders
+        detectors_to_use = self.detectors
+        if self.runs < len(detectors_to_use):
+            detectors_to_use = detectors_to_use[:self.runs]
+
         output_sca_dirs = []
-        for sca in self.detectors:
+        for sca in detectors_to_use:
             sca_dir = os.path.join(self.output_dir, f'sca{str(sca).zfill(2)}')
             os.makedirs(sca_dir, exist_ok=True)
             output_sca_dirs.append(sca_dir)
