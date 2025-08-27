@@ -139,8 +139,6 @@ def run_slsim(tuple):
     cosmo = survey_config['cosmo']
     use_real_sources = survey_config['use_real_sources']
     use_slhammocks_pipeline = survey_config['use_slhammocks_pipeline']
-    catalog_path = survey_config.get('catalog_path')
-    catalog_type = survey_config.get('catalog_type')
     snr_band = snr_config['snr_band']
     snr_exposure_time = snr_config['snr_exposure_time']
     snr_fov_arcsec = snr_config['snr_fov_arcsec']
@@ -172,18 +170,11 @@ def run_slsim(tuple):
         raise ValueError(f"Speclite filter loading not implemented for {instrument.name}.")
     speclite_filters = instrument.load_speclite_filters(**filter_args)
     if verbose: print(f'Loaded {instrument.name} filter response curve(s): {speclite_filters.names}')
-    # hwo_filters = sorted(glob(os.path.join(module_path, 'data', 'hwo_filter_response', f'*.ecsv')))
-    # roman_filters = sorted(glob(os.path.join(module_path, 'data', 'roman_filter_response', f'RomanSCA01-*.ecsv')))[:8]
-    # hst_filters = sorted(glob(os.path.join(module_path, 'data', 'hst_filter_response', f'WFC3_UVIS-*.ecsv')))
-    # lsst_filters = ['lsst2023-*']
-    # filters = hwo_filters + roman_filters + hst_filters + lsst_filters
-    # print(filters)
-    # from speclite.filters import load_filters
-    # speclite_filters = load_filters(*filters)
-    if verbose: print(f'Loaded filter response curve(s): {speclite_filters.names}')
 
     # load SkyPy config file
     cache_dir = os.path.join(module_path, 'data', 'skypy', config['survey']['skypy_config'])
+    if use_slhammocks_pipeline:
+        cache_dir += '_slhammocks'
     if instrument.name == 'Roman':
         skypy_config = os.path.join(cache_dir,
                                 f'{config["survey"]["skypy_config"]}_{detector_string}.yml')  # TODO TEMP: there should be one source of truth for this, and if necessary, some code should update the cache behind the scenes
@@ -194,7 +185,7 @@ def run_slsim(tuple):
     config_file = util.load_skypy_config(skypy_config)  # read skypy config file to get survey area
     if verbose: print(f'Loaded SkyPy configuration file {skypy_config}')
 
-    # set HLWAS parameters
+    # set survey parameters
     survey_area = float(config_file['fsky'][:-5])
     sky_area = Quantity(value=survey_area, unit='deg2')
     assert sky_area.value == area, f'Area mismatch: {sky_area.value} != {area}'
@@ -250,10 +241,7 @@ def run_slsim(tuple):
         )
     real_galaxy_kwargs = {
         "extended_source_type": "catalog_source",
-        "extendedsource_kwargs": {
-            "catalog_path": catalog_path, 
-            "catalog_type": catalog_type
-        }
+        "extendedsource_kwargs": survey_config['catalog_source_kwargs']
     } if use_real_sources else {}
     source_galaxies = sources.Galaxies(
         galaxy_list=galaxy_simulation_pipeline.blue_galaxies,
@@ -311,6 +299,7 @@ def run_slsim(tuple):
             # TODO do something with the substract lens flag
             # TODO do something with the add subhalos flag
 
+            # calculate SNR
             synthetic_image = SyntheticImage(strong_lens=strong_lens,
                                             instrument=instrument,
                                             band=snr_band,
@@ -320,16 +309,13 @@ def run_slsim(tuple):
                                             kwargs_psf=kwargs_psf,
                                             pieces=True,
                                             verbose=False)
-
             exposure = Exposure(synthetic_image=synthetic_image,
                                 exposure_time=snr_exposure_time,
                                 engine='galsim',
                                 verbose=False)
-
             snr, _ = snr_calculation.get_snr(exposure=exposure,
                                             snr_per_pixel_threshold=snr_per_pixel_threshold,
                                             verbose=False)
-            
             snr_list.append(snr)
             
             if snr is None:
@@ -355,9 +341,8 @@ def run_slsim(tuple):
     # apply additional detectability criteria
     limit = config['limit']
     detectable_gglenses, detectable_snr_list, masked_snr_array_list = [], [], []
-    k = 0
     for candidate in tqdm(lens_population, disable=not verbose):
-        # criterion 1: SNR
+        # convert from SLSim gglens to mejiro GalaxyGalaxy
         try:
             strong_lens = GalaxyGalaxy.from_slsim(candidate)
         except:
@@ -367,6 +352,7 @@ def run_slsim(tuple):
         # TODO do something with the substract lens flag
         # TODO do something with the add subhalos flag
 
+        # criterion 1: SNR
         synthetic_image = SyntheticImage(strong_lens=strong_lens,
                                         instrument=instrument,
                                         band=snr_band,
@@ -376,12 +362,10 @@ def run_slsim(tuple):
                                         kwargs_psf=kwargs_psf,
                                         pieces=True,
                                         verbose=False)
-
         exposure = Exposure(synthetic_image=synthetic_image,
                             exposure_time=snr_exposure_time,
                             engine='galsim',
                             verbose=False)
-
         snr, masked_snr_array = snr_calculation.get_snr(exposure=exposure,
                                                         snr_per_pixel_threshold=snr_per_pixel_threshold,
                                                         verbose=False)
