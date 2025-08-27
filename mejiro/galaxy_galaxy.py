@@ -133,8 +133,13 @@ class GalaxyGalaxy(StrongLens):
             'lens_stellar_mass': slsim_gglens.deflector_stellar_mass(),
             'lens_velocity_dispersion': slsim_gglens.deflector_velocity_dispersion(),
             'magnification': slsim_gglens.extended_source_magnification[0],
-            'magnitudes': magnitudes
+            'magnitudes': magnitudes,
+            'halo_properties': slsim_gglens.deflector.halo_properties
         }
+
+        # record galaxy ID if the source is a real galaxy
+        galaxy_id = slsim_gglens._source[0]._source.__dict__.get("galaxy_ID")
+        if galaxy_id is not None: physical_params['galaxy_id'] = galaxy_id
 
         return GalaxyGalaxy(name=name,
                             coords=coords,
