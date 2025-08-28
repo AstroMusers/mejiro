@@ -2,6 +2,7 @@ import argparse
 import multiprocessing
 import os
 import time
+import warnings
 import yaml
 from glob import glob
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -25,9 +26,6 @@ from mejiro.galaxy_galaxy import GalaxyGalaxy
 from mejiro.synthetic_image import SyntheticImage
 from mejiro.utils import pipeline_util, roman_util, slsim_util, util
 
-import warnings
-warnings.filterwarnings("ignore", category=UserWarning)
-
 
 def main(args):
     start = time.time()
@@ -47,6 +45,10 @@ def main(args):
 
     # set nice level
     os.nice(config.get('nice', 0))
+
+    # suppress warnings
+    if config['suppress_warnings']:
+        warnings.filterwarnings("ignore", category=UserWarning)
 
     # retrieve configuration parameters
     dev = config['dev']
@@ -131,6 +133,7 @@ def run_slsim(tuple):
     np.random.seed()
 
     # retrieve configuration parameters
+    limit = config['limit']
     snr_config = config['snr']
     verbose = config['verbose']
     survey_config = config['survey']
@@ -173,8 +176,6 @@ def run_slsim(tuple):
 
     # load SkyPy config file
     cache_dir = os.path.join(module_path, 'data', 'skypy', config['survey']['skypy_config'])
-    if use_slhammocks_pipeline:
-        cache_dir += '_slhammocks'
     if instrument.name == 'Roman':
         skypy_config = os.path.join(cache_dir,
                                 f'{config["survey"]["skypy_config"]}_{detector_string}.yml')  # TODO TEMP: there should be one source of truth for this, and if necessary, some code should update the cache behind the scenes
@@ -184,6 +185,16 @@ def run_slsim(tuple):
         raise ValueError(f"SkyPy configuration file retrieval not implemented for {instrument.name}.")
     config_file = util.load_skypy_config(skypy_config)  # read skypy config file to get survey area
     if verbose: print(f'Loaded SkyPy configuration file {skypy_config}')
+
+    # load SLHammocks SkyPy config file
+    if use_slhammocks_pipeline:
+        slhammocks_pipeline_kwargs = survey_config['slhammocks_pipeline_kwargs']
+        cache_dir = os.path.join(module_path, 'data', 'skypy', slhammocks_pipeline_kwargs["skypy_config"])
+        if instrument.name == 'Roman':
+            slhammocks_config = os.path.join(cache_dir,
+                                    f'{slhammocks_pipeline_kwargs["skypy_config"]}_{detector_string}.yml')  # TODO TEMP: there should be one source of truth for this, and if necessary, some code should update the cache behind the scenes
+        slhammocks_pipeline_kwargs["skypy_config"] = slhammocks_config
+        if verbose: print(f'Loaded SLHammocks configuration file {slhammocks_config}')
 
     # set survey parameters
     survey_area = float(config_file['fsky'][:-5])
@@ -215,13 +226,11 @@ def run_slsim(tuple):
     )
     if use_slhammocks_pipeline:
         halo_galaxy_pipeline = SLHammocksPipeline(
-            slhammocks_config=None,
             sky_area=sky_area,
             cosmo=cosmo,
             z_min=survey_config['deflector_z_min'],
             z_max=survey_config['deflector_z_max'],
-            loghm_min=13,
-            loghm_max=16,
+            **slhammocks_pipeline_kwargs
         )
         lens_galaxies = deflectors.CompoundLensHalosGalaxies(
             halo_galaxy_list=halo_galaxy_pipeline.halo_galaxies,
@@ -241,7 +250,7 @@ def run_slsim(tuple):
         )
     real_galaxy_kwargs = {
         "extended_source_type": "catalog_source",
-        "extendedsource_kwargs": survey_config['catalog_source_kwargs']
+        "extendedsource_kwargs": survey_config["catalog_source_kwargs"]
     } if use_real_sources else {}
     source_galaxies = sources.Galaxies(
         galaxy_list=galaxy_simulation_pipeline.blue_galaxies,
@@ -289,7 +298,7 @@ def run_slsim(tuple):
         snr_list = []
         num_exceptions = 0
         for candidate in tqdm(total_lens_population, disable=verbose):
-            strong_lens = GalaxyGalaxy.from_slsim(candidate)
+            strong_lens = GalaxyGalaxy.from_slsim(candidate, bands=bands)
 
             # TODO temporary fix to make sure that there are two images formed
             image_positions = strong_lens.get_image_positions()
@@ -321,12 +330,18 @@ def run_slsim(tuple):
             if snr is None:
                 num_exceptions += 1
             
-        if verbose: print(f'Percentage of exceptions: {num_exceptions / len(total_lens_population) * 100:.2f}%')
+        if verbose:
+            if len(total_lens_population) > 0:
+                print(f'Percentage of exceptions: {num_exceptions / len(total_lens_population) * 100:.2f}%')
+            else:
+                warnings.warn('No systems in total population. Consider revising the galaxy population.')
+                return 0
 
         # save other params to CSV
-        total_pop_csv = os.path.join(output_dir, f'total_pop_{run_id}.csv')
-        if verbose: print(f'Writing total population to {total_pop_csv}')
-        slsim_util.write_lens_population_to_csv(total_pop_csv, total_lens_population, snr_list, verbose=verbose)
+        if survey_config["write_to_csv"]:
+            total_pop_csv = os.path.join(output_dir, f'total_pop_{run_id}.csv')
+            if verbose: print(f'Writing total population to {total_pop_csv}')
+            slsim_util.write_lens_population_to_csv(total_pop_csv, total_lens_population, snr_list, bands=bands, verbose=verbose)
 
     # draw initial detectable lens population
     if verbose: print('Identifying detectable lenses...')
@@ -339,12 +354,11 @@ def run_slsim(tuple):
     if verbose: print(f'Number of detectable lenses from first set of criteria: {len(lens_population)}')
 
     # apply additional detectability criteria
-    limit = config['limit']
     detectable_gglenses, detectable_snr_list, masked_snr_array_list = [], [], []
     for candidate in tqdm(lens_population, disable=not verbose):
         # convert from SLSim gglens to mejiro GalaxyGalaxy
         try:
-            strong_lens = GalaxyGalaxy.from_slsim(candidate)
+            strong_lens = GalaxyGalaxy.from_slsim(candidate, bands=bands)
         except:
             print(f'Error processing candidate {candidate["name"]}')
             continue
@@ -398,8 +412,9 @@ def run_slsim(tuple):
         util.pickle(detectable_gglenses_pickle_path, detectable_gglenses)
 
         # write the parameters of detectable lenses to CSV
-        detectable_pop_csv = os.path.join(output_dir, f'detectable_pop_{run_id}.csv')
-        slsim_util.write_lens_population_to_csv(detectable_pop_csv, detectable_gglenses, detectable_snr_list, verbose=verbose)
+        if survey_config["write_to_csv"]:
+            detectable_pop_csv = os.path.join(output_dir, f'detectable_pop_{run_id}.csv')
+            slsim_util.write_lens_population_to_csv(detectable_pop_csv, detectable_gglenses, detectable_snr_list, bands=bands, verbose=verbose)
     else:
         if verbose: print(f'No detectable lenses found for run {run}')
     
