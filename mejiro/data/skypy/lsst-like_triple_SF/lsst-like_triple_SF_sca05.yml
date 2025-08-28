@@ -4,7 +4,7 @@
 # the given parameters as a_m = Q, b_m = M0 - 0.5*Q, a_phi = ln(10) * P and
 # b_phi = 10**(Phi0 - 0.5*P)
 cosmology: !astropy.cosmology.default_cosmology.get []
-z_range: !numpy.arange [0.0, 6.01, 0.01]
+z_range: !numpy.arange [0.0, 8.01, 0.01]
 M_star_blue: !astropy.modeling.models.Polynomial1D
   degree: 3
   c0: -20.485
