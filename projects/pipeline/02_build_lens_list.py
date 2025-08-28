@@ -36,6 +36,7 @@ def main(args):
 
     # retrieve configuration parameters
     scas = config['survey']['detectors']
+    bands = config['survey']['bands']
 
     # initialize PipeLineHelper
     pipeline = PipelineHelper(config, PREV_SCRIPT_NAME, SCRIPT_NAME)
@@ -67,7 +68,7 @@ def main(args):
                 gglenses = util.unpickle(pickled_list)
 
                 for slsim_lens in tqdm(gglenses, desc="Strong Lenses", position=2, leave=False):
-                    mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=f'{pipeline.name}_{str(uid).zfill(8)}')
+                    mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=f'{pipeline.name}_{str(uid).zfill(8)}', bands=bands)
                     mejiro_lens_pickle_target = os.path.join(pipeline.output_dir, f'sca{sca}/lens_{mejiro_lens.name}.pkl')
                     util.pickle(mejiro_lens_pickle_target, mejiro_lens)
                     uid += 1

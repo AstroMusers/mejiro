@@ -25,25 +25,6 @@ class GalaxyGalaxy(StrongLens):
         self.z_source = kwargs_model['z_source']
         self.z_lens = kwargs_model['lens_redshift_list'][0]
 
-    def get_einstein_radius(self):
-        """
-        Returns the Einstein radius from ``kwargs_lens`` if it has been suitably configured.
-
-        Returns
-        -------
-        float
-            The Einstein radius (``theta_E``) value extracted from ``self.kwargs_lens[0]``.
-
-        Raises
-        ------
-        ValueError
-            If the order of lens models is not as expected, or the main mass model does not have ``theta_E`` as a parameter, this method will not work and should be extended.
-        """
-        einstein_radius = self.kwargs_lens[0].get('theta_E', None)
-        if einstein_radius is None:
-            raise ValueError("Could not find `theta_E` in kwargs_lens")
-        return einstein_radius
-
     def get_magnification(self):
         if 'magnification' not in self.physical_params:
             raise ValueError("Magnification not found in physical_params. Please provide 'magnification' in physical_params.")
@@ -95,7 +76,7 @@ class GalaxyGalaxy(StrongLens):
         )
 
     @staticmethod   
-    def from_slsim(slsim_gglens, name=None, coords=None):
+    def from_slsim(slsim_gglens, name=None, coords=None, bands=None):
         # check that the input is reasonable
         if slsim_gglens.source_number != 1:
             raise ValueError("Only one source is supported for galaxy-galaxy lenses.")
@@ -105,7 +86,8 @@ class GalaxyGalaxy(StrongLens):
         z_source = slsim_gglens.source_redshift_list[0]
 
         # get the bands
-        bands = [k.split("_")[1] for k in slsim_gglens.deflector._deflector._deflector_dict.keys() if k.startswith("mag_")]
+        if bands is None:
+            bands = [k.split("_")[1] for k in slsim_gglens.deflector._deflector._deflector_dict.keys() if k.startswith("mag_")]
 
         # get kwargs_model and kwargs_params
         kwargs_model, kwargs_params = slsim_gglens.lenstronomy_kwargs(band=bands[0])
@@ -130,12 +112,15 @@ class GalaxyGalaxy(StrongLens):
 
         # populate physical parameters dictionary
         physical_params = {
+            'einstein_radius': slsim_gglens.einstein_radius[0],
             'lens_stellar_mass': slsim_gglens.deflector_stellar_mass(),
             'lens_velocity_dispersion': slsim_gglens.deflector_velocity_dispersion(),
             'magnification': slsim_gglens.extended_source_magnification[0],
             'magnitudes': magnitudes,
-            'halo_properties': slsim_gglens.deflector.halo_properties
         }
+        if slsim_gglens.deflector.deflector_type == "NFW_HERNQUIST":
+            physical_params['main_halo_mass'] = slsim_gglens.deflector.halo_properties[0]
+            physical_params['main_halo_concentration'] = slsim_gglens.deflector.halo_properties[1]
 
         # record galaxy ID if the source is a real galaxy
         galaxy_id = slsim_gglens._source[0]._source.__dict__.get("galaxy_ID")
@@ -253,7 +238,7 @@ class SampleGG(GalaxyGalaxy):
         }
         physical_params = {
             'magnitudes': magnitudes,
-            'main_halo_mass': 1e13
+            'main_halo_mass': 10 ** 13.4
         }
         
         super().__init__(name=name,

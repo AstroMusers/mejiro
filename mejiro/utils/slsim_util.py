@@ -2,7 +2,7 @@ import pandas as pd
 from tqdm import tqdm
 
 
-def write_lens_population_to_csv(output_path, lens_population, snr_list, verbose=False):
+def write_lens_population_to_csv(output_path, lens_population, snr_list, bands=None, verbose=False):
     """
     Write list of SLSim galaxy-galaxy Lens objects to a CSV.
 
@@ -14,14 +14,17 @@ def write_lens_population_to_csv(output_path, lens_population, snr_list, verbose
         A list of SLSim galaxy-galaxy Lens objects.
     snr_list : list
         A list of signal-to-noise ratio (SNR) values corresponding to each system.
+    bands: list
+        A list of bands. If None, they will be parsed from the SLSim Deflector.
     verbose : bool, optional
         If True, prints progress and completion messages. Default is False.
     """
     if verbose: print(f'Writing lens population to {output_path}...')
 
     # retrieve the bands
-    sample_gglens = lens_population[0]
-    bands = [k.split("_")[1] for k in sample_gglens.deflector._deflector._deflector_dict.keys() if k.startswith("mag_")]
+    if bands is None:
+        sample_gglens = lens_population[0]
+        bands = [k.split("_")[1] for k in sample_gglens.deflector._deflector._deflector_dict.keys() if k.startswith("mag_")]
 
     data = []
     for gglens, snr in tqdm(zip(lens_population, snr_list), total=len(lens_population), disable=not verbose):
