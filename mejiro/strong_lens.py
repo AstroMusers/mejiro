@@ -357,24 +357,24 @@ class StrongLens(ABC):
 
     def get_einstein_radius(self):
         """
-        Get the Einstein radius in angular units (often, arcseconds).
-
-        Retrieves the value of 'theta_E' from the first element of the `kwargs_lens` list.
-        Raises a ValueError if 'theta_E' is not present in the first element.
+        Returns the Einstein radius.
 
         Returns
         -------
         float
-            The Einstein radius (`theta_E`) of the lens.
+            The Einstein radius (``theta_E``) in angular units (often, arcseconds).
 
         Raises
         ------
         ValueError
-            If 'theta_E' is not found in the first element of `kwargs_lens`.
+            This method currently does not calculate the Einstein radius. Rather, it retrieves it from the attributes. If it has not been stored in these attributes, a ValueError will be raised.
         """
-        if 'theta_E' not in self.kwargs_lens[0]:
-            raise ValueError(f"Einstein radius not found in first element of `kwargs_lens`: {self.kwargs_lens}")
-        return self.kwargs_lens[0]['theta_E']
+        einstein_radius = self.physical_params.get('einstein_radius', None)
+        if einstein_radius is None:
+            einstein_radius = self.kwargs_lens[0].get('theta_E', None)
+        if einstein_radius is None:
+            raise ValueError("Could not find `einstein_radius` in `physical_params` or `theta_E` in `kwargs_lens`")
+        return einstein_radius
 
     def get_velocity_dispersion(self):
         """
