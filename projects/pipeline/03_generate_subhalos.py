@@ -7,6 +7,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
 from pyHalo.PresetModels.cdm import CDM
+from pyHalo.preset_models import preset_model_from_name
 from tqdm import tqdm
 
 from mejiro.cosmo import cosmo
@@ -99,20 +100,19 @@ def add(tuple):
         # load the lens
         lens = util.unpickle(input_pickle)
 
-        # convert stellar mass to main halo mass
-        main_halo_mass = cosmo.stellar_to_main_halo_mass(lens.physical_params['lens_stellar_mass'], lens.z_lens, sample=True)
+        # set defaults for the realization_kwargs
+        realization_kwargs = subhalo_config["realization_kwargs"]
+        if "cone_opening_angle_arcsec" not in realization_kwargs:
+            realization_kwargs["cone_opening_angle_arcsec"] = lens.get_einstein_radius() * 3
 
+        # generate realization
         try:
-            cdm_realization = CDM(z_lens=round(lens.z_lens, 2),  # circumvent bug with pyhalo, sometimes fails when redshifts have more than 2 decimal places
+            REALIZATION = preset_model_from_name(subhalo_config["pyhalo_model"])
+            realization = REALIZATION(z_lens=round(lens.z_lens, 2),  # circumvent bug with pyhalo, sometimes fails when redshifts have more than 2 decimal places
                                 z_source=round(lens.z_source, 2),
-                                sigma_sub=subhalo_config['sigma_sub'],
-                                log_mlow=subhalo_config['log_mlow'],
-                                log_mhigh=subhalo_config['log_mhigh'],
-                                log_m_host=np.log10(main_halo_mass),
-                                r_tidal=subhalo_config['r_tidal'],
-                                cone_opening_angle_arcsec=lens.get_einstein_radius() * 3,
-                                LOS_normalization=subhalo_config['los_normalization'],
-                                kwargs_cosmo=util.get_kwargs_cosmo(lens.cosmo))
+                                log_m_host=np.log10(lens.get_main_halo_mass()),
+                                kwargs_cosmo=util.get_kwargs_cosmo(lens.cosmo),
+                                **realization_kwargs)
         except Exception as e:
             failed_pickle_path = os.path.join(pipeline.output_dir, f'failed_{lens.name}.pkl')
             util.pickle(failed_pickle_path, lens)
@@ -120,12 +120,12 @@ def add(tuple):
             return
 
         # add subhalos
-        lens.add_realization(cdm_realization)
+        lens.add_realization(realization)
 
         # pickle the subhalo realization
         subhalo_dir = os.path.join(pipeline.output_dir, 'subhalos')
         util.create_directory_if_not_exists(subhalo_dir)
-        util.pickle(os.path.join(subhalo_dir, f'subhalo_realization_{lens.name}.pkl'), cdm_realization)
+        util.pickle(os.path.join(subhalo_dir, f'subhalo_realization_{lens.name}.pkl'), realization)
 
         # pickle the lens with subhalos
         if pipeline.instrument_name == 'roman':
