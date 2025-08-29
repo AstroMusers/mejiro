@@ -36,9 +36,3 @@ mejiro documentation
 
    appendices/known_issues.rst
    appendices/structure.rst
-
-Indices and tables
-==================
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

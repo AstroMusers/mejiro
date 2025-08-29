@@ -11,6 +11,14 @@ These methods are low-level utilities that are used in other ``mejiro`` modules 
     :undoc-members:
     :show-inheritance:
 
+``pipeline_helper``
+*******************
+
+.. automodule:: mejiro.utils.pipeline_helper
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 ``roman_util``
 **************
 

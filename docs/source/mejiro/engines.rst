@@ -10,6 +10,7 @@ An engine is specified when generating a simulated exposure, i.e., an instance o
 
 .. code-block:: python
 
+    from mejiro.galaxy_galaxy import SampleGG
     from mejiro.instruments.roman import Roman
     from mejiro.synthetic_image import SyntheticImage
     from mejiro.exposure import Exposure
@@ -36,6 +37,7 @@ To see the available options for each engine, check the default parameters using
 
     {
         'rng_seed': 42,
+        'min_zodi_factor': 1.5,
         'sky_background': True,
         'detector_effects': True,
         'poisson_noise': True,
@@ -46,6 +48,14 @@ To see the available options for each engine, check the default parameters using
         'read_noise': True,
     }
 
+
+``engine``
+*****************
+
+.. automodule:: mejiro.engines.engine
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 ``galsim_engine``
 *****************

@@ -37,7 +37,42 @@ class SyntheticImage:
                  pieces=False,
                  verbose=True
                  ):
-        
+        """
+        Initialize a SyntheticImage object.
+
+        Parameters
+        ----------
+        strong_lens : StrongLens
+            The strong lens system.
+        instrument : Instrument
+            The instrument object, e.g., Roman()
+        band : str
+            The photometric band to simulate.
+        fov_arcsec : float, optional
+            Field of view in arcseconds. Default is 5.
+        instrument_params : dict, optional
+            Instrument-specific parameters. If not provided, defaults are used.
+        kwargs_numerics : dict, optional
+            Numerical settings for image simulation. If not provided, defaults are used.
+        kwargs_psf : dict, optional
+            PSF settings for image simulation. If not provided, defaults are used.
+        pieces : bool, optional
+            If True, computes and stores lens/source surface brightness separately.
+        verbose : bool, optional
+            If True, prints status messages during initialization.
+
+        Raises
+        ------
+        ValueError
+            If the specified band is not valid for the instrument.
+
+        Notes
+        -----
+        - The image is simulated using lenstronomy's ray-shooting and convolution routines.
+        - Magnitudes are converted to lenstronomy amplitudes if not already provided.
+        - The pixel grid is set up to ensure an odd number of pixels per side.
+        - Adaptive supersampling grid is built if requested.
+        """
         # check band is valid for instrument
         if band not in instrument.bands:
             raise ValueError(f'Band "{band}" not valid for instrument {instrument.name}')
