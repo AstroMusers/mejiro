@@ -15,6 +15,7 @@ class GalSimEngine(Engine):
         if instrument_name.lower() == 'roman':
             return {
                 'rng_seed': 42,
+                'min_zodi_factor': 1.5,
                 'sky_background': True,
                 'detector_effects': True,
                 'poisson_noise': True,
@@ -42,6 +43,12 @@ class GalSimEngine(Engine):
         if instrument_name.lower() == 'roman':
             if 'rng_seed' not in engine_params.keys():
                 engine_params['rng_seed'] = GalSimEngine.defaults('Roman')['rng_seed']
+                # TODO logging to inform user of default
+            else:
+                # TODO validate
+                pass
+            if 'min_zodi_factor' not in engine_params.keys():
+                engine_params['min_zodi_factor'] = GalSimEngine.defaults('Roman')['min_zodi_factor']
                 # TODO logging to inform user of default
             else:
                 # TODO validate
@@ -160,7 +167,7 @@ class GalSimEngine(Engine):
             image += sky_background
         elif type(engine_params['sky_background']) is bool:
             if engine_params['sky_background']:
-                sky_background = GalSimEngine.get_roman_sky_background(roman, synthetic_image.band, exposure_time, synthetic_image.num_pix)
+                sky_background = GalSimEngine.get_roman_sky_background(roman, synthetic_image.band, exposure_time, synthetic_image.num_pix, engine_params['min_zodi_factor'])
                 image += sky_background
             else:
                 sky_background = None
@@ -283,7 +290,7 @@ class GalSimEngine(Engine):
 
 
     @staticmethod
-    def get_roman_sky_background(roman, band, exposure_time, num_pix):
+    def get_roman_sky_background(roman, band, exposure_time, num_pix, min_zodi_factor=1.5):
         # build Image
         sky_image = galsim.ImageD(num_pix, num_pix)
 
@@ -293,7 +300,7 @@ class GalSimEngine(Engine):
             raise ValueError(f"Minimum zodiacal light is not in units of counts/pixel: {sky_level.unit}")
 
         # "For observations at high galactic latitudes, the Zodi intensity is typically ~1.5x the minimum" (https://roman.gsfc.nasa.gov/science/WFI_technical.html)
-        sky_level *= 1.5
+        sky_level *= min_zodi_factor
 
         # add stray light contribution
         sky_level *= (1. + roman.stray_light_fraction)

@@ -136,6 +136,7 @@ def run_slsim(tuple):
     limit = config['limit']
     snr_config = config['snr']
     verbose = config['verbose']
+    engine_params = config['imaging']['engine_params']
     survey_config = config['survey']
     area = survey_config['area']
     bands = survey_config['bands']
@@ -321,6 +322,7 @@ def run_slsim(tuple):
             exposure = Exposure(synthetic_image=synthetic_image,
                                 exposure_time=snr_exposure_time,
                                 engine='galsim',
+                                engine_params=engine_params,
                                 verbose=False)
             snr, _ = snr_calculation.get_snr(exposure=exposure,
                                             snr_per_pixel_threshold=snr_per_pixel_threshold,
@@ -379,6 +381,7 @@ def run_slsim(tuple):
         exposure = Exposure(synthetic_image=synthetic_image,
                             exposure_time=snr_exposure_time,
                             engine='galsim',
+                            engine_params=engine_params,
                             verbose=False)
         snr, masked_snr_array = snr_calculation.get_snr(exposure=exposure,
                                                         snr_per_pixel_threshold=snr_per_pixel_threshold,
