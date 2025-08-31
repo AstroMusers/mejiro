@@ -36,10 +36,10 @@ echo 'Calculating SNRs...'
 python3 calculate_snrs.py --config $config
 echo 'SNR calculation complete.'
 
-echo 'Generating h5 file...'
-if [ $config == "training_set" ]; then
-    python3 06_h5_export_training_set.py --config $config
-else
-    python3 06_h5_export.py --config $config
-fi
-echo 'h5 file generation complete.'
+# echo 'Generating h5 file...'
+# if [ $config == "training_set" ]; then
+#     python3 06_h5_export_training_set.py --config $config
+# else
+#     python3 06_h5_export.py --config $config
+# fi
+# echo 'h5 file generation complete.'

@@ -1,21 +1,21 @@
 data_dir: &data_dir /data/bwedig/mejiro  # where output data should be written
 pipeline_label: roman_test
 psf_cache_dir: cached_psfs
-dev: True
+dev: False
 nice: 19
 verbose: True
 suppress_warnings: True
 limit: null
 seed: &seed 42
 cores:
-  script_01: 28
-  script_03: 28
-  script_04: 28
-  script_05: 28
-  script_snr: 2
+  script_01: 32
+  script_03: 32
+  script_04: 32
+  script_05: 32
+  script_snr: 1
 instrument: roman
 survey:
-  runs: 2 # 90
+  runs: 90 # 90
   area: 0.5
   skypy_config: lsst-like_triple_SF
   write_to_csv: True
@@ -26,12 +26,12 @@ survey:
     catalog_type: COSMOS
     sersic_fallback: True
     max_scale: 1
-  use_slhammocks_pipeline: True
+  use_slhammocks_pipeline: False
   slhammocks_pipeline_kwargs:
     skypy_config: slhammocks
     slhammocks_config: null
-    loghm_min: 10
-    loghm_max: 14
+    loghm_min: 11
+    loghm_max: 15
   detectors: &detectors [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]  # 
   bands: [F062, F087, F106, F129, F158, F184, F213, F146]  # SkyPy will calculate magnitudes for each of these bands; they'll be stored in the physical_params attribute of the strong_lens
   deflector_cut_band: F129
@@ -67,6 +67,7 @@ imaging:
   engine: galsim
   engine_params:
     rng_seed: *seed
+    min_zodi_factor: 1.5
     sky_background: True
     detector_effects: True
     poisson_noise: True
