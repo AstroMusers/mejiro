@@ -54,11 +54,11 @@ def main(args):
     # limit the number of systems to process, if limit imposed
     count = len(input_pickles)
     if pipeline.limit is not None and pipeline.limit < count:
-        if pipeline.verbose: print(f'Limiting to {pipeline.limit} lens(es)')
+        if pipeline.verbose: print(f'Limiting to {pipeline.limit} image(s)')
         input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
         if pipeline.limit < count:
             count = pipeline.limit
-    if pipeline.verbose: print(f'Processing {count} lens(es)')
+    if pipeline.verbose: print(f'Processing {count} image(s)')
 
     # tuple the parameters
     tuple_list = [(pipeline, imaging_config, input_pickle) for input_pickle in input_pickles]
