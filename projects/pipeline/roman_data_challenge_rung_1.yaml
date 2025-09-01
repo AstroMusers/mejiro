@@ -1,5 +1,5 @@
 data_dir: &data_dir /data/bwedig/mejiro  # where output data should be written
-pipeline_label: roman_test
+pipeline_label: roman_data_challenge_rung_1
 psf_cache_dir: cached_psfs
 dev: True
 nice: 19
@@ -19,14 +19,14 @@ survey:
   area: 0.5
   skypy_config: lsst-like_triple_SF
   write_to_csv: True
-  total_population: False
+  total_population: True
   use_real_sources: True
   catalog_source_kwargs:
     catalog_path: /data/bwedig/COSMOS
     catalog_type: COSMOS
     sersic_fallback: True
     max_scale: 1
-  use_slhammocks_pipeline: False
+  use_slhammocks_pipeline: True
   slhammocks_pipeline_kwargs:
     skypy_config: slhammocks
     slhammocks_config: null
@@ -48,7 +48,7 @@ survey:
   mag_arc_limit: 27
   magnification: 3
 subhalos:
-  fraction: 1.  # fraction of systems to add substructure to
+  fraction: 0.5  # fraction of systems to add substructure to
   pyhalo_model: CDM
   realization_kwargs:
     log_mlow: 6
@@ -67,7 +67,7 @@ imaging:
   engine: galsim
   engine_params:
     rng_seed: *seed
-    min_zodi_factor: 100
+    min_zodi_factor: 1.5
     sky_background: True
     detector_effects: True
     poisson_noise: True
@@ -92,5 +92,5 @@ psf:
   divide_up_detector: 5  # this sets the detector positions, e.g., 5 means 25 positions on each detector
 dataset:
   version: 0.1  # used in the filename of the .h5 file
-  include_psfs: True
-  include_synthetic_images: True
+  include_psfs: False
+  include_synthetic_images: False
