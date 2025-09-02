@@ -71,7 +71,7 @@ def main(args):
     # determine the number of processes
     count = len(arg_list)
     cpu_count = multiprocessing.cpu_count()
-    process_count = cpu_count - config['headroom_cores']['script_00']
+    process_count = config['cores']['script_00']
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s) to generate {count} PSF(s)')
 
     # process the tasks with ProcessPoolExecutor

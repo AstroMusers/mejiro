@@ -1,4 +1,4 @@
-data_dir: &data_dir /data/bwedig/mejiro  # where output data should be written
+data_dir: &data_dir /nfsdata1/bwedig/mejiro  # where output data should be written
 pipeline_label: roman_data_challenge_rung_1
 psf_cache_dir: cached_psfs
 dev: True
@@ -8,6 +8,7 @@ suppress_warnings: True
 limit: null
 seed: &seed 42
 cores:
+  script_00: 32
   script_01: 32
   script_03: 32
   script_04: 32
@@ -15,11 +16,11 @@ cores:
   script_snr: 1
 instrument: roman
 survey:
-  runs: 32 # 90
+  runs: 2 # 90
   area: 0.5
   skypy_config: lsst-like_triple_SF
-  write_to_csv: True
-  total_population: True
+  write_to_csv: False
+  total_population: False
   use_real_sources: True
   catalog_source_kwargs:
     catalog_path: /data/bwedig/COSMOS
