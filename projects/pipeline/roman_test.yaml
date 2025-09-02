@@ -8,6 +8,7 @@ suppress_warnings: True
 limit: null
 seed: &seed 42
 cores:
+  script_00: 32
   script_01: 32
   script_03: 32
   script_04: 32
@@ -67,7 +68,7 @@ imaging:
   engine: galsim
   engine_params:
     rng_seed: *seed
-    min_zodi_factor: 100
+    min_zodi_factor: 1.5
     sky_background: True
     detector_effects: True
     poisson_noise: True
