@@ -110,16 +110,11 @@ def main(args):
 
         # set attributes for subhalos
         if lens.realization is not None:
-            group_lens.attrs['subhalos'] = ('True', 'Is substructure present in this lens?')
-            group_lens.attrs['log_mlow'] = (
-                str(subhalo_config['log_mlow']), 'Lower mass limit for subhalos [log10(M_sun)]')
-            group_lens.attrs['log_mhigh'] = (
-                str(subhalo_config['log_mhigh']), 'Upper mass limit for subhalos [log10(M_sun)]')
-            group_lens.attrs['r_tidal'] = (str(subhalo_config['r_tidal']), 'See pyHalo documentation')
-            group_lens.attrs['sigma_sub'] = (str(subhalo_config['sigma_sub']), 'See pyHalo documentation')
-            group_lens.attrs['num_subhalos'] = (str(len(lens.realization.halos)), 'Number of subhalos')
+            group_lens.attrs['substructure'] = ('True', 'Is substructure present in this lens?')
+            for key, value in subhalo_config['realization_kwargs'].items():
+                group_lens.attrs[key] = (str(value), 'See pyHalo documentation')
         else:
-            group_lens.attrs['subhalos'] = ('False', 'Is substructure present in this lens?')
+            group_lens.attrs['substructure'] = ('False', 'Is substructure present in this lens?')
 
         # create dataset for SNR array
         # dataset_snr_array = group_lens.create_dataset(f'snr_array_{str(uid).zfill(8)}', data=lens.masked_snr_array)
