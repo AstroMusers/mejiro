@@ -4,7 +4,7 @@ Supporting files are located in `hwo`
 
 # Roman data challenge (Huang et al., in prep.)
 
-Supporting files are located in `roman`
+Supporting files are located in `roman_data_challenge`
 
 # "The Roman View of Strong Gravitational Lenses" (Wedig et al. 2025, ApJ)
 
