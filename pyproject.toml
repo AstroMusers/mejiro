@@ -4,12 +4,20 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mejiro"
+description = "Pipeline to simulate diffraction-limited telescope images of strong gravitational lenses"
 dynamic = ["version"]
 authors = [
     { name = "Bryce Wedig", email = "b.t.wedig@wustl.edu" },
 ]
 readme = "README.md"
-license = { text = "MIT License" }
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Astronomy"
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
 
 [tool.setuptools.dynamic]
 version = {attr = "mejiro.__version__"}
@@ -17,6 +25,7 @@ version = {attr = "mejiro.__version__"}
 [project.urls]
 Documentation = "https://mejiro.readthedocs.io/en/latest/index.html"
 Repository = "https://github.com/AstroMusers/mejiro"
+Issues = "https://github.com/AstroMusers/mejiro/issues"
 
 [tool.pytest.ini_options]
 pythonpath = [
