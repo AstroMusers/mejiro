@@ -16,11 +16,11 @@ cores:
   script_snr: 1
 instrument: roman
 survey:
-  runs: 200 # 90
+  runs: 756 # 90
   area: 0.5
   skypy_config: lsst-like_triple_SF
-  write_to_csv: False
-  total_population: False
+  write_to_csv: True
+  total_population: True
   use_real_sources: True
   catalog_source_kwargs:
     catalog_path: /data/bwedig/COSMOS
