@@ -2,14 +2,12 @@ import argparse
 import os
 import time
 import yaml
-from glob import glob
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
 from tqdm import tqdm
 
-from mejiro.exposure import Exposure
-from mejiro.utils import roman_util, util
+from mejiro.utils import util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
 
@@ -33,9 +31,6 @@ def main(args):
     # read configuration file
     with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
-
-    # set nice level
-    os.nice(config.get('nice', 0))
 
     # retrieve configuration parameters
     snr_config = config['snr']

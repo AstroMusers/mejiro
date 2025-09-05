@@ -30,9 +30,6 @@ def main(args):
     # read configuration file
     with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
-    
-    # set nice level
-    os.nice(config.get('nice', 0))
 
     # retrieve configuration parameters
     scas = config['survey']['detectors']

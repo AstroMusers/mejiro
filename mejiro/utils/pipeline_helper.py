@@ -1,4 +1,5 @@
 import importlib
+from logging import config
 import os
 from glob import glob
 
@@ -22,6 +23,14 @@ class PipelineHelper:
 
         # set pipeline name
         self.name = config['pipeline_label']
+
+        # set nice level
+        os.nice(config.get('nice', 0))
+
+        # suppress warnings
+        if config['suppress_warnings']:
+            import warnings
+            warnings.filterwarnings("ignore", category=UserWarning)
 
         # load instrument
         self.instrument_name = config['instrument'].lower()

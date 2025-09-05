@@ -34,9 +34,6 @@ def main(args):
     with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
 
-    # set nice level
-    os.nice(config.get('nice', 0))
-
     # retrieve configuration parameters
     synthetic_image_config = config['synthetic_image']
     psf_config = config['psf']

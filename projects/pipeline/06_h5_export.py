@@ -3,7 +3,6 @@ import galsim
 import getpass
 import h5py
 import lenstronomy
-import numpy as np
 import os
 import platform
 import time
@@ -41,12 +40,8 @@ def main(args):
     with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
 
-    # set nice level
-    os.nice(config.get('nice', 0))
-
     # retrieve configuration parameters
     bands = config['synthetic_image']['bands']
-    imaging_config = config['imaging']
     subhalo_config = config['subhalos']
     snr_config = config['snr']
     synthetic_image_config = config['synthetic_image']

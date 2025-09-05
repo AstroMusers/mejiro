@@ -6,11 +6,9 @@ import yaml
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
-from pyHalo.PresetModels.cdm import CDM
 from pyHalo.preset_models import preset_model_from_name
 from tqdm import tqdm
 
-from mejiro.cosmo import cosmo
 from mejiro.utils import util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
@@ -35,9 +33,6 @@ def main(args):
     # read configuration file
     with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
-
-    # set nice level
-    os.nice(config.get('nice', 0))
 
     # retrieve configuration parameters
     subhalo_config = config['subhalos']
