@@ -59,7 +59,7 @@ def main(args):
         input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
         if pipeline.limit < count:
             count = pipeline.limit
-    if pipeline.verbose: print(f'Processing {count} lens(es)')
+    if pipeline.verbose: print(f'Processing {count} exposure(s)')
 
     # tuple the parameters
     tuple_list = [(pipeline, snr_config, input_pickle) for input_pickle in input_pickles]
