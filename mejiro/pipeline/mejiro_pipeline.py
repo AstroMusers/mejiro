@@ -53,4 +53,41 @@ class Pipeline:
 
     # TODO run a subset of the pipeline
 
-    # TODO pipeline metrics
+    def print_metrics(self):
+        import datetime
+        import json
+        from glob import glob
+        from pprint import pprint
+
+        with open(self.config_file, 'r') as f:
+            config = yaml.load(f, Loader=yaml.SafeLoader)
+        with open(os.path.join(config['data_dir'], config['pipeline_label'], 'execution_times.json'), 'r') as f:
+            execution_times = json.load(f)
+
+        pprint(execution_times)
+
+        total_time = 0
+        for script_name, times in execution_times.items():
+            h, m, s = times.split(':')
+            if 'days' in h:
+                d, h = h.split('days, ')
+                h = int(d) * 24 + int(h)
+            elif 'day' in h:
+                d, h = h.split('day, ')
+                h = int(d) * 24 + int(h)
+            time = (int(h) * 3600) + (int(m) * 60) + int(s)
+            total_time += time
+
+        print(
+            f'Total pipeline execution time: {datetime.timedelta(seconds=total_time)}, {total_time} seconds, {total_time / 3600:.2f} hours')
+        
+        data_dir = os.path.join(config['data_dir'], config['pipeline_label'], '05')
+
+        band = config['synthetic_image']['bands'][0]
+        pickles = sorted(glob(os.path.join(data_dir, 'sca*', f'Exposure_*_{band}.pkl')))
+        # pickles = sorted(glob(os.path.join(data_dir, 'Exposure_*.pkl')))
+
+        if len(pickles) > 0:
+            print(f'Execution time per system: {total_time / len(pickles):.3f} seconds')
+        else:
+            raise ValueError(f'No pickled exposures found in {data_dir}')
