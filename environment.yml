@@ -28,8 +28,8 @@ dependencies:
     - skypy==0.5.3
     - mcfit==0.0.22
     # - git+https://github.com/bryce-wedig/hwo-tools.git@mejiro-v2.0.0
-    - sphinx==7.1.2  # dev
-    - sphinx-rtd-theme==1.3.0rc1  # dev
+    - sphinx  # dev
+    - sphinx-rtd-theme  # dev
     - corner==2.2.2
-    - romanisim==0.7.0
+    # - romanisim==0.7.0
     - -e .
