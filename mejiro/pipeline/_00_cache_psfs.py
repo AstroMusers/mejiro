@@ -1,7 +1,6 @@
 import argparse
 import multiprocessing
 import os
-import sys
 import time
 import yaml
 from concurrent.futures import ProcessPoolExecutor, as_completed
