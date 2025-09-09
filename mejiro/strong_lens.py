@@ -270,9 +270,10 @@ class StrongLens(ABC):
         self.lens_model_list += halo_lens_model_list
 
         # use JAXtronomy for supported lens models
-        from jaxtronomy.LensModel.profile_list_base import _JAXXED_MODELS
         if isinstance(use_jax, bool):
             if use_jax:
+                from jaxtronomy.LensModel.profile_list_base import _JAXXED_MODELS
+                
                 for halo_lens_model in halo_lens_model_list:
                     if halo_lens_model in _JAXXED_MODELS:
                         self.use_jax.append(True)
