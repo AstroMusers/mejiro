@@ -34,6 +34,29 @@ class Pipeline:
         script_06_h5_export.main(self.args)
 
     def run_script(self, script_number):
+        """
+        Run a specific pipeline script by its number.
+
+        Parameters
+        ----------
+        script_number : int
+            The script number to run (0-6).
+
+        Script numbers and their corresponding scripts
+        ---------------------------------------------
+        0 : Cache psfs
+        1 : Run survey simulation
+        2 : Build lens list
+        3 : Generate subhalos
+        4 : Create synthetic images
+        5 : Create exposures
+        6 : Export to HDF5 file
+
+        Raises
+        ------
+        ValueError
+            If the script_number is not between 0 and 6.
+        """
         if script_number == 0:
             script_00_cache_psfs.main(self.args)
         elif script_number == 1:
@@ -61,6 +84,10 @@ class Pipeline:
 
         with open(self.config_file, 'r') as f:
             config = yaml.load(f, Loader=yaml.SafeLoader)
+
+        if config['dev']:
+            config['pipeline_label'] += '_dev'
+
         with open(os.path.join(config['data_dir'], config['pipeline_label'], 'execution_times.json'), 'r') as f:
             execution_times = json.load(f)
 
