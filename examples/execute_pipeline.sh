@@ -11,9 +11,9 @@ cd "$(dirname "$0")/.."
 set -e
 
 # execute Python scripts sequentially
-# echo 'Caching PSFs...'
-# python3 mejiro/pipeline/_00_cache_psfs.py --config $config
-# echo 'Cached PSFs.'
+echo 'Caching PSFs...'
+python3 mejiro/pipeline/_00_cache_psfs.py --config $config
+echo 'Cached PSFs.'
 
 echo 'Running survey simulation...'
 python3 mejiro/pipeline/_01_run_survey_simulation.py --config $config
@@ -29,22 +29,22 @@ if [ $config != "training_set" ]; then
     echo 'Added subhalos.'
 fi
 
-# echo 'Building models...'
-# python3 mejiro/pipeline/_04_create_synthetic_images.py --config $config
-# echo 'Built models.'
+echo 'Building models...'
+python3 mejiro/pipeline/_04_create_synthetic_images.py --config $config
+echo 'Built models.'
 
-# echo 'Simulating images...'
-# python3 mejiro/pipeline/_05_create_exposures.py --config $config
-# echo 'GalSim simulations complete.'
+echo 'Simulating images...'
+python3 mejiro/pipeline/_05_create_exposures.py --config $config
+echo 'GalSim simulations complete.'
 
-# echo 'Calculating SNRs...'
-# python3 mejiro/pipeline/calculate_snrs.py --config $config
-# echo 'SNR calculation complete.'
+echo 'Calculating SNRs...'
+python3 mejiro/pipeline/calculate_snrs.py --config $config
+echo 'SNR calculation complete.'
 
-# echo 'Generating h5 file...'
-# if [ $config == "training_set" ]; then
-#     python3 mejiro/pipeline/_06_h5_export_training_set.py --config $config
-# else
-#     python3 mejiro/pipeline/_06_h5_export.py --config $config
-# fi
-# echo 'h5 file generation complete.'
+echo 'Generating h5 file...'
+if [ $config == "training_set" ]; then
+    python3 mejiro/pipeline/_06_h5_export_training_set.py --config $config
+else
+    python3 mejiro/pipeline/_06_h5_export.py --config $config
+fi
+echo 'h5 file generation complete.'
