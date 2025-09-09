@@ -77,7 +77,16 @@ def test_SIDM(strong_lens):
     mass_ranges_field_halos = [[6.0, 7.5], [7.5, 8.5], [8.5, 10.0]]
     collapse_fraction_subhalos = [0.9, 0.7, 0.5, 0.2]
     collapse_fraction_fieldhalos = [0.3, 0.2, 0.1]
-    realization = SIDM(round(strong_lens.z_lens, 2), round(strong_lens.z_source, 2), mass_ranges_subhalos, mass_ranges_field_halos, collapse_fraction_subhalos, collapse_fraction_fieldhalos, cone_opening_angle_arcsec=5, log_m_host=np.log10(strong_lens.get_main_halo_mass()))
+    realization = SIDM(round(strong_lens.z_lens, 2), 
+                       round(strong_lens.z_source, 2), 
+                       mass_ranges_subhalos, 
+                       mass_ranges_field_halos, 
+                       collapse_fraction_subhalos,
+                       collapse_fraction_fieldhalos, 
+                       cone_opening_angle_arcsec=5, 
+                       x_core_halo=0.1,
+                       log_m_host=np.log10(strong_lens.get_main_halo_mass())
+                       )
 
     strong_lens.add_realization(realization, use_jax=False)  # JAXtronomy doesn't support SPL_CORE profiles yet
 
