@@ -12,3 +12,5 @@ Known Issues
     spectrum, wavelength = fs.pad_spectrum(spectrum, wavelength)
 
 This pads the spectrum to allow the calculation of AB maggies for every redshift, spectrum, and filter.
+
+``pyHalo`` version 1.4.3 does not allow line-of-sight halos beyond redshift 4. This can be fixed by modifying the source code: change the maximum redshift from 4 to 8 in line 113 of ``pyHalo.Cosmology.cosmology.Cosmology._interp_kpc_per_asec()`` in ``pyHalo/Cosmology/cosmology.py``.
