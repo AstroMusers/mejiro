@@ -76,7 +76,7 @@ class GalaxyGalaxy(StrongLens):
         )
 
     @staticmethod   
-    def from_slsim(slsim_gglens, name=None, coords=None, bands=None):
+    def from_slsim(slsim_gglens, name=None, coords=None, bands=None, use_jax=None):
         # check that the input is reasonable
         if slsim_gglens.source_number != 1:
             raise ValueError("Only one source is supported for galaxy-galaxy lenses.")
@@ -130,7 +130,8 @@ class GalaxyGalaxy(StrongLens):
                             coords=coords,
                             kwargs_model=kwargs_model,
                             kwargs_params=kwargs_params,
-                            physical_params=physical_params)
+                            physical_params=physical_params,
+                            use_jax=use_jax)
 
     
 class SampleGG(GalaxyGalaxy):

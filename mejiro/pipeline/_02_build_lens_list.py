@@ -32,6 +32,7 @@ def main(args):
         config = yaml.load(f, Loader=yaml.SafeLoader)
 
     # retrieve configuration parameters
+    use_jax = config['jaxtronomy']['use_jax']
     scas = config['survey']['detectors']
     bands = config['survey']['bands']
 
@@ -65,7 +66,7 @@ def main(args):
                 gglenses = util.unpickle(pickled_list)
 
                 for slsim_lens in tqdm(gglenses, desc="Strong Lenses", position=2, leave=False):
-                    mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=f'{pipeline.name}_{str(uid).zfill(8)}', bands=bands)
+                    mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=f'{pipeline.name}_{str(uid).zfill(8)}', bands=bands, use_jax=use_jax)
                     mejiro_lens_pickle_target = os.path.join(pipeline.output_dir, f'sca{sca}/lens_{mejiro_lens.name}.pkl')
                     util.pickle(mejiro_lens_pickle_target, mejiro_lens)
                     uid += 1
@@ -78,7 +79,7 @@ def main(args):
             gglenses = util.unpickle(pickled_list)
 
             for slsim_lens in tqdm(gglenses, desc="Strong Lenses", position=2, leave=False):
-                mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=f'{pipeline.name}_{str(uid).zfill(8)}')
+                mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=f'{pipeline.name}_{str(uid).zfill(8)}', use_jax=use_jax)
                 mejiro_lens_pickle_target = os.path.join(pipeline.output_dir, f'lens_{mejiro_lens.name}.pkl')
                 util.pickle(mejiro_lens_pickle_target, mejiro_lens)
                 uid += 1

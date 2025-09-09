@@ -38,10 +38,6 @@ def main(args):
     synthetic_image_config = config['synthetic_image']
     psf_config = config['psf']
 
-    # set up jaxstronomy
-    if config['jaxtronomy']['use_jax']:
-        os.environ['JAX_PLATFORM_NAME'] = config['jaxtronomy'].get('jax_platform', 'cpu')
-
     # initialize PipeLineHelper
     pipeline = PipelineHelper(config, PREV_SCRIPT_NAME, SCRIPT_NAME)
 
@@ -66,12 +62,8 @@ def main(args):
     # tuple the parameters
     tuple_list = [(pipeline, synthetic_image_config, psf_config, input_pickle) for input_pickle in input_pickles]
 
-    # submit tasks to the executor
-    with ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(count)) as executor:
-        futures = {executor.submit(create_synthetic_image, task): task for task in tuple_list}
-
-        for future in tqdm(as_completed(futures), total=len(futures)):
-            future.result()  # Get the result to propagate exceptions if any
+    for input in tqdm(tuple_list):
+        create_synthetic_image(input)
 
     stop = time.time()
     execution_time = util.print_execution_time(start, stop, return_string=True)

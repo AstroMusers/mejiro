@@ -60,6 +60,8 @@ def main(args):
 
     # set configuration parameters
     config['survey']['cosmo'] = default_cosmology.get()
+    if config['jaxtronomy']['use_jax']:
+        os.environ['JAX_PLATFORM_NAME'] = config['jaxtronomy'].get('jax_platform', 'cpu')
 
     # load instrument
     instrument = pipeline_util.initialize_instrument_class(config['instrument'])
@@ -136,6 +138,7 @@ def run_slsim(tuple):
     limit = config['limit']
     snr_config = config['snr']
     verbose = config['verbose']
+    use_jax = config['jaxtronomy']['use_jax']
     engine_params = config['imaging']['engine_params']
     survey_config = config['survey']
     area = survey_config['area']
@@ -299,7 +302,7 @@ def run_slsim(tuple):
         snr_list = []
         num_exceptions = 0
         for candidate in tqdm(total_lens_population, disable=verbose):
-            strong_lens = GalaxyGalaxy.from_slsim(candidate, bands=bands)
+            strong_lens = GalaxyGalaxy.from_slsim(candidate, bands=bands, use_jax=use_jax)
 
             # TODO temporary fix to make sure that there are two images formed
             image_positions = strong_lens.get_image_positions()
@@ -360,7 +363,7 @@ def run_slsim(tuple):
     for candidate in tqdm(lens_population, disable=not verbose):
         # convert from SLSim gglens to mejiro GalaxyGalaxy
         try:
-            strong_lens = GalaxyGalaxy.from_slsim(candidate, bands=bands)
+            strong_lens = GalaxyGalaxy.from_slsim(candidate, bands=bands, use_jax=use_jax)
         except:
             print(f'Error processing candidate {candidate["name"]}')
             continue

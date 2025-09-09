@@ -35,6 +35,7 @@ def main(args):
         config = yaml.load(f, Loader=yaml.SafeLoader)
 
     # retrieve configuration parameters
+    use_jax = config['jaxtronomy']['use_jax']
     subhalo_config = config['subhalos']
 
     # initialize PipeLineHelper
@@ -70,7 +71,7 @@ def main(args):
         mask = np.ones(count, dtype=bool)
 
     # tuple the parameters
-    tuple_list = [(pipeline, subhalo_config, input_pickle, add_subhalos) for input_pickle, add_subhalos in zip(input_pickles, mask)]
+    tuple_list = [(pipeline, subhalo_config, use_jax, input_pickle, add_subhalos) for input_pickle, add_subhalos in zip(input_pickles, mask)]
 
     # submit tasks to the executor
     with ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(count)) as executor:
@@ -89,7 +90,7 @@ def add(tuple):
     np.random.seed()
 
     # unpack tuple
-    (pipeline, subhalo_config, input_pickle, add_subhalos) = tuple
+    (pipeline, subhalo_config, use_jax, input_pickle, add_subhalos) = tuple
 
     if add_subhalos:
         # load the lens
@@ -115,7 +116,7 @@ def add(tuple):
             return
 
         # add subhalos
-        lens.add_realization(realization)
+        lens.add_realization(realization, use_jax=use_jax)
 
         # pickle the subhalo realization
         subhalo_dir = os.path.join(pipeline.output_dir, 'subhalos')

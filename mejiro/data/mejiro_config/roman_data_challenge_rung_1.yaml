@@ -14,7 +14,10 @@ cores:
   script_04: 32
   script_05: 32
   script_snr: 1
-instrument: roman
+jaxtronomy: 
+  use_jax: False
+  jax_platform: cpu  # cpu or gpu
+  instrument: roman
 survey:
   runs: 756 # 90
   area: 0.5
@@ -55,6 +58,9 @@ subhalos:
     log_mlow: 6
     log_mhigh: 12
     LOS_normalization: 1.
+    concentration_model_subhalos: LUDLOW2016
+    concentration_model_fieldhalos: LUDLOW2016
+    shmf_log_slope: -1.9
     r_tidal: 0.5  # see Section 3.1 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract
     sigma_sub: 0.055  # see Section 6.3 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract
 synthetic_image:
