@@ -1,6 +1,9 @@
 /archive
 .nfs*
 
+# build
+dist/
+
 # docs
 docs/build
 
