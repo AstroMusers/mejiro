@@ -1,5 +1,5 @@
 data_dir: &data_dir /nfsdata1/bwedig/mejiro  # where output data should be written
-pipeline_label: roman_data_challenge_rung_1
+pipeline_label: roman_data_challenge_mini
 psf_cache_dir: cached_psfs
 dev: True
 nice: 19
