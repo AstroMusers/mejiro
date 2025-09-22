@@ -14,14 +14,17 @@ from mejiro.pipeline import (
 )
 
 class Pipeline:
-    def __init__(self, config_file=None):
+    def __init__(self, config_file=None, data_dir=None):
         if config_file is None:
-            config_file = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'mejiro_config', 'roman_test.yaml')
+            config_file = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'mejiro_config', 'simple.yaml')
         self.config_file = config_file
 
         parser = argparse.ArgumentParser(description="Run the mejiro pipeline")
-        parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+        parser.add_argument('--config')
         arg_list = ["--config", self.config_file]
+        if data_dir is not None:
+            parser.add_argument('--data_dir')
+            arg_list += ["--data_dir", data_dir]
         self.args = parser.parse_args(arg_list)
 
     def run(self):

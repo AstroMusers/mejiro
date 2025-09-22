@@ -40,6 +40,13 @@ def main(args):
     detector_positions = roman_util.divide_up_sca(psf_config['divide_up_detector'])
     num_pixes = psf_config['num_pixes']
 
+    # TODO TEMP: need to use PipelineHelper for this
+    if hasattr(args, 'data_dir'):
+        print(f'Overriding data_dir in config file ({data_dir}) with provided data_dir ({args.data_dir})')  # TODO logging
+        data_dir = args.data_dir
+    elif data_dir is None:
+        raise ValueError("data_dir must be specified either in the config file or via the --data_dir argument.")
+
     # set directory for all output of this script
     save_dir = os.path.join(data_dir, psf_cache_dir)
     util.create_directory_if_not_exists(save_dir)
@@ -89,15 +96,16 @@ def generate_psf(args):
     psf_id, save_dir = args
 
     # generate PSF
-    webbpsf_psf = STPSFEngine.get_roman_psf_from_id(psf_id, check_cache=False, verbose=False)
+    stpsf_psf = STPSFEngine.get_roman_psf_from_id(psf_id, check_cache=False, verbose=False)
 
     # save PSF
     psf_path = os.path.join(save_dir, f'{psf_id}.npy')
-    np.save(psf_path, webbpsf_psf)
+    np.save(psf_path, stpsf_psf)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Generate and cache Roman PSFs")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    parser.add_argument('--data_dir', type=str, required=False, help='Parent directory of pipeline output. Overrides data_dir in config file if provided.')
     args = parser.parse_args()
     main(args)

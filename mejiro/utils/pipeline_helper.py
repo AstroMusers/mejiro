@@ -1,21 +1,42 @@
 import importlib
-from logging import config
 import os
+import yaml
 from glob import glob
+from logging import config
 
 from mejiro.utils import util
 
 
 class PipelineHelper:
-    def __init__(self, config, prev_script_name, script_name):
-        self.config = config
+    def __init__(self, args, prev_script_name, script_name):
         self.prev_script_name = prev_script_name
         self.script_name = script_name
 
+        # ensure the configuration file has a .yaml or .yml extension
+        if not args.config.endswith(('.yaml', '.yml')):
+            if os.path.exists(args.config + '.yaml'):
+                args.config += '.yaml'
+            elif os.path.exists(args.config + '.yml'):
+                args.config += '.yml'
+            else:
+                raise ValueError("The configuration file must be a YAML file with extension '.yaml' or '.yml'.")
+
+        # read configuration file
+        with open(args.config, 'r') as f:
+            config = yaml.load(f, Loader=yaml.SafeLoader)
+        self.config = config
+
+        # set data directory
+        self.data_dir = config['data_dir']
+        if hasattr(args, 'data_dir'):
+            print(f'Overriding data_dir in config file ({self.data_dir}) with provided data_dir ({args.data_dir})')  # TODO logging
+            self.data_dir = args.data_dir
+        elif self.data_dir is None:
+            raise ValueError("data_dir must be specified either in the config file or via the --data_dir argument.")
+        
         # get attributes from config
         self.dev = config['dev']
         self.verbose = config['verbose']
-        self.data_dir = config['data_dir']
         self.limit = config['limit']
         self.runs = config['survey']['runs']
         self.detectors = config['survey']['detectors']

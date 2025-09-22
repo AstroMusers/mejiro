@@ -1,7 +1,6 @@
 import argparse
 import os
 import time
-import yaml
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
@@ -20,24 +19,11 @@ SUPPORTED_INSTRUMENTS = ['roman', 'hwo']
 def main(args):
     start = time.time()
 
-    # ensure the configuration file has a .yaml or .yml extension
-    if not args.config.endswith(('.yaml', '.yml')):
-        if os.path.exists(args.config + '.yaml'):
-            args.config += '.yaml'
-        elif os.path.exists(args.config + '.yml'):
-            args.config += '.yml'
-        else:
-            raise ValueError("The configuration file must be a YAML file with extension '.yaml' or '.yml'.")
-
-    # read configuration file
-    with open(args.config, 'r') as f:
-        config = yaml.load(f, Loader=yaml.SafeLoader)
+    # initialize PipeLineHelper
+    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME)
 
     # retrieve configuration parameters
-    imaging_config = config['imaging']
-
-    # initialize PipeLineHelper
-    pipeline = PipelineHelper(config, PREV_SCRIPT_NAME, SCRIPT_NAME)
+    imaging_config = pipeline.config['imaging']
 
     # set input and output directories
     if pipeline.instrument_name == 'roman':

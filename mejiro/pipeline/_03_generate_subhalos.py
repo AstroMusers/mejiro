@@ -2,7 +2,6 @@ import argparse
 import os
 import shutil
 import time
-import yaml
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
@@ -21,25 +20,12 @@ SUPPORTED_INSTRUMENTS = ['roman', 'hwo']
 def main(args):
     start = time.time()
 
-    # ensure the configuration file has a .yaml or .yml extension
-    if not args.config.endswith(('.yaml', '.yml')):
-        if os.path.exists(args.config + '.yaml'):
-            args.config += '.yaml'
-        elif os.path.exists(args.config + '.yml'):
-            args.config += '.yml'
-        else:
-            raise ValueError("The configuration file must be a YAML file with extension '.yaml' or '.yml'.")
-
-    # read configuration file
-    with open(args.config, 'r') as f:
-        config = yaml.load(f, Loader=yaml.SafeLoader)
+    # initialize PipeLineHelper
+    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME)
 
     # retrieve configuration parameters
-    use_jax = config['jaxtronomy']['use_jax']
-    subhalo_config = config['subhalos']
-
-    # initialize PipeLineHelper
-    pipeline = PipelineHelper(config, PREV_SCRIPT_NAME, SCRIPT_NAME)
+    use_jax = pipeline.config['jaxtronomy']['use_jax']
+    subhalo_config = pipeline.config['subhalos']
 
     # set input and output directories
     if pipeline.instrument_name == 'roman':
@@ -62,7 +48,7 @@ def main(args):
     # add subhalos to a subset of systems
     if subhalo_config['fraction'] < 1.0:
         if pipeline.verbose: print(f'Adding subhalos to {subhalo_config["fraction"] * 100}% of the systems')
-        np.random.seed(config['seed'])
+        np.random.seed(pipeline.config['seed'])
         mask = np.zeros(count, dtype=bool)
         num_true = int(np.round(subhalo_config['fraction'] * count))
         mask[:num_true] = True

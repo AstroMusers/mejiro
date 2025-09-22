@@ -2,7 +2,6 @@ import argparse
 import os
 import random
 import time
-import yaml
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
@@ -21,29 +20,16 @@ SUPPORTED_INSTRUMENTS = ['roman', 'hwo']
 def main(args):
     start = time.time()
 
-    # ensure the configuration file has a .yaml or .yml extension
-    if not args.config.endswith(('.yaml', '.yml')):
-        if os.path.exists(args.config + '.yaml'):
-            args.config += '.yaml'
-        elif os.path.exists(args.config + '.yml'):
-            args.config += '.yml'
-        else:
-            raise ValueError("The configuration file must be a YAML file with extension '.yaml' or '.yml'.")
-
-    # read configuration file
-    with open(args.config, 'r') as f:
-        config = yaml.load(f, Loader=yaml.SafeLoader)
+    # initialize PipeLineHelper
+    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME)
 
     # retrieve configuration parameters
-    synthetic_image_config = config['synthetic_image']
-    psf_config = config['psf']
+    synthetic_image_config = pipeline.config['synthetic_image']
+    psf_config = pipeline.config['psf']
 
     # set up jaxstronomy
-    if config['jaxtronomy']['use_jax']:
-        os.environ['JAX_PLATFORM_NAME'] = config['jaxtronomy'].get('jax_platform', 'cpu')
-
-    # initialize PipeLineHelper
-    pipeline = PipelineHelper(config, PREV_SCRIPT_NAME, SCRIPT_NAME)
+    if pipeline.config['jaxtronomy']['use_jax']:
+        os.environ['JAX_PLATFORM_NAME'] = pipeline.config['jaxtronomy'].get('jax_platform', 'cpu')
 
     # set input and output directories
     if pipeline.instrument_name == 'roman':

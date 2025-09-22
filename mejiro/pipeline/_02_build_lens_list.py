@@ -1,7 +1,6 @@
 import argparse
 import os
 import time
-import yaml
 from glob import glob
 from tqdm import tqdm
 
@@ -18,26 +17,13 @@ SUPPORTED_INSTRUMENTS = ['roman', 'hwo']
 def main(args):
     start = time.time()
 
-    # ensure the configuration file has a .yaml or .yml extension
-    if not args.config.endswith(('.yaml', '.yml')):
-        if os.path.exists(args.config + '.yaml'):
-            args.config += '.yaml'
-        elif os.path.exists(args.config + '.yml'):
-            args.config += '.yml'
-        else:
-            raise ValueError("The configuration file must be a YAML file with extension '.yaml' or '.yml'.")
-
-    # read configuration file
-    with open(args.config, 'r') as f:
-        config = yaml.load(f, Loader=yaml.SafeLoader)
+    # initialize PipeLineHelper
+    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME)
 
     # retrieve configuration parameters
-    use_jax = config['jaxtronomy']['use_jax']
-    scas = config['survey']['detectors']
-    bands = config['survey']['bands']
-
-    # initialize PipeLineHelper
-    pipeline = PipelineHelper(config, PREV_SCRIPT_NAME, SCRIPT_NAME)
+    use_jax = pipeline.config['jaxtronomy']['use_jax']
+    scas = pipeline.config['survey']['detectors']
+    bands = pipeline.config['survey']['bands']
 
     # tell script where the output of previous script is
     detectable_gglens_pickles = sorted(glob(pipeline.input_dir + '/detectable_gglenses_*.pkl'))
@@ -97,5 +83,6 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Build mejiro StrongLens objects.")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    parser.add_argument('--data_dir', type=str, required=False, help='Parent directory of pipeline output. Overrides data_dir in config file if provided.')
     args = parser.parse_args()
     main(args)

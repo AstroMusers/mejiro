@@ -58,6 +58,13 @@ def main(args):
     detectors = config['survey']['detectors']
     area = config['survey']['area']
 
+    # TODO TEMP: need to use PipelineHelper for this
+    if hasattr(args, 'data_dir'):
+        print(f'Overriding data_dir in config file ({data_dir}) with provided data_dir ({args.data_dir})')  # TODO logging
+        data_dir = args.data_dir
+    elif data_dir is None:
+        raise ValueError("data_dir must be specified either in the config file or via the --data_dir argument.")
+
     # set configuration parameters
     config['survey']['cosmo'] = default_cosmology.get()
     if config['jaxtronomy']['use_jax']:
@@ -430,5 +437,6 @@ def run_slsim(tuple):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Simulate survey and identify detectable systems")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    parser.add_argument('--data_dir', type=str, required=False, help='Parent directory of pipeline output. Overrides data_dir in config file if provided.')
     args = parser.parse_args()
     main(args)

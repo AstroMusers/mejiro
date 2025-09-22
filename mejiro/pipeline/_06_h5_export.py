@@ -6,7 +6,6 @@ import lenstronomy
 import os
 import platform
 import time
-import yaml
 import stpsf
 import slsim
 from datetime import datetime
@@ -27,29 +26,16 @@ SUPPORTED_INSTRUMENTS = ['roman']
 def main(args):
     start = time.time()
 
-    # ensure the configuration file has a .yaml or .yml extension
-    if not args.config.endswith(('.yaml', '.yml')):
-        if os.path.exists(args.config + '.yaml'):
-            args.config += '.yaml'
-        elif os.path.exists(args.config + '.yml'):
-            args.config += '.yml'
-        else:
-            raise ValueError("The configuration file must be a YAML file with extension '.yaml' or '.yml'.")
-
-    # read configuration file
-    with open(args.config, 'r') as f:
-        config = yaml.load(f, Loader=yaml.SafeLoader)
+    # initialize PipeLineHelper
+    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME)
 
     # retrieve configuration parameters
-    bands = config['synthetic_image']['bands']
-    subhalo_config = config['subhalos']
-    snr_config = config['snr']
-    synthetic_image_config = config['synthetic_image']
-    psf_config = config['psf']
-    dataset_config = config['dataset']
-
-    # initialize PipeLineHelper
-    pipeline = PipelineHelper(config, PREV_SCRIPT_NAME, SCRIPT_NAME)
+    bands = pipeline.config['synthetic_image']['bands']
+    subhalo_config = pipeline.config['subhalos']
+    snr_config = pipeline.config['snr']
+    synthetic_image_config = pipeline.config['synthetic_image']
+    psf_config = pipeline.config['psf']
+    dataset_config = pipeline.config['dataset']
 
     # retrieve uids
     if pipeline.instrument_name == 'roman':
@@ -163,7 +149,7 @@ def main(args):
         group_psfs = f.create_group('psfs')
 
         # retrieve configuration settings
-        psf_cache_dir = os.path.join(pipeline.data_dir, config['psf_cache_dir'])
+        psf_cache_dir = os.path.join(pipeline.data_dir, pipeline.config['psf_cache_dir'])
 
         for det in tqdm(detectors, desc='Detectors', position=0, leave=True):
             # create group for detector
