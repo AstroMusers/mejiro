@@ -34,11 +34,11 @@ jobs:
     - name: Set environment variable
       run: echo "ROMAN_TECHNICAL_INFORMATION_PATH=${{ github.workspace }}/roman-technical-information" >> $GITHUB_ENV
     - uses: conda-incubator/setup-miniconda@v3  # https://github.com/marketplace/actions/setup-miniconda
-        with:
-          activate-environment: mejiro-v2
-          environment-file: environment.yml
-          python-version: 3.10.6
-          auto-activate-base: false
+      with:
+        activate-environment: mejiro-v2
+        environment-file: environment.yml
+        python-version: 3.10.6
+        auto-activate-base: false
     - name: Install testing dependencies
       run: |
         pip install flake8 pytest
