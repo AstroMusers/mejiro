@@ -1,9 +1,6 @@
 Installation
 ============
 
-Installing ``mejiro`` and its dependencies
-------------------------------------------
-
 Install ``mejiro`` from `GitHub <https://github.com/AstroMusers/mejiro>`__ using the commands below. Currently, ``mejiro`` is not available on PyPI.
 
 .. code-block:: bash

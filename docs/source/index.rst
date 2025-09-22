@@ -1,9 +1,6 @@
 mejiro documentation
 ====================
 
-.. warning::
-   This project is under active development.
-
 .. toctree::
    :maxdepth: 1
    :caption: Getting Started
