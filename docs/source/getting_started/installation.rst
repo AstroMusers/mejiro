@@ -12,7 +12,7 @@ Install ``mejiro`` from `GitHub <https://github.com/AstroMusers/mejiro>`__ using
     cd mejiro
     conda env create -f environment.yml  
 
-Installing ``jaxtronomy`` can provide significant speedups for the survey simulation with `SL-Hammocks` and ray-shooting steps, especially if your machine has GPUs. To install ``jaxtronomy``, follow the instructions `here <https://github.com/lenstronomy/JAXtronomy>`__.
+.. Installing ``jaxtronomy`` can provide significant speed-ups for the survey simulation with `SL-Hammocks` and ray-shooting steps, especially if your machine has GPUs. To install ``jaxtronomy``, follow the instructions `here <https://github.com/lenstronomy/JAXtronomy>`__.
 
 To simulate images from *Roman*, you will need to download the ``roman-technical-information`` repository `here <https://github.com/RomanSpaceTelescope/roman-technical-information/>`__. Then, set the environment variable ``ROMAN_TECHNICAL_INFORMATION_PATH`` to the path where you downloaded the repository, e.g., in your ``.bashrc`` or ``.bash_profile``:
 

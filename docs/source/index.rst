@@ -9,11 +9,13 @@ mejiro documentation
    :caption: Getting Started
 
    getting_started/installation.rst
+   getting_started/running.rst
    
 .. toctree::
    :maxdepth: 1
    :caption: Documentation
 
+   mejiro/pipeline.rst
    mejiro/strong_lens.rst
    mejiro/synthetic_image.rst
    mejiro/exposure.rst
