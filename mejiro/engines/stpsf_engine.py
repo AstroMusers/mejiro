@@ -32,7 +32,7 @@ class STPSFEngine(Engine):
     def get_roman_psf(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None,
                     verbose=False, **calc_psf_kwargs):
         """
-        Generate a Roman WFI PSF using WebbPSF.
+        Generate a Roman WFI PSF using STPSF.
 
         Parameters
         ----------
@@ -45,7 +45,7 @@ class STPSFEngine(Engine):
         oversample : int
             The oversampling factor.
         num_pix : int
-            The number of pixels on a side. This parameter is passed to WebbPSF's `fov_pixels` parameter.
+            The number of pixels on a side. This parameter is passed to STPSF's `fov_pixels` parameter.
         check_cache : bool, optional
             If True, check the cache for an existing PSF before generating a new one. Default is True.
         psf_cache_dir : str, optional
@@ -53,7 +53,7 @@ class STPSFEngine(Engine):
         verbose : bool, optional
             If True, print additional information. Default is False.
         **calc_psf_kwargs : dict
-            Additional keyword arguments to pass to WebbPSF's `calc_psf` method.
+            Additional keyword arguments to pass to STPSF's `calc_psf` method.
 
         Returns
         -------
@@ -67,6 +67,10 @@ class STPSFEngine(Engine):
             cached_psf = STPSFEngine.get_cached_psf(psf_id, psf_cache_dir, verbose)
             if cached_psf is not None:
                 return cached_psf
+            
+        # TODO get the warning to actually show up
+        # warnings.warn('Generating PSF with STPSF, which may be slow. Consider caching frequently-used PSFs.', UserWarning)
+        print('Generating PSF with STPSF, which may be slow. Consider caching frequently-used PSFs.')
 
         # set PSF parameters
         wfi = WFI()
@@ -75,7 +79,7 @@ class STPSFEngine(Engine):
         wfi.detector_position = detector_position
         wfi.options['output_mode'] = 'oversampled'
 
-        # generate PSF in WebbPSF
+        # generate PSF in STPSF
         psf = wfi.calc_psf(fov_pixels=num_pix, oversample=oversample, **calc_psf_kwargs)
 
         return psf['OVERSAMP'].data

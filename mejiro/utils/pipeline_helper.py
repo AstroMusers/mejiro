@@ -4,6 +4,7 @@ import yaml
 from glob import glob
 from logging import config
 
+import mejiro
 from mejiro.utils import util
 
 
@@ -40,7 +41,6 @@ class PipelineHelper:
         self.limit = config['limit']
         self.runs = config['survey']['runs']
         self.detectors = config['survey']['detectors']
-        self.psf_cache_dir = os.path.join(self.data_dir, config['psf_cache_dir'])
 
         # set pipeline name
         self.name = config['pipeline_label']
@@ -56,6 +56,13 @@ class PipelineHelper:
         # load instrument
         self.instrument_name = config['instrument'].lower()
         self.instrument = self.initialize_instrument_class()
+
+        # set psf cache directory
+        self.psf_cache_dir = config['psf_cache_dir']
+        if self.psf_cache_dir is None:
+            self.psf_cache_dir = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'psfs', self.instrument_name.lower())
+        else:
+            self.psf_cache_dir = os.path.join(self.data_dir, self.psf_cache_dir)
 
         # set up top directory for all pipeline output
         self.pipeline_dir = os.path.join(self.data_dir, self.config['pipeline_label'])

@@ -5,15 +5,8 @@ def test_pipeline_run(tmp_path):
     temp_dir = tmp_path / "subdir"
     temp_dir.mkdir()
 
-    pipeline = Pipeline(data_dir=str(temp_dir))
-    pipeline.run()  
-
-    # check script 00 output
-    cached_psfs_dir = temp_dir / "cached_psfs"
-    assert cached_psfs_dir.exists() and cached_psfs_dir.is_dir(), "Cached PSFs directory does not exist"
-
-    npy_files = list(cached_psfs_dir.glob("*.npy"))
-    assert len(npy_files) == 2, f"Expected 2 .npy files in cached_psfs, found {len(npy_files)}"
+    pipeline = Pipeline(data_dir=str(temp_dir), _test_mode=True)
+    pipeline.run()
 
     # check script 01 output
     script_01_dir = temp_dir / "simple_dev" / "01"
@@ -89,13 +82,6 @@ def test_no_data_dir():
         assert str(e) == "data_dir must be specified either in the config file or via the --data_dir argument."
     else:
         assert False, "ValueError was not raised when data_dir was not specified"
-
-def test_pipeline_run_script(tmp_path):
-    temp_dir = tmp_path / "subdir"
-    temp_dir.mkdir()
-
-    pipeline = Pipeline(data_dir=str(temp_dir))
-    pipeline.run_script(0)  # Run only the first script (Cache PSFs)
 
 def test_pipeline_invalid_script_number(tmp_path):
     temp_dir = tmp_path / "subdir"

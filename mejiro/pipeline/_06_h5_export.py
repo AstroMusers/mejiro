@@ -148,9 +148,6 @@ def main(args):
         # create psfs dataset
         group_psfs = f.create_group('psfs')
 
-        # retrieve configuration settings
-        psf_cache_dir = os.path.join(pipeline.data_dir, pipeline.config['psf_cache_dir'])
-
         for det in tqdm(detectors, desc='Detectors', position=0, leave=True):
             # create group for detector
             group_detector = group_psfs.create_group(f'sca{str(det).zfill(2)}')
@@ -159,7 +156,7 @@ def main(args):
                 for i, band in enumerate(bands):
                     # get cached PSF
                     psf_id_string = STPSFEngine.get_psf_id(band, det, det_pos, psf_oversample, psf_pixels)
-                    psf = STPSFEngine.get_cached_psf(psf_id_string, psf_cache_dir, verbose=False)
+                    psf = STPSFEngine.get_cached_psf(psf_id_string, pipeline.psf_cache_dir, verbose=True)
 
                     # create psf dataset
                     dataset_psf = group_detector.create_dataset(f'psf_{psf_id_string}', data=psf)

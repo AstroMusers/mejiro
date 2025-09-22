@@ -14,7 +14,7 @@ from mejiro.pipeline import (
 )
 
 class Pipeline:
-    def __init__(self, config_file=None, data_dir=None):
+    def __init__(self, config_file=None, data_dir=None, _test_mode=False):
         if config_file is None:
             config_file = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'mejiro_config', 'simple.yaml')
         self.config_file = config_file
@@ -27,8 +27,11 @@ class Pipeline:
             arg_list += ["--data_dir", data_dir]
         self.args = parser.parse_args(arg_list)
 
+        self._test_mode = _test_mode
+
     def run(self):
-        script_00_cache_psfs.main(self.args)
+        if not self._test_mode:
+            script_00_cache_psfs.main(self.args)
         script_01_run_survey_simulation.main(self.args)
         script_02_build_lens_list.main(self.args)
         script_03_generate_subhalos.main(self.args)

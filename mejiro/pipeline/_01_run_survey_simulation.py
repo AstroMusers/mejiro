@@ -54,6 +54,7 @@ def main(args):
     dev = config['dev']
     verbose = config['verbose']
     data_dir = config['data_dir']
+    psf_cache_dir = config['psf_cache_dir']
     runs = config['survey']['runs']
     detectors = config['survey']['detectors']
     area = config['survey']['area']
@@ -96,8 +97,11 @@ def main(args):
     else:
         debug_dir = None
 
-    # get psf cache directory
-    psf_cache_dir = os.path.join(data_dir, 'cached_psfs')
+    # set psf cache directory
+    if psf_cache_dir is None:
+        psf_cache_dir = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'psfs', instrument.name.lower())
+    else:
+        psf_cache_dir = os.path.join(data_dir, psf_cache_dir)
 
     # tuple the parameters
     tuple_list = []

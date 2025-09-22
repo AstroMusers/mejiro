@@ -1,10 +1,10 @@
 data_dir: &data_dir null # where output data should be written
 pipeline_label: simple
-psf_cache_dir: cached_psfs
+psf_cache_dir: null
 dev: True
-nice: 19
+nice: 0
 verbose: True
-suppress_warnings: True
+suppress_warnings: False
 limit: null
 seed: &seed 42
 cores:
@@ -68,7 +68,7 @@ synthetic_image:
   supersampling_factor: &supersampling_factor 1
   pieces: True
 imaging:
-  exposure_time: &exposure_time 3600
+  exposure_time: &exposure_time 1000
   engine: galsim
   engine_params:
     rng_seed: *seed

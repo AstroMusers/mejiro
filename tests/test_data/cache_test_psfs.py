@@ -5,7 +5,7 @@ def main():
     bands = ['F062', 'F087', 'F106', 'F129', 'F146', 'F158', 'F184', 'F213']
 
     for band in bands:
-        psf_id = STPSFEngine.get_psf_id(band, 1, (2048, 2048), 1, 41)
+        psf_id = STPSFEngine.get_psf_id(band, 1, (2044, 2044), 1, 41)
         STPSFEngine.cache_psf(psf_id, '')
 
 
