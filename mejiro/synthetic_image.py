@@ -287,7 +287,7 @@ class SyntheticImage:
         plt.imshow(np.log10(self.image), origin='lower')
         plt.title(f'{self.strong_lens.name} (' + r'$z_{l}=$' + f'{self.strong_lens.z_lens:.2f}, ' + r'$z_{s}=$' + f'{self.strong_lens.z_source:.2f}' + f')\n{self.instrument_name} {self.band}')
         cbar = plt.colorbar()
-        cbar.set_label(r'log$_{10}$(Counts)')
+        cbar.set_label(r'log$_{10}$(Counts/sec)')
         plt.xlabel('x [Pixels]')
         plt.ylabel('y [Pixels]')
         if savepath is not None:
