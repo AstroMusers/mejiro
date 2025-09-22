@@ -33,15 +33,15 @@ jobs:
         path: roman-technical-information
     - name: Set environment variable
       run: echo "ROMAN_TECHNICAL_INFORMATION_PATH=${{ github.workspace }}/roman-technical-information" >> $GITHUB_ENV
-    - uses: conda-incubator/setup-miniconda@v3  # https://github.com/marketplace/actions/setup-miniconda
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
       with:
-        activate-environment: mejiro-v2
-        environment-file: environment.yml
-        python-version: 3.10.6
-        auto-activate-base: false
-    - name: Install testing dependencies
+        python-version: "3.10"
+    - name: Install dependencies
       run: |
+        python -m pip install --upgrade pip
         pip install flake8 pytest
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     # - name: Lint with flake8
     #   run: |
     #     # stop the build if there are Python syntax errors or undefined names
@@ -50,4 +50,4 @@ jobs:
     #     flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        pytest --ignore tests/test_hwo_imaging --ignore tests/test_engines/test_galsim_engine_hwo.py --ignore tests/test_instruments/test_hwo.py --ignore tests/test_pipelines/test_mejiro_pipeline.py -v
+        pytest --ignore tests/test_hwo_imaging --ignore tests/test_engines/test_galsim_engine_hwo.py --ignore tests/test_instruments/test_hwo.py
