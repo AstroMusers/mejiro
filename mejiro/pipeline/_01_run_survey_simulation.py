@@ -60,7 +60,7 @@ def main(args):
     area = config['survey']['area']
 
     # TODO TEMP: need to use PipelineHelper for this
-    if hasattr(args, 'data_dir'):
+    if hasattr(args, 'data_dir') and args.data_dir is not None:
         print(f'Overriding data_dir in config file ({data_dir}) with provided data_dir ({args.data_dir})')  # TODO logging
         data_dir = args.data_dir
     elif data_dir is None:

@@ -29,7 +29,7 @@ class PipelineHelper:
 
         # set data directory
         self.data_dir = config['data_dir']
-        if hasattr(args, 'data_dir'):
+        if hasattr(args, 'data_dir') and args.data_dir is not None:
             print(f'Overriding data_dir in config file ({self.data_dir}) with provided data_dir ({args.data_dir})')  # TODO logging
             self.data_dir = args.data_dir
         elif self.data_dir is None:

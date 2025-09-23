@@ -39,18 +39,18 @@ survey:
   detectors: &detectors [1]  # 
   bands: [F062, F087, F106, F129, F158, F184, F213, F146]  # SkyPy will calculate magnitudes for each of these bands; they'll be stored in the physical_params attribute of the strong_lens
   deflector_cut_band: F106
-  deflector_cut_band_max: 27
+  deflector_cut_band_max: 24
   deflector_z_min: 0.01
-  deflector_z_max: 5.0
+  deflector_z_max: 2.0
   source_cut_band: F106
-  source_cut_band_max: 29
+  source_cut_band_max: 24
   source_z_min: 0.01
-  source_z_max: 8.0
+  source_z_max: 3.0
   min_image_separation: 0.3  # arcseconds
   max_image_separation: 10.0  # arcseconds
   mag_arc_limit_band: F106
-  mag_arc_limit: 27
-  magnification: 3
+  mag_arc_limit: 24
+  magnification: 2
 subhalos:
   fraction: 1.  # fraction of systems to add substructure to
   pyhalo_model: CDM
@@ -68,11 +68,11 @@ synthetic_image:
   supersampling_factor: &supersampling_factor 1
   pieces: True
 imaging:
-  exposure_time: &exposure_time 1000
+  exposure_time: &exposure_time 10000
   engine: galsim
   engine_params:
     rng_seed: *seed
-    min_zodi_factor: 1.5
+    min_zodi_factor: 1.
     sky_background: True
     detector_effects: True
     poisson_noise: True
@@ -87,7 +87,7 @@ snr:
   snr_fov_arcsec: 6
   snr_supersampling_compute_mode: adaptive
   snr_supersampling_factor: &snr_supersampling_factor 1
-  snr_threshold: 20
+  snr_threshold: 5
   snr_per_pixel_threshold: 1
 psf:
   bands: [ F106, F158 ]
