@@ -86,17 +86,6 @@ def main(args):
     util.clear_directory(output_dir)
     if verbose: print(f'Set up output directory {output_dir}')
 
-    # set up debugging directories
-    if dev:
-        debug_dir = os.path.join(os.path.dirname(output_dir), 'debug')
-        util.create_directory_if_not_exists(debug_dir)
-        util.clear_directory(debug_dir)
-        if verbose: print(f'Set up debugging directory {debug_dir}')
-        util.create_directory_if_not_exists(os.path.join(debug_dir, 'snr'))
-        util.create_directory_if_not_exists(os.path.join(debug_dir, 'masked_snr_arrays'))
-    else:
-        debug_dir = None
-
     # set psf cache directory
     if psf_cache_dir is None:
         psf_cache_dir = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'psfs', instrument.name.lower())
@@ -110,7 +99,7 @@ def main(args):
             detector = detectors[run % len(detectors)]
         else:
             detector = None
-        tuple_list.append((str(run).zfill(4), detector, config, output_dir, debug_dir, psf_cache_dir, instrument))
+        tuple_list.append((str(run).zfill(4), detector, config, output_dir, psf_cache_dir, instrument))
 
     # split up the lenses into batches based on core count
     cpu_count = multiprocessing.cpu_count()
@@ -140,7 +129,7 @@ def run_slsim(tuple):
     module_path = os.path.dirname(mejiro.__file__)
 
     # unpack tuple
-    run, detector, config, output_dir, debug_dir, psf_cache_dir, instrument = tuple
+    run, detector, config, output_dir, psf_cache_dir, instrument = tuple
 
     # a legacy function but prevents duplicate runs
     np.random.seed()
@@ -157,6 +146,7 @@ def run_slsim(tuple):
     cosmo = survey_config['cosmo']
     use_real_sources = survey_config['use_real_sources']
     use_slhammocks_pipeline = survey_config['use_slhammocks_pipeline']
+    num_pix = config['psf']['num_pixes'][0]
     snr_band = snr_config['snr_band']
     snr_exposure_time = snr_config['snr_exposure_time']
     snr_fov_arcsec = snr_config['snr_fov_arcsec']
@@ -289,8 +279,8 @@ def run_slsim(tuple):
         'band': snr_band,
         'detector': snr_detector,
         'detector_position': snr_detector_position,
-        'oversample': 5,
-        'num_pix': 101,
+        'oversample': snr_supersampling_factor,
+        'num_pix': num_pix,
         'check_cache': True,
         'psf_cache_dir': psf_cache_dir,
         'verbose': False

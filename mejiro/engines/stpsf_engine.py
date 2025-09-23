@@ -225,9 +225,5 @@ class STPSFEngine(Engine):
             return np.load(psf_path[0])
         else:
             band, detector, detector_position, oversample, num_pix = STPSFEngine.get_params_from_psf_id(id_string)
-            warnings.warn(
-                f'PSF {band} SCA{str(detector).zfill(2)} {detector_position} {oversample} {num_pix} not found in cache {psf_cache_dir}')  # TODO change to logging
-            if verbose:
-                print(
-                    f'PSF {band} SCA{str(detector).zfill(2)} {detector_position} {oversample} {num_pix} not found in cache {psf_cache_dir}')
+            print(f'PSF {band} SCA{str(detector).zfill(2)} {detector_position} {oversample} {num_pix} not found in cache {psf_cache_dir}')  # TODO change to logging
             return None
