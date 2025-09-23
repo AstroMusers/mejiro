@@ -1,3 +1,15 @@
+"""
+Exports processed exposures and synthetic images to HDF5 format.
+
+This script reads exposures and synthetic images generated in previous pipeline steps, and writes them to an HDF5 file with relevant metadata and attributes for each lensing system and band. It also optionally exports PSF data if configured. The script reads a mejiro YAML configuration file specifying dataset options.
+
+Usage:
+    python3 _06_h5_export.py --config <config.yaml> [--data_dir <output_dir>]
+
+Arguments:
+    --config: Path to the YAML configuration file.
+    --data_dir: Optional override for the data directory specified in the config file.
+"""
 import argparse
 import galsim
 import getpass

@@ -1,3 +1,15 @@
+"""
+Builds a list of StrongLens objects from previously detected lensing systems.
+
+This script processes the output of a strong lensing survey simulation, converting detected lensing systems into mejiro StrongLens objects. It reads configuration parameters from a mejiro configuration YAML file and supports multiple instruments (Roman, HWO). Output lenses are pickled for downstream analysis.
+
+Usage:
+    python3 _02_build_lens_list.py --config <config.yaml> [--data_dir <output_dir>]
+
+Arguments:
+    --config: Path to the YAML configuration file.
+    --data_dir: Optional override for the data directory specified in the config file.
+"""
 import argparse
 import os
 import time

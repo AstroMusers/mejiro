@@ -1,3 +1,15 @@
+"""
+Generates dark matter subhalo realizations for strong lensing systems.
+
+This script processes previously detected lensing systems, adding dark matter substructure realizations generated using the pyHalo package to each system according to parameters specified in a mejiro configuration YAML file. It supports multiple instruments (Roman, HWO), and outputs updated lens objects and subhalo realizations for downstream analysis.
+
+Usage:
+    python3 _03_generate_subhalos.py --config <config.yaml> [--data_dir <output_dir>]
+
+Arguments:
+    --config: Path to the YAML configuration file.
+    --data_dir: Optional override for the data directory specified in the config file.
+"""
 import argparse
 import os
 import shutil

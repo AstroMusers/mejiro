@@ -1,3 +1,15 @@
+"""
+Simulates a strong lensing survey and identifies detectable lensing systems using configurable pipelines.
+
+This script simulates a survey and identifies detectable strong lensing systems using the SLSim pipeline plus enhanced capabilities. It reads YAML configuration files for SkyPy, SLHammock (optional), and mejiro, specifying survey parameters and simulation options. The script supports multiprocessing to parallelize survey runs across available CPU cores.
+
+Usage:
+    python3 _01_run_survey_simulation.py --config <config.yaml> [--data_dir <output_dir>]
+
+Arguments:
+    --config: Path to the YAML configuration file.
+    --data_dir: Optional override for the data directory specified in the config file.
+"""
 import argparse
 import multiprocessing
 import os

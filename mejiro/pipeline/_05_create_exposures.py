@@ -1,3 +1,15 @@
+"""
+Generates exposures from synthetic images, i.e., apply sky background and detector effects to idealized images.
+
+This script processes synthetic images produced in previous pipeline steps, generating exposures for each lensing system using instrument-specific parameters and simulation engines. It reads a mejiro YAML configuration file specifying exposure options. Multiprocessing is used to parallelize exposure creation across available CPU cores.
+
+Usage:
+    python3 _05_create_exposures.py --config <config.yaml> [--data_dir <output_dir>]
+
+Arguments:
+    --config: Path to the YAML configuration file.
+    --data_dir: Optional override for the data directory specified in the config file.
+"""
 import argparse
 import os
 import time

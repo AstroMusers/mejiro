@@ -1,3 +1,15 @@
+"""
+Generates synthetic images: idealized images with no noise or detector effects (optionally, convolved with PSF).
+
+This script creates synthetic images for each lensing system identified in previous pipeline steps, using instrument-specific parameters and PSF models. It reads a YAML configuration file specifying survey, instrument, and image simulation options. Multiprocessing is used to parallelize image generation across available CPU cores.
+
+Usage:
+    python3 _04_create_synthetic_images.py --config <config.yaml> [--data_dir <output_dir>]
+
+Arguments:
+    --config: Path to the YAML configuration file.
+    --data_dir: Optional override for the data directory specified in the config file.
+"""
 import argparse
 import os
 import random

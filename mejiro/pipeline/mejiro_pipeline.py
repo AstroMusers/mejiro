@@ -14,6 +14,18 @@ from mejiro.pipeline import (
 )
 
 class Pipeline:
+    """
+    Class for running and managing the Mejiro pipeline. It wraps the individual pipeline scripts to provide a simple interface.
+
+    Attributes
+    ----------
+    config_file : str, optional
+        Path to the pipeline configuration YAML file. If None, a default config file is used.
+    data_dir : str, optional
+        Directory containing input data. If None, uses the value from the config file.
+    _test_mode : bool, optional
+        If True, skips execution of the first pipeline script (used for testing).
+    """
     def __init__(self, config_file=None, data_dir=None, _test_mode=False):
         if config_file is None:
             config_file = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'mejiro_config', 'simple.yaml')
@@ -30,6 +42,27 @@ class Pipeline:
         self._test_mode = _test_mode
 
     def run(self):
+        """
+        Executes the mejiro pipeline end-to-end.
+
+        The pipeline consists of the following steps:
+            1. Optionally caches PSFs if not in test mode.
+            2. Runs the survey simulation.
+            3. Builds the lens list.
+            4. Generates subhalos.
+            5. Creates synthetic images.
+            6. Creates exposures.
+            7. Exports results to HDF5 format.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        The method assumes that each script's `main` function accepts `self.args` as its argument.
+        The PSF caching step is skipped if `_test_mode` is True.
+        """
         if not self._test_mode:
             script_00_cache_psfs.main(self.args)
         script_01_run_survey_simulation.main(self.args)
@@ -83,6 +116,21 @@ class Pipeline:
     # TODO run a subset of the pipeline
 
     def print_metrics(self):
+        """
+        Prints pipeline execution metrics including total execution time and average execution time per system.
+        Loads configuration and execution times from files, calculates the total pipeline execution time,
+        and prints it in human-readable format (hours, minutes, seconds, and days if applicable). Also computes
+        and prints the average execution time per system based on the number of pickled exposure files found.
+        Raises
+        ------
+        ValueError
+            If no pickled exposures are found in the expected directory.
+        Notes
+        -----
+        - Assumes the existence of a configuration file and an execution_times.json file.
+        - The method expects the configuration to specify the data directory and band information.
+        - The method modifies the pipeline label if running in development mode.
+        """
         import datetime
         import json
         from glob import glob

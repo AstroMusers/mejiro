@@ -1,3 +1,18 @@
+"""
+Generate and cache Roman PSFs in parallel.
+
+This script reads a YAML configuration file specifying parameters for PSF generation,
+such as oversampling factors, bands, detectors, detector positions, and pixel sizes.
+It determines which PSFs need to be generated based on existing cache files, and
+spins up multiple processes to compute and save the missing PSFs as .npy files.
+
+Usage:
+    python3 _00_cache_psfs.py --config <config.yaml> [--data_dir <output_dir>]
+
+Arguments:
+    --config: Path to the YAML configuration file.
+    --data_dir: Optional override for the data directory specified in the config file.
+"""
 import argparse
 import multiprocessing
 import os
@@ -9,6 +24,7 @@ from tqdm import tqdm
 
 from mejiro.utils import roman_util, util
 from mejiro.engines.stpsf_engine import STPSFEngine
+
 
 
 def main(args):
