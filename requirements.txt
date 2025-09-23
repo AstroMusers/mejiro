@@ -199,7 +199,7 @@ semantic-version==2.10.0
 Send2Trash==1.8.3
 setuptools==80.9.0
 six==1.17.0
-skypy==0.5.3
+git+https://github.com/bryce-wedig/skypy.git@mejiro-v2.0.0
 git+https://github.com/bryce-wedig/slsim.git@mejiro-v2.0.0
 sncosmo==2.10.4
 sniffio==1.3.1
