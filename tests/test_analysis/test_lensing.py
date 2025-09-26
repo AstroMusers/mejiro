@@ -3,10 +3,10 @@ import matplotlib.pyplot as plt
 from pyHalo.preset_models import preset_model_from_name
 
 from mejiro.analysis import lensing
-from mejiro.galaxy_galaxy import SampleBELLS, SampleSL2S, SampleGG
+from mejiro.galaxy_galaxy import Sample1, SampleBELLS
 
 
-@pytest.mark.parametrize("strong_lens", [SampleGG(), SampleSL2S(), SampleBELLS()])
+@pytest.mark.parametrize("strong_lens", [Sample1(), SampleBELLS()])
 def test_get_kappa(strong_lens):
     # macromodel convergence
     kappa = lensing.get_kappa(strong_lens.lens_model, strong_lens.kwargs_lens, scene_size=5, pixel_scale=0.11)
@@ -20,7 +20,7 @@ def test_get_kappa(strong_lens):
     assert kappa.shape == (47, 47)
 
 
-@pytest.mark.parametrize("strong_lens", [SampleGG(), SampleSL2S(), SampleBELLS()])
+@pytest.mark.parametrize("strong_lens", [Sample1(), SampleBELLS()])
 def test_get_subhalo_mass_function(strong_lens):
     CDM = preset_model_from_name('CDM')
     realization = CDM(round(strong_lens.z_lens, 2), round(strong_lens.z_source, 2), cone_opening_angle_arcsec=5)

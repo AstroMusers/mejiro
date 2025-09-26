@@ -3,13 +3,14 @@ import numpy as np
 from pyHalo.preset_models import preset_model_from_name
 
 from mejiro.instruments.roman import Roman
-from mejiro.galaxy_galaxy import SampleGG, SampleSL2S, SampleBELLS
+from mejiro.galaxy_galaxy import Sample1, Sample2, SampleGG, SampleSL2S, SampleBELLS
 from mejiro.synthetic_image import SyntheticImage
 from mejiro.utils import util
 
 
-def test_magnitudes():
-    synthetic_image = SyntheticImage(strong_lens=SampleGG(),
+@pytest.mark.parametrize("strong_lens", [Sample1(), Sample2(), SampleGG()])
+def test_magnitudes(strong_lens):
+    synthetic_image = SyntheticImage(strong_lens=strong_lens,
                                      instrument=Roman(),
                                      band='F129',
                                      fov_arcsec=5,
@@ -31,10 +32,13 @@ def test_lenstronomy_amplitudes(strong_lens):
                                      pieces=False,
                                      verbose=False)
 
-def test_kwargs_numerics():
+@pytest.mark.parametrize("strong_lens", [Sample1(), Sample2(), SampleGG(), SampleSL2S(), SampleBELLS()])   
+def test_kwargs_numerics(strong_lens):
+    roman = Roman()
+    
     # test defaulting
-    synthetic_image = SyntheticImage(strong_lens=SampleGG(),
-                                     instrument=Roman(),
+    synthetic_image = SyntheticImage(strong_lens=strong_lens,
+                                     instrument=roman,
                                      band='F129',
                                      fov_arcsec=5,
                                      instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
@@ -49,8 +53,8 @@ def test_kwargs_numerics():
         'supersampling_factor': 5,
         'compute_mode': 'regular'
     }
-    synthetic_image = SyntheticImage(strong_lens=SampleGG(),
-                                     instrument=Roman(),
+    synthetic_image = SyntheticImage(strong_lens=strong_lens,
+                                     instrument=roman,
                                      band='F129',
                                      fov_arcsec=5,
                                      instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
@@ -66,8 +70,8 @@ def test_kwargs_numerics():
         'compute_mode': 'adaptive',
         'supersampled_indexes': region
     }
-    synthetic_image = SyntheticImage(strong_lens=SampleGG(),
-                                     instrument=Roman(),
+    synthetic_image = SyntheticImage(strong_lens=strong_lens,
+                                     instrument=roman,
                                      band='F129',
                                      fov_arcsec=5,
                                      instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
@@ -81,8 +85,8 @@ def test_kwargs_numerics():
         'supersampling_factor': 5,
         'compute_mode': 'adaptive',
     }
-    synthetic_image = SyntheticImage(strong_lens=SampleGG(),
-                                     instrument=Roman(),
+    synthetic_image = SyntheticImage(strong_lens=strong_lens,
+                                     instrument=roman,
                                      band='F129',
                                      fov_arcsec=5,
                                      instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
@@ -98,8 +102,8 @@ def test_kwargs_numerics():
     }
     with pytest.warns(UserWarning,
                       match='Supersampling factor less than 5 may not be sufficient for accurate results, especially when convolving with a non-trivial PSF'):
-        synthetic_image = SyntheticImage(strong_lens=SampleGG(),
-                                     instrument=Roman(),
+        synthetic_image = SyntheticImage(strong_lens=strong_lens,
+                                     instrument=roman,
                                      band='F129',
                                      fov_arcsec=5,
                                      instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
@@ -109,7 +113,7 @@ def test_kwargs_numerics():
                                      verbose=True)
         
 
-@pytest.mark.parametrize("strong_lens", [SampleGG(), SampleSL2S(), SampleBELLS()])        
+@pytest.mark.parametrize("strong_lens", [Sample1(), Sample2(), SampleGG(), SampleSL2S(), SampleBELLS()])        
 def test_build_adaptive_grid(strong_lens):
     synthetic_image = SyntheticImage(strong_lens=strong_lens,
                                      instrument=Roman(),

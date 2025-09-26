@@ -8,7 +8,7 @@ import pytest
 import mejiro
 from mejiro.exposure import Exposure
 from mejiro.synthetic_image import SyntheticImage
-from mejiro.galaxy_galaxy import SampleGG, SampleSL2S, SampleBELLS
+from mejiro.galaxy_galaxy import Sample1, Sample2, SampleGG, SampleSL2S, SampleBELLS
 from mejiro.instruments.roman import Roman
 from mejiro.engines.stpsf_engine import STPSFEngine
 
@@ -16,7 +16,7 @@ from mejiro.engines.stpsf_engine import STPSFEngine
 TEST_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(mejiro.__file__)), 'tests', 'test_data')
 
 
-@pytest.mark.parametrize("strong_lens", [SampleGG(), SampleSL2S(), SampleBELLS()])
+@pytest.mark.parametrize("strong_lens", [SampleGG(), Sample1()])
 def test_exposure_with_galsim_engine(strong_lens):
     from mejiro.engines.galsim_engine import GalSimEngine
 
