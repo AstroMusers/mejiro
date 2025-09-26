@@ -1,5 +1,8 @@
+import numpy as np
+import os
 from astropy.cosmology import default_cosmology
 
+import mejiro
 from mejiro.strong_lens import StrongLens
 
 
@@ -133,7 +136,195 @@ class GalaxyGalaxy(StrongLens):
                             physical_params=physical_params,
                             use_jax=use_jax)
 
-    
+
+class Sample1(GalaxyGalaxy):
+    """
+    This is a simulated strong lens from `SLSim <https://github.com/LSST-strong-lensing/slsim>`__ with a real source galaxy from the `COSMOS real galaxy dataset <https://doi.org/10.5281/zenodo.3242143>`__ (galaxy ID: 52643).
+    """
+    def __init__(self):
+        name = 'Sample1'
+        coords = None
+        kwargs_model = {
+            'lens_light_model_list': ['HERNQUIST_ELLIPSE'],
+            'lens_model_list': ['NFW_ELLIPSE_CSE',
+            'HERNQUIST_ELLIPSE_CSE',
+            'SHEAR',
+            'CONVERGENCE'],
+            'source_light_model_list': ['INTERPOL'],
+            'point_source_model_list': [],
+            'lens_redshift_list': [0.4089999999999997,
+            0.4089999999999997,
+            0.4089999999999997,
+            0.4089999999999997],
+            'source_redshift_list': [1.0504635536161229],
+            'cosmo': default_cosmology.get(),
+            'z_source': 1.0504635536161229
+        }
+        kwargs_params = {
+            'kwargs_lens': [{'alpha_Rs': 2.152274160968798,
+            'Rs': 12.009805809840927,
+            'center_x': 0.05492674339498643,
+            'center_y': -0.011555025525515692,
+            'e1': 0.09811990428304755,
+            'e2': 0.20670368492980223},
+            {'Rs': 0.5321226122963442,
+            'sigma0': 1.776219843615018,
+            'center_x': 0.05492674339498643,
+            'center_y': -0.011555025525515692,
+            'e1': 0.23256069438280758,
+            'e2': 0.31725006496727354},
+            {'gamma1': 0.0, 'gamma2': -0.0, 'ra_0': 0, 'dec_0': 0},
+            {'kappa': 0.0, 'ra_0': 0, 'dec_0': 0}],
+            'kwargs_source': [{'magnitude': 23.024090614244994,
+            'image': np.load(os.path.join(mejiro.__path__[0], 'data', 'sample_strong_lenses', 'Sample1_source_image.npy')),
+            'center_x': 0.5234764335185655,
+            'center_y': -0.30904973000602404,
+            'phi_G': -0.40396801187729525,
+            'scale': 0.011470703531976122}],
+            'kwargs_lens_light': [{'magnitude': 19.880235363152202,
+            'Rs': 0.5321226122963442,
+            'e1': 0.23256069438280758,
+            'e2': 0.31725006496727354,
+            'center_x': 0.05492674339498643,
+            'center_y': -0.011555025525515692}],
+            'kwargs_ps': []
+        }
+        physical_params = {
+            'einstein_radius': 1.4715952785467208,
+            'lens_stellar_mass': 266751801749.89062,
+            'lens_velocity_dispersion': 220.2846927664321,
+            'magnification': 5.689519846846302,
+            'magnitudes': {'lens': {'F062': 19.880235363152202,
+            'F087': 18.928988180749073,
+            'F106': 18.583627761826264,
+            'F129': 18.282497860132786,
+            'F158': 18.033002190911418,
+            'F184': 17.94798633808793,
+            'F213': 17.841215518925587,
+            'F146': 18.21682576587846},
+            'source': {'F062': 23.024090614244994,
+            'F087': 22.18513730209406,
+            'F106': 21.778955564710362,
+            'F129': 21.460108789175212,
+            'F158': 21.195266461816228,
+            'F184': 20.97473766143266,
+            'F213': 20.75170735159845,
+            'F146': 21.347643040542298},
+            'lensed_source': {'F062': 21.136401572450623,
+            'F087': 20.29744826029969,
+            'F106': 19.89126652291599,
+            'F129': 19.57241974738084,
+            'F158': 19.307577420021858,
+            'F184': 19.08704861963829,
+            'F213': 18.86401830980408,
+            'F146': 19.459953998747928}},
+            'main_halo_mass': 30070387660798.555,
+            'main_halo_concentration': 8.389596552329431,
+            'galaxy_id': 52643
+        }
+        
+        super().__init__(name=name,
+                         coords=coords,
+                         kwargs_model=kwargs_model, 
+                         kwargs_params=kwargs_params,
+                         physical_params=physical_params,
+                         use_jax=[True, True, True, True])
+        
+
+class Sample2(GalaxyGalaxy):
+    """
+    This is a simulated strong lens from `SLSim <https://github.com/LSST-strong-lensing/slsim>`__ with a real source galaxy from the `COSMOS real galaxy dataset <https://doi.org/10.5281/zenodo.3242143>`__ (galaxy ID: 125125).
+    """
+    def __init__(self):
+        name = 'Sample2'
+        coords = None
+        kwargs_model = {
+            'lens_light_model_list': ['HERNQUIST_ELLIPSE'],
+            'lens_model_list': ['NFW_ELLIPSE_CSE',
+            'HERNQUIST_ELLIPSE_CSE',
+            'SHEAR',
+            'CONVERGENCE'],
+            'source_light_model_list': ['INTERPOL'],
+            'point_source_model_list': [],
+            'lens_redshift_list': [0.28799999999999976,
+            0.28799999999999976,
+            0.28799999999999976,
+            0.28799999999999976],
+            'source_redshift_list': [1.5812955302517107],
+            'cosmo': default_cosmology.get(),
+            'z_source': 1.5812955302517107
+        }
+        kwargs_params = {
+            'kwargs_lens': [{'alpha_Rs': 1.7090478742473105,
+            'Rs': 14.45565972243006,
+            'center_x': -0.03388918233495778,
+            'center_y': 0.0015198194628865055,
+            'e1': -0.1701872552668492,
+            'e2': 0.19935762812442037},
+            {'Rs': 1.1919802798455827,
+            'sigma0': 0.6093943647695845,
+            'center_x': -0.03388918233495778,
+            'center_y': 0.0015198194628865055,
+            'e1': -0.1387964563225823,
+            'e2': 0.17184563503903189},
+            {'gamma1': -0.0, 'gamma2': 0.0, 'ra_0': 0, 'dec_0': 0},
+            {'kappa': 0.0, 'ra_0': 0, 'dec_0': 0}],
+            'kwargs_source': [{'magnitude': 23.64945686424934,
+            'image': np.load(os.path.join(mejiro.__path__[0], 'data', 'sample_strong_lenses', 'Sample2_source_image.npy')),
+            'center_x': -0.15344107941982324,
+            'center_y': -0.07658324218289095,
+            'phi_G': 0.04333272209103614,
+            'scale': 0.01199994615069906}],
+            'kwargs_lens_light': [{'magnitude': 18.858486184904116,
+            'Rs': 1.1919802798455827,
+            'e1': -0.1387964563225823,
+            'e2': 0.17184563503903189,
+            'center_x': -0.03388918233495778,
+            'center_y': 0.0015198194628865055}],
+            'kwargs_ps': []
+        }
+        physical_params = {
+            'einstein_radius': 1.155670048766553,
+            'lens_stellar_mass': 263558660846.60092,
+            'lens_velocity_dispersion': 180.4905400737736,
+            'magnification': 8.040132325729415,
+            'magnitudes': {'lens': {'F062': 18.858486184904116,
+            'F087': 18.016514953150647,
+            'F106': 17.660306087413154,
+            'F129': 17.32939178131017,
+            'F158': 17.116956163651793,
+            'F184': 17.00686322367511,
+            'F213': 16.817299459688087,
+            'F146': 17.281968709211363},
+            'source': {'F062': 23.64945686424934,
+            'F087': 23.137923721134147,
+            'F106': 22.567632622207018,
+            'F129': 22.29282837571761,
+            'F158': 22.092272848864585,
+            'F184': 21.970548370597573,
+            'F213': 21.94144833183736,
+            'F146': 22.250790065136616},
+            'lensed_source': {'F062': 21.38629887301839,
+            'F087': 20.874765729903196,
+            'F106': 20.304474630976067,
+            'F129': 20.029670384486657,
+            'F158': 19.829114857633634,
+            'F184': 19.707390379366622,
+            'F213': 19.67829034060641,
+            'F146': 19.987632073905665}},
+            'main_halo_mass': 15166922314867.84,
+            'main_halo_concentration': 7.309338903404382,
+            'galaxy_id': 125125
+        }
+        
+        super().__init__(name=name,
+                         coords=coords,
+                         kwargs_model=kwargs_model, 
+                         kwargs_params=kwargs_params,
+                         physical_params=physical_params,
+                         use_jax=[True, True, True, True])
+
+
 class SampleGG(GalaxyGalaxy):
     """
     This is a simulated strong lens from `SLSim <https://github.com/LSST-strong-lensing/slsim>`__.
