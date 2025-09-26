@@ -1,4 +1,5 @@
 import numpy as np
+import time
 import warnings
 from lenstronomy.Data.coord_transforms import Coordinates
 from lenstronomy.Data.pixel_grid import PixelGrid
@@ -73,6 +74,8 @@ class SyntheticImage:
         - The pixel grid is set up to ensure an odd number of pixels per side.
         - Adaptive supersampling grid is built if requested.
         """
+        start = time.time()
+
         # check band is valid for instrument
         if band not in instrument.bands:
             raise ValueError(f'Band "{band}" not valid for instrument {instrument.name}')
@@ -185,6 +188,11 @@ class SyntheticImage:
             self.source_surface_brightness = image_model.source_surface_brightness(kwargs_source=self.strong_lens.kwargs_source, kwargs_lens=self.strong_lens.kwargs_lens, kwargs_extinction=self.strong_lens.kwargs_extinction, kwargs_special=self.strong_lens.kwargs_special, unconvolved=False)
         else:
             self.lens_surface_brightness, self.source_surface_brightness = None, None
+
+        end = time.time()
+        self.calc_time = end - start
+        if self.verbose:
+            print(f'Synthetic image calculation time: {util.calculate_execution_time(start, end, unit="s")}')
 
     def build_adaptive_grid(self, pad):
         """
