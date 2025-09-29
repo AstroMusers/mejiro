@@ -3,6 +3,7 @@ import os
 import warnings
 from glob import glob
 from stpsf.roman import WFI
+from stpsf import NIRCam
 
 from mejiro.engines.engine import Engine
 from mejiro.utils import roman_util, lenstronomy_util
@@ -83,6 +84,39 @@ class STPSFEngine(Engine):
         psf = wfi.calc_psf(fov_pixels=num_pix, oversample=oversample, **calc_psf_kwargs)
 
         return psf['OVERSAMP'].data
+    
+
+    @staticmethod
+    def get_jwst_psf_kwargs(band, oversample, num_pix, check_cache=False, psf_cache_dir=None,
+                    verbose=False):
+        kernel = STPSFEngine.get_jwst_psf(band, oversample, num_pix,
+                                            check_cache=check_cache, psf_cache_dir=psf_cache_dir, verbose=verbose)
+        return lenstronomy_util.get_pixel_psf_kwargs(kernel, oversample)
+
+
+    @staticmethod
+    def get_jwst_psf(band, oversample, num_pix, check_cache=False, psf_cache_dir=None, verbose=False, **calc_psf_kwargs):
+        # first, check if it exists in the cache
+        if check_cache:
+            assert psf_cache_dir is not None, 'Must provide a PSF cache directory if checking the cache'
+            psf_id = STPSFEngine.get_jwst_psf_id(band, oversample, num_pix)
+            cached_psf = STPSFEngine.get_cached_psf(psf_id, psf_cache_dir, verbose)
+            if cached_psf is not None:
+                return cached_psf
+            
+        # TODO get the warning to actually show up
+        # warnings.warn('Generating PSF with STPSF, which may be slow. Consider caching frequently-used PSFs.', UserWarning)
+        print('Generating PSF with STPSF, which may be slow. Consider caching frequently-used PSFs.')
+
+        # set PSF parameters
+        nircam = NIRCam()
+        nircam.filter = band.upper()
+        nircam.options['output_mode'] = 'oversampled'
+
+        # generate PSF in STPSF
+        psf = nircam.calc_psf(fov_pixels=num_pix, oversample=oversample, **calc_psf_kwargs)
+
+        return psf['OVERSAMP'].data
 
 
     @staticmethod
@@ -110,6 +144,28 @@ class STPSFEngine(Engine):
         """
         detector = roman_util.get_sca_int(detector)
         return f'{band}_{detector}_{detector_position[0]}_{detector_position[1]}_{oversample}_{num_pix}'
+    
+
+    @staticmethod
+    def get_jwst_psf_id(band, oversample, num_pix):
+        """
+        Generate a PSF identifier string. mejiro's JWST simulation uses this under-the-hood to cache and retrieve JWST PSFs.
+
+        Parameters
+        ----------
+        band : str
+            The band.
+        oversample : int
+            The oversampling factor.
+        num_pix : int
+            The number of pixels on a side. 
+
+        Returns
+        -------
+        str
+            A unique identifier string for the PSF.
+        """
+        return f'{band}_{oversample}_{num_pix}'
 
 
     @staticmethod
@@ -224,6 +280,5 @@ class STPSFEngine(Engine):
                 print(f'Loading cached PSF: {psf_path[0]}')
             return np.load(psf_path[0])
         else:
-            band, detector, detector_position, oversample, num_pix = STPSFEngine.get_params_from_psf_id(id_string)
-            print(f'PSF {band} SCA{str(detector).zfill(2)} {detector_position} {oversample} {num_pix} not found in cache {psf_cache_dir}')  # TODO change to logging
+            print(f'PSF {id_string} not found in cache {psf_cache_dir}')  # TODO change to logging
             return None
