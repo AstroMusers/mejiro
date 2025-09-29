@@ -1,0 +1,1 @@
+Retrieved 29 September 2025 from https://jwst-docs.stsci.edu/jwst-near-infrared-camera/nircam-instrumentation/nircam-filters#gsc.tab=0.
