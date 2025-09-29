@@ -5,7 +5,7 @@ import numpy as np
 import mejiro
 from mejiro.engines import galsim_engine
 from mejiro.exposure import Exposure
-from mejiro.instruments.hwo import HWO
+from mejiro.instruments.jwst import JWST
 from mejiro.galaxy_galaxy import SampleGG
 from mejiro.synthetic_image import SyntheticImage
 
@@ -13,10 +13,10 @@ from mejiro.synthetic_image import SyntheticImage
 TEST_DATA_DIR = os.path.join(os.path.dirname(mejiro.__path__[0]), 'tests', 'test_data')
 
 
-def test_hwo_default_engine_params():
+def test_jwst_default_engine_params():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
-                                     instrument=HWO(),
-                                     band='J',
+                                     instrument=JWST(),
+                                     band='F200W',
                                      verbose=False)
 
     exposure = Exposure(synthetic_image,
@@ -28,36 +28,36 @@ def test_hwo_default_engine_params():
     assert exposure.engine == 'galsim'
 
     for key, item in exposure.engine_params.items():
-        assert item == galsim_engine.default_engine_params('HWO')[key]
+        assert item == galsim_engine.default_engine_params('JWST')[key]
 
 
-def test_hwo_pieces():
+def test_jwst_pieces():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
-                                     instrument=HWO(),
-                                     band='J',
+                                     instrument=JWST(),
+                                     band='F200W',
                                      pieces=True,
                                      verbose=False)
 
-    assert synthetic_image.image.shape == (291, 291)
-    assert synthetic_image.lens_surface_brightness.shape == (291, 291)
-    assert synthetic_image.source_surface_brightness.shape == (291, 291)
+    assert synthetic_image.image.shape == (163, 163)
+    assert synthetic_image.lens_surface_brightness.shape == (163, 163)
+    assert synthetic_image.source_surface_brightness.shape == (163, 163)
 
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
                         engine='galsim',
                         verbose=False)
 
-    assert exposure.exposure.shape == (291, 291)
-    assert exposure.lens_exposure.shape == (291, 291)
-    assert exposure.source_exposure.shape == (291, 291)
+    assert exposure.exposure.shape == (163, 163)
+    assert exposure.lens_exposure.shape == (163, 163)
+    assert exposure.source_exposure.shape == (163, 163)
 
     # TODO checks on the images
 
 
-def test_hwo_noise():
+def test_jwst_noise():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
-                                     instrument=HWO(),
-                                     band='J',
+                                     instrument=JWST(),
+                                     band='F200W',
                                      verbose=False)
 
     exposure = Exposure(synthetic_image,
@@ -91,10 +91,10 @@ def test_hwo_noise():
     assert np.array_equal(read_noise.array, exposure2.read_noise.array)
 
 
-def test_hwo_sky_background_off():
+def test_jwst_sky_background_off():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
-                                     instrument=HWO(),
-                                     band='J',
+                                     instrument=JWST(),
+                                     band='F200W',
                                      verbose=False)
 
     engine_params = {
@@ -110,10 +110,10 @@ def test_hwo_sky_background_off():
     # TODO checks on the images
 
 
-def test_hwo_all_detector_effects_off():
+def test_jwst_all_detector_effects_off():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
-                                     instrument=HWO(),
-                                     band='J',
+                                     instrument=JWST(),
+                                     band='F200W',
                                      verbose=False)
 
     engine_params = {
@@ -129,10 +129,10 @@ def test_hwo_all_detector_effects_off():
     # TODO checks on the images
 
 
-def test_hwo_poisson_noise_off():
+def test_jwst_poisson_noise_off():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
-                                     instrument=HWO(),
-                                     band='J',
+                                     instrument=JWST(),
+                                     band='F200W',
                                      verbose=False)
 
     engine_params = {
@@ -148,10 +148,10 @@ def test_hwo_poisson_noise_off():
     # TODO checks on the images
 
 
-def test_hwo_dark_noise_off():
+def test_jwst_dark_noise_off():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
-                                     instrument=HWO(),
-                                     band='J',
+                                     instrument=JWST(),
+                                     band='F200W',
                                      verbose=False)
 
     engine_params = {
@@ -167,10 +167,10 @@ def test_hwo_dark_noise_off():
     # TODO checks on the images
 
 
-def test_hwo_read_noise_off():
+def test_jwst_read_noise_off():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
-                                     instrument=HWO(),
-                                     band='J',
+                                     instrument=JWST(),
+                                     band='F200W',
                                      verbose=False)
 
     engine_params = {

@@ -405,7 +405,13 @@ class SampleGG(GalaxyGalaxy):
                 'NUV': 17,
                 'R': 17,
                 'U': 17,
-                'V': 17
+                'V': 17,
+                'F115W': 17,
+                'F150W': 17,
+                'F200W': 17,
+                'F277W': 17,
+                'F356W': 17,
+                'F444W': 17
             },
             'source': {
                 'F062': 21.9,
@@ -425,7 +431,13 @@ class SampleGG(GalaxyGalaxy):
                 'NUV': 20,
                 'R': 20,
                 'U': 20,
-                'V': 20
+                'V': 20,
+                'F115W': 20,
+                'F150W': 20,
+                'F200W': 20,
+                'F277W': 20,
+                'F356W': 20,
+                'F444W': 20
             }
         }
         physical_params = {
