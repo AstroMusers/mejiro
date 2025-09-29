@@ -2,7 +2,7 @@ import importlib.metadata
 import os
 import numpy as np
 import syotools
-import lenstronomy.Util.data_util as data_util
+from lenstronomy.Util import data_util
 from astropy import units as u
 from astropy.units import Quantity
 from fractions import Fraction
@@ -50,7 +50,7 @@ class HWO(Instrument):
             raise importlib.metadata.PackageNotFoundError("syotools package not found. Please install syotools.")
 
         # set attributes
-        self.gain = 1.
+        self.gain = {band: 1. for band in self.bands}
         self.stray_light_fraction = 0.1
         self.aperture = self.telescope.recover('aperture')
         self.effective_aperture = self.telescope.effective_aperture
@@ -99,6 +99,9 @@ class HWO(Instrument):
                 raise ValueError(f"Unit of {attribute} must be {unit}, not {values.unit}")
 
         return {band: value for band, value in zip(self.bands, values)}
+    
+    def get_gain(self, band):
+        return self.gain[band]
     
     def get_sky_level(self, band):
         return self.sky_level[band]
