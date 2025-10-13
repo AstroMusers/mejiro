@@ -25,7 +25,7 @@ from mejiro.utils.pipeline_helper import PipelineHelper
 
 PREV_SCRIPT_NAME = '04'
 SCRIPT_NAME = '05'
-SUPPORTED_INSTRUMENTS = ['roman', 'hwo']
+SUPPORTED_INSTRUMENTS = ['roman']
 
 
 def main(args):
