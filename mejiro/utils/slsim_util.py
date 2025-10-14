@@ -39,6 +39,10 @@ def write_lens_population_to_csv(output_path, lens_population, snr_list, bands=N
             'snr': snr,
         }
 
+        if gglens.deflector.deflector_type == "NFW_HERNQUIST":
+            row['main_halo_mass'] = gglens.deflector.halo_properties[0]
+            row['main_halo_concentration'] = gglens.deflector.halo_properties[1]
+
         for band in bands:
             row[f'mag_{band}_lens'] = gglens.deflector_magnitude(band=band)
             row[f'mag_{band}_source'] = gglens.extended_source_magnitude(band=band, lensed=False)[0]
