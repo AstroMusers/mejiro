@@ -11,14 +11,10 @@ Arguments:
     --data_dir: Optional override for the data directory specified in the config file.
 """
 import argparse
-import multiprocessing
 import os
 import time
 import warnings
-import yaml
-from glob import glob
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from pprint import pprint
 
 import numpy as np
 from astropy.cosmology import default_cosmology
@@ -31,110 +27,53 @@ from slsim.Pipelines.sl_hammocks_pipeline import SLHammocksPipeline
 from tqdm import tqdm
 
 import mejiro
-from mejiro.utils import util
 from mejiro.analysis import snr_calculation
 from mejiro.exposure import Exposure
 from mejiro.galaxy_galaxy import GalaxyGalaxy
 from mejiro.synthetic_image import SyntheticImage
-from mejiro.utils import pipeline_util, roman_util, slsim_util, util
+from mejiro.utils import roman_util, slsim_util, util
+from mejiro.utils.pipeline_helper import PipelineHelper
+
+
+PREV_SCRIPT_NAME = None
+SCRIPT_NAME = '01'
+SUPPORTED_INSTRUMENTS = ['roman', 'jwst']
 
 
 def main(args):
     start = time.time()
 
-    # ensure the configuration file has a .yaml or .yml extension
-    if not args.config.endswith(('.yaml', '.yml')):
-        if os.path.exists(args.config + '.yaml'):
-            args.config += '.yaml'
-        elif os.path.exists(args.config + '.yml'):
-            args.config += '.yml'
-        else:
-            raise ValueError("The configuration file must be a YAML file with extension '.yaml' or '.yml'.")
-
-    # read configuration file
-    with open(args.config, 'r') as f:
-        config = yaml.load(f, Loader=yaml.SafeLoader)
-
-    # set nice level
-    os.nice(config.get('nice', 0))
-
-    # suppress warnings
-    if config['suppress_warnings']:
-        warnings.filterwarnings("ignore", category=UserWarning)
-
-    # retrieve configuration parameters
-    dev = config['dev']
-    verbose = config['verbose']
-    data_dir = config['data_dir']
-    psf_cache_dir = config['psf_cache_dir']
-    runs = config['survey']['runs']
-    detectors = config['survey']['detectors']
-    area = config['survey']['area']
-
-    # TODO TEMP: need to use PipelineHelper for this
-    if hasattr(args, 'data_dir') and args.data_dir is not None:
-        print(f'Overriding data_dir in config file ({data_dir}) with provided data_dir ({args.data_dir})')  # TODO logging
-        data_dir = args.data_dir
-    elif data_dir is None:
-        raise ValueError("data_dir must be specified either in the config file or via the --data_dir argument.")
+    # initialize PipeLineHelper
+    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS)
 
     # set configuration parameters
-    config['survey']['cosmo'] = default_cosmology.get()
-    if config['jaxtronomy']['use_jax']:
-        os.environ['JAX_PLATFORM_NAME'] = config['jaxtronomy'].get('jax_platform', 'cpu')
-
-    # load instrument
-    instrument = pipeline_util.initialize_instrument_class(config['instrument'])
-
-    # set up top directory for all pipeline output
-    pipeline_dir = os.path.join(data_dir, config['pipeline_label'])
-    if dev:
-        pipeline_dir += '_dev'
-    util.create_directory_if_not_exists(pipeline_dir)
-
-    # set up output directory
-    output_dir = os.path.join(pipeline_dir, '01')
-    util.create_directory_if_not_exists(output_dir)
-    util.clear_directory(output_dir)
-    if verbose: print(f'Set up output directory {output_dir}')
-
-    # set psf cache directory
-    if psf_cache_dir is None:
-        psf_cache_dir = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'psfs', instrument.name.lower())
-    else:
-        psf_cache_dir = os.path.join(data_dir, psf_cache_dir)
-
+    pipeline.config['survey']['cosmo'] = default_cosmology.get()
+    if pipeline.config['jaxtronomy']['use_jax']:
+        os.environ['JAX_PLATFORM_NAME'] = pipeline.config['jaxtronomy'].get('jax_platform', 'cpu')
+        
     # tuple the parameters
     tuple_list = []
-    for run in range(runs):
-        if instrument.num_detectors > 1:
-            detector = detectors[run % len(detectors)]
+    for run in range(pipeline.runs):
+        if pipeline.instrument.num_detectors > 1:
+            detector = pipeline.detectors[run % len(pipeline.detectors)]
         else:
             detector = None
-        tuple_list.append((str(run).zfill(4), detector, config, output_dir, psf_cache_dir, instrument))
-
-    # split up the lenses into batches based on core count
-    cpu_count = multiprocessing.cpu_count()
-    process_count = config['cores']['script_01']
-    count = runs
-    if count < process_count:
-        process_count = count
-    print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
+        tuple_list.append((str(run).zfill(4), detector, pipeline.config, pipeline.output_dir, pipeline.psf_cache_dir, pipeline.instrument))
 
     # process the tasks with ProcessPoolExecutor
     num_detectable = 0
-    with ProcessPoolExecutor(max_workers=process_count) as executor:
+    with ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(pipeline.runs)) as executor:
         futures = [executor.submit(run_slsim, task) for task in tuple_list]
 
         for future in tqdm(as_completed(futures), total=len(futures)):
             num_detectable += future.result()
 
     print(f'{num_detectable} detectable lenses found')
-    print(f'{num_detectable / area / runs:.2f} per square degree')
+    print(f'{num_detectable / pipeline.config["survey"]["area"] / pipeline.runs:.2f} per square degree')
 
     stop = time.time()
     execution_time = util.print_execution_time(start, stop, return_string=True)
-    util.write_execution_time(execution_time, '01', os.path.join(pipeline_dir, 'execution_times.json'))
+    util.write_execution_time(execution_time, '01', os.path.join(pipeline.pipeline_dir, 'execution_times.json'))
 
 
 def run_slsim(tuple):
@@ -145,6 +84,10 @@ def run_slsim(tuple):
 
     # a legacy function but prevents duplicate runs
     np.random.seed()
+
+    # suppress warnings; this happens in PipelineHelper, but apparently doesn't propagate to processes
+    if config['suppress_warnings']:
+        warnings.filterwarnings("ignore")
 
     # retrieve configuration parameters
     limit = config['limit']
@@ -175,7 +118,7 @@ def run_slsim(tuple):
     # set run identifier
     if instrument.name == 'Roman':
         run_id = f'{run}_{roman_util.get_sca_string(detector).lower()}'
-    elif instrument.name == 'HWO':
+    elif instrument.name == 'HWO' or instrument.name == 'JWST':
         run_id = str(run).zfill(4)
     else:
         raise ValueError(f"Run identifier not implemented for {instrument.name}.")
@@ -184,7 +127,7 @@ def run_slsim(tuple):
     if instrument.name == 'Roman':
         detector_string = roman_util.get_sca_string(detector).lower()
         filter_args = {'detector': detector_string}
-    elif instrument.name == 'HWO':
+    elif instrument.name == 'HWO' or instrument.name == 'JWST':
         filter_args = {}
     else:
         raise ValueError(f"Speclite filter loading not implemented for {instrument.name}.")
@@ -196,7 +139,7 @@ def run_slsim(tuple):
     if instrument.name == 'Roman':
         skypy_config = os.path.join(cache_dir,
                                 f'{config["survey"]["skypy_config"]}_{detector_string}.yml')  # TODO TEMP: there should be one source of truth for this, and if necessary, some code should update the cache behind the scenes
-    elif instrument.name == 'HWO':
+    elif instrument.name == 'HWO' or instrument.name == 'JWST':
         skypy_config = os.path.join(cache_dir, config['survey']['skypy_config'] + '.yml')
     else:
         raise ValueError(f"SkyPy configuration file retrieval not implemented for {instrument.name}.")
@@ -210,6 +153,8 @@ def run_slsim(tuple):
         if instrument.name == 'Roman':
             slhammocks_config = os.path.join(cache_dir,
                                     f'{slhammocks_pipeline_kwargs["skypy_config"]}_{detector_string}.yml')  # TODO TEMP: there should be one source of truth for this, and if necessary, some code should update the cache behind the scenes
+        elif instrument.name == 'HWO' or instrument.name == 'JWST':
+            slhammocks_config = os.path.join(cache_dir, slhammocks_pipeline_kwargs["skypy_config"] + instrument.name.lower() + '.yml')
         slhammocks_pipeline_kwargs["skypy_config"] = slhammocks_config
         if verbose: print(f'Loaded SLHammocks configuration file {slhammocks_config}')
 

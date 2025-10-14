@@ -23,14 +23,14 @@ from mejiro.utils.pipeline_helper import PipelineHelper
 
 PREV_SCRIPT_NAME = '01'
 SCRIPT_NAME = '02'
-SUPPORTED_INSTRUMENTS = ['roman']
+SUPPORTED_INSTRUMENTS = ['roman', 'jwst']
 
 
 def main(args):
     start = time.time()
 
     # initialize PipeLineHelper
-    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME)
+    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS)
 
     # retrieve configuration parameters
     use_jax = pipeline.config['jaxtronomy']['use_jax']
@@ -46,7 +46,7 @@ def main(args):
         scas = [int(d[3:]) for d in parsed_names]
         scas = sorted(set([str(sca).zfill(2) for sca in scas]))
         if pipeline.verbose: print(f'Found SCA(s): {scas}')
-    elif pipeline.instrument_name == 'hwo':
+    elif pipeline.instrument_name == 'hwo' or pipeline.instrument_name == 'jwst':
         pass
     else:
         raise ValueError(f'Unknown instrument {pipeline.instrument_name}. Supported instruments are {SUPPORTED_INSTRUMENTS}.')
@@ -72,7 +72,7 @@ def main(args):
                 if uid == pipeline.limit:
                     break
 
-    elif pipeline.instrument_name == 'hwo':
+    elif pipeline.instrument_name == 'hwo' or pipeline.instrument_name == 'jwst':
         for pickled_list in tqdm(detectable_gglens_pickles, desc="Runs", position=1, leave=False):
             gglenses = util.unpickle(pickled_list)
 
