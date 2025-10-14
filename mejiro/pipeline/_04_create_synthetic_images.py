@@ -33,7 +33,7 @@ def main(args):
     start = time.time()
 
     # initialize PipeLineHelper
-    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME)
+    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS)
 
     # retrieve configuration parameters
     synthetic_image_config = pipeline.config['synthetic_image']
