@@ -11,6 +11,6 @@ tables:
     mag_F115W, mag_F150W, mag_F200W, mag_F277W, mag_F356W, mag_F444W: !skypy.galaxies.spectrum.kcorrect.apparent_magnitudes
       coefficients: $halo.coeff
       redshift: $halo.z
-      filters: ['F115W', 'F150W', 'F200W', 'F277W', 'F356W', 'F444W']
+      filters: ['NIRCam-F115W', 'NIRCam-F150W', 'NIRCam-F200W', 'NIRCam-F277W', 'NIRCam-F356W', 'NIRCam-F444W']
       stellar_mass: $halo.stellar_mass
       cosmology: $cosmology
