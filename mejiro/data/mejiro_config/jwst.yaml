@@ -1,0 +1,101 @@
+data_dir: &data_dir /data/bwedig/mejiro # where output data should be written
+pipeline_label: jwst
+psf_cache_dir: /grad/bwedig/mejiro/mejiro/data/psfs/jwst
+dev: True
+nice: 19
+verbose: True
+suppress_warnings: True
+limit: null
+seed: &seed 42
+cores:
+  script_00: 1
+  script_01: 16
+  script_03: 1
+  script_04: 1
+  script_05: 1
+  script_snr: 1
+jaxtronomy: 
+  use_jax: False
+  jax_platform: cpu  # cpu or gpu
+instrument: jwst
+survey:
+  runs: 320
+  area: 0.5
+  skypy_config: jwst
+  write_to_csv: True
+  total_population: True
+  use_real_sources: True
+  catalog_source_kwargs:
+    catalog_path: /data/bwedig/COSMOS
+    catalog_type: COSMOS
+    sersic_fallback: True
+    max_scale: 1
+  use_slhammocks_pipeline: False
+  slhammocks_pipeline_kwargs:
+    skypy_config: slhammocks_jwst
+    slhammocks_config: null
+    loghm_min: 11
+    loghm_max: 15
+  detectors: &detectors [1]  # 
+  bands: [F115W, F150W, F200W, F277W, F356W, F444W]  # SkyPy will calculate magnitudes for each of these bands; they'll be stored in the physical_params attribute of the strong_lens
+  deflector_cut_band: F115W
+  deflector_cut_band_max: 27
+  deflector_z_min: 0.01
+  deflector_z_max: 5.0
+  source_cut_band: F115W
+  source_cut_band_max: 31
+  source_z_min: 0.01
+  source_z_max: 8.0
+  min_image_separation: 0.3  # arcseconds
+  max_image_separation: 10.0  # arcseconds
+  mag_arc_limit_band: F115W
+  mag_arc_limit: 30
+  magnification: 3
+subhalos:
+  fraction: 1.  # fraction of systems to add substructure to
+  pyhalo_model: CDM
+  realization_kwargs:
+    log_mlow: 6
+    log_mhigh: 12
+    LOS_normalization: 1.
+    concentration_model_subhalos: LUDLOW2016
+    concentration_model_fieldhalos: LUDLOW2016
+    shmf_log_slope: -1.9
+synthetic_image:
+  bands: [ F115W, F277W ]
+  fov_arcsec: 6
+  supersampling_compute_mode: adaptive
+  supersampling_factor: &supersampling_factor 1
+  pieces: True
+imaging:
+  exposure_time: &exposure_time 21000
+  engine: galsim
+  engine_params:
+    rng_seed: *seed
+    min_zodi_factor: 1.
+    sky_background: True
+    detector_effects: True
+    poisson_noise: True
+    reciprocity_failure: True
+    dark_noise: True
+    nonlinearity: True
+    ipc: True
+    read_noise: True
+snr:
+  snr_band: F115W
+  snr_exposure_time: *exposure_time
+  snr_fov_arcsec: 6
+  snr_supersampling_compute_mode: adaptive
+  snr_supersampling_factor: &snr_supersampling_factor 1
+  snr_threshold: 100
+  snr_per_pixel_threshold: 1
+psf:
+  bands: [ F115W, F277W ]
+  oversamples: [*snr_supersampling_factor, *supersampling_factor]
+  num_pixes: [41]  # the first element of this list is used for the pipeline
+  detectors: *detectors
+  divide_up_detector: 1  # this sets the detector positions, e.g., 5 means 25 positions on each detector
+dataset:
+  version: 0.1  # used in the filename of the .h5 file
+  include_psfs: True
+  include_synthetic_images: True

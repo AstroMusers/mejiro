@@ -9,9 +9,10 @@ from mejiro.utils import util
 
 
 class PipelineHelper:
-    def __init__(self, args, prev_script_name, script_name):
+    def __init__(self, args, prev_script_name, script_name, supported_instruments):
         self.prev_script_name = prev_script_name
         self.script_name = script_name
+        self.supported_instruments = supported_instruments
 
         # ensure the configuration file has a .yaml or .yml extension
         if not args.config.endswith(('.yaml', '.yml')):
@@ -55,6 +56,8 @@ class PipelineHelper:
 
         # load instrument
         self.instrument_name = config['instrument'].lower()
+        if self.instrument_name not in self.supported_instruments:
+            raise ValueError(f"Unsupported instrument: {self.instrument_name}. Supported instruments are {self.supported_instruments}.")
         self.instrument = self.initialize_instrument_class()
 
         # set psf cache directory
@@ -70,9 +73,12 @@ class PipelineHelper:
             self.pipeline_dir += '_dev'
 
         # set up input directory for current script
-        self.input_dir = os.path.join(self.pipeline_dir, self.prev_script_name)
+        if self.prev_script_name is not None:
+            self.input_dir = os.path.join(self.pipeline_dir, self.prev_script_name)
 
         # set up output directory for current script
+        if self.script_name is None:
+            raise ValueError("script_name must be specified.")
         self.output_dir = os.path.join(self.pipeline_dir, self.script_name)
         util.create_directory_if_not_exists(self.output_dir)
         util.clear_directory(self.output_dir)
@@ -158,6 +164,7 @@ class PipelineHelper:
         base_module_path = "mejiro.instruments"
         class_map = {
             "hwo": "HWO",
+            "jwst": "JWST",
             "roman": "Roman"
         }
 

@@ -13,7 +13,18 @@ def test_init():
     assert type(hwo.engines) == list and len(hwo.engines) > 0
 
     # set attributes
-    assert hwo.gain == 1.0
+    assert hwo.gain == {
+        'B': 1.0,
+        'FUV': 1.0,
+        'H': 1.0,
+        'I': 1.0,
+        'J': 1.0,
+        'K': 1.0,
+        'NUV': 1.0,
+        'R': 1.0,
+        'U': 1.0,
+        'V': 1.0,
+    }
     assert hwo.stray_light_fraction == 0.1
     assert hwo.aperture is not None
     assert hwo.pixel_scale is not None

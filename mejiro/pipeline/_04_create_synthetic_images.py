@@ -26,14 +26,14 @@ from mejiro.utils.pipeline_helper import PipelineHelper
 
 PREV_SCRIPT_NAME = '03'
 SCRIPT_NAME = '04'
-SUPPORTED_INSTRUMENTS = ['roman', 'hwo']
+SUPPORTED_INSTRUMENTS = ['roman']
 
 
 def main(args):
     start = time.time()
 
     # initialize PipeLineHelper
-    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME)
+    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS)
 
     # retrieve configuration parameters
     synthetic_image_config = pipeline.config['synthetic_image']

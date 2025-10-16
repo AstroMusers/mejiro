@@ -17,51 +17,35 @@ import argparse
 import multiprocessing
 import os
 import time
-import yaml
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import numpy as np
 from tqdm import tqdm
 
-from mejiro.utils import roman_util, util
 from mejiro.engines.stpsf_engine import STPSFEngine
+from mejiro.utils import roman_util, util
+from mejiro.utils.pipeline_helper import PipelineHelper
 
+
+PREV_SCRIPT_NAME = None
+SCRIPT_NAME = '00'
+SUPPORTED_INSTRUMENTS = ['roman']
 
 
 def main(args):
     start = time.time()
 
-    # ensure the configuration file has a .yaml or .yml extension
-    if not args.config.endswith(('.yaml', '.yml')):
-        if os.path.exists(args.config + '.yaml'):
-            args.config += '.yaml'
-        elif os.path.exists(args.config + '.yml'):
-            args.config += '.yml'
-        else:
-            raise ValueError("The configuration file must be a YAML file with extension '.yaml' or '.yml'.")
-
-    # read configuration file
-    with open(args.config, 'r') as f:
-        config = yaml.load(f, Loader=yaml.SafeLoader)
-
-    # set nice level
-    os.nice(config.get('nice', 0))
+    # initialize PipeLineHelper
+    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS)
 
     # retrieve configuration parameters
-    data_dir = config['data_dir']
-    psf_cache_dir = config['psf_cache_dir']
-    psf_config = config['psf']
+    data_dir = pipeline.data_dir
+    psf_cache_dir = pipeline.config['psf_cache_dir']
+    psf_config = pipeline.config['psf']
     oversamples = psf_config['oversamples']
     bands = psf_config['bands']
     detectors = psf_config['detectors']
     detector_positions = roman_util.divide_up_sca(psf_config['divide_up_detector'])
     num_pixes = psf_config['num_pixes']
-
-    # TODO TEMP: need to use PipelineHelper for this
-    if hasattr(args, 'data_dir') and args.data_dir is not None:
-        print(f'Overriding data_dir in config file ({data_dir}) with provided data_dir ({args.data_dir})')  # TODO logging
-        data_dir = args.data_dir
-    elif data_dir is None:
-        raise ValueError("data_dir must be specified either in the config file or via the --data_dir argument.")
 
     # set directory for all output of this script
     save_dir = os.path.join(data_dir, psf_cache_dir)
@@ -93,7 +77,7 @@ def main(args):
     # determine the number of processes
     count = len(arg_list)
     cpu_count = multiprocessing.cpu_count()
-    process_count = config['cores']['script_00']
+    process_count = pipeline.config['cores']['script_00']
     print(f'Spinning up {process_count} process(es) on {cpu_count} core(s) to generate {count} PSF(s)')
 
     # process the tasks with ProcessPoolExecutor
