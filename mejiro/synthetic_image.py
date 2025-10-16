@@ -302,7 +302,7 @@ class SyntheticImage:
             plt.savefig(savepath)
         plt.show()
 
-    def overplot_subhalos(self, savepath=None):
+    def overplot_subhalos(self, alpha=0.5,savepath=None):
         if self.strong_lens.realization is None:
             raise ValueError('No realization has been added to this StrongLens object.')
 
@@ -310,12 +310,12 @@ class SyntheticImage:
         from matplotlib.lines import Line2D
 
         for halo in self.strong_lens.realization.halos:
-            if halo.mass > 1e8:
-                plt.scatter(*self.coords.map_coord2pix(halo.x, halo.y), marker='.', color='#FF9500')
-            elif halo.mass > 1e7:
-                plt.scatter(*self.coords.map_coord2pix(halo.x, halo.y), marker='.', color='#00B945')
+            if halo.mass < 1e7:
+                plt.scatter(*self.coords.map_coord2pix(halo.x, halo.y), marker='.', color='#0C5DA5', alpha=alpha)
+            elif halo.mass < 1e8:
+                plt.scatter(*self.coords.map_coord2pix(halo.x, halo.y), marker='.', color='#00B945', alpha=alpha)
             else:
-                plt.scatter(*self.coords.map_coord2pix(halo.x, halo.y), marker='.', color='#0C5DA5')
+                plt.scatter(*self.coords.map_coord2pix(halo.x, halo.y), marker='.', color='#FF9500', alpha=alpha)
 
         plt.imshow(np.log10(self.image), origin='lower', cmap='binary')
         plt.title(f'{self.strong_lens.name}: {self.instrument_name} {self.band} band {self.image.shape}')
