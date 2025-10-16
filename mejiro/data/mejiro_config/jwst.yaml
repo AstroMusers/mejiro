@@ -9,7 +9,7 @@ limit: null
 seed: &seed 42
 cores:
   script_00: 1
-  script_01: 32
+  script_01: 16
   script_03: 1
   script_04: 1
   script_05: 1
@@ -19,7 +19,7 @@ jaxtronomy:
   jax_platform: cpu  # cpu or gpu
 instrument: jwst
 survey:
-  runs: 256
+  runs: 320
   area: 0.5
   skypy_config: jwst
   write_to_csv: True
