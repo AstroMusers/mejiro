@@ -19,7 +19,7 @@ jaxtronomy:
   jax_platform: cpu  # cpu or gpu
 instrument: jwst
 survey:
-  runs: 128
+  runs: 256
   area: 0.5
   skypy_config: jwst
   write_to_csv: True

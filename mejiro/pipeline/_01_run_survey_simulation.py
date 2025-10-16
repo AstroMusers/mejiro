@@ -153,8 +153,6 @@ def run_slsim(tuple):
         if instrument.name == 'Roman':
             slhammocks_config = os.path.join(cache_dir,
                                     f'{slhammocks_pipeline_kwargs["skypy_config"]}_{detector_string}.yml')  # TODO TEMP: there should be one source of truth for this, and if necessary, some code should update the cache behind the scenes
-        elif instrument.name == 'HWO' or instrument.name == 'JWST':
-            slhammocks_config = os.path.join(cache_dir, slhammocks_pipeline_kwargs["skypy_config"] + instrument.name.lower() + '.yml')
         slhammocks_pipeline_kwargs["skypy_config"] = slhammocks_config
         if verbose: print(f'Loaded SLHammocks configuration file {slhammocks_config}')
 
