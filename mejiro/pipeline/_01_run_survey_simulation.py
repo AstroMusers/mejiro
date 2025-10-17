@@ -143,6 +143,7 @@ def run_slsim(tuple):
         skypy_config = os.path.join(cache_dir, config['survey']['skypy_config'] + '.yml')
     else:
         raise ValueError(f"SkyPy configuration file retrieval not implemented for {instrument.name}.")
+    # TODO check if the file exists
     config_file = util.load_skypy_config(skypy_config)  # read skypy config file to get survey area
     if verbose: print(f'Loaded SkyPy configuration file {skypy_config}')
 
@@ -153,7 +154,11 @@ def run_slsim(tuple):
         if instrument.name == 'Roman':
             slhammocks_config = os.path.join(cache_dir,
                                     f'{slhammocks_pipeline_kwargs["skypy_config"]}_{detector_string}.yml')  # TODO TEMP: there should be one source of truth for this, and if necessary, some code should update the cache behind the scenes
-        slhammocks_pipeline_kwargs["skypy_config"] = slhammocks_config
+        elif instrument.name == 'HWO' or instrument.name == 'JWST':
+            slhammocks_config = os.path.join(cache_dir, slhammocks_pipeline_kwargs["skypy_config"] + '.yml')
+        else:
+            raise ValueError(f"SLHammocks SkyPy configuration file retrieval not implemented for {instrument.name}.")
+        # TODO check if the file exists
         if verbose: print(f'Loaded SLHammocks configuration file {slhammocks_config}')
 
     # set survey parameters

@@ -90,6 +90,7 @@ class PipelineHelper:
         if count < process_count:
             process_count = count
         print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
+        return process_count
 
     def retrieve_roman_sca_input(self):
         self.validate_instrument('roman')
