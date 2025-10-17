@@ -240,7 +240,7 @@ class StrongLens(ABC):
         xx, yy = np.meshgrid(_r, _r)
         return lens_model_realization.kappa(xx.ravel(), yy.ravel(), kwargs_halos).reshape(num_pix, num_pix)
 
-    def add_realization(self, realization, use_jax=True):
+    def add_realization(self, realization, add_mass_sheet_correction=True, use_jax=True):
         """
         Add a pyHalo dark matter subhalo realization to the mass model of the system. See the `pyHalo documentation <https://github.com/dangilman/pyHalo>`__ for details.
 
@@ -248,6 +248,10 @@ class StrongLens(ABC):
         ----------
         realization : pyHalo realization object
             See the pyHalo documentation for details.
+        add_mass_sheet_correction : bool, optional
+            See the pyHalo documentation for details. Default is True.
+        use_jax : bool, optional
+            Whether to use JAXtronomy for calculations. Default is True.
         """
         self.realization = realization
 
@@ -259,7 +263,7 @@ class StrongLens(ABC):
 
         # get lenstronomy lensing quantities
         halo_lens_model_list, halo_redshift_array, kwargs_halos, _ = realization.lensing_quantities(
-            add_mass_sheet_correction=True)
+            add_mass_sheet_correction=add_mass_sheet_correction)
         
         # halo_lens_model_list and kwargs_halos are lists, but halo_redshift_array is ndarray
         halo_redshift_list = list(halo_redshift_array)
