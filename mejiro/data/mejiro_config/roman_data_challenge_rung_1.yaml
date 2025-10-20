@@ -1,7 +1,7 @@
 data_dir: &data_dir /nfsdata1/bwedig/mejiro  # where output data should be written
 pipeline_label: roman_data_challenge_rung_1
 psf_cache_dir: cached_psfs
-dev: True
+dev: False
 nice: 19
 verbose: True
 suppress_warnings: True
@@ -19,11 +19,11 @@ jaxtronomy:
   jax_platform: cpu  # cpu or gpu
 instrument: roman
 survey:
-  runs: 756 # 90
+  runs: 7042 # 90
   area: 0.5
   skypy_config: lsst-like_triple_SF
-  write_to_csv: True
-  total_population: True
+  write_to_csv: False
+  total_population: False
   use_real_sources: True
   catalog_source_kwargs:
     catalog_path: /data/bwedig/COSMOS
@@ -52,6 +52,9 @@ survey:
   mag_arc_limit: 27
   magnification: 3
 subhalos:
+  split:
+    model_1: CDM
+    model_2: WDM
   fraction: 0.5  # fraction of systems to add substructure to
   pyhalo_model: CDM
   realization_kwargs:
