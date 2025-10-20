@@ -2,7 +2,7 @@
 
 # this bash script is a less-polished way of executing the `mejiro` pipeline that is useful for development
 
-config="mejiro/data/mejiro_config/simple.yaml"
+config="mejiro/data/mejiro_config/roman_data_challenge_rung_0.yaml"
 
 # change directory to the root of the repository
 cd "$(dirname "$0")/.."
@@ -37,9 +37,9 @@ echo 'Simulating images...'
 python3 mejiro/pipeline/_05_create_exposures.py --config $config
 echo 'GalSim simulations complete.'
 
-# echo 'Calculating SNRs...'
-# python3 mejiro/pipeline/calculate_snrs.py --config $config
-# echo 'SNR calculation complete.'
+echo 'Calculating SNRs...'
+python3 mejiro/pipeline/calculate_snrs.py --config $config
+echo 'SNR calculation complete.'
 
 echo 'Generating h5 file...'
 if [ $config == "training_set" ]; then

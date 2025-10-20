@@ -1,7 +1,7 @@
 data_dir: &data_dir /nfsdata1/bwedig/mejiro  # where output data should be written
-pipeline_label: roman_data_challenge_mini
+pipeline_label: roman_data_challenge_rung_0
 psf_cache_dir: cached_psfs
-dev: True
+dev: False
 nice: 19
 verbose: True
 suppress_warnings: True
@@ -22,8 +22,8 @@ survey:
   runs: 756 # 90
   area: 0.5
   skypy_config: lsst-like_triple_SF
-  write_to_csv: True
-  total_population: True
+  write_to_csv: False
+  total_population: False
   use_real_sources: True
   catalog_source_kwargs:
     catalog_path: /data/bwedig/COSMOS
@@ -52,7 +52,7 @@ survey:
   mag_arc_limit: 27
   magnification: 3
 subhalos:
-  fraction: 0.5  # fraction of systems to add substructure to
+  fraction: 1.  # fraction of systems to add substructure to
   pyhalo_model: CDM
   realization_kwargs:
     log_mlow: 6
@@ -98,6 +98,6 @@ psf:
   detectors: *detectors
   divide_up_detector: 5  # this sets the detector positions, e.g., 5 means 25 positions on each detector
 dataset:
-  version: 0.1  # used in the filename of the .h5 file
+  version: 1.0  # used in the filename of the .h5 file
   include_psfs: False
   include_synthetic_images: False
