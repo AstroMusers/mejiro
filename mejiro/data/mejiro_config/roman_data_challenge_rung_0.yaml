@@ -13,7 +13,7 @@ cores:
   script_03: 32
   script_04: 32
   script_05: 32
-  script_snr: 1
+  script_snr: 32
 jaxtronomy: 
   use_jax: False
   jax_platform: cpu  # cpu or gpu
