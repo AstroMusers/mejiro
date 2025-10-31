@@ -2,7 +2,7 @@
 
 # this bash script is a less-polished way of executing the `mejiro` pipeline that is useful for development
 
-config="mejiro/data/mejiro_config/roman_data_challenge_rung_0.yaml"
+config="mejiro/data/mejiro_config/roman_data_challenge_rung_0_unlabeled.yaml"
 
 # change directory to the root of the repository
 cd "$(dirname "$0")/.."
