@@ -41,6 +41,9 @@ def main(args):
     # initialize PipeLineHelper
     pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS)
 
+    # determine if labeled dataset
+    labeled = True
+
     # retrieve configuration parameters
     bands = pipeline.config['synthetic_image']['bands']
     subhalo_config = pipeline.config['subhalos']
@@ -93,10 +96,11 @@ def main(args):
         group_lens.attrs['uid'] = (uid, 'Unique identifier for system assigned by mejiro')
         group_lens.attrs['z_source'] = (str(lens.z_source), 'Source galaxy redshift')
         group_lens.attrs['z_lens'] = (str(lens.z_lens), 'Lens galaxy redshift')
-        group_lens.attrs['main_halo_mass'] = (str(lens.get_main_halo_mass()), 'Lens galaxy main halo mass [M_sun]')
-        group_lens.attrs['theta_e'] = (str(lens.get_einstein_radius()), 'Einstein radius [arcsec]')
-        group_lens.attrs['sigma_v'] = (str(lens.get_velocity_dispersion()), 'Lens galaxy velocity dispersion [km/s]')
-        group_lens.attrs['mu'] = (str(lens.get_magnification()), 'Flux-weighted magnification of source')
+        if labeled:
+            group_lens.attrs['main_halo_mass'] = (str(lens.get_main_halo_mass()), 'Lens galaxy main halo mass [M_sun]')
+            group_lens.attrs['theta_e'] = (str(lens.get_einstein_radius()), 'Einstein radius [arcsec]')
+            group_lens.attrs['sigma_v'] = (str(lens.get_velocity_dispersion()), 'Lens galaxy velocity dispersion [km/s]')
+            group_lens.attrs['mu'] = (str(lens.get_magnification()), 'Flux-weighted magnification of source')
         group_lens.attrs['detector'] = (str(synthetic_image.instrument_params['detector']), 'Detector')
         group_lens.attrs['detector_position_x'] = (str(synthetic_image.instrument_params['detector_position'][0]), 'Detector X position')
         group_lens.attrs['detector_position_y'] = (str(synthetic_image.instrument_params['detector_position'][1]), 'Detector Y position')
@@ -141,11 +145,11 @@ def main(args):
             for dset in dset_list:
                 dset.attrs['units'] = ('Counts/sec', 'Units of pixel values')
                 dset.attrs['filter'] = (band, 'Filter')
-                dset.attrs['source_magnitude'] = (str(lens.get_source_magnitude(band)), 'Unlensed source galaxy magnitude')
-                dset.attrs['lensed_source_magnitude'] = (
-                    str(lens.get_lensed_source_magnitude(band)), 'Lensed source galaxy magnitude')
-                dset.attrs['lens_magnitude'] = (str(lens.get_lens_magnitude(band)), 'Lens galaxy magnitude')
-
+                if labeled:
+                    dset.attrs['source_magnitude'] = (str(lens.get_source_magnitude(band)), 'Unlensed source galaxy magnitude')
+                    dset.attrs['lensed_source_magnitude'] = (
+                        str(lens.get_lensed_source_magnitude(band)), 'Lensed source galaxy magnitude')
+                    dset.attrs['lens_magnitude'] = (str(lens.get_lens_magnitude(band)), 'Lens galaxy magnitude')
 
     if dataset_config['include_psfs']:
         # ---------------------------CREATE PSF DATASET--------------------------------
