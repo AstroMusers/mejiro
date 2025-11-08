@@ -3,8 +3,8 @@ pipeline_label: jwst
 psf_cache_dir: /grad/bwedig/mejiro/mejiro/data/psfs/jwst
 dev: True
 nice: 19
-verbose: True
-suppress_warnings: True
+verbose: False
+suppress_warnings: False
 limit: null
 seed: &seed 42
 cores:
@@ -22,15 +22,15 @@ survey:
   runs: 320
   area: 0.5
   skypy_config: jwst
-  write_to_csv: True
-  total_population: True
+  write_to_csv: False
+  total_population: False
   use_real_sources: True
   catalog_source_kwargs:
     catalog_path: /data/bwedig/COSMOS
     catalog_type: COSMOS
     sersic_fallback: True
     max_scale: 1
-  use_slhammocks_pipeline: False
+  use_slhammocks_pipeline: True
   slhammocks_pipeline_kwargs:
     skypy_config: slhammocks_jwst
     slhammocks_config: null
@@ -62,7 +62,7 @@ subhalos:
     concentration_model_fieldhalos: LUDLOW2016
     shmf_log_slope: -1.9
 synthetic_image:
-  bands: [ F115W, F277W ]
+  bands: [ F115W, F150W, F200W ]
   fov_arcsec: 6
   supersampling_compute_mode: adaptive
   supersampling_factor: &supersampling_factor 1
