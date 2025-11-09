@@ -11,7 +11,7 @@ class LenstronomyEngine(Engine):
         if 'kwargs_numerics' not in engine_params:
             engine_params |= {
                     'kwargs_numerics': {
-                    'supersampling_factor': 1,
+                    'supersampling_factor': 5,
                     'compute_mode': 'regular'
                 }
             }
@@ -19,32 +19,33 @@ class LenstronomyEngine(Engine):
             engine_params |= {
                 'noise': True
             }
-        if instrument_name.lower() == 'roman' and 'obs_config_kwargs' not in engine_params:
-            engine_params |= {
-                'obs_config_kwargs': {
-                    'band': 'F129', 
-                    'psf_type': 'PIXEL', 
-                    'survey_mode': 'wide_area'
+        if 'obs_config_kwargs' not in engine_params:
+            if instrument_name.lower() == 'roman':
+                engine_params |= {
+                    'obs_config_kwargs': {
+                        'band': 'F129', 
+                        'psf_type': 'PIXEL', 
+                        'survey_mode': 'wide_area'
+                    }
                 }
-            }
-        elif instrument_name.lower() == 'hst' and 'obs_config_kwargs' not in engine_params:
-            engine_params |= {
-                'obs_config_kwargs': {
-                    'band': 'WFC3_F160W', 
-                    'psf_type': 'PIXEL', 
-                    'coadd_years': None
+            elif instrument_name.lower() == 'hst':
+                engine_params |= {
+                    'obs_config_kwargs': {
+                        'band': 'WFC3_F160W', 
+                        'psf_type': 'PIXEL', 
+                        'coadd_years': None
+                    }
                 }
-            }
-        elif instrument_name.lower() == 'lsst' and 'obs_config_kwargs' not in engine_params:
-            engine_params |= {
-                'obs_config_kwargs': {
-                    'band': 'i', 
-                    'psf_type': 'GAUSSIAN', 
-                    'coadd_years': 10
+            elif instrument_name.lower() == 'lsst':
+                engine_params |= {
+                    'obs_config_kwargs': {
+                        'band': 'i', 
+                        'psf_type': 'GAUSSIAN', 
+                        'coadd_years': 10
+                    }
                 }
-            }
-        # else:
-        #     Engine().instrument_not_supported(instrument_name)
+            else:
+                Engine.instrument_not_supported(instrument_name)
 
         return engine_params
 
@@ -80,9 +81,9 @@ class LenstronomyEngine(Engine):
         #     from lenstronomy.SimulationAPI.ObservationConfig import JWST
         #     obs_config = JWST.JWST(**engine_params['obs_config_kwargs'])
         else:
-            # Engine().instrument_not_supported(synthetic_image.instrument_name)
-            pass
+            Engine.instrument_not_supported(synthetic_image.instrument_name)
         # obs_config.obs['num_exposures'] = 1  # set number of exposures to 1 cf. 96
+
         obs_config.obs['exposure_time'] = exposure_time
 
         sim_api = SimAPI(numpix=synthetic_image.num_pix,

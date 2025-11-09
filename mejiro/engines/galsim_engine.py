@@ -23,7 +23,10 @@ class GalSimEngine(Engine):
             engine_params = GalSimEngine.validate_engine_params('Roman', engine_params)
 
         # build rng
-        rng = galsim.UniformDeviate(engine_params['rng_seed'])
+        if 'rng_seed' in engine_params:
+            rng = galsim.UniformDeviate(engine_params['rng_seed'])
+        else:
+            rng = galsim.UniformDeviate()
 
         # import image to GalSim
         image = galsim.Image(array=synthetic_image.image * exposure_time, scale=synthetic_image.pixel_scale, xmin=0, ymin=0, copy=True)
@@ -230,7 +233,10 @@ class GalSimEngine(Engine):
             engine_params = GalSimEngine.validate_engine_params(instrument.name, engine_params)
 
         # build rng
-        rng = galsim.UniformDeviate(engine_params['rng_seed'])
+        if 'rng_seed' in engine_params:
+            rng = galsim.UniformDeviate(engine_params['rng_seed'])
+        else:
+            rng = galsim.UniformDeviate()
 
         # import image to GalSim
         image = galsim.Image(array=synthetic_image.image * exposure_time, scale=synthetic_image.pixel_scale, xmin=0, ymin=0, copy=True)
@@ -384,7 +390,7 @@ class GalSimEngine(Engine):
     def defaults(instrument_name):
         if instrument_name.lower() == 'roman':
             return {
-                'rng_seed': 42,
+                # 'rng_seed': 42,
                 'min_zodi_factor': 1.5,
                 'sky_background': True,
                 'detector_effects': True,
@@ -395,18 +401,9 @@ class GalSimEngine(Engine):
                 'ipc': True,
                 'read_noise': True,
             }
-        elif instrument_name.lower() == 'hwo':
+        elif instrument_name.lower() == 'hwo' or instrument_name.lower() == 'jwst' or instrument_name.lower() == 'hst':
             return {
-                'rng_seed': 42,
-                'sky_background': True,
-                'detector_effects': True,
-                'poisson_noise': True,
-                'dark_noise': True,
-                'read_noise': True,
-            }
-        elif instrument_name.lower() == 'jwst':
-            return {
-                'rng_seed': 42,
+                # 'rng_seed': 42,
                 'sky_background': True,
                 'detector_effects': True,
                 'poisson_noise': True,
@@ -420,12 +417,12 @@ class GalSimEngine(Engine):
     @staticmethod
     def validate_engine_params(instrument_name, engine_params):
         if instrument_name.lower() == 'roman':
-            if 'rng_seed' not in engine_params.keys():
-                engine_params['rng_seed'] = GalSimEngine.defaults('Roman')['rng_seed']
+            # if 'rng_seed' not in engine_params.keys():
+            #     engine_params['rng_seed'] = GalSimEngine.defaults('Roman')['rng_seed']
                 # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
+            # else:
+            #     # TODO validate
+            #     pass
             if 'min_zodi_factor' not in engine_params.keys():
                 engine_params['min_zodi_factor'] = GalSimEngine.defaults('Roman')['min_zodi_factor']
                 # TODO logging to inform user of default
@@ -481,51 +478,13 @@ class GalSimEngine(Engine):
                 # TODO validate
                 pass
             return engine_params
-        elif instrument_name.lower() == 'hwo':
-            if 'rng_seed' not in engine_params.keys():
-                engine_params['rng_seed'] = GalSimEngine.defaults('HWO')['rng_seed']
+        elif instrument_name.lower() == 'hwo' or instrument_name.lower() == 'jwst' or instrument_name.lower() == 'hst':
+            # if 'rng_seed' not in engine_params.keys():
+            #     engine_params['rng_seed'] = GalSimEngine.defaults('HWO')['rng_seed']
                 # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
-            if 'sky_background' not in engine_params.keys():
-                engine_params['sky_background'] = GalSimEngine.defaults('HWO')['sky_background']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
-            if 'detector_effects' not in engine_params.keys():
-                engine_params['detector_effects'] = GalSimEngine.defaults('HWO')['detector_effects']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
-            if 'poisson_noise' not in engine_params.keys():
-                engine_params['poisson_noise'] = GalSimEngine.defaults('HWO')['poisson_noise']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
-            if 'dark_noise' not in engine_params.keys():
-                engine_params['dark_noise'] = GalSimEngine.defaults('HWO')['dark_noise']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
-            if 'read_noise' not in engine_params.keys():
-                engine_params['read_noise'] = GalSimEngine.defaults('HWO')['read_noise']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
-            return engine_params
-        elif instrument_name.lower() == 'jwst':
-            if 'rng_seed' not in engine_params.keys():
-                engine_params['rng_seed'] = GalSimEngine.defaults('HWO')['rng_seed']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
+            # else:
+            #     # TODO validate
+            #     pass
             if 'sky_background' not in engine_params.keys():
                 engine_params['sky_background'] = GalSimEngine.defaults('HWO')['sky_background']
                 # TODO logging to inform user of default
