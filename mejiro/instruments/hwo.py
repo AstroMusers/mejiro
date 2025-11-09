@@ -51,7 +51,7 @@ class HWO(Instrument):
 
         # set attributes
         self.gain = {band: 1. for band in self.bands}
-        self.stray_light_fraction = 0.1
+        self.stray_light_fraction = 0.01  # placeholder value
         self.aperture = self.telescope.recover('aperture')
         self.effective_aperture = self.telescope.effective_aperture
         self.pixel_scale = self.get_attribute_from_syotools(self.camera, 'pixel_size', u.arcsec / u.pix)
