@@ -1,27 +1,27 @@
 data_dir: &data_dir /data/bwedig/mejiro # where output data should be written
-pipeline_label: jwst
-psf_cache_dir: /grad/bwedig/mejiro/mejiro/data/psfs/jwst
-dev: False
+pipeline_label: hwo
+psf_cache_dir: null
+dev: True
 nice: 19
 verbose: False
 suppress_warnings: False
 limit: null
 seed: &seed 42
 cores:
-  script_00: 32
-  script_01: 32
-  script_03: 32
-  script_04: 32
-  script_05: 32
-  script_snr: 32
+  script_00: 1
+  script_01: 16
+  script_03: 1
+  script_04: 1
+  script_05: 1
+  script_snr: 1
 jaxtronomy: 
   use_jax: False
   jax_platform: cpu  # cpu or gpu
-instrument: jwst
+instrument: hwo
 survey:
-  runs: 100
+  runs: 1
   area: 0.5
-  skypy_config: jwst
+  skypy_config: hwo
   write_to_csv: False
   total_population: False
   use_real_sources: True
@@ -32,23 +32,23 @@ survey:
     max_scale: 1
   use_slhammocks_pipeline: True
   slhammocks_pipeline_kwargs:
-    skypy_config: slhammocks_jwst
+    skypy_config: slhammocks_hwo
     slhammocks_config: null
     loghm_min: 11
     loghm_max: 15
   detectors: &detectors [1]  # 
-  bands: [F115W, F150W, F200W, F277W, F356W, F444W]  # SkyPy will calculate magnitudes for each of these bands; they'll be stored in the physical_params attribute of the strong_lens
+  bands: [F115W, F150W, F200W, F277W, F356W, F444W, B, FUV, H, I, J, K, NUV, R, U, V, F438W, F475W, F555W, F606W, F625W, F775W, F814W, u, g, r, i, z, y]  # SkyPy will calculate magnitudes for each of these bands; they'll be stored in the physical_params attribute of the strong_lens
   deflector_cut_band: F115W
   deflector_cut_band_max: 27
   deflector_z_min: 0.01
   deflector_z_max: 5.0
-  source_cut_band: F115W
+  source_cut_band: J
   source_cut_band_max: 31
   source_z_min: 0.01
   source_z_max: 8.0
   min_image_separation: 0.3  # arcseconds
   max_image_separation: 10.0  # arcseconds
-  mag_arc_limit_band: F115W
+  mag_arc_limit_band: J
   mag_arc_limit: 30
   magnification: 3
 subhalos:
@@ -97,5 +97,5 @@ psf:
   divide_up_detector: 1  # this sets the detector positions, e.g., 5 means 25 positions on each detector
 dataset:
   version: 0.1  # used in the filename of the .h5 file
-  include_psfs: False
-  include_synthetic_images: False
+  include_psfs: True
+  include_synthetic_images: True

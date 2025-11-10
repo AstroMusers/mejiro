@@ -24,9 +24,9 @@ from mejiro.utils import roman_util, util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
 
-PREV_SCRIPT_NAME = '03'
+PREV_SCRIPT_NAME = '02'
 SCRIPT_NAME = '04'
-SUPPORTED_INSTRUMENTS = ['roman']
+SUPPORTED_INSTRUMENTS = ['roman', 'jwst']
 
 
 def main(args):
@@ -47,8 +47,8 @@ def main(args):
     if pipeline.instrument_name == 'roman':
         input_pickles = pipeline.retrieve_roman_pickles(prefix='lens', suffix='', extension='.pkl')
         pipeline.create_roman_sca_output_directories()
-    elif pipeline.instrument_name == 'hwo':
-        input_pickles = pipeline.retrieve_hwo_pickles(prefix='lens', suffix='', extension='.pkl')
+    elif pipeline.instrument_name == 'hwo' or pipeline.instrument_name == 'jwst':
+        input_pickles = pipeline.retrieve_pickles(prefix='lens', suffix='', extension='.pkl')
     else:
         raise ValueError(f'Unknown instrument {pipeline.instrument_name}. Supported instruments are {SUPPORTED_INSTRUMENTS}.')
 

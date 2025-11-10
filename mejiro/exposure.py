@@ -43,7 +43,7 @@ class Exposure:
                 if self.ipc is not None: self.noise += self.ipc
                 if self.read_noise is not None: self.noise += self.read_noise
 
-            elif self.synthetic_image.instrument_name == 'HWO' or self.synthetic_image.instrument_name == 'JWST':
+            elif self.synthetic_image.instrument_name == 'HWO' or self.synthetic_image.instrument_name == 'JWST' or self.synthetic_image.instrument_name == 'HST':
                 # get exposure
                 results, self.sky_background, self.poisson_noise, self.dark_noise, self.read_noise = GalSimEngine.get_exposure(
                     synthetic_image, exposure_time, engine_params, self.verbose)

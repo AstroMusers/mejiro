@@ -1,6 +1,6 @@
 mag_lim: 32
 fsky: 0.1 deg2
-z_range: !numpy.arange [ 0, 3.01, 0.1 ]
+z_range: !numpy.arange [ 0, 8.01, 0.1 ]
 M_star_blue: !astropy.modeling.models.Linear1D [ -0.9408582, -20.40492365 ]
 phi_star_blue: !astropy.modeling.models.Exponential1D [ 0.00370253, -9.73858 ]
 alpha_blue: -1.3
@@ -8,7 +8,7 @@ M_star_red: !astropy.modeling.models.Linear1D [ -0.70798041, -20.37196157 ]
 phi_star_red: !astropy.modeling.models.Exponential1D [ 0.0035097, -1.41649 ]
 alpha_red: -0.5
 cosmology: !astropy.cosmology.default_cosmology.get [ ]
-filters: [ 'HRI-B', 'HRI-FUV', 'HRI-H', 'HRI-I', 'HRI-J', 'HRI-K', 'HRI-NUV', 'HRI-R', 'HRI-U', 'HRI-V', 'RomanSCA01-F062', 'RomanSCA01-F087', 'RomanSCA01-F106', 'RomanSCA01-F129', 'RomanSCA01-F158', 'RomanSCA01-F184', 'RomanSCA01-F146', 'RomanSCA01-F213', 'lsst2023-u', 'lsst2023-g', 'lsst2023-r', 'lsst2023-i', 'lsst2023-z', 'lsst2023-y', 'WFC3_UVIS-F438W', 'WFC3_UVIS-F475W', 'WFC3_UVIS-F606W', 'WFC3_UVIS-F814W' ]
+filters: [ 'HRI-B', 'HRI-FUV', 'HRI-H', 'HRI-I', 'HRI-J', 'HRI-K', 'HRI-NUV', 'HRI-R', 'HRI-U', 'HRI-V', 'RomanSCA01-F062', 'RomanSCA01-F087', 'RomanSCA01-F106', 'RomanSCA01-F129', 'RomanSCA01-F158', 'RomanSCA01-F184', 'RomanSCA01-F146', 'RomanSCA01-F213', 'lsst2023-u', 'lsst2023-g', 'lsst2023-r', 'lsst2023-i', 'lsst2023-z', 'lsst2023-y', 'WFC3_UVIS-F438W', 'WFC3_UVIS-F475W', 'WFC3_UVIS-F606W', 'WFC3_UVIS-F814W', 'NIRCam-F115W', 'NIRCam-F150W', 'NIRCam-F200W', 'NIRCam-F277W', 'NIRCam-F356W', 'NIRCam-F444W' ]
 tables:
   blue:
     z: !skypy.galaxies.redshift.schechter_lf_redshift
@@ -33,7 +33,7 @@ tables:
       magnitudes: $blue.M
       coefficients: $blue.coeff
       filter: bessell-B
-    mag_B, mag_FUV, mag_H, mag_I, mag_J, mag_K, mag_NUV, mag_R, mag_U, mag_V, mag_F062, mag_F087, mag_F106, mag_F129, mag_F158, mag_F184, mag_F146, mag_F213, mag_u, mag_g, mag_r, mag_i, mag_z, mag_y, mag_F438W, mag_F475W, mag_F606W, mag_F814W: !skypy.galaxies.spectrum.kcorrect.apparent_magnitudes
+    mag_B, mag_FUV, mag_H, mag_I, mag_J, mag_K, mag_NUV, mag_R, mag_U, mag_V, mag_F062, mag_F087, mag_F106, mag_F129, mag_F158, mag_F184, mag_F146, mag_F213, mag_u, mag_g, mag_r, mag_i, mag_z, mag_y, mag_F438W, mag_F475W, mag_F606W, mag_F814W, mag_F115W, mag_F150W, mag_F200W, mag_F277W, mag_F356W, mag_F444W: !skypy.galaxies.spectrum.kcorrect.apparent_magnitudes
       coefficients: $blue.coeff
       filters: $filters
       redshift: $blue.z
@@ -78,7 +78,7 @@ tables:
       magnitudes: $red.M
       coefficients: $red.coeff
       filter: bessell-B
-    mag_B, mag_FUV, mag_H, mag_I, mag_J, mag_K, mag_NUV, mag_R, mag_U, mag_V, mag_F062, mag_F087, mag_F106, mag_F129, mag_F158, mag_F184, mag_F146, mag_F213, mag_u, mag_g, mag_r, mag_i, mag_z, mag_y, mag_F438W, mag_F475W, mag_F606W, mag_F814W: !skypy.galaxies.spectrum.kcorrect.apparent_magnitudes
+    mag_B, mag_FUV, mag_H, mag_I, mag_J, mag_K, mag_NUV, mag_R, mag_U, mag_V, mag_F062, mag_F087, mag_F106, mag_F129, mag_F158, mag_F184, mag_F146, mag_F213, mag_u, mag_g, mag_r, mag_i, mag_z, mag_y, mag_F438W, mag_F475W, mag_F606W, mag_F814W, mag_F115W, mag_F150W, mag_F200W, mag_F277W, mag_F356W, mag_F444W: !skypy.galaxies.spectrum.kcorrect.apparent_magnitudes
       coefficients: $red.coeff
       filters: $filters
       redshift: $red.z

@@ -287,6 +287,29 @@ class StrongLens(ABC):
                 self.use_jax += [False] * len(halo_lens_model_list)
         else:
             raise ValueError("use_jax must be a boolean.")
+
+    def quick_add(self, model='CDM', model_kwargs=None, add_mass_sheet_correction=True, use_jax=True):
+        """
+        Add a pyHalo dark matter subhalo realization to the mass model of the system. See the `pyHalo documentation <https://github.com/dangilman/pyHalo>`__ for details.
+
+        Parameters
+        ----------
+        model : str, optional
+            The name of the pyHalo preset model to use. Default is 'CDM'.
+        model_kwargs : dict, optional
+            Additional keyword arguments to pass to the model class.
+        add_mass_sheet_correction : bool, optional
+            Whether to add a mass sheet correction. Default is True.
+        use_jax : bool, optional
+            Whether to use JAXtronomy for calculations. Default is True.
+        """
+        from pyHalo.preset_models import preset_model_from_name
+
+        ModelClass = preset_model_from_name(model)
+        if model_kwargs is None:
+            model_kwargs = {}
+        realization = ModelClass(round(self.z_lens, 2), round(self.z_source, 2), log_m_host=np.log10(self.get_main_halo_mass()), **model_kwargs)
+        self.add_realization(realization, add_mass_sheet_correction=add_mass_sheet_correction, use_jax=use_jax)
         
     def get_lens_magnitude(self, band):
         """

@@ -32,7 +32,7 @@ To see how `mejiro` works, see the pipeline walkthrough notebook: `examples/pipe
 
 If you use `mejiro`, please cite [Wedig et al. 2025](https://doi.org/10.3847/1538-4357/adc24f) and link to [this GitHub repository](https://github.com/AstroMusers/mejiro). Additional citation information can be found in [`CITATION.cff`](/CITATION.cff).
 
-# Acknowledgement
+# Acknowledgment
 
 This research was supported by the National Aeronautics and Space Administration (NASA) under grant number 80NSSC24K0095
 issued by the Astrophysics Division of the Science Mission Directorate (SMD) and the McDonnell Center for the Space Sciences at Washington University in St. Louis.

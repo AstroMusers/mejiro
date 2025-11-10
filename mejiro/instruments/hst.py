@@ -16,7 +16,7 @@ class HST(Instrument):
         name = 'HST'
         bands = ['F438W', 'F475W', 'F606W', 'F814W']
         num_detectors = 1
-        engines = ['lenstronomy']
+        engines = ['lenstronomy', 'galsim']
 
         super().__init__(
             name,
@@ -44,22 +44,35 @@ class HST(Instrument):
         self.gain = 2.5
         self.stray_light_fraction = 0.1
         self.pixel_scale = None
-        self.dark_current = {
-            'F160W': Quantity(0.0, 'ct / pix / s'),  # TODO: placeholder value, needs to be updated
-        }
-        self.read_noise = {
-            'F160W': Quantity(4.0, 'ct / pix / s'),
-        }
+        self.dark_current = {band: Quantity(0.00319, 'ct / pix / s') for band in filtnames}  # https://etc.stsci.edu/etcstatic/users_guide/1_ref_9_background.html
+        self.read_noise = {band: Quantity(3.0, 'ct / pix / s') for band in filtnames}  # https://ntrs.nasa.gov/api/citations/20060047835/downloads/20060047835.pdf
         self.psf_fwhm = {
-            'F160W': Quantity(0.08, 'arcsec'),
-        }
+            'F438W': Quantity(0.070, 'arcsec'),
+            'F475W': Quantity(0.067, 'arcsec'),
+            'F555W': Quantity(0.067, 'arcsec'),
+            'F606W': Quantity(0.067, 'arcsec'),
+            'F625W': Quantity(0.067, 'arcsec'),
+            'F775W': Quantity(0.074, 'arcsec'),
+            'F814W': Quantity(0.074, 'arcsec')
+        }  # https://hst-docs.stsci.edu/wfc3ihb/chapter-6-uvis-imaging-with-wfc3/6-6-uvis-optical-performance
         self.thermal_background = {
-            'B': Quantity(0.0, 'ct / pix'),  # TODO: placeholder value, needs to be updated
-        }
-        self.zeropoints = {
-            'F160W': 25.96,
-        }
-        self.sky_level = None
+            'F438W': Quantity(0.0, 'ct / pix'),
+            'F475W': Quantity(0.0, 'ct / pix'),
+            'F555W': Quantity(0.0, 'ct / pix'),
+            'F606W': Quantity(0.0, 'ct / pix'),
+            'F625W': Quantity(0.0, 'ct / pix'),
+            'F775W': Quantity(0.0, 'ct / pix'),
+            'F814W': Quantity(0.0, 'ct / pix')
+        }  # "The thermal background is negligible below about 8000 Angstrom" (https://etc.stsci.edu/etcstatic/users_guide/1_ref_9_background.html)
+        self.sky_level = {
+            'F438W': Quantity(0.25, 'ct / pix'),
+            'F475W': Quantity(0.25, 'ct / pix'),
+            'F555W': Quantity(0.25, 'ct / pix'),
+            'F606W': Quantity(0.25, 'ct / pix'),
+            'F625W': Quantity(0.25, 'ct / pix'),
+            'F775W': Quantity(0.25, 'ct / pix'),
+            'F814W': Quantity(0.25, 'ct / pix')
+        }  # placeholders; rough estimates based on Roman
 
     @staticmethod
     def build_obsmode(detector, filt, mjd, aper):
@@ -80,6 +93,9 @@ class HST(Instrument):
     
     def get_sky_level(self, band):
         return self.sky_level[band]
+
+    def get_gain(self, band):
+        return self.gain
 
     def get_noise(self, band):
         """
