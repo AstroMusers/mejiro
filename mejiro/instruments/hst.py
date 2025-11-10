@@ -114,7 +114,7 @@ class HST(Instrument):
     
     # implement abstract methods
     def get_pixel_scale(self, band):
-        return Quantity(0.08, 'arcsec / pix')
+        return Quantity(0.04, 'arcsec / pix')
     
     def get_psf_fwhm(self, band):
         return self.psf_fwhm[band]
