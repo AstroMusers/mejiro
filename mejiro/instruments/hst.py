@@ -137,7 +137,7 @@ class HST(Instrument):
     def load_speclite_filters():
         import mejiro
         module_path = os.path.dirname(mejiro.__file__)
-        filters = sorted(glob(os.path.join(module_path, 'data', 'hwo_filter_response', f'HRI-*.ecsv')))
+        filters = sorted(glob(os.path.join(module_path, 'data', 'hst_filter_response', f'WFC3_UVIS-*.ecsv')))
 
         from speclite.filters import load_filters
         return load_filters(*filters)
