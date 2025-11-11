@@ -1,5 +1,6 @@
 alabaster==0.7.16
 anyio==4.9.0
+argcomplete==3.6.2
 argon2-cffi==25.1.0
 argon2-cffi-bindings==21.2.0
 arrow==1.3.0
@@ -40,7 +41,7 @@ debugpy==1.8.14
 decorator==5.2.1
 defusedxml==0.7.1
 dill==0.4.0
-docutils==0.18.1
+docutils==0.21.2
 et_xmlfile==2.0.0
 exceptiongroup==1.3.0
 executing==2.2.0
@@ -60,6 +61,7 @@ html5lib==1.1
 httpcore==1.0.9
 httpx==0.28.1
 hyperframe==6.1.0
+id==1.5.0
 idna==3.10
 imageio==2.37.0
 imagesize==1.4.1
@@ -107,10 +109,12 @@ llvmlite==0.44.0
 looseversion==1.3.0
 LSSTDESC.Coord==1.3.0
 lxml==5.4.0
+markdown-it-py==4.0.0
 MarkupSafe==3.0.2
 matplotlib==3.10.3
 matplotlib-inline==0.1.7
 mcfit==0.0.22
+mdurl==0.1.2
 mistune==3.1.3
 ml_dtypes==0.5.1
 more-itertools==10.7.0
@@ -122,6 +126,7 @@ nbformat==5.10.4
 ndcube==2.3.1
 nest_asyncio==1.6.0
 networkx==3.4.2
+nh3==0.3.0
 notebook==7.4.3
 notebook_shim==0.2.4
 numba==0.61.2
@@ -152,7 +157,8 @@ pexpect==4.9.0
 photutils==2.0.2
 pickleshare==0.7.5
 pillow==11.2.1
-pip==25.2
+pip==25.3
+pipx==1.7.1
 pkgutil_resolve_name==1.3.10
 platformdirs==4.3.8
 pluggy==1.6.0
@@ -162,6 +168,7 @@ prompt_toolkit==3.0.51
 psutil==7.0.0
 ptyprocess==0.7.0
 pure_eval==0.2.3
+py==1.11.0
 pybind11==2.13.6
 pybind11_global==2.13.6
 pycparser==2.22
@@ -175,6 +182,7 @@ PySocks==1.7.1
 pysynphot==2.0.0
 pytest==8.4.0
 pytest-astropy-header==0.2.2
+pytest-forked==1.6.0
 python-dateutil==2.9.0.post0
 python-json-logger==2.0.7
 pytz==2025.2
@@ -183,10 +191,14 @@ pyxdg==0.28
 PyYAML==6.0.2
 pyzmq==26.4.0
 rad==0.22.0
+readme_renderer==44.0
 referencing==0.36.2
 requests==2.32.4
+requests-toolbelt==1.0.0
 rfc3339_validator==0.1.4
+rfc3986==2.0.0
 rfc3986-validator==0.1.1
+rich==14.1.0
 roman_datamodels==0.22.0
 romanisim==0.7.0
 rpds-py==0.25.1
@@ -207,8 +219,8 @@ snowballstemmer==3.0.1
 soupsieve==2.7
 git+https://github.com/bryce-wedig/speclite.git@mejiro-v2.0.0
 specutils==1.20.2
-Sphinx==7.1.2
-sphinx-rtd-theme==1.3.0rc1
+Sphinx==8.1.3
+sphinx-rtd-theme==3.0.2
 sphinxcontrib-applehelp==2.0.0
 sphinxcontrib-devhelp==2.0.0
 sphinxcontrib-htmlhelp==2.1.0
@@ -225,16 +237,19 @@ terminado==0.18.1
 threadpoolctl==3.6.0
 tifffile==2025.5.10
 tinycss2==1.4.0
+toml==0.10.2
 tomli==2.2.1
 tornado==6.5.1
 tqdm==4.67.1
 traitlets==5.14.3
+twine==6.2.0
 types-python-dateutil==2.9.0.20250516
 typing_extensions==4.14.0
 typing_utils==0.1.0
 tzdata==2025.2
 uri-template==1.3.0
 urllib3==2.4.0
+userpath==1.9.2
 wcwidth==0.2.13
 webbpsf==2.0.0
 webcolors==24.11.1
