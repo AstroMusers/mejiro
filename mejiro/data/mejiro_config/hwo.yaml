@@ -37,8 +37,8 @@ survey:
     loghm_min: 11
     loghm_max: 15
   detectors: &detectors [1]  # 
-  bands: [F115W, F150W, F200W, F277W, F356W, F444W, B, FUV, H, I, J, K, NUV, R, U, V, F438W, F475W, F555W, F606W, F625W, F775W, F814W, u, g, r, i, z, y]  # SkyPy will calculate magnitudes for each of these bands; they'll be stored in the physical_params attribute of the strong_lens
-  deflector_cut_band: F115W
+  bands: [B, FUV, H, I, J, K, NUV, R, U, V]  # SkyPy will calculate magnitudes for each of these bands; they'll be stored in the physical_params attribute of the strong_lens
+  deflector_cut_band: J
   deflector_cut_band_max: 27
   deflector_z_min: 0.01
   deflector_z_max: 5.0
@@ -62,7 +62,7 @@ subhalos:
     concentration_model_fieldhalos: LUDLOW2016
     shmf_log_slope: -1.9
 synthetic_image:
-  bands: [ F115W, F150W, F200W ]
+  bands: [ I, J, K ]
   fov_arcsec: 6
   supersampling_compute_mode: adaptive
   supersampling_factor: &supersampling_factor 1
