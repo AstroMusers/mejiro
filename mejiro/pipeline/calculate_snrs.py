@@ -13,7 +13,7 @@ from mejiro.utils.pipeline_helper import PipelineHelper
 
 PREV_SCRIPT_NAME = '05'
 SCRIPT_NAME = 'snr'
-SUPPORTED_INSTRUMENTS = ['roman']
+SUPPORTED_INSTRUMENTS = ['roman', 'hwo']
 
 
 def main(args):
@@ -30,7 +30,7 @@ def main(args):
         input_pickles = pipeline.retrieve_roman_pickles(prefix='Exposure', suffix='', extension='.pkl')
         pipeline.create_roman_sca_output_directories()
     elif pipeline.instrument_name == 'hwo':
-        input_pickles = pipeline.retrieve_hwo_pickles(prefix='Exposure', suffix='', extension='.pkl')
+        input_pickles = pipeline.retrieve_pickles(prefix='Exposure', suffix='', extension='.pkl')
     else:
         raise ValueError(f'Unknown instrument {pipeline.instrument_name}. Supported instruments are {SUPPORTED_INSTRUMENTS}.')
 
