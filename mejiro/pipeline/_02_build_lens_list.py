@@ -23,7 +23,7 @@ from mejiro.utils.pipeline_helper import PipelineHelper
 
 PREV_SCRIPT_NAME = '01'
 SCRIPT_NAME = '02'
-SUPPORTED_INSTRUMENTS = ['roman', 'jwst']
+SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
 
 
 def main(args):

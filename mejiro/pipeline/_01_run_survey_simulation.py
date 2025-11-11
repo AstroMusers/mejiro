@@ -37,7 +37,7 @@ from mejiro.utils.pipeline_helper import PipelineHelper
 
 PREV_SCRIPT_NAME = None
 SCRIPT_NAME = '01'
-SUPPORTED_INSTRUMENTS = ['roman', 'jwst']
+SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
 
 
 def main(args):
@@ -124,14 +124,29 @@ def run_slsim(tuple):
         raise ValueError(f"Run identifier not implemented for {instrument.name}.")
 
     # load filters
-    if instrument.name == 'Roman':
+    if config['pipeline_label'] == 'all':
+        from mejiro.instruments.hst import HST
+        from mejiro.instruments.jwst import JWST
+        from mejiro.instruments.roman import Roman
+        from mejiro.instruments.hwo import HWO
+        speclite_filters = Roman.load_speclite_filters(detector='SCA01')
+        print(f'Loaded Roman filter response curve(s): {speclite_filters.names}')
+        speclite_filters = HST.load_speclite_filters()
+        print(f'Loaded HST filter response curve(s): {speclite_filters.names}')
+        speclite_filters = JWST.load_speclite_filters()
+        print(f'Loaded JWST filter response curve(s): {speclite_filters.names}')
+        speclite_filters = HWO.load_speclite_filters()
+        print(f'Loaded HWO filter response curve(s): {speclite_filters.names}')
+    elif instrument.name == 'Roman':
         detector_string = roman_util.get_sca_string(detector).lower()
         filter_args = {'detector': detector_string}
+        speclite_filters = instrument.load_speclite_filters(**filter_args)
     elif instrument.name == 'HWO' or instrument.name == 'JWST':
         filter_args = {}
+        speclite_filters = instrument.load_speclite_filters(**filter_args)
     else:
         raise ValueError(f"Speclite filter loading not implemented for {instrument.name}.")
-    speclite_filters = instrument.load_speclite_filters(**filter_args)
+    
     if verbose: print(f'Loaded {instrument.name} filter response curve(s): {speclite_filters.names}')
 
     # load SkyPy config file
@@ -150,7 +165,9 @@ def run_slsim(tuple):
     if use_slhammocks_pipeline:
         slhammocks_pipeline_kwargs = survey_config['slhammocks_pipeline_kwargs']
         cache_dir = os.path.join(module_path, 'data', 'skypy', 'slhammocks')
-        if instrument.name == 'Roman':
+        if config['pipeline_label'] == 'all':
+            slhammocks_config = os.path.join(cache_dir, 'slhammocks_all.yml')
+        elif instrument.name == 'Roman':
             slhammocks_config = os.path.join(cache_dir,
                                     f'{slhammocks_pipeline_kwargs["skypy_config"]}_{detector_string}.yml')  # TODO TEMP: there should be one source of truth for this, and if necessary, some code should update the cache behind the scenes
         elif instrument.name == 'HWO' or instrument.name == 'JWST':
