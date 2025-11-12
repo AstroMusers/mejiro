@@ -323,7 +323,7 @@ def run_slsim(tuple):
         if survey_config["write_to_csv"]:
             total_pop_csv = os.path.join(output_dir, f'total_pop_{run_id}.csv')
             if verbose: print(f'Writing total population to {total_pop_csv}')
-            slsim_util.write_lens_population_to_csv(total_pop_csv, total_lens_population, snr_list, bands=bands, verbose=verbose)
+            slsim_util.write_lens_population_to_csv(total_pop_csv, total_lens_population, snr_list, bands=None, verbose=verbose)
 
     # draw initial detectable lens population
     if verbose: print('Identifying detectable lenses...')
@@ -397,7 +397,7 @@ def run_slsim(tuple):
         # write the parameters of detectable lenses to CSV
         if survey_config["write_to_csv"]:
             detectable_pop_csv = os.path.join(output_dir, f'detectable_pop_{run_id}.csv')
-            slsim_util.write_lens_population_to_csv(detectable_pop_csv, detectable_gglenses, detectable_snr_list, bands=bands, verbose=verbose)
+            slsim_util.write_lens_population_to_csv(detectable_pop_csv, detectable_gglenses, detectable_snr_list, bands=None, verbose=verbose)
     else:
         if verbose: print(f'No detectable lenses found for run {run}')
     
