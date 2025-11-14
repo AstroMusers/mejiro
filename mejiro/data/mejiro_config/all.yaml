@@ -1,9 +1,9 @@
 data_dir: &data_dir /data/bwedig/mejiro # where output data should be written
 pipeline_label: all
 psf_cache_dir: null
-dev: True
-nice: 0
-verbose: True
+dev: False
+nice: 19
+verbose: False
 suppress_warnings: True
 limit: null
 seed: &seed 42
@@ -19,7 +19,7 @@ jaxtronomy:
   jax_platform: cpu  # cpu or gpu
 instrument: hwo
 survey:
-  runs: 2
+  runs: 64
   area: 0.1
   skypy_config: all
   write_to_csv: False
@@ -30,22 +30,22 @@ survey:
     catalog_type: COSMOS
     sersic_fallback: True
     max_scale: 1
-  use_slhammocks_pipeline: True
+  use_slhammocks_pipeline: False
   slhammocks_pipeline_kwargs:
     skypy_config: slhammocks_all
     slhammocks_config: null
     loghm_min: 11
     loghm_max: 15
   detectors: &detectors [1]  # 
-  bands: [B, FUV, H, I, J, K, NUV, R, U, V]  # SkyPy will calculate magnitudes for each of these bands; they'll be stored in the physical_params attribute of the strong_lens
+  bands: [B, FUV, H, I, J, K, NUV, R, U, V]
   deflector_cut_band: I
   deflector_cut_band_max: 27
   deflector_z_min: 0.01
-  deflector_z_max: 5.0
+  deflector_z_max: 3.0
   source_cut_band: I
-  source_cut_band_max: 31
+  source_cut_band_max: 30
   source_z_min: 0.01
-  source_z_max: 8.0
+  source_z_max: 4.0
   min_image_separation: 0.3  # arcseconds
   max_image_separation: 10.0  # arcseconds
   mag_arc_limit_band: I
@@ -87,7 +87,7 @@ snr:
   snr_fov_arcsec: 6
   snr_supersampling_compute_mode: adaptive
   snr_supersampling_factor: &snr_supersampling_factor 1
-  snr_threshold: 100
+  snr_threshold: 500
   snr_per_pixel_threshold: 1
 psf:
   bands: [ F115W, F277W ]
