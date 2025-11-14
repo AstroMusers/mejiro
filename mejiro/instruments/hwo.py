@@ -30,6 +30,7 @@ class HWO(Instrument):
         self.telescope.set_from_json(eac)
         self.camera = Camera()
         self.telescope.add_camera(self.camera)
+        self.eac = eac
 
         name = 'HWO'
         bands = self.camera.bandnames
