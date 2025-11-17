@@ -23,6 +23,9 @@ from mejiro.instruments.hst import HST
 from mejiro.instruments.lsst import LSST
 from mejiro.instruments.jwst import JWST
 from mejiro.instruments.roman import Roman
+from matplotlib.patches import Circle
+
+plt.style.use('/grad/bwedig/mejiro/mejiro/mejiro.mplstyle')
 
 
 def process_lens(params):
@@ -31,6 +34,7 @@ def process_lens(params):
     (run, lens, instrument, script_config, imaging_params, subhalo_params, save_dir, image_save_dir,
      idx_to_save) = params
     rng_seed = script_config['rng_seed']
+    plot = script_config['plot']
     band = imaging_params['band']
     oversample = imaging_params['oversample']
     scene_size = imaging_params['scene_size']
@@ -192,40 +196,57 @@ def process_lens(params):
             # print(f'{lens.name}: Undetected subhalo mass {m200:.2e} with {chi_square:.2f} < {threshold_chi2:.2f}, {c:.2f}')
             undetectable_halos.append((lens.z_lens, m200, c))
 
-        if run in idx_to_save and mass_idx in mass_indices:
-            _, ax = plt.subplots(2, 3, figsize=(15, 10))
-            residual = masked_exposure_with_subhalo - masked_exposure_no_subhalo
-            vmax = plot_util.get_limit(residual)
-            if vmax == 0.: vmax = 0.1
+        if run in idx_to_save and mass_idx in mass_indices and plot:
+            # _, ax = plt.subplots(2, 3, figsize=(15, 10))
+            # residual = masked_exposure_with_subhalo - masked_exposure_no_subhalo
+            # vmax = plot_util.get_limit(residual)
+            # if vmax == 0.: vmax = 0.1
+            # coords_x, coords_y = synth.coords.map_coord2pix(halo_x, halo_y)
+
+            # ax00 = ax[0, 0].imshow(masked_exposure_no_subhalo)
+            # ax01 = ax[0, 1].imshow(masked_exposure_with_subhalo)
+            # ax[0, 1].scatter(coords_x, coords_y, c='r', s=10)
+            # ax02 = ax[0, 2].imshow(residual, cmap='bwr', vmin=-vmax, vmax=vmax)
+
+            # # ax[0, 0].set_title(f'SNR: {lens.snr:.2f}')
+            # ax[0, 1].set_title(f'{m200:.2e}')
+            # ax[0, 2].set_title(
+            #     r'$\chi^2=$ ' + f'{chi_square:.2f}, ' + r'$\chi_{3\sigma}^2=$ ' + f'{threshold_chi2:.2f}')
+
+            # ax10 = ax[1, 0].imshow(synth.image - synth_no_subhalo.image, cmap='bwr', norm=CenteredNorm()) # 
+            # ax11 = ax[1, 1].imshow(np.log10(exposure.exposure), cmap='cubehelix')
+            # ax12 = ax[1, 2].imshow(mask)
+
+            # ax[1, 0].set_title('Synthetic Residual')
+            # ax[1, 1].set_title('Full Exposure With Subhalo')
+            # ax[1, 2].set_title(f'SNR Array: {pixels_unmasked} pixels, {dof} dof')
+
+            # plt.colorbar(ax00, ax=ax[0, 0])
+            # plt.colorbar(ax01, ax=ax[0, 1])
+            # plt.colorbar(ax02, ax=ax[0, 2])
+            # plt.colorbar(ax10, ax=ax[1, 0])
+            # plt.colorbar(ax11, ax=ax[1, 1])
+            # plt.colorbar(ax12, ax=ax[1, 2])
+
             coords_x, coords_y = synth.coords.map_coord2pix(halo_x, halo_y)
 
-            ax00 = ax[0, 0].imshow(masked_exposure_no_subhalo)
-            ax01 = ax[0, 1].imshow(masked_exposure_with_subhalo)
-            ax[0, 1].scatter(coords_x, coords_y, c='r', s=10)
-            ax02 = ax[0, 2].imshow(residual, cmap='bwr', vmin=-vmax, vmax=vmax)
+            _, ax = plt.subplots(1, 2, figsize=(8, 4))
 
-            # ax[0, 0].set_title(f'SNR: {lens.snr:.2f}')
-            ax[0, 1].set_title(f'{m200:.2e}')
-            ax[0, 2].set_title(
+            ax[0].imshow(np.log10(exposure.exposure), cmap='cubehelix')
+            ax[0].scatter(coords_x, coords_y, c='r', s=10, label=f'{m200:.2e}' + r' M$_\odot$ Subhalo')
+            ax[0].set_title('Exposure With Subhalo')
+            ax[0].legend()
+            ax[0].axis('off')
+
+            ax[1].imshow(exposure.exposure - exposure_no_subhalo.exposure, cmap='bwr', norm=CenteredNorm())
+            ax[1].set_title(
                 r'$\chi^2=$ ' + f'{chi_square:.2f}, ' + r'$\chi_{3\sigma}^2=$ ' + f'{threshold_chi2:.2f}')
+            circle = Circle((coords_x, coords_y), radius_pix, edgecolor='black', facecolor='none', linewidth=1.5)
+            ax[1].add_patch(circle)
+            ax[1].axis('off')
 
-            ax10 = ax[1, 0].imshow(synth.image - synth_no_subhalo.image, cmap='bwr', norm=CenteredNorm()) # 
-            ax11 = ax[1, 1].imshow(np.log10(exposure.exposure), cmap='cubehelix')
-            ax12 = ax[1, 2].imshow(mask)
-
-            ax[1, 0].set_title('Synthetic Residual')
-            ax[1, 1].set_title('Full Exposure With Subhalo')
-            ax[1, 2].set_title(f'SNR Array: {pixels_unmasked} pixels, {dof} dof')
-
-            plt.colorbar(ax00, ax=ax[0, 0])
-            plt.colorbar(ax01, ax=ax[0, 1])
-            plt.colorbar(ax02, ax=ax[0, 2])
-            plt.colorbar(ax10, ax=ax[1, 0])
-            plt.colorbar(ax11, ax=ax[1, 1])
-            plt.colorbar(ax12, ax=ax[1, 2])
-
-            plt.suptitle(
-                f'StrongLens {lens.name} with {instrument.name}, Image Shape: {exposure.exposure.shape}')
+            # plt.suptitle(
+                # f'StrongLens {lens.name} with {instrument.name}, Image Shape: {exposure.exposure.shape}')
             plt.savefig(os.path.join(image_save_dir, f'{lens.name}_{run}_mass{mass_idx}.png'))
             plt.close()
 
@@ -247,6 +268,7 @@ def main():
         'num_lenses': 1000,  # None
         # 'num_positions': 10,
         'rng_seed': None,
+        'plot': True,
     }
 
     # collect lenses
@@ -303,7 +325,7 @@ def main():
 
         # script configuration options
         subhalo_params = {
-            'masses': np.logspace(6, 11, 100),
+            'masses': np.logspace(6, 11, 50),
             'r_tidal': 0.5,
             'sigma_sub': 0.055,
             'los_normalization': 0.
