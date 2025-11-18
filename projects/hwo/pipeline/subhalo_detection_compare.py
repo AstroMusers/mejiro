@@ -265,7 +265,7 @@ def main():
 
     script_config = {
         'snr_quantile': 0.99,
-        'num_lenses': 1000,  # None
+        'num_lenses': 100,  # None
         # 'num_positions': 10,
         'rng_seed': None,
         'plot': True,
@@ -310,9 +310,9 @@ def main():
     roman = Roman()
 
     instrument_config = [
-        (hwo1, 'I', 2e5),
-        (hwo2, 'I', 2e5),
-        (hwo3, 'I', 2e5),
+        (hwo1, 'I', 5e5),
+        (hwo2, 'I', 5e5),
+        (hwo3, 'I', 5e5),
         (hst, 'F814W', 1e5),
         # (lsst, 'i'),
         # (jwst, 'F115W'),
@@ -325,14 +325,14 @@ def main():
 
         # script configuration options
         subhalo_params = {
-            'masses': np.logspace(6, 11, 50),
+            'masses': np.logspace(6, 11, 250),
             'r_tidal': 0.5,
             'sigma_sub': 0.055,
             'los_normalization': 0.
         }
         imaging_params = {
             'band': band,
-            'scene_size': 8,  # arcsec
+            'scene_size': 10,  # arcsec
             'oversample': 1,
             'exposure_time': exp_time # 14400
         }
