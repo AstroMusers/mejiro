@@ -1,0 +1,35 @@
+name: mejiro-v3
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - astropy
+  - galsim
+  - jupyter
+  # - numpy
+  - pandas
+  - pip
+  - pytest  # dev
+  # - scipy
+  - tqdm
+  - pip:
+    - lenstronomy
+    - jaxtronomy
+    - stpsf
+    # - pysiaf
+    # - syotools==1.1.13  # for HWO imaging
+    # - speclite==0.20
+    - pyhalo
+    # - colossus==1.3.3  # needed for pyhalo
+    - slsim
+    # - git+https://github.com/bryce-wedig/speclite.git@mejiro-v2.0.0
+    # - git+https://github.com/bryce-wedig/skypy.git@mejiro-v2.0.0
+    # - sncosmo==2.10.4
+    # - mcfit==0.0.22
+    # - git+https://github.com/bryce-wedig/hwo-tools.git@mejiro-v2.0.0
+    - sphinx  # dev
+    - sphinx-rtd-theme  # dev
+    - corner
+    - romanisim
+    # - -e .
