@@ -2,7 +2,8 @@
 
 # this bash script is a less-polished way of executing the `mejiro` pipeline that is useful for development
 
-config="mejiro/data/mejiro_config/all.yaml"
+# config="mejiro/data/mejiro_config/all.yaml"
+config="/grad/bwedig/mejiro/projects/nancy/nancy.yaml"
 
 # change directory to the root of the repository
 cd "$(dirname "$0")/.."
@@ -23,23 +24,23 @@ echo 'Building lens list from SkyPy...'
 python3 mejiro/pipeline/_02_build_lens_list.py --config $config
 echo 'Built lens list.'
 
-# if [ $config != "training_set" ]; then
-#     echo 'Adding subhalos with PyHalo...'
-#     python3 mejiro/pipeline/_03_generate_subhalos.py --config $config
-#     echo 'Added subhalos.'
-# fi
+if [ $config != "training_set" ]; then
+    echo 'Adding subhalos with PyHalo...'
+    python3 mejiro/pipeline/_03_generate_subhalos.py --config $config
+    echo 'Added subhalos.'
+fi
 
-# echo 'Building models...'
-# python3 mejiro/pipeline/_04_create_synthetic_images.py --config $config
-# echo 'Built models.'
+echo 'Building models...'
+python3 mejiro/pipeline/_04_create_synthetic_images.py --config $config
+echo 'Built models.'
 
-# echo 'Simulating images...'
-# python3 mejiro/pipeline/_05_create_exposures.py --config $config
-# echo 'GalSim simulations complete.'
+echo 'Simulating images...'
+python3 mejiro/pipeline/_05_create_exposures.py --config $config
+echo 'GalSim simulations complete.'
 
-# echo 'Calculating SNRs...'
-# python3 mejiro/pipeline/calculate_snrs.py --config $config
-# echo 'SNR calculation complete.'
+echo 'Calculating SNRs...'
+python3 mejiro/pipeline/calculate_snrs.py --config $config
+echo 'SNR calculation complete.'
 
 # echo 'Generating h5 file...'
 # if [ $config == "training_set" ]; then

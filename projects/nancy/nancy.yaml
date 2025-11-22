@@ -1,7 +1,7 @@
 data_dir: &data_dir /nfsdata1/bwedig/mejiro  # where output data should be written
 pipeline_label: nancy
 psf_cache_dir: cached_psfs
-dev: False
+dev: True
 nice: 19
 verbose: True
 suppress_warnings: True
@@ -19,18 +19,18 @@ jaxtronomy:
   jax_platform: cpu  # cpu or gpu
 instrument: roman
 survey:
-  runs: 256
+  runs: 64
   area: 0.5
   skypy_config: lsst-like_triple_SF
   write_to_csv: True
   total_population: True
-  use_real_sources: False
+  use_real_sources: True
   catalog_source_kwargs:
     catalog_path: /data/bwedig/COSMOS
     catalog_type: COSMOS
     sersic_fallback: True
     max_scale: 1
-  use_slhammocks_pipeline: False
+  use_slhammocks_pipeline: True
   slhammocks_pipeline_kwargs:
     skypy_config: slhammocks
     slhammocks_config: null
@@ -55,14 +55,14 @@ subhalos:
   fraction: 1.  # fraction of systems to add substructure to
   pyhalo_model: CDM
   realization_kwargs:
-    log_mlow: 6
+    log_mlow: 4
     log_mhigh: 12
     LOS_normalization: 1.
     concentration_model_subhalos: LUDLOW2016
     concentration_model_fieldhalos: LUDLOW2016
     shmf_log_slope: -1.9
-    r_tidal: 0.5  # see Section 3.1 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract
-    sigma_sub: 0.055  # see Section 6.3 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract
+    r_tidal: 0.25
+    sigma_sub: 0.025
 synthetic_image:
   bands: [ F146 ]
   fov_arcsec: 10
