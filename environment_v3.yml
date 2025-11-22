@@ -11,13 +11,13 @@ dependencies:
   - pandas
   - pip
   - pytest  # dev
+  # - pysiaf
   # - scipy
   - tqdm
   - pip:
     - lenstronomy
     - jaxtronomy
     - stpsf
-    # - pysiaf
     # - syotools==1.1.13  # for HWO imaging
     # - speclite==0.20
     - pyhalo
