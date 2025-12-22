@@ -15,7 +15,7 @@ and [GalSim](https://github.com/GalSim-developers/GalSim).
 ![Simulated Roman images of strong lenses](images/mosaic.png)
 
 > [!NOTE]  
-> `mejiro` will be used to generate >100k simulated Roman images of strong lenses for a **data challenge** in late 2025. Stay tuned!
+> `mejiro` will be used to generate >100k simulated Roman images for the [**Roman Strong Lens Data Challenge**](https://roman-data-challenge.readthedocs.io/en/latest/) in 2026.
 
 # Installation
 
