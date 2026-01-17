@@ -10,14 +10,54 @@ authors = [
     { name = "Bryce Wedig", email = "b.t.wedig@wustl.edu" },
 ]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
-    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Operating System :: OS Independent",
     "Topic :: Scientific/Engineering :: Astronomy"
 ]
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
+dependencies = [
+    "astropy",
+    "galsim",
+    "pandas",
+    "tqdm",
+    "lenstronomy",
+    "jax[cuda12]",
+    "jaxtronomy",
+    "pyhalo",
+    "mcfit",  # required for pyhalo
+    "slsim",
+    "sncosmo",  # required for slsim
+    "git+https://github.com/bryce-wedig/speclite.git@mejiro-v2.0.0",  # required for slsim
+    "git+https://github.com/bryce-wedig/skypy.git@mejiro-v2.0.0",  # required for slsim
+    "colossus",  # required for slsim
+    "corner",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-forked",
+    "jupyter",
+    "sphinx",
+    "sphinx-rtd-theme",
+]
+roman = [
+    "stpsf",
+    "romanisim"
+]
+hwo = [
+    "syotools"
+]
+all = [
+    "mejiro[dev,roman,hwo]"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["mejiro*"]
 
 [tool.setuptools.dynamic]
 version = {attr = "mejiro.__version__"}
@@ -28,9 +68,7 @@ Repository = "https://github.com/AstroMusers/mejiro"
 Issues = "https://github.com/AstroMusers/mejiro/issues"
 
 [tool.pytest.ini_options]
+testpaths = ["tests"]
 pythonpath = [
     "."
 ]
-
-[tool.setuptools.packages.find]
-include = ["mejiro", "mejiro.*"]
