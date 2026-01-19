@@ -19,7 +19,7 @@ jaxtronomy:
   jax_platform: cpu  # cpu or gpu
 instrument: roman
 survey:
-  runs: 64
+  runs: 128
   area: 0.5
   skypy_config: lsst-like_triple_SF
   write_to_csv: True
@@ -74,7 +74,7 @@ imaging:
   engine: galsim
   engine_params:
     rng_seed: *seed
-    min_zodi_factor: 2.0
+    min_zodi_factor: 1.
     sky_background: True
     detector_effects: True
     poisson_noise: True
