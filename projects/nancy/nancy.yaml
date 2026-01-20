@@ -1,7 +1,7 @@
 data_dir: &data_dir /nfsdata1/bwedig/mejiro  # where output data should be written
 pipeline_label: nancy
 psf_cache_dir: cached_psfs
-dev: True
+dev: False
 nice: 19
 verbose: True
 suppress_warnings: True
@@ -19,7 +19,7 @@ jaxtronomy:
   jax_platform: cpu  # cpu or gpu
 instrument: roman
 survey:
-  runs: 128
+  runs: 414
   area: 0.5
   skypy_config: lsst-like_triple_SF
   write_to_csv: True
@@ -45,7 +45,7 @@ survey:
   source_cut_band: F146
   source_cut_band_max: 27
   source_z_min: 0.01
-  source_z_max: 6.0
+  source_z_max: 7.0
   min_image_separation: 0.3  # arcseconds
   max_image_separation: 10.0  # arcseconds
   mag_arc_limit_band: F146

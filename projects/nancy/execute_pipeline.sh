@@ -2,10 +2,10 @@
 
 # this bash script is a less-polished way of executing the `mejiro` pipeline that is useful for development
 
-config="nancy.yaml"
+config="projects/nancy/nancy.yaml"
 
 # change directory to the root of the repository
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 
 # escape if error encountered
 set -e
