@@ -37,7 +37,16 @@ class GalSimEngine(Engine):
             image += sky_background
         elif type(engine_params['sky_background']) is bool:
             if engine_params['sky_background']:
-                sky_background = GalSimEngine.get_roman_sky_background(roman, synthetic_image.band, exposure_time, synthetic_image.num_pix, engine_params['min_zodi_factor'])
+                # sky background can be provided either as a `min_zodi_factor`
+                # or overwritten by providing `background_cps`
+                sky_background = GalSimEngine.get_roman_sky_background(
+                    roman=roman, 
+                    band=synthetic_image.band, 
+                    exposure_time=exposure_time, 
+                    num_pix=synthetic_image.num_pix, 
+                    min_zodi_factor=engine_params['min_zodi_factor'],
+                    background_cps=engine_params.get('background_cps', None)
+                )
                 image += sky_background
             else:
                 sky_background = None
@@ -160,31 +169,38 @@ class GalSimEngine(Engine):
 
 
     @staticmethod
-    def get_roman_sky_background(roman, band, exposure_time, num_pix, min_zodi_factor=1.5):
+    def get_roman_sky_background(roman, band, exposure_time, num_pix, min_zodi_factor=1.5, background_cps=None):
         # build Image
         sky_image = galsim.ImageD(num_pix, num_pix)
 
-        # get minimum zodiacal light in this band in counts/pixel/sec
-        sky_level = roman.get_minimum_zodiacal_light(band)
-        if sky_level.unit != 'ct / pix':
-            raise ValueError(f"Minimum zodiacal light is not in units of counts/pixel: {sky_level.unit}")
+        # if background_cps is provided, use it directly
+        # otherwise, compute sky background from zodiacal light and thermal background (the standard GalSim.roman approach)
+        if background_cps is None:
+            # get minimum zodiacal light in this band in counts/pixel/sec
+            sky_level = roman.get_minimum_zodiacal_light(band)
+            if sky_level.unit != 'ct / pix':
+                raise ValueError(f"Minimum zodiacal light is not in units of counts/pixel: {sky_level.unit}")
 
-        # "For observations at high galactic latitudes, the Zodi intensity is typically ~1.5x the minimum" (https://roman.gsfc.nasa.gov/science/WFI_technical.html)
-        sky_level *= min_zodi_factor
+            # "For observations at high galactic latitudes, the Zodi intensity is typically ~1.5x the minimum" (https://roman.gsfc.nasa.gov/science/WFI_technical.html)
+            sky_level *= min_zodi_factor
 
-        # add stray light contribution
-        sky_level *= (1. + roman.stray_light_fraction)
+            # add stray light contribution
+            sky_level *= (1. + roman.stray_light_fraction)
 
-        # get thermal background in this band in counts/pixel/sec
-        thermal_bkg = roman.get_thermal_background(band)
-        if thermal_bkg.unit != 'ct / pix':
-            raise ValueError(f"Thermal background is not in units of counts/pixel: {thermal_bkg.unit}")
+            # get thermal background in this band in counts/pixel/sec
+            thermal_bkg = roman.get_thermal_background(band)
+            if thermal_bkg.unit != 'ct / pix':
+                raise ValueError(f"Thermal background is not in units of counts/pixel: {thermal_bkg.unit}")
 
-        # combine the two backgrounds (still counts/pixel/sec)
-        sky_image += sky_level.value
-        sky_image += thermal_bkg.value
+            # combine the two backgrounds (still counts/pixel/sec)
+            sky_image += sky_level.value
+            sky_image += thermal_bkg.value
+        else:
+            background_level = background_cps
+            background_level *= (1. + roman.stray_light_fraction)  # TODO thermal background shouldn't get this factor, but this should be fine for now with F146 for NANCY because thermal background is negligible there
+            sky_image += background_level
 
-        # convert to counts/pixel
+        # convert from counts/sec to counts
         sky_image *= exposure_time
 
         return sky_image

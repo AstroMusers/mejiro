@@ -3,6 +3,7 @@ import time
 import warnings
 
 from mejiro.utils import util
+from mejiro.analysis.snr_calculation import get_snr
 
 
 class Exposure:
@@ -139,8 +140,6 @@ class Exposure:
             print(f'Exposure calculation time with {self.engine} engine: {util.calculate_execution_time(start, end, unit="s")}')
 
     def get_snr(self, snr_per_pixel_threshold=1):
-        from mejiro.analysis.snr_calculation import get_snr
-
         return get_snr(self, snr_per_pixel_threshold=snr_per_pixel_threshold, verbose=self.verbose)[0]
 
     def plot(self, show_snr=False, savepath=None):
