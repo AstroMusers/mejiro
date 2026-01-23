@@ -19,7 +19,7 @@ jaxtronomy:
   jax_platform: cpu  # cpu or gpu
 instrument: roman
 survey:
-  runs: 414
+  runs: 4122
   area: 0.5
   skypy_config: lsst-like_triple_SF
   write_to_csv: True
@@ -30,7 +30,7 @@ survey:
     catalog_type: COSMOS
     sersic_fallback: True
     max_scale: 1
-  use_slhammocks_pipeline: True
+  use_slhammocks_pipeline: False
   slhammocks_pipeline_kwargs:
     skypy_config: slhammocks
     slhammocks_config: null
@@ -49,7 +49,7 @@ survey:
   min_image_separation: 0.3  # arcseconds
   max_image_separation: 10.0  # arcseconds
   mag_arc_limit_band: F146
-  mag_arc_limit: 26
+  mag_arc_limit: 25
   magnification: 3
 subhalos:
   fraction: 1.  # fraction of systems to add substructure to
