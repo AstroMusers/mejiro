@@ -15,6 +15,16 @@ class Instrument(ABC):
         self.engines = engines
         self.versions = {}
 
+    def convert_mag_to_cps(self, magnitude, band):
+        from lenstronomy.Util.data_util import magnitude2cps
+        zeropoint = self.get_zeropoint_magnitude(band)
+        return magnitude2cps(magnitude, zeropoint)
+
+    def convert_cps_to_mag(self, cps, band):
+        from lenstronomy.Util.data_util import cps2magnitude
+        zeropoint = self.get_zeropoint_magnitude(band)
+        return cps2magnitude(cps, zeropoint)
+
     @abstractmethod
     def get_pixel_scale(self, band):
         """
