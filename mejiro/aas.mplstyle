@@ -1,0 +1,357 @@
+# =============================================================================
+# AAS Journal Matplotlib Style
+# =============================================================================
+# A professional matplotlib style designed for publications in American
+# Astronomical Society (AAS) journals (ApJ, ApJL, ApJS, AJ, etc.)
+#
+# Based on aastex7.cls specifications:
+#   - 10pt fonts for twocolumn/published articles
+#   - Times/serif font family
+#   - Standard astronomical conventions (origin='lower' for images)
+#   - Color-blind friendly color cycle
+#
+# Usage:
+#   import matplotlib.pyplot as plt
+#   plt.style.use('aas_journal.mplstyle')
+#
+# Column widths for reference:
+#   - Single column: 3.5 inches (242 pt / 88.9 mm)
+#   - Double column: 7.1 inches (510 pt / 180.3 mm)
+# =============================================================================
+
+# =============================================================================
+# FONT CONFIGURATION
+# =============================================================================
+# AAS journals use Times Roman / serif fonts
+# aastex7.cls: 10pt base font for twocolumn published articles
+# with 12.5pt line spacing (factor ~1.25)
+
+font.family         : serif
+font.serif          : Times New Roman, Times, DejaVu Serif, Bitstream Vera Serif, Computer Modern Roman, New Century Schoolbook, Century Schoolbook L, Utopia, ITC Bookman, Bookman, Nimbus Roman No9 L, Palatino, Charter, serif
+font.sans-serif     : Helvetica, Arial, DejaVu Sans, Bitstream Vera Sans, Computer Modern Sans Serif, Lucida Grande, Verdana, Geneva, Lucid, Avant Garde, sans-serif
+font.monospace      : DejaVu Sans Mono, Bitstream Vera Sans Mono, Computer Modern Typewriter, Andale Mono, Nimbus Mono L, Courier New, Courier, Fixed, Terminal, monospace
+font.size           : 10
+
+# =============================================================================
+# TEXT & MATH RENDERING
+# =============================================================================
+# Use LaTeX-style math rendering for consistency with documents
+# Enable TeX for professional math typography
+
+text.usetex         : False
+mathtext.fontset    : dejavuserif
+mathtext.rm         : serif
+mathtext.it         : serif:italic
+mathtext.bf         : serif:bold
+mathtext.sf         : sans
+mathtext.tt         : monospace
+
+# =============================================================================
+# AXES CONFIGURATION
+# =============================================================================
+# Clean, professional axis styling with inward ticks
+# Font sizes matched to aastex7.cls conventions
+
+axes.labelsize      : 10
+axes.titlesize      : 10
+axes.titleweight    : normal
+axes.labelweight    : normal
+axes.labelpad       : 4.0
+axes.linewidth      : 0.8
+axes.edgecolor      : black
+axes.labelcolor     : black
+axes.axisbelow      : True
+axes.formatter.use_mathtext : True
+axes.formatter.limits : -3, 4
+axes.unicode_minus  : True
+
+# Professional margins with minimal padding
+axes.xmargin        : 0.02
+axes.ymargin        : 0.02
+
+# Grid off by default (astronomical figures typically don't use grids)
+axes.grid           : False
+
+# Spines - all visible for publication quality
+axes.spines.left    : True
+axes.spines.bottom  : True
+axes.spines.top     : True
+axes.spines.right   : True
+
+# =============================================================================
+# COLOR-BLIND FRIENDLY COLOR CYCLE
+# =============================================================================
+# Paul Tol's vibrant color scheme - optimized for color-blind accessibility
+# https://personal.sron.nl/~pault/
+# These colors are distinguishable by most color-blind individuals
+
+axes.prop_cycle     : cycler('color', ['0077BB', 'EE7733', '009988', 'CC3311', '33BBEE', 'EE3377', 'BBBBBB', '000000'])
+#                               blue    orange    teal      red       cyan      magenta   gray      black
+
+# Alternative: Okabe-Ito colorblind-safe palette
+# axes.prop_cycle   : cycler('color', ['E69F00', '56B4E9', '009E73', 'F0E442', '0072B2', 'D55E00', 'CC79A7', '000000'])
+
+# =============================================================================
+# TICK CONFIGURATION
+# =============================================================================
+# Inward ticks as preferred in astronomical publications
+# Sizes appropriate for 10pt font
+
+xtick.direction     : in
+ytick.direction     : in
+xtick.top           : True
+ytick.right         : True
+xtick.bottom        : True
+ytick.left          : True
+xtick.minor.visible : True
+ytick.minor.visible : True
+
+# Tick sizes
+xtick.major.size    : 5
+xtick.minor.size    : 2.5
+ytick.major.size    : 5
+ytick.minor.size    : 2.5
+
+# Tick widths
+xtick.major.width   : 0.8
+xtick.minor.width   : 0.6
+ytick.major.width   : 0.8
+ytick.minor.width   : 0.6
+
+# Tick label sizes (footnotesize in aastex = 8pt for 10pt documents)
+xtick.labelsize     : 9
+ytick.labelsize     : 9
+
+# Tick padding
+xtick.major.pad     : 4
+xtick.minor.pad     : 4
+ytick.major.pad     : 4
+ytick.minor.pad     : 4
+
+# Tick label colors
+xtick.labelcolor    : black
+ytick.labelcolor    : black
+xtick.color         : black
+ytick.color         : black
+
+# =============================================================================
+# LINE PROPERTIES
+# =============================================================================
+# Clean, visible lines appropriate for print
+
+lines.linewidth     : 1.2
+lines.markersize    : 5
+lines.markeredgewidth : 0.8
+lines.solid_capstyle : round
+lines.dash_capstyle : round
+lines.dash_joinstyle : round
+
+# Antialiasing for smooth lines
+lines.antialiased   : True
+
+# =============================================================================
+# MARKERS
+# =============================================================================
+# Standard marker configuration
+
+markers.fillstyle   : full
+scatter.marker      : o
+scatter.edgecolors  : face
+
+# =============================================================================
+# ERRORBAR PROPERTIES
+# =============================================================================
+
+errorbar.capsize    : 2
+
+# =============================================================================
+# LEGEND CONFIGURATION
+# =============================================================================
+# Professional legend with frame, appropriate font sizes
+
+legend.loc          : best
+legend.frameon      : True
+legend.framealpha   : 1.0
+legend.facecolor    : white
+legend.edgecolor    : black
+legend.fancybox     : False
+legend.shadow       : False
+legend.numpoints    : 1
+legend.scatterpoints : 1
+legend.markerscale  : 1.0
+legend.fontsize     : 9
+legend.title_fontsize : 9
+legend.borderpad    : 0.4
+legend.labelspacing : 0.4
+legend.handlelength : 2.0
+legend.handleheight : 0.7
+legend.handletextpad : 0.5
+legend.borderaxespad : 0.5
+legend.columnspacing : 1.0
+
+# =============================================================================
+# FIGURE CONFIGURATION
+# =============================================================================
+# Default figure size = single column width (3.5 inches)
+# Aspect ratio of 1.0 (square) is common for astronomical figures
+# For wider figures, use figsize=(7.1, height) for double column
+
+figure.figsize      : 3.5, 3.5
+figure.dpi          : 150
+figure.facecolor    : white
+figure.edgecolor    : white
+figure.autolayout   : False
+figure.constrained_layout.use : True
+figure.constrained_layout.h_pad : 0.04167
+figure.constrained_layout.w_pad : 0.04167
+figure.constrained_layout.hspace : 0.02
+figure.constrained_layout.wspace : 0.02
+
+# =============================================================================
+# SUBPLOT CONFIGURATION
+# =============================================================================
+# Tight spacing for multi-panel figures
+
+figure.subplot.left   : 0.125
+figure.subplot.right  : 0.9
+figure.subplot.bottom : 0.11
+figure.subplot.top    : 0.88
+figure.subplot.wspace : 0.2
+figure.subplot.hspace : 0.2
+
+# =============================================================================
+# IMAGE CONFIGURATION
+# =============================================================================
+# CRITICAL: origin='lower' is standard in astronomy
+# (pixel [0,0] at bottom-left, matching celestial coordinates)
+
+image.origin        : lower
+image.cmap          : viridis
+image.aspect        : equal
+image.interpolation : nearest  # don't blur images; recommended for scaling a small image up
+image.resample      : True
+
+# =============================================================================
+# CONTOUR CONFIGURATION
+# =============================================================================
+
+contour.negative_linestyle : dashed
+contour.corner_mask : True
+contour.linewidth   : 0.8
+
+# =============================================================================
+# HISTOGRAM CONFIGURATION
+# =============================================================================
+
+hist.bins           : auto
+
+# =============================================================================
+# PATCH CONFIGURATION
+# =============================================================================
+
+patch.linewidth     : 0.8
+patch.edgecolor     : black
+patch.facecolor     : 0077BB
+patch.antialiased   : True
+
+# =============================================================================
+# HATCH CONFIGURATION
+# =============================================================================
+
+hatch.linewidth     : 0.8
+hatch.color         : black
+
+# =============================================================================
+# COLORBAR CONFIGURATION
+# =============================================================================
+# Note: Most colorbar settings must be set programmatically
+
+# =============================================================================
+# SAVEFIG CONFIGURATION
+# =============================================================================
+# High resolution for publication quality
+# AAS recommends 300 DPI minimum for raster images
+
+savefig.dpi         : 600
+savefig.format      : pdf
+savefig.pad_inches  : 0.05
+savefig.facecolor   : white
+savefig.edgecolor   : white
+savefig.transparent : False
+
+# =============================================================================
+# PDF OUTPUT CONFIGURATION
+# =============================================================================
+# Vector output settings for high quality
+
+pdf.compression     : 6
+pdf.fonttype        : 42
+
+# =============================================================================
+# SVG OUTPUT CONFIGURATION
+# =============================================================================
+
+svg.fonttype        : path
+
+# =============================================================================
+# PS/EPS OUTPUT CONFIGURATION
+# =============================================================================
+
+ps.fonttype         : 42
+ps.useafm           : False
+ps.usedistiller     : None
+
+# =============================================================================
+# BOXPLOT CONFIGURATION
+# =============================================================================
+
+boxplot.notch       : False
+boxplot.vertical    : True
+boxplot.whiskers    : 1.5
+boxplot.bootstrap   : None
+boxplot.patchartist : False
+boxplot.showmeans   : False
+boxplot.showcaps    : True
+boxplot.showbox     : True
+boxplot.showfliers  : True
+boxplot.meanline    : False
+
+boxplot.flierprops.color           : black
+boxplot.flierprops.marker          : o
+boxplot.flierprops.markerfacecolor : none
+boxplot.flierprops.markeredgecolor : black
+boxplot.flierprops.markersize      : 5
+boxplot.flierprops.linewidth       : 0.8
+
+boxplot.boxprops.color     : black
+boxplot.boxprops.linewidth : 0.8
+
+boxplot.whiskerprops.color     : black
+boxplot.whiskerprops.linewidth : 0.8
+boxplot.whiskerprops.linestyle : -
+
+boxplot.capprops.color     : black
+boxplot.capprops.linewidth : 0.8
+
+boxplot.medianprops.color     : CC3311
+boxplot.medianprops.linewidth : 1.2
+
+boxplot.meanprops.color           : 009988
+boxplot.meanprops.marker          : ^
+boxplot.meanprops.markerfacecolor : 009988
+boxplot.meanprops.markeredgecolor : black
+boxplot.meanprops.markersize      : 5
+boxplot.meanprops.linewidth       : 0.8
+boxplot.meanprops.linestyle       : --
+
+# =============================================================================
+# DATE CONFIGURATION
+# =============================================================================
+
+date.autoformatter.year     : %Y
+date.autoformatter.month    : %Y-%m
+date.autoformatter.day      : %Y-%m-%d
+date.autoformatter.hour     : %m-%d %H
+date.autoformatter.minute   : %d %H:%M
+date.autoformatter.second   : %H:%M:%S
+date.autoformatter.microsecond : %M:%S.%f
