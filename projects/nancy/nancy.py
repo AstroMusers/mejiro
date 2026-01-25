@@ -1,4 +1,3 @@
-
 import os
 os.environ['OMP_NUM_THREADS'] = '1'
 os.environ['MKL_NUM_THREADS'] = '1'
@@ -29,6 +28,7 @@ from mejiro.utils.pipeline_helper import PipelineHelper
 from mejiro.instruments.roman import Roman
 from mejiro.engines.galsim_engine import GalSimEngine
 from mejiro.exposure import Exposure
+from mejiro.synthetic_image import SyntheticImage
 
 set_aas_style()
 
@@ -47,8 +47,8 @@ args = Namespace(config='nancy.yaml')
 pipeline = PipelineHelper(args, '04', 'nancy', ['roman'])
 
 if config['dev']:
-    pipeline.input_dir = '/nfsdata1/bwedig/mejiro/nancy_dev/04'
-input_pickles = pipeline.retrieve_roman_pickles(prefix='SyntheticImage', suffix='', extension='.pkl')
+    pipeline.input_dir = '/nfsdata1/bwedig/mejiro/nancy_dev/02'
+input_pickles = pipeline.retrieve_roman_pickles(prefix='lens', suffix='', extension='.pkl')
 print(f'Found {len(input_pickles)} input pickle(s).')
 
 
@@ -56,6 +56,9 @@ dev = False
 runs = 1
 snr_threshold = 20
 num_cores = 32
+survey_area = 0.5
+runs = 128
+total_area = survey_area * runs
 
 # HEALPix uses nside parameter where npix = 12 * nside^2
 if dev:
@@ -86,7 +89,7 @@ hp.graticule()
 # Overplot the pixel centers
 # hp.projscatter(theta, phi, marker='o', color='red', s=20)
 
-plt.savefig('healpix_sky_map.png', dpi=300)
+plt.savefig('figures/healpix_sky_map.png', dpi=300)
 plt.close()
 
 # Get the area of each pixel in square degrees
@@ -111,7 +114,7 @@ hp.mollview(np.log10(bkg_array),
             title=r"Total Background at 1.46 $\mu$m", 
             cmap='viridis', coord='G', unit=r'$\log_{10}$(MJy/Sr)')
 hp.graticule()
-plt.savefig('total_bkg.png', dpi=300)
+plt.savefig('figures/total_bkg.png', dpi=300)
 plt.close()
 
 
@@ -224,32 +227,24 @@ hp.mollview(np.log10(cps_array),
             title=r"Roman F146 Total Background from Roman Background Tool", 
             cmap='viridis', coord='G', unit=r'$\log_{10}$(Counts/sec)')
 hp.graticule()
-plt.savefig('total_bkg_roman_f146.png', dpi=300)
+plt.savefig('figures/total_bkg_roman_f146.png', dpi=300)
 plt.close()
-
-
-synthetic_images = []
-for p in tqdm(input_pickles):
-    synthetic_images.append(util.unpickle(p))
-print(f'Loaded {len(synthetic_images)} synthetic image(s).')
 
 
 roman = Roman()
 engine_params = GalSimEngine.defaults(roman.name)
+kwargs_numerics = SyntheticImage.DEFAULT_KWARGS_NUMERICS
+kwargs_numerics['supersampling_factor'] = 5
+kwargs_numerics['compute_mode'] = 'adaptive'
 
-
-survey_area = 0.5
-runs = 128
-total_area = survey_area * runs
-
-min_zodi_det_per_sq_deg = len(synthetic_images) / total_area
-print(f'Detectable strong lenses per sq. deg.: {min_zodi_det_per_sq_deg:.2f}')
+min_zodi_det_per_sq_deg = len(input_pickles) / total_area
+print(f'Expected detectable strong lenses per sq. deg. at minimum zodiacal light: {min_zodi_det_per_sq_deg:.2f}')
 
 expected_num_per_pixel = min_zodi_det_per_sq_deg * pixel_area
 if dev:
     expected_num_per_pixel /= 100
 rv = poisson(expected_num_per_pixel)
-print(f'Expected number of detectable lenses per healpix pixel: {expected_num_per_pixel:.4f}')
+print(f'Expected number per healpix pixel: {expected_num_per_pixel:.4f}')
 
 def process_cps(cps):
     """Process one cps value - this runs in parallel"""
@@ -259,12 +254,27 @@ def process_cps(cps):
         
         # randomly draw the appropriate number of strong lenses for this healpix pixel
         num_lenses = rv.rvs()
-        synth_images_for_pixel = np.random.choice(synthetic_images, size=num_lenses, replace=True)
+        pkls_for_pixel = np.random.choice(input_pickles, size=num_lenses, replace=True)
         
-        for img in synth_images_for_pixel:
+        for pkl in pkls_for_pixel:
             # Make a local copy to avoid any potential issues with shared state
             engine_params_local = engine_params.copy()
             engine_params_local['background_cps'] = cps
+            kwargs_numerics_local = kwargs_numerics.copy()
+
+            # unpickle the lens
+            lens = util.unpickle(pkl)
+
+            # create synthetic image
+            img = SyntheticImage(lens,
+                                 instrument=roman,
+                                 band='F146',
+                                 fov_arcsec=np.max([lens.get_einstein_radius() * 4, 1]),
+                                #  instrument_params=instrument_params,
+                                 kwargs_numerics=kwargs_numerics_local,
+                                #  kwargs_psf=kwargs_psf,
+                                 pieces=True,
+                                 verbose=False)
             
             exposure = Exposure(img,
                         exposure_time=30,
@@ -297,5 +307,10 @@ hp.mollview(np.array(detectable_counts),
             title=f"Detectable Strong Lenses per sq. deg. (SNR $\geq$ {snr_threshold})", 
             cmap='viridis', coord='G', unit=r'Detectable Lenses per deg$^2$')
 hp.graticule()
-plt.savefig('nancy_detectable_sky_map.png', dpi=300)
+plt.savefig('figures/nancy_detectable_sky_map.png', dpi=300)
 plt.close()
+
+if dev:
+    np.save('nancy_detectable_counts_dev.npy', np.array(detectable_counts))
+else:
+    np.save('nancy_detectable_counts.npy', np.array(detectable_counts))
