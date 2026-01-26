@@ -4,7 +4,7 @@ import os
 
 detectable_counts = np.load('nancy_detectable_counts.npy')
 
-nside = 5
+nside = 25
 npix = hp.nside2npix(nside)
 pixel_area = hp.nside2pixarea(nside, degrees=True)
 print(f"Area per pixel: {pixel_area:.2f} sq deg")

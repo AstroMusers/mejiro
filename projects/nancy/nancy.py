@@ -4,6 +4,8 @@ os.environ['MKL_NUM_THREADS'] = '1'
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 os.environ['NUMEXPR_NUM_THREADS'] = '1'
 
+from sys import exit
+import time
 import yaml
 from argparse import Namespace
 from pprint import pprint
@@ -13,6 +15,7 @@ import warnings
 from tqdm.auto import tqdm as tqdm_auto
 
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 import numpy as np
 import healpy as hp
 from corner import corner
@@ -38,27 +41,21 @@ config_file = 'nancy.yaml'
 with open(config_file, 'r') as f:
     config = yaml.load(f, Loader=yaml.SafeLoader)
 
-config['dev'] = True
 if config['dev']:
     config['pipeline_label'] += '_dev'
 
-
 args = Namespace(config='nancy.yaml')
 pipeline = PipelineHelper(args, '04', 'nancy', ['roman'])
-
-if config['dev']:
-    pipeline.input_dir = '/nfsdata1/bwedig/mejiro/nancy_dev/02'
+pipeline.input_dir = '/nfsdata1/bwedig/mejiro/nancy/02'
 input_pickles = pipeline.retrieve_roman_pickles(prefix='lens', suffix='', extension='.pkl')
-print(f'Found {len(input_pickles)} input pickle(s).')
-
+print(f'Found {len(input_pickles)} input pickle(s) in {pipeline.input_dir}.')
 
 dev = False
-runs = 1
+runs = 5
 snr_threshold = 20
 num_cores = 32
 survey_area = 0.5
-runs = 128
-total_area = survey_area * runs
+total_area = survey_area * pipeline.runs
 
 # HEALPix uses nside parameter where npix = 12 * nside^2
 if dev:
@@ -223,9 +220,9 @@ else:
     np.save(bkg_file, np.array(cps_array))
 
 
-hp.mollview(np.log10(cps_array), 
+hp.mollview(cps_array, 
             title=r"Roman F146 Total Background from Roman Background Tool", 
-            cmap='viridis', coord='G', unit=r'$\log_{10}$(Counts/sec)')
+            cmap='viridis', coord='G', unit=r'Counts/sec')
 hp.graticule()
 plt.savefig('figures/total_bkg_roman_f146.png', dpi=300)
 plt.close()
@@ -234,29 +231,40 @@ plt.close()
 roman = Roman()
 engine_params = GalSimEngine.defaults(roman.name)
 kwargs_numerics = SyntheticImage.DEFAULT_KWARGS_NUMERICS
-kwargs_numerics['supersampling_factor'] = 5
+if dev:
+    kwargs_numerics['supersampling_factor'] = 1
+else:
+    kwargs_numerics['supersampling_factor'] = 5
 kwargs_numerics['compute_mode'] = 'adaptive'
 
 min_zodi_det_per_sq_deg = len(input_pickles) / total_area
 print(f'Expected detectable strong lenses per sq. deg. at minimum zodiacal light: {min_zodi_det_per_sq_deg:.2f}')
 
 expected_num_per_pixel = min_zodi_det_per_sq_deg * pixel_area
-if dev:
-    expected_num_per_pixel /= 100
+# if dev:
+#     expected_num_per_pixel /= 100
 rv = poisson(expected_num_per_pixel)
 print(f'Expected number per healpix pixel: {expected_num_per_pixel:.4f}')
 
-def process_cps(cps):
+def process_cps(args):
     """Process one cps value - this runs in parallel"""
+    idx, cps = args
+
+    # Determine if this is a spot-check iteration (10 evenly spaced)
+    spot_check = idx % 750 == 0  # 7500/10 = 750
+
     detectable_trials = []
     for run in range(runs):
         num_detectable = 0
-        
+
         # randomly draw the appropriate number of strong lenses for this healpix pixel
+        np.random.seed()  # ensure different seed for each iteration of runs
         num_lenses = rv.rvs()
         pkls_for_pixel = np.random.choice(input_pickles, size=num_lenses, replace=True)
-        
-        for pkl in pkls_for_pixel:
+
+        exposures_and_snrs = []
+
+        for pkl in pkls_for_pixel:  # , disable=not dev
             # Make a local copy to avoid any potential issues with shared state
             engine_params_local = engine_params.copy()
             engine_params_local['background_cps'] = cps
@@ -269,36 +277,60 @@ def process_cps(cps):
             img = SyntheticImage(lens,
                                  instrument=roman,
                                  band='F146',
-                                 fov_arcsec=np.max([lens.get_einstein_radius() * 4, 1]),
+                                 fov_arcsec=np.max([lens.get_einstein_radius() * 4, 5]),
                                 #  instrument_params=instrument_params,
                                  kwargs_numerics=kwargs_numerics_local,
                                 #  kwargs_psf=kwargs_psf,
                                  pieces=True,
                                  verbose=False)
-            
+
             exposure = Exposure(img,
                         exposure_time=30,
                         engine='galsim',
                         engine_params=engine_params_local,
                         verbose=False)
-            
+
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore')
                 snr = exposure.get_snr()
+
             if snr >= snr_threshold:
                 num_detectable += 1
+
+            exposures_and_snrs.append((exposure, snr))
         
+        # Save figure for spot-checking
+        if spot_check and run == 0:  # Only first run to avoid too many figures
+            fig, axes = plt.subplots(7, 7, figsize=(20, 20))
+            for ax, (exposure, snr) in zip(axes.flatten(), exposures_and_snrs):
+                ax.imshow(exposure.exposure, norm=LogNorm(), cmap='cubehelix')
+                ax.set_title(f'SNR: {snr:.2f}')
+                ax.axis('off')
+            plt.suptitle(f'healpix pixel {idx}, background level {cps:.2f} counts/sec/pixel, detectable lenses: {num_detectable} of {num_lenses} ({(num_detectable/num_lenses*100) if num_lenses > 0 else 0:.2f}%)', fontsize=16)
+            plt.savefig(f'figures/spot_check_{idx:04d}.png', dpi=300)
+            plt.close()
+            spot_check = False  # Only one figure per pixel
+
         # calculate detectable fraction
         detectable_per_sq_deg = num_detectable / pixel_area
         detectable_trials.append(detectable_per_sq_deg)
-    
+
     mean_detectable = np.mean(detectable_trials)
     return mean_detectable
 
+def init_worker():
+    """
+    Initialize each worker with a unique random seed based on process ID and time.
+
+    When using multiprocessing.Pool with the default fork start method (on Linux/Mac), each worker process inherits a copy of the parent process's memory state, including NumPy's random number generator state.
+    """
+    seed = int(time.time() * 1000) + os.getpid()
+    np.random.seed(seed % (2**32))  # NumPy seed must be < 2^32
+
 # Parallelize the outer loop with order preservation
-with Pool(num_cores) as pool:
+with Pool(num_cores, initializer=init_worker) as pool:
     detectable_counts = list(tqdm_auto(
-        pool.imap(process_cps, cps_array),
+        pool.imap(process_cps, enumerate(cps_array)),
         total=len(cps_array),
         desc='Background levels'
     ))
