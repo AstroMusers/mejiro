@@ -30,8 +30,8 @@ dependencies = [
     "mcfit",  # required for pyhalo
     "slsim",
     "sncosmo",  # required for slsim
-    "git+https://github.com/bryce-wedig/speclite.git@mejiro-v2.0.0",  # required for slsim
-    "git+https://github.com/bryce-wedig/skypy.git@mejiro-v2.0.0",  # required for slsim
+    "speclite @ git+https://github.com/bryce-wedig/speclite.git@mejiro-v2.0.0",  # required for slsim
+    "skypy @ git+https://github.com/bryce-wedig/skypy.git@mejiro-v2.0.0",  # required for slsim
     "colossus",  # required for slsim
     "corner",
 ]
