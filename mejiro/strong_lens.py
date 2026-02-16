@@ -383,6 +383,32 @@ class StrongLens(ABC):
             raise ValueError(f"{kind} magnitudes for band {band} are not provided in the `physical_params` dictionary.")
         return self.physical_params['magnitudes'][kind][band]
 
+    def get_maggies(self, kind, band):
+        """
+        Retrieve the maggies value for a specified kind and photometric band from the physical parameters dictionary.
+
+        Parameters
+        ----------
+        kind : str
+            Options are 'lens', 'source', 'lensed_source'.
+        band : str
+            e.g., 'F129' (Roman), 'J' (HWO), etc.
+
+        Returns
+        -------
+        float
+            Maggies
+
+        Raises
+        ------
+        ValueError
+            If magnitudes are not provided in the `physical_params` dictionary.
+            If the specified kind is not present in the magnitudes.
+            If the specified band is not present for the given kind.
+        """
+        magnitude = self.get_magnitude(kind, band)
+        return 10 ** (-0.4 * magnitude)
+
     def get_einstein_radius(self):
         """
         Returns the Einstein radius.
