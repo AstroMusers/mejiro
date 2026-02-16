@@ -50,7 +50,7 @@ pipeline.input_dir = '/nfsdata1/bwedig/mejiro/nancy/02'
 input_pickles = pipeline.retrieve_roman_pickles(prefix='lens', suffix='', extension='.pkl')
 print(f'Found {len(input_pickles)} input pickle(s) in {pipeline.input_dir}.')
 
-dev = False
+dev = True
 runs = 5
 snr_threshold = 20
 num_cores = 32
@@ -75,6 +75,11 @@ b = 90 - np.rad2deg(theta)    # Galactic latitude [-90, 90]
 
 # Create SkyCoord in Galactic frame
 coords_gal = SkyCoord(l=l*u.deg, b=b*u.deg, frame='galactic')
+
+# Mask pixels within 10 degrees of the galactic plane
+galactic_plane_mask = np.abs(b) < 10
+num_masked = np.sum(galactic_plane_mask)
+print(f"Masking {num_masked} pixels within 10 deg of galactic plane ({num_masked/npix*100:.1f}%)")
 
 # Create a map (e.g., with pixel indices as values)
 sky_map = np.arange(npix)
@@ -248,7 +253,11 @@ print(f'Expected number per healpix pixel: {expected_num_per_pixel:.4f}')
 
 def process_cps(args):
     """Process one cps value - this runs in parallel"""
-    idx, cps = args
+    idx, cps, masked = args
+
+    # Skip pixels within 10 degrees of the galactic plane
+    if masked:
+        return np.nan
 
     # Determine if this is a spot-check iteration (10 evenly spaced)
     spot_check = idx % 750 == 0  # 7500/10 = 750
@@ -328,10 +337,11 @@ def init_worker():
     np.random.seed(seed % (2**32))  # NumPy seed must be < 2^32
 
 # Parallelize the outer loop with order preservation
+process_args = [(i, cps, galactic_plane_mask[i]) for i, cps in enumerate(cps_array)]
 with Pool(num_cores, initializer=init_worker) as pool:
     detectable_counts = list(tqdm_auto(
-        pool.imap(process_cps, enumerate(cps_array)),
-        total=len(cps_array),
+        pool.imap(process_cps, process_args),
+        total=len(process_args),
         desc='Background levels'
     ))
 
