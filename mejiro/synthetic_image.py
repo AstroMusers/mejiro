@@ -126,14 +126,14 @@ class SyntheticImage:
         if not amps_provided:
             # retrieve zero-point magnitude
             if instrument.name == 'Roman':
-                magnitude_zero_point = instrument.get_zeropoint_magnitude(self.band,
+                self.magnitude_zeropoint = instrument.get_zeropoint_magnitude(self.band,
                                                                                     self.instrument_params['detector'])
             else:
-                magnitude_zero_point = instrument.get_zeropoint_magnitude(self.band)
+                self.magnitude_zeropoint = instrument.get_zeropoint_magnitude(self.band)
 
             # retrieve lens and source magnitudes
-            lens_magnitude = self.strong_lens.get_lens_magnitude(band)
-            source_magnitude = self.strong_lens.get_source_magnitude(band)
+            lens_magnitude = self.strong_lens.get_lens_magnitude(self.band)
+            source_magnitude = self.strong_lens.get_source_magnitude(self.band)
 
             # overwrite the magnitudes in kwargs_lens_light and kwargs_source
             self.strong_lens.kwargs_lens_light[0]['magnitude'] = lens_magnitude
@@ -142,10 +142,12 @@ class SyntheticImage:
             # convert magnitudes to lenstronomy amplitudes
             self.strong_lens.kwargs_lens_light = data_util.magnitude2amplitude(light_model_class=self.strong_lens.lens_light_model,
                                                                   kwargs_light_mag=self.strong_lens.kwargs_lens_light,
-                                                                  magnitude_zero_point=magnitude_zero_point)
+                                                                  magnitude_zero_point=self.magnitude_zeropoint)
             self.strong_lens.kwargs_source = data_util.magnitude2amplitude(light_model_class=self.strong_lens.source_light_model,
                                                                   kwargs_light_mag=self.strong_lens.kwargs_source,
-                                                                  magnitude_zero_point=magnitude_zero_point)
+                                                                  magnitude_zero_point=self.magnitude_zeropoint)
+        else:
+            self.magnitude_zeropoint = None
             
         # set kwargs_numerics
         if not kwargs_numerics:
@@ -193,6 +195,32 @@ class SyntheticImage:
         self.calc_time = end - start
         if self.verbose:
             print(f'Synthetic image calculation time: {util.calculate_execution_time(start, end, unit="s")}')
+
+    def get_flux(self):
+        """
+        Calculate the total flux in counts/sec of the synthetic image by summing over all pixel values.
+
+        Returns
+        -------
+        float
+            The total flux of the synthetic image in counts/sec.
+        """
+        return np.sum(self.image)
+
+    def get_maggies(self):
+        """
+        Calculate the total flux of the synthetic image in maggies. This is done by summing over all pixel values to get the total flux in counts, and then converting that flux to maggies using the instrument's zero-point magnitude for the specified band.
+
+        Returns
+        -------
+        float
+            The total flux of the synthetic image in maggies.
+        """
+        total_flux_counts = self.get_flux()
+        magnitude = data_util.cps2magnitude(total_flux_counts, self.magnitude_zeropoint)
+
+        # using `item()` below because it gives me numpy.ndarray with one element and I want a float
+        return (10 ** (-0.4 * magnitude.value)).item()  
 
     def build_adaptive_grid(self, pad):
         """
