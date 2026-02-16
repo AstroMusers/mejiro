@@ -1,5 +1,7 @@
 /archive
 .nfs*
+/dev/**/*.fits
+/dev/**/*.asdf
 
 # build
 dist/
