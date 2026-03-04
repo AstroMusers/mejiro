@@ -234,7 +234,7 @@ class Sample1(GalaxyGalaxy):
                          kwargs_model=kwargs_model, 
                          kwargs_params=kwargs_params,
                          physical_params=physical_params,
-                         use_jax=[True, True, True, True])
+                         use_jax=[False, False, False, False])
         
 
 class Sample2(GalaxyGalaxy):
@@ -328,7 +328,7 @@ class Sample2(GalaxyGalaxy):
                          kwargs_model=kwargs_model, 
                          kwargs_params=kwargs_params,
                          physical_params=physical_params,
-                         use_jax=[True, True, True, True])
+                         use_jax=[False, False, False, False])
 
 
 class SampleGG(GalaxyGalaxy):
@@ -456,7 +456,7 @@ class SampleGG(GalaxyGalaxy):
                          kwargs_model=kwargs_model, 
                          kwargs_params=kwargs_params,
                          physical_params=physical_params,
-                         use_jax=[True, True, True])
+                         use_jax=[False, False, False])
 
 
 class SampleBELLS(GalaxyGalaxy):
@@ -548,7 +548,7 @@ class SampleBELLS(GalaxyGalaxy):
                          kwargs_model=kwargs_model, 
                          kwargs_params=kwargs_params,
                          physical_params=physical_params,
-                         use_jax=[True, False])
+                         use_jax=[False, False])
 
 
 class SampleSL2S(GalaxyGalaxy):
@@ -699,5 +699,5 @@ class SampleSL2S(GalaxyGalaxy):
                          kwargs_model=kwargs_model, 
                          kwargs_params=kwargs_params,
                          physical_params=physical_params,
-                         use_jax=[True, False])
+                         use_jax=[False, False])
         
