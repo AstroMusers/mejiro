@@ -19,21 +19,19 @@ classifiers = [
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
 dependencies = [
-    "astropy",
-    "galsim",
-    "pandas",
-    "tqdm",
-    "lenstronomy",
-    "jax[cuda12]",
-    "jaxtronomy",
-    "pyhalo",
-    "mcfit",  # required for pyhalo
-    "slsim",
-    "sncosmo",  # required for slsim
+    "astropy==7.2.0",
+    "galsim==2.7.2",
+    "pandas==2.3.3",
+    "tqdm==4.67.1",
+    "lenstronomy==1.13.3",
+    "pyhalo==1.4.3",
+    "mcfit==0.0.22",  # required for pyhalo
+    "slsim==0.1.1",
+    "sncosmo==2.12.1",  # required for slsim
     "speclite @ git+https://github.com/bryce-wedig/speclite.git@mejiro-v2.0.0",  # required for slsim
     "skypy @ git+https://github.com/bryce-wedig/skypy.git@mejiro-v2.0.0",  # required for slsim
-    "colossus",  # required for slsim
-    "corner",
+    "colossus==1.3.10",  # required for slsim
+    "corner==2.2.3",
 ]
 
 [project.optional-dependencies]
@@ -44,15 +42,19 @@ dev = [
     "sphinx",
     "sphinx-rtd-theme",
 ]
+jax = [
+    "jax[cuda12]",
+    "jaxtronomy",
+]
 roman = [
-    "stpsf",
-    "romanisim"
+    "stpsf==2.1.0",
+    "romanisim==0.11.2"
 ]
 hwo = [
-    "syotools"
+    "syotools==1.3.0"
 ]
 all = [
-    "mejiro[dev,roman,hwo]"
+    "mejiro[dev,jax,roman,hwo]"
 ]
 
 [tool.setuptools.packages.find]
