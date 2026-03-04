@@ -32,12 +32,12 @@ class StrongLens(ABC):
             - 'magnification': the magnification of the source galaxy.
             - 'magnitudes': a dictionary of magnitudes for the lens and source galaxies, with keys 'lens' and 'source', respectively. Each value should be a dictionary with keys corresponding to the filter names (e.g., 'F062', 'F087', etc.) and values as the magnitudes in those filters.
     use_jax : bool, or list of bool
-        Whether to use JAXtronomy for calculations. Default is None, then set to True in the constructor for all lens model element(s). See the `lenstronomy documentation <https://lenstronomy.readthedocs.io/en/latest/lenstronomy.LensModel.html#module-lenstronomy.LensModel.lens_model>`__ for details.
+        Whether to use JAXtronomy for calculations. Default is None, then set to False in the constructor for all lens model element(s). See the `lenstronomy documentation <https://lenstronomy.readthedocs.io/en/latest/lenstronomy.LensModel.html#module-lenstronomy.LensModel.lens_model>`__ for details.
 
     Notes
     -----
 
-    - Note that JAXtronomy is utilized by default for all lens model elements. To disable this, either set `use_jax` to False (which will disable it for all lens model elements) or provide a list of booleans specifying which lens model(s) to disable JAXtronomy for.
+    - Note that JAXtronomy is disabled by default. To enable it, either set `use_jax` to True (which will enable it for all lens model elements) or provide a list of booleans specifying which lens model(s) to enable JAXtronomy for.
         
     Examples
     --------
@@ -108,7 +108,7 @@ class StrongLens(ABC):
         
         # set JAXtronomy flag
         if self.use_jax is None:
-            self.use_jax = [True] * len(self.lens_model_list)  # default to True for all lens models
+            self.use_jax = [False] * len(self.lens_model_list)  # default to False for all lens models
         elif isinstance(self.use_jax, list):
             if len(self.use_jax) != len(self.lens_model_list):
                 raise ValueError("Length of use_jax list must match the number of lens models.")
@@ -240,7 +240,7 @@ class StrongLens(ABC):
         xx, yy = np.meshgrid(_r, _r)
         return lens_model_realization.kappa(xx.ravel(), yy.ravel(), kwargs_halos).reshape(num_pix, num_pix)
 
-    def add_realization(self, realization, add_mass_sheet_correction=True, use_jax=True):
+    def add_realization(self, realization, add_mass_sheet_correction=True, use_jax=False):
         """
         Add a pyHalo dark matter subhalo realization to the mass model of the system. See the `pyHalo documentation <https://github.com/dangilman/pyHalo>`__ for details.
 
@@ -251,7 +251,7 @@ class StrongLens(ABC):
         add_mass_sheet_correction : bool, optional
             See the pyHalo documentation for details. Default is True.
         use_jax : bool, optional
-            Whether to use JAXtronomy for calculations. Default is True.
+            Whether to use JAXtronomy for calculations. Default is False.
         """
         self.realization = realization
 
@@ -288,7 +288,7 @@ class StrongLens(ABC):
         else:
             raise ValueError("use_jax must be a boolean.")
 
-    def quick_add(self, model='CDM', model_kwargs=None, add_mass_sheet_correction=True, use_jax=True):
+    def quick_add(self, model='CDM', model_kwargs=None, add_mass_sheet_correction=True, use_jax=False):
         """
         Add a pyHalo dark matter subhalo realization to the mass model of the system. See the `pyHalo documentation <https://github.com/dangilman/pyHalo>`__ for details.
 
@@ -301,7 +301,7 @@ class StrongLens(ABC):
         add_mass_sheet_correction : bool, optional
             Whether to add a mass sheet correction. Default is True.
         use_jax : bool, optional
-            Whether to use JAXtronomy for calculations. Default is True.
+            Whether to use JAXtronomy for calculations. Default is False.
         """
         from pyHalo.preset_models import preset_model_from_name
 
