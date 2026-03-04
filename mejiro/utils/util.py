@@ -1051,7 +1051,18 @@ def return_qtable(path):
         The QTable read from the specified file path.
     """
     filepath = _handle_glob(path)
-    return QTable.read(filepath)
+    try:
+        return QTable.read(filepath)
+    except Exception:
+        with open(filepath, 'r') as f:
+            content = f.read()
+        lines = content.splitlines(keepends=True)
+        fixed = []
+        for line in lines:
+            if not line.startswith('#') and line.strip():
+                line = ','.join(col.strip() for col in line.split(',')) + '\n'
+            fixed.append(line)
+        return QTable.read(''.join(fixed), format='ascii.ecsv')
 
 
 def return_table(path):
