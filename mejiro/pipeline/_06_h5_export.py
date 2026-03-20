@@ -187,6 +187,10 @@ def main(args):
                     psf_id_string = STPSFEngine.get_psf_id(band, det, det_pos, psf_oversample, psf_pixels)
                     psf = STPSFEngine.get_cached_psf(psf_id_string, pipeline.psf_cache_dir, verbose=True)
 
+                    if psf is None:
+                        print(f'Warning: Cached PSF not found for {psf_id_string}. Skipping PSF dataset creation.')
+                        continue
+
                     # create psf dataset
                     dataset_psf = group_detector.create_dataset(f'psf_{psf_id_string}', data=psf)
 
