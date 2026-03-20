@@ -1,4 +1,4 @@
-data_dir: &data_dir /data/bwedig/mejiro # where output data should be written
+data_dir: &data_dir null # where output data should be written
 pipeline_label: simple
 psf_cache_dir: /data/bwedig/mejiro/cached_psfs
 dev: True
