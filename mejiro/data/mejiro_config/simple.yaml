@@ -1,14 +1,14 @@
-data_dir: &data_dir null # where output data should be written
+data_dir: &data_dir /data/bwedig/mejiro # where output data should be written
 pipeline_label: simple
-psf_cache_dir: null
+psf_cache_dir: /data/bwedig/mejiro/cached_psfs
 dev: True
-nice: 0
+nice: 19
 verbose: True
 suppress_warnings: False
 limit: null
 seed: &seed 42
 cores:
-  script_00: 1
+  script_00: 36
   script_01: 1
   script_03: 1
   script_04: 1
@@ -36,7 +36,7 @@ survey:
     slhammocks_config: null
     loghm_min: 11
     loghm_max: 15
-  detectors: &detectors [1]  # 
+  detectors: &detectors [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]  # 
   bands: [F062, F087, F106, F129, F158, F184, F213, F146]  # SkyPy will calculate magnitudes for each of these bands; they'll be stored in the physical_params attribute of the strong_lens
   deflector_cut_band: F106
   deflector_cut_band_max: 24
@@ -90,11 +90,11 @@ snr:
   snr_threshold: 5
   snr_per_pixel_threshold: 1
 psf:
-  bands: [ F106, F158 ]
-  oversamples: [*snr_supersampling_factor, *supersampling_factor]
-  num_pixes: [41]  # the first element of this list is used for the pipeline
+  bands: [ F106, F129, F158 ]
+  oversamples: [5]  # *snr_supersampling_factor, *supersampling_factor
+  num_pixes: [91]  # the first element of this list is used for the pipeline
   detectors: *detectors
-  divide_up_detector: 1  # this sets the detector positions, e.g., 5 means 25 positions on each detector
+  divide_up_detector: 56  # this sets the detector positions, e.g., 5 means 25 positions on each detector
 dataset:
   version: 0.1  # used in the filename of the .h5 file
   include_psfs: True

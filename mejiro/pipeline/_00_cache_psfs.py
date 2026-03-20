@@ -13,9 +13,15 @@ Arguments:
     --config: Path to the YAML configuration file.
     --data_dir: Optional override for the data directory specified in the config file.
 """
+import os
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
 import argparse
 import multiprocessing
-import os
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import numpy as np
