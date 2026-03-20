@@ -9,24 +9,31 @@ def divide_up_sca(sides):
 
     Returns
     -------
-    np.ndarray
-        An array of shape (sides * sides, 2) containing the (x, y) coordinates of the centers of the sub-arrays.
+    list
+        A list of tuples containing the (x, y) coordinates of the centers of the sub-arrays.
 
     Raises
     ------
     AssertionError
-        If `sides` is not a positive integer.
+        If `sides` is not a positive integer or if the SCA size (4088) cannot be evenly divided by `sides`.
     """
     sides = int(sides)
     assert sides > 0, "Input sides must be a positive integer."
 
     sub_array_size = 4088 / sides
-    centers = []
+    assert sub_array_size.is_integer(), (
+        f"Sub-array size must be a whole number, got {sub_array_size:.6f} for sides={sides}"
+    )
+    sub_array_size = int(sub_array_size)
+    print(f"Sub-array size: {sub_array_size} pixels")
 
+    half = (sub_array_size - 1) / 2
+
+    centers = []
     for i in range(sides):
         for j in range(sides):
-            center_x = int(round((i + 0.5) * sub_array_size))
-            center_y = int(round((j + 0.5) * sub_array_size))
+            center_x = int((i * sub_array_size) + half)
+            center_y = int((j * sub_array_size) + half)
             centers.append((center_x, center_y))
 
     return centers
