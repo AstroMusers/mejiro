@@ -8,11 +8,11 @@ suppress_warnings: True
 limit: null
 seed: &seed 42
 cores:
-  script_00: 32
-  script_01: 32
-  script_03: 32
-  script_04: 32
-  script_05: 32
+  script_00: 60
+  script_01: 60
+  script_03: 60
+  script_04: 60
+  script_05: 60
   script_snr: 1
 jaxtronomy: 
   use_jax: False
@@ -68,7 +68,7 @@ subhalos:
     sigma_sub: 0.055  # see Section 6.3 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract
 synthetic_image:
   bands: [ F106, F129, F158 ]
-  fov_arcsec: 10
+  fov_arcsec: 8.03
   supersampling_compute_mode: adaptive
   supersampling_factor: &supersampling_factor 5
   pieces: True
@@ -77,7 +77,7 @@ imaging:
   engine: galsim
   engine_params:
     rng_seed: *seed
-    min_zodi_factor: 1.5
+    min_zodi_factor: 1.4
     sky_background: True
     detector_effects: True
     poisson_noise: True
@@ -89,7 +89,7 @@ imaging:
 snr:
   snr_band: F129
   snr_exposure_time: *exposure_time
-  snr_fov_arcsec: 10
+  snr_fov_arcsec: 8.03
   snr_supersampling_compute_mode: adaptive
   snr_supersampling_factor: &snr_supersampling_factor 1
   snr_threshold: 20
