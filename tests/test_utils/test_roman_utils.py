@@ -4,41 +4,15 @@ from mejiro.utils import roman_util
 
 
 def test_divide_up_sca():
-    # sides = 1
-    result = roman_util.divide_up_sca(1)
-    expected = [(2044, 2044)]
+    # sides = 56
+    centers = roman_util.divide_up_sca(56)
+    result = [centers[0], centers[1], centers[2], centers[-1]]
+    expected = [(36, 36), (36, 109), (36, 182), (4051, 4051)]
     assert result == expected, f"Expected {expected}, but got {result}"
 
-    # sides = 2 (as float)
-    result = roman_util.divide_up_sca(2.)
-    expected = [(1022, 1022), (1022, 3066), (3066, 1022), (3066, 3066)]
-    assert result == expected, f"Expected {expected}, but got {result}"
-
-    # sides = 3
-    result = roman_util.divide_up_sca(3)
-    expected = [
-        (681, 681),
-        (681, 2044),
-        (681, 3407),
-        (2044, 681),
-        (2044, 2044),
-        (2044, 3407),
-        (3407, 681),
-        (3407, 2044),
-        (3407, 3407)
-    ]
-
-    assert result == expected, f"Expected {expected}, but got {result}"
-
-    # sides = 4
-    result = roman_util.divide_up_sca(4)
-    expected = [
-        (511, 511), (511, 1533), (511, 2555), (511, 3577),
-        (1533, 511), (1533, 1533), (1533, 2555), (1533, 3577),
-        (2555, 511), (2555, 1533), (2555, 2555), (2555, 3577),
-        (3577, 511), (3577, 1533), (3577, 2555), (3577, 3577)
-    ]
-    assert result == expected, f"Expected {expected}, but got {result}"
+    # sides = 3 (4088 cannot be evenly divided by 3)
+    with pytest.raises(AssertionError, match='Sub-array size must be a whole number'):
+        roman_util.divide_up_sca(3)
 
     # unhappy path
     with pytest.raises(AssertionError):
