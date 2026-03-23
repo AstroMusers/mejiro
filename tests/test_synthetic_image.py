@@ -170,6 +170,24 @@ def test_get_image_positions():
     np.testing.assert_allclose(pixel_positions[1], expected_pixel_result[1], rtol=1e-5)
 
 
+def test_fov_flux():
+    common_kwargs = dict(
+        strong_lens=SampleGG(),
+        instrument=Roman(),
+        band='F129',
+        instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+        kwargs_numerics={},
+        kwargs_psf={},
+        pieces=False,
+        verbose=False,
+    )
+    small_fov = SyntheticImage(fov_arcsec=3, **common_kwargs)
+    large_fov = SyntheticImage(fov_arcsec=7, **common_kwargs)
+
+    assert large_fov.get_flux() > small_fov.get_flux()
+    assert large_fov.get_maggies() > small_fov.get_maggies()
+
+
 def test_plot():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=Roman(),
