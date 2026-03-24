@@ -9,7 +9,7 @@ from mejiro.utils import util
 
 
 class PipelineHelper:
-    def __init__(self, args, prev_script_name, script_name, supported_instruments):
+    def __init__(self, args, prev_script_name, script_name, supported_instruments, delete_existing_output=True):
         self.prev_script_name = prev_script_name
         self.script_name = script_name
         self.supported_instruments = supported_instruments
@@ -81,7 +81,8 @@ class PipelineHelper:
             raise ValueError("script_name must be specified.")
         self.output_dir = os.path.join(self.pipeline_dir, self.script_name)
         util.create_directory_if_not_exists(self.output_dir)
-        util.clear_directory(self.output_dir)
+        if delete_existing_output:
+            util.clear_directory(self.output_dir)
 
     def calculate_process_count(self, count):
         import multiprocessing
