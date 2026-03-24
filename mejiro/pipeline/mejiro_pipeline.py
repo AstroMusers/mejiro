@@ -6,6 +6,8 @@ import mejiro
 from mejiro.pipeline import (
     _00_cache_psfs as script_00_cache_psfs,
     _01_run_survey_simulation as script_01_run_survey_simulation,
+    _01a_generate_galaxy_tables as script_01a_generate_galaxy_tables,
+    _01b_run_survey_simulation as script_01b_run_survey_simulation,
     _02_build_lens_list as script_02_build_lens_list,
     _03_generate_subhalos as script_03_generate_subhalos,
     _04_create_synthetic_images as script_04_create_synthetic_images,
@@ -65,7 +67,8 @@ class Pipeline:
         """
         if not self._test_mode:
             script_00_cache_psfs.main(self.args)
-        script_01_run_survey_simulation.main(self.args)
+        script_01a_generate_galaxy_tables.main(self.args)
+        script_01b_run_survey_simulation.main(self.args)
         script_02_build_lens_list.main(self.args)
         script_03_generate_subhalos.main(self.args)
         script_04_create_synthetic_images.main(self.args)
@@ -84,7 +87,9 @@ class Pipeline:
         Script numbers and their corresponding scripts
         ---------------------------------------------
         0 : Cache psfs
-        1 : Run survey simulation
+        1 : Run survey simulation (original, single step)
+        '1a' : Generate galaxy tables
+        '1b' : Run survey simulation (using pre-computed tables)
         2 : Build lens list
         3 : Generate subhalos
         4 : Create synthetic images
@@ -94,12 +99,16 @@ class Pipeline:
         Raises
         ------
         ValueError
-            If the script_number is not between 0 and 6.
+            If the script_number is not valid.
         """
         if script_number == 0:
             script_00_cache_psfs.main(self.args)
         elif script_number == 1:
             script_01_run_survey_simulation.main(self.args)
+        elif script_number == '1a':
+            script_01a_generate_galaxy_tables.main(self.args)
+        elif script_number == '1b':
+            script_01b_run_survey_simulation.main(self.args)
         elif script_number == 2:
             script_02_build_lens_list.main(self.args)
         elif script_number == 3:

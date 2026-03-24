@@ -10,6 +10,8 @@ seed: &seed 42
 cores:
   script_00: 1
   script_01: 16
+  script_01a: 16
+  script_01b: 16
   script_03: 1
   script_04: 1
   script_05: 1
@@ -20,6 +22,8 @@ jaxtronomy:
 instrument: hwo
 survey:
   runs: 1
+  num_galaxy_tables: 1  # number of independent galaxy tables for _01a; higher = more intrinsic diversity
+  speed_factor: 1  # set >1 for faster but less complete population draws in _01b
   area: 0.5
   skypy_config: hwo
   write_to_csv: False

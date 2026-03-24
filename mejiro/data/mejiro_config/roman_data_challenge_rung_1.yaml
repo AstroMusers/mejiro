@@ -10,6 +10,8 @@ seed: &seed 42
 cores:
   script_00: 60
   script_01: 60
+  script_01a: 60
+  script_01b: 32
   script_03: 60
   script_04: 60
   script_05: 60
@@ -19,7 +21,9 @@ jaxtronomy:
   jax_platform: cpu  # cpu or gpu
 instrument: roman
 survey:
-  runs: 7042 # 90
+  runs: 7042
+  num_galaxy_tables: 100  # number of independent galaxy tables for _01a; higher = more intrinsic diversity
+  speed_factor: 1  # set >1 for faster but less complete population draws in _01b
   area: 0.5
   skypy_config: lsst-like_triple_SF
   write_to_csv: False
@@ -97,9 +101,9 @@ snr:
 psf:
   bands: [ F106, F129, F158 ]
   oversamples: [*snr_supersampling_factor, *supersampling_factor]
-  num_pixes: [101]  # the first element of this list is used for the pipeline
+  num_pixes: [73]  # the first element of this list is used for the pipeline
   detectors: *detectors
-  divide_up_detector: 5  # this sets the detector positions, e.g., 5 means 25 positions on each detector
+  divide_up_detector: 4  # this sets the detector positions, e.g., 5 means 25 positions on each detector
 dataset:
   version: 0.1  # used in the filename of the .h5 file
   include_psfs: False
