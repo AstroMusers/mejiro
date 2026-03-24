@@ -8,18 +8,31 @@ def test_pipeline_run(tmp_path):
     pipeline = Pipeline(data_dir=str(temp_dir), _test_mode=True)
     pipeline.run()
 
-    # check script 01 output
-    script_01_dir = temp_dir / "simple_dev" / "01"
-    assert script_01_dir.exists() and script_01_dir.is_dir(), "Script 01 directory does not exist"
+    # check script 01a output
+    script_01a_dir = temp_dir / "simple_dev" / "01a"
+    assert script_01a_dir.exists() and script_01a_dir.is_dir(), "Script 01a directory does not exist"
 
-    detectable_lenses_pickle = list(script_01_dir.glob("detectable_gglenses_*.pkl"))
-    assert len(detectable_lenses_pickle) == 1, f"Expected 1 .pkl file in {script_01_dir}, found {len(detectable_lenses_pickle)}"
+    galaxy_table_pickle = list(script_01a_dir.glob("galaxy_table_*.pkl"))
+    assert len(galaxy_table_pickle) == 1, f"Expected 1 .pkl file in {script_01a_dir}, found {len(galaxy_table_pickle)}"
 
-    detectable_pop_csv = list(script_01_dir.glob("detectable_pop_*.csv"))
-    assert len(detectable_pop_csv) == 1, f"Expected 1 .csv file in {script_01_dir}, found {len(detectable_pop_csv)}"
+    # check script 01b output
+    script_01b_dir = temp_dir / "simple_dev" / "01b"
+    assert script_01b_dir.exists() and script_01b_dir.is_dir(), "Script 01b directory does not exist"
 
-    total_pop_csv = list(script_01_dir.glob("total_pop_*.csv"))
-    assert len(total_pop_csv) == 1, f"Expected 1 .csv file in {script_01_dir}, found {len(total_pop_csv)}"
+    detectable_lenses_pickle = list(script_01b_dir.glob("detectable_gglenses_*.pkl"))
+    assert len(detectable_lenses_pickle) == 1, f"Expected 1 .pkl file in {script_01b_dir}, found {len(detectable_lenses_pickle)}"
+
+    sentinel_file = script_01b_dir / "run_complete_0000_sca01.txt"
+    assert sentinel_file.exists(), f"Sentinel file {sentinel_file} does not exist, indicating script 01b did not complete successfully"
+    with open(sentinel_file, 'r') as f:
+        content = f.read()
+        assert any(char.isdigit() for char in content), f"No digit found in sentinel file {sentinel_file}"
+
+    detectable_pop_csv = list(script_01b_dir.glob("detectable_pop_*.csv"))
+    assert len(detectable_pop_csv) == 1, f"Expected 1 .csv file in {script_01b_dir}, found {len(detectable_pop_csv)}"
+
+    total_pop_csv = list(script_01b_dir.glob("total_pop_*.csv"))
+    assert len(total_pop_csv) == 1, f"Expected 1 .csv file in {script_01b_dir}, found {len(total_pop_csv)}"
 
     # check script 02 output
     script02_dir = temp_dir / "simple_dev" / "02"

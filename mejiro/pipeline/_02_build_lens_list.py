@@ -21,7 +21,7 @@ from mejiro.utils import util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
 
-PREV_SCRIPT_NAME = '01'
+PREV_SCRIPT_NAME = '01b'
 SCRIPT_NAME = '02'
 SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
 
