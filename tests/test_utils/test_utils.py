@@ -84,6 +84,47 @@ def test_replace_negatives():
     assert np.array_equal(result, expected), f"Expected {expected}, but got {result}"
 
 
+def test_smooth_negative_pixels():
+    # no negative pixels: image is unchanged
+    image = np.array([[1., 2., 3.],
+                      [4., 5., 6.],
+                      [7., 8., 9.]])
+    original = image.copy()
+    util.smooth_negative_pixels(image, verbose=False)
+    np.testing.assert_array_equal(image, original)
+
+    # negative pixel is replaced with a non-negative value
+    image = np.array([[1., 2., 3.],
+                      [4., -5., 6.],
+                      [7., 8., 9.]], dtype=float)
+    util.smooth_negative_pixels(image, verbose=False)
+    assert image[1, 1] >= 0
+
+    # all non-negative pixels are preserved
+    image = np.array([[1., 2., 3.],
+                      [4., -5., 6.],
+                      [7., 8., 9.]], dtype=float)
+    util.smooth_negative_pixels(image, verbose=False)
+    non_neg_mask = np.array([[True, True, True],
+                             [True, False, True],
+                             [True, True, True]])
+    np.testing.assert_array_equal(image[non_neg_mask],
+                                  np.array([1., 2., 3., 4., 6., 7., 8., 9.]))
+
+    # verbose=True prints when negatives are present
+    image = np.array([[1., -2.], [3., 4.]], dtype=float)
+    util.smooth_negative_pixels(image, verbose=True)  # should not raise
+
+    # verbose=True prints when no negatives
+    image = np.array([[1., 2.], [3., 4.]], dtype=float)
+    util.smooth_negative_pixels(image, verbose=True)  # should not raise
+
+    # in-place: returns the same array object
+    image = np.array([[1., -2.], [3., 4.]], dtype=float)
+    result = util.smooth_negative_pixels(image, verbose=False)
+    assert result is image
+
+
 def test_create_centered_box():
     # check even N
     with pytest.raises(ValueError):

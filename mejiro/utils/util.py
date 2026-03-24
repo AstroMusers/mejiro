@@ -10,6 +10,62 @@ import warnings
 import yaml
 from collections import ChainMap
 from glob import glob
+from scipy.ndimage import generic_filter
+
+
+def smooth_negative_pixels(image, kernel_size=3, verbose=True):
+    """
+    Replace negative pixels in an image with local median values.
+
+    This function identifies negative pixels in an image and replaces them with
+    the median value computed from a local neighborhood around each negative pixel.
+    Positive pixels remain unchanged.
+
+    Parameters
+    ----------
+    image : ndarray
+        Input image array that may contain negative pixels.
+    kernel_size : int, optional
+        Size of the square kernel used to compute local median values.
+        Default is 3, meaning a 3x3 neighborhood.
+    verbose : bool, optional
+        If True, print information about the number of negative pixels replaced.
+        Default is True.
+
+    Returns
+    -------
+    ndarray
+        Image array with negative pixels replaced by local median values.
+        The original array is modified in-place.
+
+    Notes
+    -----
+    - The function uses `scipy.ndimage.generic_filter` with `np.nanmedian` to compute
+      the local median, treating NaN values as missing data.
+    - Pixels with values >= 0 are not modified.
+    - The kernel_size determines the neighborhood size for median computation.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> image = np.array([[-1, 2, 3], [4, -2, 6], [7, 8, 9]], dtype=float)
+    >>> smoothed = smooth_negative_pixels(image, kernel_size=3, verbose=False)
+    """
+    n_neg = np.sum(image < 0)
+
+    if n_neg > 0:
+        if verbose:
+            print(f"Replacing {n_neg} negative pixels in image with local {kernel_size}x{kernel_size} median")
+        neg_mask = image < 0
+        filled = generic_filter(
+            np.where(neg_mask, np.nan, image), np.nanmedian, size=kernel_size
+        )
+        image[neg_mask] = filled[neg_mask]
+    else:
+        if verbose:
+            print("No negative pixels in image")
+
+    return image
 
 
 def get_gaussian_kernel(fwhm, size):
