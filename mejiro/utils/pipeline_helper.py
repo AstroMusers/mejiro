@@ -30,6 +30,10 @@ class PipelineHelper:
             config = yaml.load(f, Loader=yaml.SafeLoader)
         self.config = config
 
+        # configure logging level
+        logging_level = config.get('logging_level', 'INFO')
+        logging.basicConfig(level=getattr(logging, logging_level.upper(), logging.INFO))
+
         # set data directory
         self.data_dir = config['data_dir']
         if hasattr(args, 'data_dir') and args.data_dir is not None:

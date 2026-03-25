@@ -5,6 +5,7 @@ dev: False
 nice: 19
 show_progress_bar: False
 suppress_warnings: False
+logging_level: INFO
 limit: null
 seed: &seed 42
 cores:
