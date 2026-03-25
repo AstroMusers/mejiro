@@ -14,7 +14,7 @@ def get_snr(exposure, snr_per_pixel_threshold=1):
 
         \\text{SNR}_\\text{region} = \\frac{\\sum\\limits_i N_{i,\\,S}}{\\sqrt{\\sum\\limits_i \\left(N_{i,\\,S} + N_{i,\\,L} + N_{i,\\,B} + N_{i,\\,N}\\right)}}
 
-    where the summations are over the pixels that comprise the region, :math:`N_{i,\,S}` are the counts in pixel :math:`i` due to the source galaxy, :math:`N_{i,\,L}` are counts due to the lensing galaxy, :math:`N_{i,\,B}` are counts due to the sky background, and :math:`N_{i,\,N}` are counts due to detector noise. If multiple regions are formed, the SNR of the region with the highest SNR is taken to be the SNR of the system.
+    where the summations are over the pixels that comprise the region, :math:`N_{i,\\,S}` are the counts in pixel :math:`i` due to the source galaxy, :math:`N_{i,\\,L}` are counts due to the lensing galaxy, :math:`N_{i,\\,B}` are counts due to the sky background, and :math:`N_{i,\\,N}` are counts due to detector noise. If multiple regions are formed, the SNR of the region with the highest SNR is taken to be the SNR of the system.
 
     Parameters
     ----------
