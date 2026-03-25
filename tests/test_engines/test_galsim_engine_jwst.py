@@ -16,14 +16,13 @@ TEST_DATA_DIR = os.path.join(os.path.dirname(mejiro.__path__[0]), 'tests', 'test
 def test_jwst_default_engine_params():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=JWST(),
-                                     band='F200W',
-                                     verbose=False)
+                                     band='F200W')
 
     exposure = Exposure(synthetic_image,
                         exposure_time=1000,
                         engine='galsim',
                         # don't provide engine params
-                        verbose=False)
+                        )
 
     assert exposure.engine == 'galsim'
 
@@ -35,8 +34,7 @@ def test_jwst_pieces():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=JWST(),
                                      band='F200W',
-                                     pieces=True,
-                                     verbose=False)
+                                     pieces=True)
 
     assert synthetic_image.image.shape == (163, 163)
     assert synthetic_image.lens_surface_brightness.shape == (163, 163)
@@ -44,8 +42,7 @@ def test_jwst_pieces():
 
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
-                        engine='galsim',
-                        verbose=False)
+                        engine='galsim')
 
     assert exposure.exposure.shape == (163, 163)
     assert exposure.lens_exposure.shape == (163, 163)
@@ -57,13 +54,11 @@ def test_jwst_pieces():
 def test_jwst_noise():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=JWST(),
-                                     band='F200W',
-                                     verbose=False)
+                                     band='F200W')
 
     exposure = Exposure(synthetic_image,
                         exposure_time=1000,
-                        engine='galsim',
-                        verbose=False)
+                        engine='galsim')
 
     poisson_noise = exposure.poisson_noise
     dark_noise = exposure.dark_noise
@@ -82,8 +77,7 @@ def test_jwst_noise():
     exposure2 = Exposure(synthetic_image,
                          exposure_time=1000,
                          engine='galsim',
-                         engine_params=engine_params,
-                         verbose=False)
+                         engine_params=engine_params)
 
     assert np.array_equal(exposure2.exposure, exposure.exposure)
     assert np.array_equal(poisson_noise.array, exposure2.poisson_noise.array)
@@ -94,8 +88,7 @@ def test_jwst_noise():
 def test_jwst_sky_background_off():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=JWST(),
-                                     band='F200W',
-                                     verbose=False)
+                                     band='F200W')
 
     engine_params = {
         'sky_background': False
@@ -104,8 +97,7 @@ def test_jwst_sky_background_off():
     exposure = Exposure(synthetic_image,
                         exposure_time=1000,
                         engine='galsim',
-                        engine_params=engine_params,
-                        verbose=False)
+                        engine_params=engine_params)
 
     # TODO checks on the images
 
@@ -113,8 +105,7 @@ def test_jwst_sky_background_off():
 def test_jwst_all_detector_effects_off():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=JWST(),
-                                     band='F200W',
-                                     verbose=False)
+                                     band='F200W')
 
     engine_params = {
         'detector_effects': False
@@ -123,8 +114,7 @@ def test_jwst_all_detector_effects_off():
     exposure = Exposure(synthetic_image,
                         exposure_time=1000,
                         engine='galsim',
-                        engine_params=engine_params,
-                        verbose=False)
+                        engine_params=engine_params)
 
     # TODO checks on the images
 
@@ -132,8 +122,7 @@ def test_jwst_all_detector_effects_off():
 def test_jwst_poisson_noise_off():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=JWST(),
-                                     band='F200W',
-                                     verbose=False)
+                                     band='F200W')
 
     engine_params = {
         'poisson_noise': False
@@ -142,8 +131,7 @@ def test_jwst_poisson_noise_off():
     exposure = Exposure(synthetic_image,
                         exposure_time=1000,
                         engine='galsim',
-                        engine_params=engine_params,
-                        verbose=False)
+                        engine_params=engine_params)
 
     # TODO checks on the images
 
@@ -151,8 +139,7 @@ def test_jwst_poisson_noise_off():
 def test_jwst_dark_noise_off():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=JWST(),
-                                     band='F200W',
-                                     verbose=False)
+                                     band='F200W')
 
     engine_params = {
         'dark_noise': False
@@ -161,8 +148,7 @@ def test_jwst_dark_noise_off():
     exposure = Exposure(synthetic_image,
                         exposure_time=1000,
                         engine='galsim',
-                        engine_params=engine_params,
-                        verbose=False)
+                        engine_params=engine_params)
 
     # TODO checks on the images
 
@@ -170,8 +156,7 @@ def test_jwst_dark_noise_off():
 def test_jwst_read_noise_off():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=JWST(),
-                                     band='F200W',
-                                     verbose=False)
+                                     band='F200W')
 
     engine_params = {
         'read_noise': False
@@ -180,7 +165,6 @@ def test_jwst_read_noise_off():
     exposure = Exposure(synthetic_image,
                         exposure_time=1000,
                         engine='galsim',
-                        engine_params=engine_params,
-                        verbose=False)
+                        engine_params=engine_params)
 
     # TODO checks on the images

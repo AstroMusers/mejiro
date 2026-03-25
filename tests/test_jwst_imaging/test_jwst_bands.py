@@ -17,15 +17,13 @@ def test_data_dir():
 @pytest.mark.parametrize("band", ['F115W', 'F150W', 'F200W', 'F277W', 'F356W', 'F444W'])
 def test_band(band, test_data_dir):
     jwst = JWST()
-    kwargs_psf = STPSFEngine.get_jwst_psf_kwargs(band, oversample=5, num_pix=101, check_cache=True, psf_cache_dir=test_data_dir, verbose=False)
+    kwargs_psf = STPSFEngine.get_jwst_psf_kwargs(band, oversample=5, num_pix=101, check_cache=True, psf_cache_dir=test_data_dir)
 
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                     instrument=jwst,
                                     band=band,
                                     kwargs_numerics={'supersampling_factor': 1},
-                                    kwargs_psf=kwargs_psf,
-                                    verbose=False)
+                                    kwargs_psf=kwargs_psf)
         
     exposure = Exposure(synthetic_image,
-                        exposure_time=1000,
-                        verbose=False)
+                        exposure_time=1000)

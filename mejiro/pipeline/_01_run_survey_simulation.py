@@ -34,6 +34,9 @@ from mejiro.synthetic_image import SyntheticImage
 from mejiro.utils import roman_util, slsim_util, util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 PREV_SCRIPT_NAME = None
 SCRIPT_NAME = '01'
@@ -68,8 +71,8 @@ def main(args):
         for future in tqdm(as_completed(futures), total=len(futures)):
             num_detectable += future.result()
 
-    print(f'{num_detectable} detectable lenses found')
-    print(f'{num_detectable / pipeline.config["survey"]["area"] / pipeline.runs:.2f} per square degree')
+    logger.info(f'{num_detectable} detectable lenses found')
+    logger.info(f'{num_detectable / pipeline.config["survey"]["area"] / pipeline.runs:.2f} per square degree')
 
     stop = time.time()
     execution_time = util.print_execution_time(start, stop, return_string=True)
@@ -92,7 +95,7 @@ def run_slsim(tuple):
     # retrieve configuration parameters
     limit = config['limit']
     snr_config = config['snr']
-    verbose = config['verbose']
+    show_progress_bar = config['show_progress_bar']
     use_jax = config['jaxtronomy']['use_jax']
     engine_params = config['imaging']['engine_params']
     survey_config = config['survey']
@@ -130,13 +133,13 @@ def run_slsim(tuple):
         from mejiro.instruments.roman import Roman
         from mejiro.instruments.hwo import HWO
         speclite_filters = Roman.load_speclite_filters(detector='SCA01')
-        print(f'Loaded Roman filter response curve(s): {speclite_filters.names}')
+        logger.info(f'Loaded Roman filter response curve(s): {speclite_filters.names}')
         speclite_filters = HST.load_speclite_filters()
-        print(f'Loaded HST filter response curve(s): {speclite_filters.names}')
+        logger.info(f'Loaded HST filter response curve(s): {speclite_filters.names}')
         speclite_filters = JWST.load_speclite_filters()
-        print(f'Loaded JWST filter response curve(s): {speclite_filters.names}')
+        logger.info(f'Loaded JWST filter response curve(s): {speclite_filters.names}')
         speclite_filters = HWO.load_speclite_filters()
-        print(f'Loaded HWO filter response curve(s): {speclite_filters.names}')
+        logger.info(f'Loaded HWO filter response curve(s): {speclite_filters.names}')
     elif instrument.name == 'Roman':
         detector_string = roman_util.get_sca_string(detector).lower()
         filter_args = {'detector': detector_string}
@@ -147,7 +150,7 @@ def run_slsim(tuple):
     else:
         raise ValueError(f"Speclite filter loading not implemented for {instrument.name}.")
     
-    if verbose: print(f'Loaded {instrument.name} filter response curve(s): {speclite_filters.names}')
+    logger.info(f'Loaded {instrument.name} filter response curve(s): {speclite_filters.names}')
 
     # load SkyPy config file
     cache_dir = os.path.join(module_path, 'data', 'skypy', config['survey']['skypy_config'])
@@ -159,7 +162,7 @@ def run_slsim(tuple):
     if not os.path.exists(skypy_config):
         raise FileNotFoundError(f'SkyPy configuration file {skypy_config} not found.')
     config_file = util.load_skypy_config(skypy_config)  # read skypy config file to get survey area
-    if verbose: print(f'Loaded SkyPy configuration file {skypy_config}')
+    logger.info(f'Loaded SkyPy configuration file {skypy_config}')
 
     # load SLHammocks SkyPy config file
     if use_slhammocks_pipeline:
@@ -175,13 +178,13 @@ def run_slsim(tuple):
         if not os.path.exists(slhammocks_config):
             raise FileNotFoundError(f'SLHammocks configuration file {slhammocks_config} not found.')
         slhammocks_pipeline_kwargs['skypy_config'] = slhammocks_config
-        if verbose: print(f'Loaded SLHammocks configuration file {slhammocks_config}')
+        logger.info(f'Loaded SLHammocks configuration file {slhammocks_config}')
 
     # set survey parameters
     survey_area = float(config_file['fsky'][:-5])
     sky_area = Quantity(value=survey_area, unit='deg2')
     assert sky_area.value == area, f'Area mismatch: {sky_area.value} != {area}'
-    if verbose: print(f'Surveying {sky_area.value} deg2 with bands {bands}')
+    logger.info(f'Surveying {sky_area.value} deg2 with bands {bands}')
 
     # define cuts on the intrinsic deflector and source populations (in addition to the skypy config file)
     kwargs_deflector_cut = {
@@ -198,7 +201,7 @@ def run_slsim(tuple):
     }
 
     # create the lens population
-    if verbose: print('Defining galaxy population...')
+    logger.info('Defining galaxy population...')
     galaxy_simulation_pipeline = pipelines.SkyPyPipeline(
         skypy_config=skypy_config,
         sky_area=sky_area,
@@ -248,7 +251,7 @@ def run_slsim(tuple):
         cosmo=cosmo,
         sky_area=sky_area,
     )
-    if verbose: print('Defined galaxy population')
+    logger.info('Defined galaxy population')
 
     # get PSF parameters for SNR calculation
     instrument_psf_kwargs = {
@@ -259,26 +262,25 @@ def run_slsim(tuple):
         'num_pix': num_pix,
         'check_cache': True,
         'psf_cache_dir': psf_cache_dir,
-        'verbose': False
     }
     kwargs_psf = instrument.get_psf_kwargs(**instrument_psf_kwargs)
 
     # draw the total lens population
     if survey_config['total_population']:
-        if verbose: print('Identifying lenses...')
+        logger.info('Identifying lenses...')
         kwargs_lens_total_cut = {
             'min_image_separation': 0,
             'max_image_separation': 10,
             'mag_arc_limit': None
         }
         total_lens_population = lens_pop.draw_population(kwargs_lens_cuts=kwargs_lens_total_cut)
-        if verbose: print(f'Number of total lenses: {len(total_lens_population)}')
+        logger.info(f'Number of total lenses: {len(total_lens_population)}')
 
         # compute SNRs and save
-        if verbose: print(f'Computing SNRs for {len(total_lens_population)} lenses')
+        logger.info(f'Computing SNRs for {len(total_lens_population)} lenses')
         snr_list = []
         num_exceptions = 0
-        for candidate in tqdm(total_lens_population, disable=verbose):
+        for candidate in tqdm(total_lens_population, disable=not show_progress_bar):
             strong_lens = GalaxyGalaxy.from_slsim(candidate, bands=bands, use_jax=use_jax)
 
             # TODO temporary fix to make sure that there are two images formed
@@ -297,52 +299,48 @@ def run_slsim(tuple):
                                             instrument_params={'detector': snr_detector, 'detector_position': snr_detector_position},
                                             kwargs_numerics=snr_kwargs_numerics,
                                             kwargs_psf=kwargs_psf,
-                                            pieces=True,
-                                            verbose=False)
+                                            pieces=True)
             exposure = Exposure(synthetic_image=synthetic_image,
                                 exposure_time=snr_exposure_time,
                                 engine='galsim',
-                                engine_params=engine_params,
-                                verbose=False)
+                                engine_params=engine_params)
             snr, _ = snr_calculation.get_snr(exposure=exposure,
-                                            snr_per_pixel_threshold=snr_per_pixel_threshold,
-                                            verbose=False)
+                                            snr_per_pixel_threshold=snr_per_pixel_threshold)
             snr_list.append(snr)
-            
+
             if snr is None:
                 num_exceptions += 1
-            
-        if verbose:
-            if len(total_lens_population) > 0:
-                print(f'Percentage of exceptions: {num_exceptions / len(total_lens_population) * 100:.2f}%')
-            else:
-                warnings.warn('No systems in total population. Consider revising the galaxy population.')
-                return 0
+
+        if len(total_lens_population) > 0:
+            logger.info(f'Percentage of exceptions: {num_exceptions / len(total_lens_population) * 100:.2f}%')
+        else:
+            warnings.warn('No systems in total population. Consider revising the galaxy population.')
+            return 0
 
         # save other params to CSV
         if survey_config["write_to_csv"]:
             total_pop_csv = os.path.join(output_dir, f'total_pop_{run_id}.csv')
-            if verbose: print(f'Writing total population to {total_pop_csv}')
-            slsim_util.write_lens_population_to_csv(total_pop_csv, total_lens_population, snr_list, bands=bands, verbose=verbose)
+            logger.info(f'Writing total population to {total_pop_csv}')
+            slsim_util.write_lens_population_to_csv(total_pop_csv, total_lens_population, snr_list, bands=bands, show_progress_bar=False)
 
     # draw initial detectable lens population
-    if verbose: print('Identifying detectable lenses...')
+    logger.info('Identifying detectable lenses...')
     kwargs_lens_detectable_cut = {
         'min_image_separation': survey_config['min_image_separation'],
         'max_image_separation': survey_config['max_image_separation'],
         'mag_arc_limit': {survey_config['mag_arc_limit_band']: survey_config['mag_arc_limit']}
     }
     lens_population = lens_pop.draw_population(kwargs_lens_cuts=kwargs_lens_detectable_cut)
-    if verbose: print(f'Number of detectable lenses from first set of criteria: {len(lens_population)}')
+    logger.info(f'Number of detectable lenses from first set of criteria: {len(lens_population)}')
 
     # apply additional detectability criteria
     detectable_gglenses, detectable_snr_list, masked_snr_array_list = [], [], []
-    for candidate in tqdm(lens_population, disable=not verbose):
+    for candidate in tqdm(lens_population, disable=not show_progress_bar):
         # convert from SLSim gglens to mejiro GalaxyGalaxy
         try:
             strong_lens = GalaxyGalaxy.from_slsim(candidate, bands=bands, use_jax=use_jax)
         except:
-            print(f'Error processing candidate {candidate["name"]}')
+            logger.warning(f'Error processing candidate {candidate["name"]}')
             continue
 
         # TODO do something with the substract lens flag
@@ -356,16 +354,13 @@ def run_slsim(tuple):
                                         instrument_params={'detector': snr_detector, 'detector_position': snr_detector_position},
                                         kwargs_numerics=snr_kwargs_numerics,
                                         kwargs_psf=kwargs_psf,
-                                        pieces=True,
-                                        verbose=False)
+                                        pieces=True)
         exposure = Exposure(synthetic_image=synthetic_image,
                             exposure_time=snr_exposure_time,
                             engine='galsim',
-                            engine_params=engine_params,
-                            verbose=False)
+                            engine_params=engine_params)
         snr, masked_snr_array = snr_calculation.get_snr(exposure=exposure,
-                                                        snr_per_pixel_threshold=snr_per_pixel_threshold,
-                                                        verbose=False)
+                                                        snr_per_pixel_threshold=snr_per_pixel_threshold)
         if snr is None or snr < snr_config['snr_threshold']:
             continue
 
@@ -383,7 +378,7 @@ def run_slsim(tuple):
         if limit is not None and len(detectable_gglenses) == limit:
             break
 
-    if verbose: print(f'Run {run}: {len(detectable_gglenses)} detectable lens(es)')
+    logger.info(f'Run {run}: {len(detectable_gglenses)} detectable lens(es)')
 
     assert len(detectable_gglenses) == len(
         detectable_snr_list), f'Lengths of detectable_gglenses ({len(detectable_gglenses)}) and detectable_snr_list ({len(detectable_snr_list)}) do not match.'
@@ -391,15 +386,15 @@ def run_slsim(tuple):
     if len(detectable_gglenses) > 0:
         # pickle the list of slsim gglenses
         detectable_gglenses_pickle_path = os.path.join(output_dir, f'detectable_gglenses_{run_id}.pkl')
-        if verbose: print(f'Pickling detectable gglenses to {detectable_gglenses_pickle_path}')
+        logger.info(f'Pickling detectable gglenses to {detectable_gglenses_pickle_path}')
         util.pickle(detectable_gglenses_pickle_path, detectable_gglenses)
 
         # write the parameters of detectable lenses to CSV
         if survey_config["write_to_csv"]:
             detectable_pop_csv = os.path.join(output_dir, f'detectable_pop_{run_id}.csv')
-            slsim_util.write_lens_population_to_csv(detectable_pop_csv, detectable_gglenses, detectable_snr_list, bands=bands, verbose=verbose)
+            slsim_util.write_lens_population_to_csv(detectable_pop_csv, detectable_gglenses, detectable_snr_list, bands=bands, show_progress_bar=False)
     else:
-        if verbose: print(f'No detectable lenses found for run {run}')
+        logger.info(f'No detectable lenses found for run {run}')
     
     return len(detectable_gglenses)
 

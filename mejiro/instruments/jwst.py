@@ -62,7 +62,7 @@ class JWST(Instrument):
 
     def get_psf_kwargs(self, band, **kwargs):
         from mejiro.engines.stpsf_engine import STPSFEngine
-        return STPSFEngine.get_jwst_psf_kwargs(band, kwargs['oversample'], kwargs['num_pix'], kwargs.get('check_cache', False), kwargs.get('psf_cache_dir', None), kwargs.get('verbose', False))
+        return STPSFEngine.get_jwst_psf_kwargs(band, kwargs['oversample'], kwargs['num_pix'], kwargs.get('check_cache', False), kwargs.get('psf_cache_dir', None))
 
     def get_psf_fwhm(self, band):
         pass

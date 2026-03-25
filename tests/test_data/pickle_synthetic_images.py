@@ -20,8 +20,7 @@ def main(config):
                                      instrument=roman,
                                      band='F129',
                                      arcsec=5,
-                                     oversample=1,
-                                     verbose=True)
+                                     oversample=1)
 
     util.pickle('synthetic_image_roman_F129_5_1.pkl', synthetic_image)
 
@@ -29,8 +28,7 @@ def main(config):
                                      instrument=roman,
                                      band='F129',
                                      arcsec=5,
-                                     oversample=5,
-                                     verbose=True)
+                                     oversample=5)
 
     util.pickle('synthetic_image_roman_F129_5_5.pkl', synthetic_image)
 

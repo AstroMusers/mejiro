@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import time
 import warnings
@@ -5,15 +6,16 @@ import warnings
 from mejiro.utils import util
 from mejiro.analysis.snr_calculation import get_snr
 
+logger = logging.getLogger(__name__)
+
 
 class Exposure:
 
     def __init__(self, 
                  synthetic_image, 
                  exposure_time, 
-                 engine='galsim', 
-                 engine_params={}, 
-                 verbose=True
+                 engine='galsim',
+                 engine_params={}
                  ):
         
         start = time.time()
@@ -21,7 +23,6 @@ class Exposure:
         self.synthetic_image = synthetic_image
         self.exposure_time = exposure_time
         self.engine = engine
-        self.verbose = verbose
         self.noise = None
 
         if engine == 'galsim':
@@ -33,7 +34,7 @@ class Exposure:
             if self.synthetic_image.instrument_name == 'Roman':
                 # get exposure
                 results, self.sky_background, self.poisson_noise, self.reciprocity_failure, self.dark_noise, self.nonlinearity, self.ipc, self.read_noise = GalSimEngine.get_roman_exposure(
-                    synthetic_image, exposure_time, engine_params, self.verbose)
+                    synthetic_image, exposure_time, engine_params)
 
                 # sum noise
                 if self.sky_background is not None: self.noise += self.sky_background
@@ -47,7 +48,7 @@ class Exposure:
             elif self.synthetic_image.instrument_name == 'HWO' or self.synthetic_image.instrument_name == 'JWST' or self.synthetic_image.instrument_name == 'HST':
                 # get exposure
                 results, self.sky_background, self.poisson_noise, self.dark_noise, self.read_noise = GalSimEngine.get_exposure(
-                    synthetic_image, exposure_time, engine_params, self.verbose)
+                    synthetic_image, exposure_time, engine_params)
                 
                 # sum noise
                 if self.sky_background is not None: self.noise += self.sky_background
@@ -68,10 +69,9 @@ class Exposure:
 
             # get exposure
             results, self.noise = LenstronomyEngine.get_exposure(
-                synthetic_image=synthetic_image, 
+                synthetic_image=synthetic_image,
                 exposure_time=exposure_time,
-                engine_params=engine_params,
-                verbose=verbose)
+                engine_params=engine_params)
             # TODO conditional for supported instruments
 
         elif engine == 'pandeia':
@@ -80,7 +80,7 @@ class Exposure:
             from mejiro.engines.pandeia_engine import PandeiaEngine
 
             # get exposure
-            results, self.noise = PandeiaEngine.get_roman_exposure(synthetic_image, exposure_time, engine_params, self.verbose)
+            results, self.noise = PandeiaEngine.get_roman_exposure(synthetic_image, exposure_time, engine_params)
 
             # TODO temporarily set noise to zeros until I can grab the noise that Pandeia generates
             self.noise = np.zeros((self.synthetic_image.num_pix, self.synthetic_image.num_pix))
@@ -91,7 +91,7 @@ class Exposure:
             from mejiro.engines.romanisim_engine import RomanISimEngine
 
             if self.synthetic_image.instrument_name == 'Roman':
-                results, self.noise = RomanISimEngine.get_roman_exposure(synthetic_image, exposure_time, engine_params, self.verbose)
+                results, self.noise = RomanISimEngine.get_roman_exposure(synthetic_image, exposure_time, engine_params)
                 
             else:
                 self.instrument_not_available_error(engine)
@@ -136,11 +136,10 @@ class Exposure:
 
         end = time.time()
         self.calc_time = end - start
-        if self.verbose:
-            print(f'Exposure calculation time with {self.engine} engine: {util.calculate_execution_time(start, end, unit="s")}')
+        logger.info(f'Exposure calculation time with {self.engine} engine: {util.calculate_execution_time(start, end, unit="s")}')
 
     def get_snr(self, snr_per_pixel_threshold=1):
-        return get_snr(self, snr_per_pixel_threshold=snr_per_pixel_threshold, verbose=self.verbose)[0]
+        return get_snr(self, snr_per_pixel_threshold=snr_per_pixel_threshold)[0]
 
     def plot(self, show_snr=False, savepath=None):
         import matplotlib.pyplot as plt

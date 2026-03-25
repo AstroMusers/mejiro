@@ -2,10 +2,12 @@ import importlib
 import os
 import yaml
 from glob import glob
-from logging import config
+import logging
 
 import mejiro
 from mejiro.utils import util
+
+logger = logging.getLogger(__name__)
 
 
 class PipelineHelper:
@@ -31,14 +33,14 @@ class PipelineHelper:
         # set data directory
         self.data_dir = config['data_dir']
         if hasattr(args, 'data_dir') and args.data_dir is not None:
-            print(f'Overriding data_dir in config file ({self.data_dir}) with provided data_dir ({args.data_dir})')  # TODO logging
+            logger.warning(f'Overriding data_dir in config file ({self.data_dir}) with provided data_dir ({args.data_dir})')
             self.data_dir = args.data_dir
         elif self.data_dir is None:
             raise ValueError("data_dir must be specified either in the config file or via the --data_dir argument.")
         
         # get attributes from config
         self.dev = config['dev']
-        self.verbose = config['verbose']
+        self.show_progress_bar = config['show_progress_bar']
         self.limit = config['limit']
         self.runs = config['survey']['runs']
         self.detectors = config['survey']['detectors']
@@ -90,7 +92,7 @@ class PipelineHelper:
         process_count = self.config['cores'][f'script_{self.script_name}']
         if count < process_count:
             process_count = count
-        print(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
+        logger.info(f'Spinning up {process_count} process(es) on {cpu_count} core(s)')
         return process_count
 
     def retrieve_roman_sca_input(self):
@@ -98,7 +100,7 @@ class PipelineHelper:
 
         # get input directories
         input_sca_dirs = [os.path.basename(d) for d in glob(os.path.join(self.input_dir, 'sca*')) if os.path.isdir(d)]
-        if self.verbose: print(f'Reading from {input_sca_dirs}')
+        logger.info(f'Reading from {input_sca_dirs}')
 
         # parse scas from input directories
         scas = sorted([int(d[3:]) for d in input_sca_dirs])
@@ -130,7 +132,7 @@ class PipelineHelper:
             sca_dir = os.path.join(self.output_dir, f'sca{str(sca).zfill(2)}')
             os.makedirs(sca_dir, exist_ok=True)
             output_sca_dirs.append(sca_dir)
-        if self.verbose: print(f'Set up output directories {output_sca_dirs}')
+        logger.info(f'Set up output directories {output_sca_dirs}')
         return output_sca_dirs
     
     def parse_roman_uids(self, prefix, suffix, extension):

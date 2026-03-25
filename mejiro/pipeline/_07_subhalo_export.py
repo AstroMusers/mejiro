@@ -1,10 +1,13 @@
 import hydra
+import logging
 import numpy as np
 import os
 import sys
 import time
 from glob import glob
 from tqdm import tqdm
+
+logger = logging.getLogger(__name__)
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config.yaml')
@@ -39,13 +42,13 @@ def main(config):
     util.clear_directory(subhalo_dir)
 
     # get all lenses
-    all_lenses = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=True, verbose=True, limit=None,
+    all_lenses = lens_util.get_detectable_lenses(pipeline_dir, with_subhalos=True, limit=None,
                                                  exposure=True)
 
     # filter lenses by SNR
     all_lenses = [lens for lens in all_lenses if lens.snr != np.inf]
 
-    print(f'Copying pickled subhalo realizations for {len(all_lenses)} systems')
+    logger.info(f'Copying pickled subhalo realizations for {len(all_lenses)} systems')
     for lens in tqdm(all_lenses):
         uid = lens.uid
 

@@ -7,9 +7,12 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 import numpy as np
 from tqdm import tqdm
 
+import logging
+
 from mejiro.utils import util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
+logger = logging.getLogger(__name__)
 
 PREV_SCRIPT_NAME = '05'
 SCRIPT_NAME = 'snr'
@@ -37,11 +40,11 @@ def main(args):
     # limit the number of systems to process, if limit imposed
     count = len(input_pickles)
     if pipeline.limit is not None and pipeline.limit < count:
-        if pipeline.verbose: print(f'Limiting to {pipeline.limit} lens(es)')
+        logger.info(f'Limiting to {pipeline.limit} lens(es)')
         input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
         if pipeline.limit < count:
             count = pipeline.limit
-    if pipeline.verbose: print(f'Processing {count} exposure(s)')
+    logger.info(f'Processing {count} exposure(s)')
 
     # tuple the parameters
     tuple_list = [(pipeline, snr_config, input_pickle) for input_pickle in input_pickles]

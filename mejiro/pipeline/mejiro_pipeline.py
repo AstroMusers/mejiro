@@ -1,8 +1,11 @@
 import argparse
+import logging
 import os
 import yaml
 
 import mejiro
+
+logger = logging.getLogger(__name__)
 from mejiro.pipeline import (
     _00_cache_psfs as script_00_cache_psfs,
     _01_run_survey_simulation as script_01_run_survey_simulation,
@@ -143,7 +146,6 @@ class Pipeline:
         import datetime
         import json
         from glob import glob
-        from pprint import pprint
 
         with open(self.config_file, 'r') as f:
             config = yaml.load(f, Loader=yaml.SafeLoader)
@@ -154,7 +156,7 @@ class Pipeline:
         with open(os.path.join(config['data_dir'], config['pipeline_label'], 'execution_times.json'), 'r') as f:
             execution_times = json.load(f)
 
-        pprint(execution_times)
+        logger.info(execution_times)
 
         total_time = 0
         for script_name, times in execution_times.items():
@@ -168,7 +170,7 @@ class Pipeline:
             time = (int(h) * 3600) + (int(m) * 60) + int(s)
             total_time += time
 
-        print(
+        logger.info(
             f'Total pipeline execution time: {datetime.timedelta(seconds=total_time)}, {total_time} seconds, {total_time / 3600:.2f} hours')
         
         data_dir = os.path.join(config['data_dir'], config['pipeline_label'], '05')
@@ -178,6 +180,6 @@ class Pipeline:
         # pickles = sorted(glob(os.path.join(data_dir, 'Exposure_*.pkl')))
 
         if len(pickles) > 0:
-            print(f'Execution time per system: {total_time / len(pickles):.3f} seconds')
+            logger.info(f'Execution time per system: {total_time / len(pickles):.3f} seconds')
         else:
             raise ValueError(f'No pickled exposures found in {data_dir}')

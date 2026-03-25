@@ -31,6 +31,9 @@ from mejiro.engines.stpsf_engine import STPSFEngine
 from mejiro.utils import roman_util, util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 PREV_SCRIPT_NAME = None
 SCRIPT_NAME = '00'
@@ -56,7 +59,7 @@ def main(args):
     # set directory for all output of this script
     save_dir = os.path.join(data_dir, psf_cache_dir)
     util.create_directory_if_not_exists(save_dir)
-    print(f'Saving PSFs to {save_dir}')
+    logger.info(f'Saving PSFs to {save_dir}')
 
     # determine which PSFs need to be generated
     psf_ids = []
@@ -69,13 +72,13 @@ def main(args):
                         psf_filename = f'{psf_id}.npy'
                         psf_path = os.path.join(save_dir, psf_filename)
                         if os.path.exists(psf_path):
-                            print(f'{psf_path} already exists')
+                            logger.info(f'{psf_path} already exists')
                             continue
                         else:
                             psf_ids.append(psf_id)
 
     if len(psf_ids) == 0:
-        print('All PSFs already exist. Exiting.')
+        logger.info('All PSFs already exist. Exiting.')
         return
 
     arg_list = [(psf_id_string, save_dir) for psf_id_string in psf_ids]
@@ -84,7 +87,7 @@ def main(args):
     count = len(arg_list)
     cpu_count = multiprocessing.cpu_count()
     process_count = pipeline.config['cores']['script_00']
-    print(f'Spinning up {process_count} process(es) on {cpu_count} core(s) to generate {count} PSF(s)')
+    logger.info(f'Spinning up {process_count} process(es) on {cpu_count} core(s) to generate {count} PSF(s)')
 
     # process the tasks with ProcessPoolExecutor
     with ProcessPoolExecutor(max_workers=process_count) as executor:
@@ -102,7 +105,7 @@ def generate_psf(args):
     psf_id, save_dir = args
 
     # generate PSF
-    stpsf_psf = STPSFEngine.get_roman_psf_from_id(psf_id, check_cache=False, verbose=False)
+    stpsf_psf = STPSFEngine.get_roman_psf_from_id(psf_id, check_cache=False)
 
     # save PSF
     psf_path = os.path.join(save_dir, f'{psf_id}.npy')

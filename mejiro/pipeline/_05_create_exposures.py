@@ -18,10 +18,13 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 import numpy as np
 from tqdm import tqdm
 
+import logging
+
 from mejiro.exposure import Exposure
 from mejiro.utils import roman_util, util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
+logger = logging.getLogger(__name__)
 
 PREV_SCRIPT_NAME = '04'
 SCRIPT_NAME = '05'
@@ -49,11 +52,11 @@ def main(args):
     # limit the number of systems to process, if limit imposed
     count = len(input_pickles)
     if pipeline.limit is not None and pipeline.limit < count:
-        if pipeline.verbose: print(f'Limiting to {pipeline.limit} image(s)')
+        logger.info(f'Limiting to {pipeline.limit} image(s)')
         input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
         if pipeline.limit < count:
             count = pipeline.limit
-    if pipeline.verbose: print(f'Processing {count} image(s)')
+    logger.info(f'Processing {count} image(s)')
 
     # tuple the parameters
     tuple_list = [(pipeline, imaging_config, input_pickle) for input_pickle in input_pickles]
@@ -97,13 +100,12 @@ def get_image(input):
         exposure = Exposure(synthetic_image,
                         exposure_time=exposure_time,
                         engine=engine,
-                        engine_params=engine_params,
-                        verbose=False)
+                        engine_params=engine_params)
         util.pickle(os.path.join(output_dir, f'Exposure_{synthetic_image.strong_lens.name}_{synthetic_image.band}.pkl'), exposure)
     except Exception as e:
         failed_pickle_path = os.path.join(output_dir, f'failed_{synthetic_image.strong_lens.name}_{synthetic_image.band}.pkl')
         util.pickle(failed_pickle_path, synthetic_image)
-        print(f'Error creating synthetic image for lens {synthetic_image.strong_lens.name} in band {synthetic_image.band}: {e}. Pickling to {failed_pickle_path}')
+        logger.warning(f'Error creating synthetic image for lens {synthetic_image.strong_lens.name} in band {synthetic_image.band}: {e}. Pickling to {failed_pickle_path}')
         return
 
     return exposure.calc_time

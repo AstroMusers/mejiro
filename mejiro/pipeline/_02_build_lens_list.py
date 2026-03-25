@@ -20,6 +20,9 @@ from mejiro.galaxy_galaxy import GalaxyGalaxy
 from mejiro.utils import util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 PREV_SCRIPT_NAME = '01b'
 SCRIPT_NAME = '02'
@@ -45,7 +48,7 @@ def main(args):
         parsed_names = [os.path.basename(f).split("_")[3].split(".")[0] for f in detectable_gglens_pickles]
         scas = [int(d[3:]) for d in parsed_names]
         scas = sorted(set([str(sca).zfill(2) for sca in scas]))
-        if pipeline.verbose: print(f'Found SCA(s): {scas}')
+        logger.info(f'Found SCA(s): {scas}')
     elif pipeline.instrument_name == 'hwo' or pipeline.instrument_name == 'jwst':
         pass
     else:
@@ -85,7 +88,7 @@ def main(args):
             if uid == pipeline.limit:
                 break
 
-    if pipeline.verbose: print(f'Pickled {uid} lens(es) to {pipeline.output_dir}')
+    logger.info(f'Pickled {uid} lens(es) to {pipeline.output_dir}')
 
     stop = time.time()
     execution_time = util.print_execution_time(start, stop, return_string=True)

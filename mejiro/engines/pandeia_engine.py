@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 from lenstronomy.Util import data_util
 from pandeia.engine.calc_utils import build_default_calc, build_default_source
@@ -6,6 +7,8 @@ from tqdm import tqdm
 
 from mejiro.engines.engine import Engine
 from mejiro.instruments.roman import Roman
+
+logger = logging.getLogger(__name__)
 
 
 class PandeiaEngine(Engine):
@@ -38,41 +41,24 @@ class PandeiaEngine(Engine):
     def validate_engine_params(instrument_name, engine_params):
         if instrument_name.lower() == 'roman':
             if 'num_samples' not in engine_params.keys():
-                engine_params['num_samples'] = PandeiaEngine.defaults('Roman')[
-                    'num_samples']  # TODO is this necessary? doesn't GalSim do this?
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                # TODO it doesn't like floats (e.g. 1e4), so make sure int
-                pass
+                engine_params['num_samples'] = PandeiaEngine.defaults('Roman')['num_samples']
+                logger.debug(f'Using default num_samples: {engine_params["num_samples"]}')
             if 'calculation' not in engine_params.keys():
                 engine_params['calculation'] = PandeiaEngine.defaults('Roman')['calculation']
-                # TODO logging to inform user of default
+                logger.debug(f'Using default calculation: {engine_params["calculation"]}')
             else:
                 if 'noise' not in engine_params['calculation'].keys():
                     engine_params['calculation']['noise'] = PandeiaEngine.defaults('Roman')['calculation']['noise']
-                    # TODO logging to inform user of default
-                else:
-                    # TODO validate
-                    pass
+                    logger.debug(f'Using default calculation.noise: {engine_params["calculation"]["noise"]}')
                 if 'effects' not in engine_params['calculation'].keys():
                     engine_params['calculation']['effects'] = PandeiaEngine.defaults('Roman')['calculation']['effects']
-                    # TODO logging to inform user of default
-                else:
-                    # TODO validate
-                    pass
+                    logger.debug(f'Using default calculation.effects: {engine_params["calculation"]["effects"]}')
             if 'background' not in engine_params.keys():
                 engine_params['background'] = PandeiaEngine.defaults('Roman')['background']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
+                logger.debug(f'Using default background: {engine_params["background"]}')
             if 'background_level' not in engine_params.keys():
                 engine_params['background_level'] = PandeiaEngine.defaults('Roman')['background_level']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
+                logger.debug(f'Using default background_level: {engine_params["background_level"]}')
             return engine_params
         else:
             Engine.instrument_not_supported(instrument_name)
@@ -80,7 +66,7 @@ class PandeiaEngine(Engine):
 
     @staticmethod
     def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=defaults('Roman'),
-                        verbose=False, **kwargs):
+                        show_progress_bar=False, **kwargs):
         band = synthetic_image.band
         image = synthetic_image.image
         strong_lens = synthetic_image.strong_lens
@@ -116,15 +102,12 @@ class PandeiaEngine(Engine):
         # add point sources to Pandeia input
         norm_wave = PandeiaEngine._get_norm_wave(band)
         if num_samples:
-            calc, num_point_sources = PandeiaEngine._phonion_sample(calc, mag_array, synthetic_image, norm_wave, verbose)
+            calc, num_point_sources = PandeiaEngine._phonion_sample(calc, mag_array, synthetic_image, norm_wave, show_progress_bar)
         # TODO pass in an engine param to choose between sampling and grid methods
         elif oversample_factor:
-            calc, num_point_sources = PandeiaEngine._phonion_grid(calc, mag_array, synthetic_image, norm_wave, verbose)
+            calc, num_point_sources = PandeiaEngine._phonion_grid(calc, mag_array, synthetic_image, norm_wave, show_progress_bar)
         else:
             raise Exception('Either provide num_samples to use sampling method or oversample_factor to use grid method')
-
-        # if not suppress_output:
-        #     print(f'Estimated calculation time: {estimate_calculation_time(num_point_sources)}')
 
         results = perform_calculation(calc)
 
@@ -132,11 +115,11 @@ class PandeiaEngine(Engine):
 
 
     @staticmethod
-    def _phonion_sample(calc, mag_array, synthetic_image, norm_wave, verbose):
+    def _phonion_sample(calc, mag_array, synthetic_image, norm_wave, show_progress_bar):
         i = 0
 
         # loop over non-zero pixels, i.e. ignore pixels with no phonions
-        for x, y in tqdm(np.argwhere(mag_array != np.inf), disable=not verbose):
+        for x, y in tqdm(np.argwhere(mag_array != np.inf), disable=not show_progress_bar):
             if i != 0:
                 calc['scene'].append(build_default_source(geometry='point', telescope='roman'))
 
@@ -156,8 +139,7 @@ class PandeiaEngine(Engine):
 
             i += 1
 
-        if verbose:
-            print(f'Point source conversion complete: placed {i} point sources')
+        logger.info(f'Point source conversion complete: placed {i} point sources')
 
         # add an extra point source far out to force maximum scene size
         calc['scene'].append(build_default_source(geometry='point', telescope='roman'))
@@ -168,14 +150,13 @@ class PandeiaEngine(Engine):
 
 
     @staticmethod
-    def _phonion_grid(calc, mag_array, synthetic_image, norm_wave, verbose):
+    def _phonion_grid(calc, mag_array, synthetic_image, norm_wave, show_progress_bar):
         i = 0
         side, _ = mag_array.shape
 
-        if verbose:
-            print(f'Converting {mag_array.shape} array to point sources...')
+        logger.info(f'Converting {mag_array.shape} array to point sources...')
 
-        for row_number, row in tqdm(enumerate(mag_array), total=side, disable=not verbose):
+        for row_number, row in tqdm(enumerate(mag_array), total=side, disable=not show_progress_bar):
             for item_number, item in enumerate(row):
                 if i != 0:
                     calc['scene'].append(build_default_source(geometry='point', telescope='roman'))
@@ -201,8 +182,7 @@ class PandeiaEngine(Engine):
 
                 i += 1
 
-        if verbose:
-            print(f'Point source conversion complete: placed {i} point sources')
+        logger.info(f'Point source conversion complete: placed {i} point sources')
 
         return calc, i
 

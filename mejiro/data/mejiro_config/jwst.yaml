@@ -3,7 +3,7 @@ pipeline_label: jwst
 psf_cache_dir: /grad/bwedig/mejiro/mejiro/data/psfs/jwst
 dev: False
 nice: 19
-verbose: False
+show_progress_bar: False
 suppress_warnings: False
 limit: null
 seed: &seed 42

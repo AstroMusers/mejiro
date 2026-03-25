@@ -40,6 +40,9 @@ import mejiro
 from mejiro.utils import roman_util, util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 PREV_SCRIPT_NAME = None
 SCRIPT_NAME = '01a'
@@ -74,7 +77,7 @@ def main(args):
         for future in tqdm(as_completed(futures), total=len(futures)):
             future.result()  # propagate any exceptions
 
-    print(f'Generated {num_galaxy_tables} galaxy table(s)')
+    logger.info(f'Generated {num_galaxy_tables} galaxy table(s)')
 
     stop = time.time()
     execution_time = util.print_execution_time(start, stop, return_string=True)
@@ -95,7 +98,6 @@ def generate_galaxy_table(tuple):
     if config['suppress_warnings']:
         warnings.filterwarnings("ignore")
 
-    verbose = config['verbose']
     survey_config = config['survey']
     cosmo = survey_config['cosmo']
     area = survey_config['area']
@@ -130,7 +132,7 @@ def generate_galaxy_table(tuple):
     if not os.path.exists(skypy_config):
         raise FileNotFoundError(f'SkyPy configuration file {skypy_config} not found.')
     config_file = util.load_skypy_config(skypy_config)
-    if verbose: print(f'[Table {table_index}] Loaded SkyPy configuration file {skypy_config}')
+    logger.info(f'[Table {table_index}] Loaded SkyPy configuration file {skypy_config}')
 
     # load SLHammocks SkyPy config file
     slhammocks_pipeline_kwargs = None
@@ -147,7 +149,7 @@ def generate_galaxy_table(tuple):
         if not os.path.exists(slhammocks_config):
             raise FileNotFoundError(f'SLHammocks configuration file {slhammocks_config} not found.')
         slhammocks_pipeline_kwargs['skypy_config'] = slhammocks_config
-        if verbose: print(f'[Table {table_index}] Loaded SLHammocks configuration file {slhammocks_config}')
+        logger.info(f'[Table {table_index}] Loaded SLHammocks configuration file {slhammocks_config}')
 
     # validate survey area
     survey_area = float(config_file['fsky'][:-5])
@@ -155,7 +157,7 @@ def generate_galaxy_table(tuple):
     assert sky_area.value == area, f'Area mismatch: {sky_area.value} != {area}'
 
     # run SkyPy pipeline
-    if verbose: print(f'[Table {table_index}] Generating galaxy population...')
+    logger.info(f'[Table {table_index}] Generating galaxy population...')
     galaxy_simulation_pipeline = pipelines.SkyPyPipeline(
         skypy_config=skypy_config,
         sky_area=sky_area,
@@ -184,7 +186,7 @@ def generate_galaxy_table(tuple):
     # serialize
     output_path = os.path.join(output_dir, f'galaxy_table_{str(table_index).zfill(4)}.pkl')
     util.pickle(output_path, galaxy_data)
-    if verbose: print(f'[Table {table_index}] Saved galaxy table to {output_path}')
+    logger.info(f'[Table {table_index}] Saved galaxy table to {output_path}')
 
 
 if __name__ == '__main__':

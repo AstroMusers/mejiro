@@ -3,7 +3,7 @@ pipeline_label: roman_data_challenge_rung_1
 psf_cache_dir: cached_psfs
 dev: False
 nice: 19
-verbose: True
+show_progress_bar: True
 suppress_warnings: True
 limit: null
 seed: &seed 42

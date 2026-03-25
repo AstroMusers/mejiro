@@ -8,10 +8,13 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 import numpy as np
 from tqdm import tqdm
 
+import logging
+
 from mejiro.synthetic_image import SyntheticImage
 from mejiro.utils import roman_util, util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
+logger = logging.getLogger(__name__)
 
 PREV_SCRIPT_NAME = '03'
 SCRIPT_NAME = '04'
@@ -53,11 +56,11 @@ def main(args):
     # limit the number of systems to process, if limit imposed
     count = len(input_pickles)
     if pipeline.limit is not None and pipeline.limit < count:
-        if pipeline.verbose: print(f'Limiting to {pipeline.limit} lens(es)')
+        logger.info(f'Limiting to {pipeline.limit} lens(es)')
         input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
         if pipeline.limit < count:
             count = pipeline.limit
-    if pipeline.verbose: print(f'Processing {count} lens(es)')
+    logger.info(f'Processing {count} lens(es)')
 
     # tuple the parameters
     tuple_list = [(pipeline, synthetic_image_config, psf_config, input_pickle) for input_pickle in input_pickles]
@@ -118,7 +121,6 @@ def create_synthetic_image(input):
             'num_pix': num_pix,
             'check_cache': True,
             'psf_cache_dir': pipeline.psf_cache_dir,
-            'verbose': False,
         }
         kwargs_psf = pipeline.instrument.get_psf_kwargs(**get_psf_args)
 
@@ -131,13 +133,12 @@ def create_synthetic_image(input):
                                         instrument_params=instrument_params,
                                         kwargs_numerics=kwargs_numerics,
                                         kwargs_psf=kwargs_psf,
-                                        pieces=pieces,
-                                        verbose=False)
+                                        pieces=pieces)
             util.pickle(os.path.join(output_dir, f'SyntheticImage_{lens.name}_{band}.pkl'), synthetic_image)
         except Exception as e:
             failed_pickle_path = os.path.join(output_dir, f'failed_{lens.name}_{band}.pkl')
             util.pickle(failed_pickle_path, lens)
-            print(f'Error creating synthetic image for lens {lens.name} in band {band}: {e}. Pickling to {failed_pickle_path}')
+            logger.warning(f'Error creating synthetic image for lens {lens.name} in band {band}: {e}. Pickling to {failed_pickle_path}')
             return
 
 

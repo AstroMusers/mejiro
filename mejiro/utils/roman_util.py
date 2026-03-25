@@ -1,3 +1,7 @@
+import logging
+logger = logging.getLogger(__name__)
+
+
 def divide_up_sca(sides):
     """
     Divides the SCA into a grid of sub-arrays and calculates the center coordinates of each sub-array.
@@ -25,7 +29,7 @@ def divide_up_sca(sides):
         f"Sub-array size must be a whole number, got {sub_array_size:.6f} for sides={sides}"
     )
     sub_array_size = int(sub_array_size)
-    print(f"Sub-array size: {sub_array_size} pixels")
+    logger.info(f"Sub-array size: {sub_array_size} pixels")
 
     half = (sub_array_size - 1) / 2
 

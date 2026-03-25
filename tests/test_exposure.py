@@ -24,7 +24,7 @@ def test_exposure_with_galsim_engine(strong_lens):
     detector = 'SCA01'
     detector_position = (2048, 2048)
 
-    kwargs_psf = STPSFEngine.get_roman_psf_kwargs(band, detector, detector_position, oversample=5, num_pix=101, check_cache=True, psf_cache_dir=TEST_DATA_DIR, verbose=False)
+    kwargs_psf = STPSFEngine.get_roman_psf_kwargs(band, detector, detector_position, oversample=5, num_pix=101, check_cache=True, psf_cache_dir=TEST_DATA_DIR)
 
     synthetic_image = SyntheticImage(strong_lens=strong_lens,
                                      instrument=Roman(),
@@ -33,18 +33,15 @@ def test_exposure_with_galsim_engine(strong_lens):
                                      instrument_params={'detector': detector, 'detector_position': detector_position},
                                      kwargs_numerics={},
                                      kwargs_psf=kwargs_psf,
-                                     pieces=False,
-                                     verbose=False)
+                                     pieces=False)
 
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
-                        engine='galsim',
-                        verbose=False)
+                        engine='galsim')
 
     assert exposure.synthetic_image == synthetic_image
     assert exposure.exposure_time == 146
     assert exposure.engine == 'galsim'
-    assert exposure.verbose == False
 
     # check engine param defaulting
     ignored_keys = ['rng']
@@ -77,13 +74,11 @@ def test_exposure_with_galsim_engine(strong_lens):
 #                         engine='lenstronomy',
 #                         # default engine params
 #                         check_cache=True,
-#                         psf_cache_dir=TEST_DATA_DIR,
-#                         verbose=False)
+#                         psf_cache_dir=TEST_DATA_DIR)
 
 #     assert exposure.synthetic_image == synthetic_image
 #     assert exposure.exposure_time == 146
 #     assert exposure.engine == 'lenstronomy'
-#     assert exposure.verbose == False
 
 #     # check engine param defaulting
 #     assert exposure.engine_params == lenstronomy_engine.default_roman_engine_params()
@@ -113,13 +108,11 @@ def test_exposure_with_galsim_engine(strong_lens):
 #                         engine='pandeia',
 #                         engine_params=engine_params,
 #                         check_cache=True,
-#                         psf_cache_dir=TEST_DATA_DIR,
-#                         verbose=False)
+#                         psf_cache_dir=TEST_DATA_DIR)
 
 #     assert exposure.synthetic_image == synthetic_image
 #     assert exposure.exposure_time == 146
 #     assert exposure.engine == 'pandeia'
-#     assert exposure.verbose == False
 
 #     # check engine param defaulting
 #     assert exposure.engine_params == engine_params
@@ -142,8 +135,7 @@ def test_exposure_with_galsim_engine(strong_lens):
 #                         exposure_time=146,
 #                         # don't provide engine
 #                         check_cache=True,
-#                         psf_cache_dir=TEST_DATA_DIR,
-#                         verbose=False)
+#                         psf_cache_dir=TEST_DATA_DIR)
 
 #     assert exposure.engine == 'galsim'
 
@@ -156,8 +148,7 @@ def test_exposure_with_galsim_engine(strong_lens):
 #                  exposure_time=146,
 #                  engine='invalid_engine',
 #                  check_cache=True,
-#                  psf_cache_dir=TEST_DATA_DIR,
-#                  verbose=False)
+#                  psf_cache_dir=TEST_DATA_DIR)
 #     except ValueError as e:
 #         assert str(e) == 'Engine "invalid_engine" not recognized'
 

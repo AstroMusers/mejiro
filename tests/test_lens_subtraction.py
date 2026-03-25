@@ -76,7 +76,7 @@ def test_subtract_lens_on_exposure():
 
     kwargs_psf = STPSFEngine.get_roman_psf_kwargs(
         band, detector, detector_position, oversample=5, num_pix=101,
-        check_cache=True, psf_cache_dir=TEST_DATA_DIR, verbose=False)
+        check_cache=True, psf_cache_dir=TEST_DATA_DIR)
 
     synthetic_image = SyntheticImage(
         strong_lens=strong_lens,
@@ -86,8 +86,7 @@ def test_subtract_lens_on_exposure():
         instrument_params={'detector': detector, 'detector_position': detector_position},
         kwargs_numerics={},
         kwargs_psf=kwargs_psf,
-        pieces=True,
-        verbose=False)
+        pieces=True)
 
     engine_params = {
         'sky_background': False,
@@ -97,8 +96,7 @@ def test_subtract_lens_on_exposure():
         synthetic_image,
         exposure_time=146,
         engine='galsim',
-        engine_params=engine_params,
-        verbose=False)
+        engine_params=engine_params)
 
     residual, model, best_fit, fit_result = subtract_lens(exposure)
 

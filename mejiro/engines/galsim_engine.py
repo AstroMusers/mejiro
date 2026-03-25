@@ -1,3 +1,4 @@
+import logging
 import os
 import galsim
 import galsim.roman  # NB not automatically imported with `import galsim`
@@ -8,11 +9,13 @@ from copy import deepcopy
 from mejiro.engines.engine import Engine
 from mejiro.utils import roman_util
 
+logger = logging.getLogger(__name__)
+
 
 class GalSimEngine(Engine):
 
     @staticmethod
-    def get_roman_exposure(synthetic_image, exposure_time, engine_params={}, verbose=False):
+    def get_roman_exposure(synthetic_image, exposure_time, engine_params={}):
         from mejiro.instruments.roman import Roman
         roman = Roman()
 
@@ -236,7 +239,7 @@ class GalSimEngine(Engine):
 
 
     @staticmethod
-    def get_exposure(synthetic_image, exposure_time, engine_params={}, verbose=False):
+    def get_exposure(synthetic_image, exposure_time, engine_params={}):
         # import instrument dynamically based on instrument name
         import importlib
         module = importlib.import_module(f'mejiro.instruments.{synthetic_image.instrument_name.lower()}')
@@ -433,104 +436,50 @@ class GalSimEngine(Engine):
     @staticmethod
     def validate_engine_params(instrument_name, engine_params):
         if instrument_name.lower() == 'roman':
-            # if 'rng_seed' not in engine_params.keys():
-            #     engine_params['rng_seed'] = GalSimEngine.defaults('Roman')['rng_seed']
-                # TODO logging to inform user of default
-            # else:
-            #     # TODO validate
-            #     pass
             if 'min_zodi_factor' not in engine_params.keys():
                 engine_params['min_zodi_factor'] = GalSimEngine.defaults('Roman')['min_zodi_factor']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
+                logger.debug(f'Using default min_zodi_factor: {engine_params["min_zodi_factor"]}')
             if 'sky_background' not in engine_params.keys():
                 engine_params['sky_background'] = GalSimEngine.defaults('Roman')['sky_background']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
+                logger.debug(f'Using default sky_background: {engine_params["sky_background"]}')
             if 'detector_effects' not in engine_params.keys():
                 engine_params['detector_effects'] = GalSimEngine.defaults('Roman')['detector_effects']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
+                logger.debug(f'Using default detector_effects: {engine_params["detector_effects"]}')
             if 'poisson_noise' not in engine_params.keys():
                 engine_params['poisson_noise'] = GalSimEngine.defaults('Roman')['poisson_noise']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
+                logger.debug(f'Using default poisson_noise: {engine_params["poisson_noise"]}')
             if 'reciprocity_failure' not in engine_params.keys():
                 engine_params['reciprocity_failure'] = GalSimEngine.defaults('Roman')['reciprocity_failure']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
+                logger.debug(f'Using default reciprocity_failure: {engine_params["reciprocity_failure"]}')
             if 'dark_noise' not in engine_params.keys():
                 engine_params['dark_noise'] = GalSimEngine.defaults('Roman')['dark_noise']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
+                logger.debug(f'Using default dark_noise: {engine_params["dark_noise"]}')
             if 'nonlinearity' not in engine_params.keys():
                 engine_params['nonlinearity'] = GalSimEngine.defaults('Roman')['nonlinearity']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
+                logger.debug(f'Using default nonlinearity: {engine_params["nonlinearity"]}')
             if 'ipc' not in engine_params.keys():
                 engine_params['ipc'] = GalSimEngine.defaults('Roman')['ipc']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
+                logger.debug(f'Using default ipc: {engine_params["ipc"]}')
             if 'read_noise' not in engine_params.keys():
                 engine_params['read_noise'] = GalSimEngine.defaults('Roman')['read_noise']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
+                logger.debug(f'Using default read_noise: {engine_params["read_noise"]}')
             return engine_params
         elif instrument_name.lower() == 'hwo' or instrument_name.lower() == 'jwst' or instrument_name.lower() == 'hst':
-            # if 'rng_seed' not in engine_params.keys():
-            #     engine_params['rng_seed'] = GalSimEngine.defaults('HWO')['rng_seed']
-                # TODO logging to inform user of default
-            # else:
-            #     # TODO validate
-            #     pass
             if 'sky_background' not in engine_params.keys():
                 engine_params['sky_background'] = GalSimEngine.defaults('HWO')['sky_background']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
+                logger.debug(f'Using default sky_background: {engine_params["sky_background"]}')
             if 'detector_effects' not in engine_params.keys():
                 engine_params['detector_effects'] = GalSimEngine.defaults('HWO')['detector_effects']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
+                logger.debug(f'Using default detector_effects: {engine_params["detector_effects"]}')
             if 'poisson_noise' not in engine_params.keys():
                 engine_params['poisson_noise'] = GalSimEngine.defaults('HWO')['poisson_noise']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
+                logger.debug(f'Using default poisson_noise: {engine_params["poisson_noise"]}')
             if 'dark_noise' not in engine_params.keys():
                 engine_params['dark_noise'] = GalSimEngine.defaults('HWO')['dark_noise']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
+                logger.debug(f'Using default dark_noise: {engine_params["dark_noise"]}')
             if 'read_noise' not in engine_params.keys():
                 engine_params['read_noise'] = GalSimEngine.defaults('HWO')['read_noise']
-                # TODO logging to inform user of default
-            else:
-                # TODO validate
-                pass
+                logger.debug(f'Using default read_noise: {engine_params["read_noise"]}')
             return engine_params
         else:
             Engine.instrument_not_supported(instrument_name)

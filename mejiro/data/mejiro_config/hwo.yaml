@@ -3,7 +3,7 @@ pipeline_label: hwo
 psf_cache_dir: null
 dev: True
 nice: 19
-verbose: False
+show_progress_bar: False
 suppress_warnings: False
 limit: null
 seed: &seed 42

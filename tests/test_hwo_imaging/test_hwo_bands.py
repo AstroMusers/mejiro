@@ -16,9 +16,7 @@ def test_band(band):
                                     instrument=hwo,
                                     band=band,
                                     kwargs_numerics={'supersampling_factor': 1},
-                                    kwargs_psf=kwargs_psf,
-                                    verbose=False)
+                                    kwargs_psf=kwargs_psf)
         
     exposure = Exposure(synthetic_image,
-                        exposure_time=1000,
-                        verbose=False)
+                        exposure_time=1000)

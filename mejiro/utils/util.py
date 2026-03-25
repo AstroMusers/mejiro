@@ -12,8 +12,11 @@ from collections import ChainMap
 from glob import glob
 from scipy.ndimage import generic_filter
 
+import logging
+logger = logging.getLogger(__name__)
 
-def smooth_negative_pixels(image, kernel_size=3, verbose=True):
+
+def smooth_negative_pixels(image, kernel_size=3):
     """
     Replace negative pixels in an image with local median values.
 
@@ -28,9 +31,6 @@ def smooth_negative_pixels(image, kernel_size=3, verbose=True):
     kernel_size : int, optional
         Size of the square kernel used to compute local median values.
         Default is 3, meaning a 3x3 neighborhood.
-    verbose : bool, optional
-        If True, print information about the number of negative pixels replaced.
-        Default is True.
 
     Returns
     -------
@@ -49,21 +49,19 @@ def smooth_negative_pixels(image, kernel_size=3, verbose=True):
     --------
     >>> import numpy as np
     >>> image = np.array([[-1, 2, 3], [4, -2, 6], [7, 8, 9]], dtype=float)
-    >>> smoothed = smooth_negative_pixels(image, kernel_size=3, verbose=False)
+    >>> smoothed = smooth_negative_pixels(image, kernel_size=3)
     """
     n_neg = np.sum(image < 0)
 
     if n_neg > 0:
-        if verbose:
-            print(f"Replacing {n_neg} negative pixels in image with local {kernel_size}x{kernel_size} median")
+        logger.info(f"Replacing {n_neg} negative pixels in image with local {kernel_size}x{kernel_size} median")
         neg_mask = image < 0
         filled = generic_filter(
             np.where(neg_mask, np.nan, image), np.nanmedian, size=kernel_size
         )
         image[neg_mask] = filled[neg_mask]
     else:
-        if verbose:
-            print("No negative pixels in image")
+        logger.info("No negative pixels in image")
 
     return image
 
@@ -165,7 +163,7 @@ def print_key_structure(d, indent=0):
     if not isinstance(d, dict):
         raise TypeError("Input must be a dictionary")
     for key, value in d.items():
-        print(' ' * indent + str(key))
+        logger.debug(' ' * indent + str(key))
         if isinstance(value, dict):
             print_key_structure(value, indent + 2)
 
@@ -622,7 +620,7 @@ def combine_all_csvs(path, prefix="", filename=None):
     # save as combined CSV
     if filename is not None:
         df_res.to_csv(filename)
-        print(f"Wrote combined CSV to {filename}")
+        logger.info(f"Wrote combined CSV to {filename}")
 
     # return as DataFrame
     return df_res
@@ -819,7 +817,7 @@ def print_execution_time(start, stop, return_string=False):
 
     """
     execution_time = calculate_execution_time(start, stop)
-    print(f"Execution time: {execution_time}")
+    logger.info(f"Execution time: {execution_time}")
     if return_string:
         return execution_time
 

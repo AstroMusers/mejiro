@@ -21,7 +21,7 @@ def _make_noiseless_exposure(strong_lens, band='F129', exposure_time=146, pieces
 
     kwargs_psf = STPSFEngine.get_roman_psf_kwargs(
         band, detector, detector_position, oversample=5, num_pix=101,
-        check_cache=True, psf_cache_dir=TEST_DATA_DIR, verbose=False)
+        check_cache=True, psf_cache_dir=TEST_DATA_DIR)
 
     synthetic_image = SyntheticImage(
         strong_lens=strong_lens,
@@ -31,8 +31,7 @@ def _make_noiseless_exposure(strong_lens, band='F129', exposure_time=146, pieces
         instrument_params={'detector': detector, 'detector_position': detector_position},
         kwargs_numerics={},
         kwargs_psf=kwargs_psf,
-        pieces=pieces,
-        verbose=False)
+        pieces=pieces)
 
     # disable all noise and detector effects
     engine_params = {
@@ -43,8 +42,7 @@ def _make_noiseless_exposure(strong_lens, band='F129', exposure_time=146, pieces
         synthetic_image,
         exposure_time=exposure_time,
         engine='galsim',
-        engine_params=engine_params,
-        verbose=False)
+        engine_params=engine_params)
 
     return synthetic_image, exposure
 

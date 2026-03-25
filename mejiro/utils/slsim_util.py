@@ -1,8 +1,11 @@
+import logging
 import pandas as pd
 from tqdm import tqdm
 
+logger = logging.getLogger(__name__)
 
-def write_lens_population_to_csv(output_path, lens_population, snr_list, bands=None, verbose=False):
+
+def write_lens_population_to_csv(output_path, lens_population, snr_list, bands=None, show_progress_bar=False):
     """
     Write list of SLSim galaxy-galaxy Lens objects to a CSV.
 
@@ -16,10 +19,10 @@ def write_lens_population_to_csv(output_path, lens_population, snr_list, bands=N
         A list of signal-to-noise ratio (SNR) values corresponding to each system.
     bands: list
         A list of bands. If None, they will be parsed from the SLSim Deflector.
-    verbose : bool, optional
-        If True, prints progress and completion messages. Default is False.
+    show_progress_bar : bool, optional
+        If True, shows a progress bar during processing. Default is False.
     """
-    if verbose: print(f'Writing lens population to {output_path}...')
+    logger.info(f'Writing lens population to {output_path}...')
 
     # retrieve the bands
     if bands is None:
@@ -27,7 +30,7 @@ def write_lens_population_to_csv(output_path, lens_population, snr_list, bands=N
         bands = [k.split("_")[1] for k in sample_gglens.deflector._deflector._deflector_dict.keys() if k.startswith("mag_")]
 
     data = []
-    for gglens, snr in tqdm(zip(lens_population, snr_list), total=len(lens_population), disable=not verbose):
+    for gglens, snr in tqdm(zip(lens_population, snr_list), total=len(lens_population), disable=not show_progress_bar):
         row = {
             'vel_disp': gglens.deflector_velocity_dispersion(),
             'm_star': gglens.deflector_stellar_mass(),
@@ -52,4 +55,4 @@ def write_lens_population_to_csv(output_path, lens_population, snr_list, bands=N
 
     df = pd.DataFrame(data)
     df.to_csv(output_path, index=False)
-    if verbose: print(f'Wrote lens population to {output_path}.')
+    logger.info(f'Wrote lens population to {output_path}.')

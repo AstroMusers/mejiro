@@ -1,3 +1,5 @@
+import logging
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import colors
@@ -5,6 +7,8 @@ from scipy.fft import fft2
 
 from mejiro.lenses import lens_util
 from mejiro.plots import plot_util
+
+logger = logging.getLogger(__name__)
 
 
 def snr_plot(labeled_array, strong_lens, total, lens, source, noise, snr_array, masked_snr_array, snr_list, debug_dir):
@@ -46,8 +50,8 @@ def snr_plot(labeled_array, strong_lens, total, lens, source, noise, snr_array, 
     try:
         plt.savefig(f'{debug_dir}/snr/snr_check_{id(total)}.png')
         plt.close()
-    except:
-        print('Could not save SNR plot')
+    except Exception as e:
+        logger.warning(f'Could not save SNR plot: {e}')
 
 
 def power_spectrum_check(array_list, lenses, titles, save_path, oversampled):

@@ -25,11 +25,14 @@ from datetime import datetime
 from glob import glob
 from tqdm import tqdm
 
+import logging
+
 import mejiro
 from mejiro.engines.stpsf_engine import STPSFEngine
 from mejiro.utils import roman_util, util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
+logger = logging.getLogger(__name__)
 
 PREV_SCRIPT_NAME = '05'
 SCRIPT_NAME = '06'
@@ -185,10 +188,10 @@ def main(args):
                 for i, band in enumerate(bands):
                     # get cached PSF
                     psf_id_string = STPSFEngine.get_psf_id(band, det, det_pos, psf_oversample, psf_pixels)
-                    psf = STPSFEngine.get_cached_psf(psf_id_string, pipeline.psf_cache_dir, verbose=True)
+                    psf = STPSFEngine.get_cached_psf(psf_id_string, pipeline.psf_cache_dir)
 
                     if psf is None:
-                        print(f'Warning: Cached PSF not found for {psf_id_string}. Skipping PSF dataset creation.')
+                        logger.warning(f'Cached PSF not found for {psf_id_string}. Skipping PSF dataset creation.')
                         continue
 
                     # create psf dataset
@@ -204,12 +207,12 @@ def main(args):
     # if not labeled, save answer key
     if not labeled:
         df.to_csv(answer_key_filepath, index=False)
-        print(f'Wrote answer key to {answer_key_filepath}')
+        logger.info(f'Wrote answer key to {answer_key_filepath}')
 
     stop = time.time()
     util.print_execution_time(start, stop)
 
-    print(f'Wrote dataset to {filepath}')
+    logger.info(f'Wrote dataset to {filepath}')
 
 
 if __name__ == '__main__':

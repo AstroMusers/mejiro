@@ -18,15 +18,13 @@
 #                                      instrument=roman,
 #                                      band=band,
 #                                      arcsec=scene_size,
-#                                      oversample=oversample,
-#                                      verbose=False)
+#                                      oversample=oversample)
 
 #     exposure = Exposure(synthetic_image,
 #                         exposure_time=exposure_time,
 #                         engine='pandeia',
 #                         engine_params='',
 #                         check_cache=True,
-#                         psf_cache_dir='test_data',
-#                         verbose=False)
+#                         psf_cache_dir='test_data')
 
 #     default_roman_engine_params = galsim_engine.default_roman_engine_params()

@@ -1,7 +1,10 @@
+import logging
 import numpy as np
 import time
 import warnings
 from lenstronomy.Data.coord_transforms import Coordinates
+
+logger = logging.getLogger(__name__)
 from lenstronomy.Data.pixel_grid import PixelGrid
 from lenstronomy.Data.psf import PSF
 from lenstronomy.ImSim.image_model import ImageModel
@@ -35,8 +38,7 @@ class SyntheticImage:
                  instrument_params={},
                  kwargs_numerics={},
                  kwargs_psf={},
-                 pieces=False,
-                 verbose=True
+                 pieces=False
                  ):
         """
         Initialize a SyntheticImage object.
@@ -59,8 +61,6 @@ class SyntheticImage:
             PSF settings for image simulation. If not provided, defaults are used.
         pieces : bool, optional
             If True, computes and stores lens/source surface brightness separately.
-        verbose : bool, optional
-            If True, prints status messages during initialization.
 
         Raises
         ------
@@ -93,13 +93,12 @@ class SyntheticImage:
         self.band = band
         self.fov_arcsec = fov_arcsec
         self.pieces = pieces
-        self.verbose = verbose
 
         # calculate size of scene
         self.pixel_scale = instrument.get_pixel_scale(self.band).value  # an Astropy Quantity with units arcsec / pix
         self.num_pix = util.set_odd_num_pix(self.fov_arcsec, self.pixel_scale)  # make sure that final image will have odd number of pixels on a side
         self.fov_arcsec = self.num_pix * self.pixel_scale  # adjust fov (may differ from user-provided input)
-        if verbose: print(f'Scene size: {self.fov_arcsec} arcsec, {self.num_pix} pixels at pixel scale {self.pixel_scale} arcsec/pix')
+        logger.info(f'Scene size: {self.fov_arcsec} arcsec, {self.num_pix} pixels at pixel scale {self.pixel_scale} arcsec/pix')
 
         # set up pixel grid and coordinates
         x, y, self.ra_at_xy_0, self.dec_at_xy_0, x_at_radec_0, y_at_radec_0, self.Mpix2coord, self.Mcoord2pix = (
@@ -155,10 +154,10 @@ class SyntheticImage:
         elif 'compute_mode' not in kwargs_numerics:
             kwargs_numerics['compute_mode'] = 'regular'
         if kwargs_numerics['compute_mode'] == 'adaptive' and 'supersampled_indexes' not in kwargs_numerics.keys():
-            if self.verbose: print('Building adaptive grid')
+            logger.info('Building adaptive grid')
             self.supersampled_indexes = self.build_adaptive_grid(pad=40)
             kwargs_numerics['supersampled_indexes'] = self.supersampled_indexes
-        if kwargs_numerics['supersampling_factor'] < 5 and verbose:
+        if kwargs_numerics['supersampling_factor'] < 5:
             warnings.warn('Supersampling factor less than 5 may not be sufficient for accurate results, especially when convolving with a non-trivial PSF')
         self.kwargs_numerics = kwargs_numerics            
 
@@ -193,8 +192,7 @@ class SyntheticImage:
 
         end = time.time()
         self.calc_time = end - start
-        if self.verbose:
-            print(f'Synthetic image calculation time: {util.calculate_execution_time(start, end, unit="s")}')
+        logger.info(f'Synthetic image calculation time: {util.calculate_execution_time(start, end, unit="s")}')
 
     def get_flux(self):
         """

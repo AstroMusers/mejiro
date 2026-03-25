@@ -1,8 +1,12 @@
+import logging
+
 import numpy as np
 from scipy import ndimage
 
+logger = logging.getLogger(__name__)
 
-def get_snr(exposure, snr_per_pixel_threshold=1, verbose=False):
+
+def get_snr(exposure, snr_per_pixel_threshold=1):
     """
     Calculate the signal-to-noise ratio (SNR) given an exposure, using the method of `Holloway et al. (2023) <https://doi.org/10.1093/mnras/stad2371>`_. First, the SNR per pixel is calculated: see `get_snr_array()`. Then, contiguous regions of pixels above the SNR per pixel threshold are identified. The SNR for each region is calculated in the following way:
 
@@ -18,8 +22,6 @@ def get_snr(exposure, snr_per_pixel_threshold=1, verbose=False):
         Expected to have 'source_exposure' and 'exposure' attributes.
     snr_per_pixel_threshold : float, optional
         The minimum SNR per pixel required for a pixel to be included in a region (default is 1).
-    verbose : bool, optional
-        If True, prints detailed information about the processing steps (default is False).
 
     Returns
     -------
@@ -44,10 +46,10 @@ def get_snr(exposure, snr_per_pixel_threshold=1, verbose=False):
                     [[0, 1, 0],
                      [1, 1, 1],
                      [0, 1, 0]])
-    if verbose: print(f'Using structure\n{structure}')
+    logger.debug(f'Using structure\n{structure}')
 
     labeled_array, num_regions = ndimage.label(masked_snr_array.filled(0), structure=structure)
-    if verbose: print(f'Identified {num_regions} region(s)')
+    logger.debug(f'Identified {num_regions} region(s)')
 
     # calculate the SNR for each region
     snrs = []
@@ -56,7 +58,7 @@ def get_snr(exposure, snr_per_pixel_threshold=1, verbose=False):
         total_counts = np.sum(exposure.exposure[labeled_array == i])
         snr = source_counts / np.sqrt(total_counts)
         snrs.append(snr)
-        if verbose: print(f'Region {i}: SNR = {snr}')
+        logger.debug(f'Region {i}: SNR = {snr}')
 
     # return the maximum SNR
     return np.max(snrs) if snrs else None, masked_snr_array

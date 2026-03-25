@@ -3,7 +3,7 @@ pipeline_label: simple
 psf_cache_dir: null  # /data/bwedig/mejiro/cached_psfs
 dev: True
 nice: 19
-verbose: True
+show_progress_bar: True
 suppress_warnings: False
 limit: null
 seed: &seed 42

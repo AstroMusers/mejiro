@@ -12,9 +12,12 @@ from datetime import datetime
 from glob import glob
 from tqdm import tqdm
 
+import logging
+
 import mejiro
 from mejiro.utils import util
 
+logger = logging.getLogger(__name__)
 
 PREV_SCRIPT_NAME = '05'
 SCRIPT_NAME = '06'
@@ -41,7 +44,6 @@ def main(args):
 
     # retrieve configuration parameters
     dev = config['dev']
-    verbose = config['verbose']
     data_dir = config['data_dir']
     limit = config['limit']
     bands = config['synthetic_image']['bands']
@@ -71,12 +73,12 @@ def main(args):
         lens_uids = sorted(lens_uids)
         uid_dict[sca] = lens_uids  # for each SCA, list of UIDs of associated lenses
 
-    if verbose: print(f'Found {len(uid_dict)} SCA(s) with {sum([len(v) for v in uid_dict.values()])} lenses')
+    logger.info(f'Found {len(uid_dict)} SCA(s) with {sum([len(v) for v in uid_dict.values()])} lenses')
 
     # create h5 file
     filepath = f'{pipeline_dir}/roman_data_v1.h5'
     if os.path.exists(filepath):
-        if verbose: print(f'File {filepath} already exists. Overwriting...')
+        logger.info(f'File {filepath} already exists. Overwriting...')
         os.remove(filepath)
     f = h5py.File(filepath, 'a')  # append mode: read/write if exists, create otherwise
 

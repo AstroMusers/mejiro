@@ -1,6 +1,9 @@
+import logging
 import numpy as np
 import galsim
 from galsim import roman
+
+logger = logging.getLogger(__name__)
 from romanisim import image, parameters, catalog, psf, util, wcs, persistence
 from astropy.coordinates import SkyCoord
 from astropy import units as u
@@ -28,27 +31,24 @@ from mejiro.utils import roman_util
 class RomanISimEngine(Engine):
 
     @staticmethod
-    def build_extra_counts(synthetic_image, exposure_time, psf=None, engine_params=defaults('Roman'), verbose=False):
+    def build_extra_counts(synthetic_image, exposure_time, psf=None, engine_params=defaults('Roman')):
         band = synthetic_image.band
         sca = engine_params['sca']
 
         # AB zeropoint flux [electrons/s]
         flux_zeropoint = romanisim.bandpass.get_abflux(band, sca)
-        if verbose:
-            print(f"AB zeropoint flux for {band}, SCA{sca}: {abflux:.3e} e/s")
+        logger.debug(f"AB zeropoint flux for {band}, SCA{sca}: {abflux:.3e} e/s")
 
         # Exposure time from the MA table
         read_pattern = rsim_params.read_pattern[ma_table_number]
         exptime = rsim_params.read_time * read_pattern[-1][-1]
-        if verbose:
-            print(f"Total exposure time (MA table {ma_table_number}): {exptime:.1f} s")
+        logger.debug(f"Total exposure time (MA table {ma_table_number}): {exptime:.1f} s")
 
         # Total electrons from the lens system
         total_electrons = maggies * abflux * exptime
-        if verbose:
-            print(f"Lens flux: {maggies:.3e} maggies "
-                f"(AB mag {-2.5*np.log10(maggies):.1f})")
-            print(f"Total electrons from lens: {total_electrons:.1f}")
+        logger.debug(f"Lens flux: {maggies:.3e} maggies "
+            f"(AB mag {-2.5*np.log10(maggies):.1f})")
+        logger.debug(f"Total electrons from lens: {total_electrons:.1f}")
 
         # Scale the normalized stamp to electrons
         lens_electrons = (synth.image / np.sum(synth.image)) * total_electrons
@@ -60,9 +60,7 @@ class RomanISimEngine(Engine):
 
         # return tiled_extra_counts
 
-    # @staticmethod
-    # def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=defaults(), verbose=False):
-        
+
 
     @staticmethod
     def defaults(instrument_name='roman'):

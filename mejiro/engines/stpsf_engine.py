@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import os
 import warnings
@@ -7,6 +8,8 @@ from stpsf import NIRCam
 
 from mejiro.engines.engine import Engine
 from mejiro.utils import roman_util, lenstronomy_util
+
+logger = logging.getLogger(__name__)
 
 
 class STPSFEngine(Engine):
@@ -23,15 +26,14 @@ class STPSFEngine(Engine):
         pass
 
     @staticmethod
-    def get_roman_psf_kwargs(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None,
-                    verbose=False):
+    def get_roman_psf_kwargs(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None):
         kernel = STPSFEngine.get_roman_psf(band, detector, detector_position, oversample, num_pix,
-                                            check_cache=check_cache, psf_cache_dir=psf_cache_dir, verbose=verbose)
+                                            check_cache=check_cache, psf_cache_dir=psf_cache_dir)
         return lenstronomy_util.get_pixel_psf_kwargs(kernel, oversample)
 
     @staticmethod
     def get_roman_psf(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None,
-                    verbose=False, **calc_psf_kwargs):
+                    **calc_psf_kwargs):
         """
         Generate a Roman WFI PSF using STPSF.
 
@@ -51,8 +53,6 @@ class STPSFEngine(Engine):
             If True, check the cache for an existing PSF before generating a new one. Default is True.
         psf_cache_dir : str, optional
             The directory where cached PSFs are stored. If None, defaults to the directory installed with mejiro. Default is None.
-        verbose : bool, optional
-            If True, print additional information. Default is False.
         **calc_psf_kwargs : dict
             Additional keyword arguments to pass to STPSF's `calc_psf` method.
 
@@ -65,13 +65,11 @@ class STPSFEngine(Engine):
         if check_cache:
             assert psf_cache_dir is not None, 'Must provide a PSF cache directory if checking the cache'
             psf_id = STPSFEngine.get_psf_id(band, detector, detector_position, oversample, num_pix)
-            cached_psf = STPSFEngine.get_cached_psf(psf_id, psf_cache_dir, verbose)
+            cached_psf = STPSFEngine.get_cached_psf(psf_id, psf_cache_dir)
             if cached_psf is not None:
                 return cached_psf
-            
-        # TODO get the warning to actually show up
-        # warnings.warn('Generating PSF with STPSF, which may be slow. Consider caching frequently-used PSFs.', UserWarning)
-        print('Generating PSF with STPSF, which may be slow. Consider caching frequently-used PSFs.')
+
+        logger.warning('Generating PSF with STPSF, which may be slow. Consider caching frequently-used PSFs.')
 
         # set PSF parameters
         wfi = WFI()
@@ -87,26 +85,23 @@ class STPSFEngine(Engine):
     
 
     @staticmethod
-    def get_jwst_psf_kwargs(band, oversample, num_pix, check_cache=False, psf_cache_dir=None,
-                    verbose=False):
+    def get_jwst_psf_kwargs(band, oversample, num_pix, check_cache=False, psf_cache_dir=None):
         kernel = STPSFEngine.get_jwst_psf(band, oversample, num_pix,
-                                            check_cache=check_cache, psf_cache_dir=psf_cache_dir, verbose=verbose)
+                                            check_cache=check_cache, psf_cache_dir=psf_cache_dir)
         return lenstronomy_util.get_pixel_psf_kwargs(kernel, oversample)
 
 
     @staticmethod
-    def get_jwst_psf(band, oversample, num_pix, check_cache=False, psf_cache_dir=None, verbose=False, **calc_psf_kwargs):
+    def get_jwst_psf(band, oversample, num_pix, check_cache=False, psf_cache_dir=None, **calc_psf_kwargs):
         # first, check if it exists in the cache
         if check_cache:
             assert psf_cache_dir is not None, 'Must provide a PSF cache directory if checking the cache'
             psf_id = STPSFEngine.get_jwst_psf_id(band, oversample, num_pix)
-            cached_psf = STPSFEngine.get_cached_psf(psf_id, psf_cache_dir, verbose)
+            cached_psf = STPSFEngine.get_cached_psf(psf_id, psf_cache_dir)
             if cached_psf is not None:
                 return cached_psf
-            
-        # TODO get the warning to actually show up
-        # warnings.warn('Generating PSF with STPSF, which may be slow. Consider caching frequently-used PSFs.', UserWarning)
-        print('Generating PSF with STPSF, which may be slow. Consider caching frequently-used PSFs.')
+
+        logger.warning('Generating PSF with STPSF, which may be slow. Consider caching frequently-used PSFs.')
 
         # set PSF parameters
         nircam = NIRCam()
@@ -193,7 +188,7 @@ class STPSFEngine(Engine):
 
 
     @staticmethod
-    def get_roman_psf_from_id(psf_id, check_cache=True, psf_cache_dir=None, verbose=False, **calc_psf_kwargs):
+    def get_roman_psf_from_id(psf_id, check_cache=True, psf_cache_dir=None, **calc_psf_kwargs):
         """
         Wrapper method for `get_roman_psf` that accepts the PSF's identifier string.
 
@@ -205,8 +200,6 @@ class STPSFEngine(Engine):
             If True, check the cache for an existing PSF before generating a new one. Default is True.
         psf_cache_dir : str, optional
             The directory where cached PSFs are stored. If None, defaults to the directory installed with mejiro. Default is None.
-        verbose : bool, optional
-            If True, print additional information. Default is False.
         **calc_psf_kwargs : dict
             Additional keyword arguments to pass to WebbPSF's `calc_psf` method.
 
@@ -216,12 +209,12 @@ class STPSFEngine(Engine):
             The PSF kernel.
         """
         band, detector, detector_position, oversample, num_pix = STPSFEngine.get_params_from_psf_id(psf_id)
-        return STPSFEngine.get_roman_psf(band, detector, detector_position, oversample, num_pix, check_cache, psf_cache_dir, verbose,
+        return STPSFEngine.get_roman_psf(band, detector, detector_position, oversample, num_pix, check_cache, psf_cache_dir,
                             **calc_psf_kwargs)
 
 
     @staticmethod
-    def cache_psf(id_string, psf_cache_dir, verbose=True):
+    def cache_psf(id_string, psf_cache_dir):
         """
         Save a PSF to the provided directory.
 
@@ -231,8 +224,6 @@ class STPSFEngine(Engine):
             The PSF identifier string.
         psf_cache_dir : str
             The directory where cached PSFs are stored.
-        verbose : bool, optional
-            If True, print messages about the caching process. Default is True.
 
         Returns
         -------
@@ -240,17 +231,15 @@ class STPSFEngine(Engine):
         """
         psf_path = os.path.join(psf_cache_dir, f'{id_string}.npy')
         if os.path.exists(psf_path):
-            if verbose:
-                print(f'PSF {id_string} already cached to {psf_path}')
+            logger.info(f'PSF {id_string} already cached to {psf_path}')
         else:
-            psf = STPSFEngine.get_roman_psf_from_id(id_string, check_cache=False, verbose=verbose)
+            psf = STPSFEngine.get_roman_psf_from_id(id_string, check_cache=False)
             np.save(psf_path, psf)
-            if verbose:
-                print(f'Cached PSF to {psf_path}')
+            logger.info(f'Cached PSF to {psf_path}')
 
 
     @staticmethod
-    def get_cached_psf(id_string, psf_cache_dir, verbose):
+    def get_cached_psf(id_string, psf_cache_dir):
         """
         Check if a PSF exists in the provided cache directory. If found, load and return it. Otherwise, return None.
 
@@ -260,8 +249,6 @@ class STPSFEngine(Engine):
             The PSF identifier string.
         psf_cache_dir : str or None
             The directory where cached PSFs are stored. If None, defaults to the directory installed with mejiro.
-        verbose : bool
-            If True, print additional information.
 
         Returns
         -------
@@ -276,9 +263,8 @@ class STPSFEngine(Engine):
 
         psf_path = glob(os.path.join(psf_cache_dir, f'{id_string}.npy'))
         if len(psf_path) == 1:
-            if verbose:
-                print(f'Loading cached PSF: {psf_path[0]}')
+            logger.debug(f'Loading cached PSF: {psf_path[0]}')
             return np.load(psf_path[0])
         else:
-            print(f'PSF {id_string} not found in cache {psf_cache_dir}')  # TODO change to logging
+            logger.warning(f'PSF {id_string} not found in cache {psf_cache_dir}')
             return None

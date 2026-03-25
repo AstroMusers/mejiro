@@ -19,8 +19,7 @@ def test_CDM(strong_lens):
                                      band='F129',
                                      fov_arcsec=5,
                                      instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
-                                     pieces=False,
-                                     verbose=False)
+                                     pieces=False)
     
 
 @pytest.mark.parametrize("strong_lens", [SampleGG(), SampleSL2S(), SampleBELLS()])
@@ -66,8 +65,7 @@ def test_WDM(strong_lens):
                                      band='F129',
                                      fov_arcsec=5,
                                      instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
-                                     pieces=False,
-                                     verbose=False)
+                                     pieces=False)
 
 
 @pytest.mark.parametrize("strong_lens", [SampleGG(), SampleSL2S(), SampleBELLS()])
@@ -95,8 +93,7 @@ def test_SIDM(strong_lens):
                                      band='F129',
                                      fov_arcsec=5,
                                      instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
-                                     pieces=False,
-                                     verbose=False)
+                                     pieces=False)
 
 
 @pytest.mark.parametrize("strong_lens", [SampleGG(), SampleSL2S(), SampleBELLS()])
@@ -119,6 +116,5 @@ def test_ULDM(strong_lens):
                                      band='F129',
                                      fov_arcsec=5,
                                      instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
-                                     pieces=False,
-                                     verbose=False)
+                                     pieces=False)
     

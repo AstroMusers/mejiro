@@ -17,8 +17,7 @@ def test_magnitudes(strong_lens):
                                      instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
                                      kwargs_numerics={},
                                      kwargs_psf={},
-                                     pieces=False,
-                                     verbose=False)
+                                     pieces=False)
 
 @pytest.mark.parametrize("strong_lens", [SampleSL2S(), SampleBELLS()])
 def test_lenstronomy_amplitudes(strong_lens):
@@ -29,8 +28,7 @@ def test_lenstronomy_amplitudes(strong_lens):
                                      instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
                                      kwargs_numerics={},
                                      kwargs_psf={},
-                                     pieces=False,
-                                     verbose=False)
+                                     pieces=False)
 
 @pytest.mark.parametrize("strong_lens", [Sample1(), Sample2(), SampleGG(), SampleSL2S(), SampleBELLS()])   
 def test_kwargs_numerics(strong_lens):
@@ -44,8 +42,7 @@ def test_kwargs_numerics(strong_lens):
                                      instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
                                      # none provided
                                      kwargs_psf={},
-                                     pieces=False,
-                                     verbose=False)
+                                     pieces=False)
     assert synthetic_image.kwargs_numerics == SyntheticImage.DEFAULT_KWARGS_NUMERICS
     
     # regular compute mode
@@ -60,8 +57,7 @@ def test_kwargs_numerics(strong_lens):
                                      instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
                                      kwargs_numerics=kwargs_numerics,
                                      kwargs_psf={},
-                                     pieces=False,
-                                     verbose=False)
+                                     pieces=False)
 
     # adaptive compute mode with supersampled indices provided
     region = util.create_centered_circle(N=47, radius=10)
@@ -77,8 +73,7 @@ def test_kwargs_numerics(strong_lens):
                                      instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
                                      kwargs_numerics=kwargs_numerics,
                                      kwargs_psf={},
-                                     pieces=False,
-                                     verbose=False)
+                                     pieces=False)
 
     # adaptive compute mode with default supersampled indices (annulus around image positions)
     kwargs_numerics = {
@@ -92,8 +87,7 @@ def test_kwargs_numerics(strong_lens):
                                      instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
                                      kwargs_numerics=kwargs_numerics,
                                      kwargs_psf={},
-                                     pieces=False,
-                                     verbose=False)
+                                     pieces=False)
     
     # unhappy path: insufficient supersampling factor
     kwargs_numerics = {
@@ -109,8 +103,7 @@ def test_kwargs_numerics(strong_lens):
                                      instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
                                      kwargs_numerics=kwargs_numerics,
                                      kwargs_psf={},
-                                     pieces=False,
-                                     verbose=True)
+                                     pieces=False)
         
 
 @pytest.mark.parametrize("strong_lens", [Sample1(), Sample2(), SampleGG(), SampleSL2S(), SampleBELLS()])        
@@ -122,8 +115,7 @@ def test_build_adaptive_grid(strong_lens):
                                      instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
                                      kwargs_numerics={},
                                      kwargs_psf={},
-                                     pieces=False,
-                                     verbose=False)
+                                     pieces=False)
     
     image_positions = synthetic_image.get_image_positions(pixel=True)
 
@@ -154,8 +146,7 @@ def test_get_image_positions():
                                      instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
                                      kwargs_numerics={},
                                      kwargs_psf={},
-                                     pieces=False,
-                                     verbose=False)
+                                     pieces=False)
     
     # check angular positions
     angular_positions = synthetic_image.get_image_positions(pixel=False)
@@ -179,8 +170,7 @@ def test_fov_flux():
         kwargs_numerics={},
         kwargs_psf={},
         pieces=False,
-        verbose=False,
-    )
+        )
     small_fov = SyntheticImage(fov_arcsec=3, **common_kwargs)
     large_fov = SyntheticImage(fov_arcsec=7, **common_kwargs)
 
@@ -196,8 +186,7 @@ def test_plot():
                                      instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
                                      kwargs_numerics={},
                                      kwargs_psf={},
-                                     pieces=False,
-                                     verbose=False)
+                                     pieces=False)
     synthetic_image.plot()  
 
 
@@ -210,8 +199,7 @@ def test_overplot_subhalos():
                                          instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
                                          kwargs_numerics={},
                                          kwargs_psf={},
-                                         pieces=False,
-                                         verbose=False)
+                                         pieces=False)
     with pytest.raises(ValueError):
         synthetic_image.overplot_subhalos()
 

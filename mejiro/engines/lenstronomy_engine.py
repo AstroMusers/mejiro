@@ -57,7 +57,7 @@ class LenstronomyEngine(Engine):
 
 
     @staticmethod
-    def get_exposure(synthetic_image, exposure_time, engine_params=None, verbose=False):
+    def get_exposure(synthetic_image, exposure_time, engine_params=None):
         engine_params = LenstronomyEngine.defaults(engine_params, synthetic_image.instrument_name)
 
         strong_lens = synthetic_image.strong_lens

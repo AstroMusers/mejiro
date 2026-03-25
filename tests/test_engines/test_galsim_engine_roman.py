@@ -16,14 +16,13 @@ TEST_DATA_DIR = os.path.join(os.path.dirname(mejiro.__path__[0]), 'tests', 'test
 def test_roman_default_engine_params():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=Roman(),
-                                     band='F129',
-                                     verbose=False)
+                                     band='F129')
 
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
                         engine='galsim',
                         # don't provide engine params
-                        verbose=False)
+                        )
 
     assert exposure.engine == 'galsim'
 
@@ -35,8 +34,7 @@ def test_roman_pieces():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=Roman(),
                                      band='F129',
-                                     pieces=True,
-                                     verbose=False)
+                                     pieces=True)
 
     assert synthetic_image.image.shape == (47, 47)
     assert synthetic_image.lens_surface_brightness.shape == (47, 47)
@@ -44,8 +42,7 @@ def test_roman_pieces():
 
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
-                        engine='galsim',
-                        verbose=False)
+                        engine='galsim')
 
     assert exposure.exposure.shape == (47, 47)
     assert exposure.lens_exposure.shape == (47, 47)
@@ -57,13 +54,11 @@ def test_roman_pieces():
 def test_roman_noise():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=Roman(),
-                                     band='F129',
-                                     verbose=False)
+                                     band='F129')
 
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
-                        engine='galsim',
-                        verbose=False)
+                        engine='galsim')
 
     poisson_noise = exposure.poisson_noise
     reciprocity_failure = exposure.reciprocity_failure
@@ -91,8 +86,7 @@ def test_roman_noise():
     exposure2 = Exposure(synthetic_image,
                         exposure_time=146,
                         engine='galsim',
-                        engine_params=engine_params,
-                        verbose=False)
+                        engine_params=engine_params)
 
     assert np.array_equal(exposure2.exposure, exposure.exposure)
     assert np.array_equal(poisson_noise.array, exposure2.poisson_noise.array)
@@ -106,8 +100,7 @@ def test_roman_noise():
 def test_roman_sky_background_off():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=Roman(),
-                                     band='F129',
-                                     verbose=False)
+                                     band='F129')
 
     engine_params = {
         'sky_background': False
@@ -116,8 +109,7 @@ def test_roman_sky_background_off():
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
                         engine='galsim',
-                        engine_params=engine_params,
-                        verbose=False)
+                        engine_params=engine_params)
 
     # TODO checks on the images
 
@@ -125,8 +117,7 @@ def test_roman_sky_background_off():
 def test_roman_all_detector_effects_off():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=Roman(),
-                                     band='F129',
-                                     verbose=False)
+                                     band='F129')
 
     engine_params = {
         'detector_effects': False
@@ -135,8 +126,7 @@ def test_roman_all_detector_effects_off():
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
                         engine='galsim',
-                        engine_params=engine_params,
-                        verbose=False)
+                        engine_params=engine_params)
 
     # TODO checks on the images
 
@@ -144,8 +134,7 @@ def test_roman_all_detector_effects_off():
 def test_roman_poisson_noise_off():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=Roman(),
-                                     band='F129',
-                                     verbose=False)
+                                     band='F129')
 
     engine_params = {
         'poisson_noise': False
@@ -154,8 +143,7 @@ def test_roman_poisson_noise_off():
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
                         engine='galsim',
-                        engine_params=engine_params,
-                        verbose=False)
+                        engine_params=engine_params)
 
     # TODO checks on the images
 
@@ -163,8 +151,7 @@ def test_roman_poisson_noise_off():
 def test_roman_reciprocity_failure_off():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=Roman(),
-                                     band='F129',
-                                     verbose=False)
+                                     band='F129')
 
     engine_params = {
         'reciprocity_failure': False
@@ -173,8 +160,7 @@ def test_roman_reciprocity_failure_off():
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
                         engine='galsim',
-                        engine_params=engine_params,
-                        verbose=False)
+                        engine_params=engine_params)
 
     # TODO checks on the images
 
@@ -182,8 +168,7 @@ def test_roman_reciprocity_failure_off():
 def test_roman_dark_noise_off():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=Roman(),
-                                     band='F129',
-                                     verbose=False)
+                                     band='F129')
 
     engine_params = {
         'dark_noise': False
@@ -192,8 +177,7 @@ def test_roman_dark_noise_off():
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
                         engine='galsim',
-                        engine_params=engine_params,
-                        verbose=False)
+                        engine_params=engine_params)
 
     # TODO checks on the images
 
@@ -201,8 +185,7 @@ def test_roman_dark_noise_off():
 def test_roman_nonlinearity_off():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=Roman(),
-                                     band='F129',
-                                     verbose=False)
+                                     band='F129')
 
     engine_params = {
         'nonlinearity': False
@@ -211,8 +194,7 @@ def test_roman_nonlinearity_off():
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
                         engine='galsim',
-                        engine_params=engine_params,
-                        verbose=False)
+                        engine_params=engine_params)
 
     # TODO checks on the images
 
@@ -220,8 +202,7 @@ def test_roman_nonlinearity_off():
 def test_roman_ipc_off():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=Roman(),
-                                     band='F129',
-                                     verbose=False)
+                                     band='F129')
 
     engine_params = {
         'ipc': False
@@ -230,8 +211,7 @@ def test_roman_ipc_off():
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
                         engine='galsim',
-                        engine_params=engine_params,
-                        verbose=False)
+                        engine_params=engine_params)
 
     # TODO checks on the images
 
@@ -239,8 +219,7 @@ def test_roman_ipc_off():
 def test_roman_read_noise_off():
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=Roman(),
-                                     band='F129',
-                                     verbose=False)
+                                     band='F129')
 
     engine_params = {
         'read_noise': False
@@ -249,7 +228,6 @@ def test_roman_read_noise_off():
     exposure = Exposure(synthetic_image,
                         exposure_time=146,
                         engine='galsim',
-                        engine_params=engine_params,
-                        verbose=False)
+                        engine_params=engine_params)
 
     # TODO checks on the images

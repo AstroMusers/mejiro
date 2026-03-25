@@ -13,9 +13,7 @@ def test_default_roman_imaging(strong_lens):
 
     synthetic_image = SyntheticImage(strong_lens=strong_lens,
                                      instrument=Roman(),
-                                     band='F129',
-                                     verbose=False)
+                                     band='F129')
 
     exposure = Exposure(synthetic_image,
-                        exposure_time=1000,
-                        verbose=False)
+                        exposure_time=1000)

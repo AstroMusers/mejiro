@@ -19,15 +19,13 @@ def test_jwst_imaging(strong_lens, test_data_dir):
     # TODO generate CDM realization with LOS and add to strong_lens
 
     jwst = JWST()
-    kwargs_psf = STPSFEngine.get_jwst_psf_kwargs('F115W', oversample=5, num_pix=101, check_cache=True, psf_cache_dir=test_data_dir, verbose=False)
+    kwargs_psf = STPSFEngine.get_jwst_psf_kwargs('F115W', oversample=5, num_pix=101, check_cache=True, psf_cache_dir=test_data_dir)
 
     synthetic_image = SyntheticImage(strong_lens=strong_lens,
                                     instrument=jwst,
                                     band='F115W',
                                     kwargs_numerics={'supersampling_factor': 1},
-                                    kwargs_psf=kwargs_psf,
-                                    verbose=False)
+                                    kwargs_psf=kwargs_psf)
 
     exposure = Exposure(synthetic_image,
-                        exposure_time=1000,
-                        verbose=False)
+                        exposure_time=1000)

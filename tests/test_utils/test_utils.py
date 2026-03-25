@@ -90,38 +90,34 @@ def test_smooth_negative_pixels():
                       [4., 5., 6.],
                       [7., 8., 9.]])
     original = image.copy()
-    util.smooth_negative_pixels(image, verbose=False)
+    util.smooth_negative_pixels(image)
     np.testing.assert_array_equal(image, original)
 
     # negative pixel is replaced with a non-negative value
     image = np.array([[1., 2., 3.],
                       [4., -5., 6.],
                       [7., 8., 9.]], dtype=float)
-    util.smooth_negative_pixels(image, verbose=False)
+    util.smooth_negative_pixels(image)
     assert image[1, 1] >= 0
 
     # all non-negative pixels are preserved
     image = np.array([[1., 2., 3.],
                       [4., -5., 6.],
                       [7., 8., 9.]], dtype=float)
-    util.smooth_negative_pixels(image, verbose=False)
+    util.smooth_negative_pixels(image)
     non_neg_mask = np.array([[True, True, True],
                              [True, False, True],
                              [True, True, True]])
     np.testing.assert_array_equal(image[non_neg_mask],
                                   np.array([1., 2., 3., 4., 6., 7., 8., 9.]))
-
-    # verbose=True prints when negatives are present
     image = np.array([[1., -2.], [3., 4.]], dtype=float)
-    util.smooth_negative_pixels(image, verbose=True)  # should not raise
-
-    # verbose=True prints when no negatives
+    util.smooth_negative_pixels(image)  # should not raise
     image = np.array([[1., 2.], [3., 4.]], dtype=float)
-    util.smooth_negative_pixels(image, verbose=True)  # should not raise
+    util.smooth_negative_pixels(image)  # should not raise
 
     # in-place: returns the same array object
     image = np.array([[1., -2.], [3., 4.]], dtype=float)
-    result = util.smooth_negative_pixels(image, verbose=False)
+    result = util.smooth_negative_pixels(image)
     assert result is image
 
 
