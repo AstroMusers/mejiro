@@ -63,6 +63,8 @@ class Exposure:
             self.noise = self.noise.array  # it's confusing for all detector effects to be type galsim.Image and the noise attribute to be an ndarray, but for comparison across engines, the noise should be an array and the detector effects should be Images so they can be passed in as engine params
 
         elif engine == 'lenstronomy':
+            raise NotImplementedError('Lenstronomy engine not yet implemented')
+
             from mejiro.engines.lenstronomy_engine import LenstronomyEngine
 
             self.noise = np.zeros_like(self.synthetic_image.data)
@@ -86,7 +88,7 @@ class Exposure:
             self.noise = np.zeros((self.synthetic_image.num_pix, self.synthetic_image.num_pix))
 
         elif engine == 'romanisim':
-            # raise NotImplementedError('romanisim engine not yet implemented')
+            raise NotImplementedError('romanisim engine not yet implemented')
             
             from mejiro.engines.romanisim_engine import RomanISimEngine
 
