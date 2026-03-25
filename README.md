@@ -28,6 +28,8 @@ Install `mejiro` by following [these instructions in the documentation](https://
 
 To see how `mejiro` works, see the pipeline walkthrough notebook: `examples/pipeline_walkthrough.ipynb`.
 
+![mejiro flow diagram](images/mejiro_flow_diagram.png)
+
 # Citation
 
 If you use `mejiro`, please cite [Wedig et al. 2025](https://doi.org/10.3847/1538-4357/adc24f) and link to [this GitHub repository](https://github.com/AstroMusers/mejiro). Additional citation information can be found in [`CITATION.cff`](/CITATION.cff).
