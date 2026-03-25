@@ -74,17 +74,17 @@ def process_lens(params):
         print(f'Failed to generate exposure for StrongLens {lens.name}: {e}')
         return lens.name, None, None
 
-    source_exposure = exposure_no_subhalo.source_exposure
+    source_exposure = exposure_no_subhalo.source_data
     sky_background = exposure_no_subhalo.sky_background
     poisson_noise = exposure_no_subhalo.poisson_noise
     dark_noise = exposure_no_subhalo.dark_noise
     read_noise = exposure_no_subhalo.read_noise
 
-    snr_array = np.nan_to_num(source_exposure / np.sqrt(exposure_no_subhalo.exposure))
+    snr_array = np.nan_to_num(source_exposure / np.sqrt(exposure_no_subhalo.data))
     snr_threshold = np.quantile(snr_array, script_config['snr_quantile'])
     masked_snr_array = np.ma.masked_where(snr_array <= snr_threshold, snr_array)
     mask = np.ma.getmask(masked_snr_array)
-    masked_exposure_no_subhalo = np.ma.masked_array(exposure_no_subhalo.exposure, mask=mask)
+    masked_exposure_no_subhalo = np.ma.masked_array(exposure_no_subhalo.data, mask=mask)
 
     pixels_unmasked = masked_snr_array.count()
     dof = pixels_unmasked - 3
@@ -149,7 +149,7 @@ def process_lens(params):
             print(f'Failed to generate exposure with subhalo for StrongLens {lens.name}: {e}')
             return lens.name, None, None
 
-        masked_exposure_with_subhalo = np.ma.masked_array(exposure.exposure, mask=mask)
+        masked_exposure_with_subhalo = np.ma.masked_array(exposure.data, mask=mask)
         chi_square = stats.chi_square(np.ma.compressed(masked_exposure_with_subhalo),
                                         np.ma.compressed(masked_exposure_no_subhalo))
 
@@ -182,8 +182,8 @@ def process_lens(params):
             ax[0, 2].set_title(
                 r'$\chi^2=$ ' + f'{chi_square:.2f}, ' + r'$\chi_{3\sigma}^2=$ ' + f'{threshold_chi2:.2f}')
 
-            ax10 = ax[1, 0].imshow(synth.image - synth_no_subhalo.image, cmap='bwr', norm=CenteredNorm()) # 
-            ax11 = ax[1, 1].imshow(np.log10(exposure.exposure), cmap='cubehelix')
+            ax10 = ax[1, 0].imshow(synth.data - synth_no_subhalo.data, cmap='bwr', norm=CenteredNorm()) # 
+            ax11 = ax[1, 1].imshow(np.log10(exposure.data), cmap='cubehelix')
             ax12 = ax[1, 2].imshow(snr_array)
 
             ax[1, 0].set_title('Synthetic Residual')
@@ -198,7 +198,7 @@ def process_lens(params):
             plt.colorbar(ax12, ax=ax[1, 2])
 
             plt.suptitle(
-                f'StrongLens {lens.name}, Image Shape: {exposure.exposure.shape}')
+                f'StrongLens {lens.name}, Image Shape: {exposure.data.shape}')
             plt.savefig(os.path.join(image_save_dir, f'{lens.name}_{run}_mass{mass_idx}.png'))
             plt.close()
 

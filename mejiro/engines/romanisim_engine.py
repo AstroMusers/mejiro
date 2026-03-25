@@ -51,7 +51,7 @@ class RomanISimEngine(Engine):
         logger.debug(f"Total electrons from lens: {total_electrons:.1f}")
 
         # Scale the normalized stamp to electrons
-        lens_electrons = (synth.image / np.sum(synth.image)) * total_electrons
+        lens_electrons = (synth.data / np.sum(synth.data)) * total_electrons
 
     @staticmethod
     def tile_extra_counts(synthetic_image_list):

@@ -21,7 +21,7 @@ class Exposure:
         start = time.time()
 
         self.synthetic_image = synthetic_image
-        self.exposure_time = exposure_time
+        self.data_time = exposure_time
         self.engine = engine
         self.noise = None
 
@@ -65,7 +65,7 @@ class Exposure:
         elif engine == 'lenstronomy':
             from mejiro.engines.lenstronomy_engine import LenstronomyEngine
 
-            self.noise = np.zeros_like(self.synthetic_image.image)
+            self.noise = np.zeros_like(self.synthetic_image.data)
 
             # get exposure
             results, self.noise = LenstronomyEngine.get_exposure(
@@ -106,33 +106,33 @@ class Exposure:
         if self.engine == 'galsim':
             if self.synthetic_image.pieces:
                 self.image, self.lens_image, self.source_image = results
-                self.exposure, self.lens_exposure, self.source_exposure = self.image.array, self.lens_image.array, self.source_image.array
+                self.data, self.lens_data, self.source_data = self.image.array, self.lens_image.array, self.source_image.array
             else:
                 self.image, self.lens_image, self.source_image = results, None, None
-                self.exposure, self.lens_exposure, self.source_exposure = self.image.array, None, None
+                self.data, self.lens_data, self.source_data = self.image.array, None, None
         else:
             if self.synthetic_image.pieces:
-                self.exposure, self.lens_exposure, self.source_exposure = results
+                self.data, self.lens_data, self.source_data = results
             else:
-                self.exposure, self.lens_exposure, self.source_exposure = results, None, None
+                self.data, self.lens_data, self.source_data = results, None, None
 
         # crop off edge effects (e.g., IPC)
-        Exposure.crop_edge_effects(self.exposure, pad=3)
+        Exposure.crop_edge_effects(self.data, pad=3)
 
         # check for negative pixels
-        if np.any(self.exposure < 0):
-            warnings.warn(f'Negative pixel values in final image. Setting {np.sum(self.exposure < 0)} pixels to 0')
-            self.exposure[self.exposure < 0] = 0
+        if np.any(self.data < 0):
+            warnings.warn(f'Negative pixel values in final image. Setting {np.sum(self.data < 0)} pixels to 0')
+            self.data[self.data < 0] = 0
 
         if self.synthetic_image.pieces:
-            Exposure.crop_edge_effects(self.lens_exposure, pad=3)
-            Exposure.crop_edge_effects(self.source_exposure, pad=3)
-            if np.any(self.lens_exposure < 0):
-                warnings.warn(f'Negative pixel values in lens image. Setting {np.sum(self.lens_exposure < 0)} pixels to 0')
-                self.lens_exposure[self.lens_exposure < 0] = 0
-            if np.any(self.source_exposure < 0):
-                warnings.warn(f'Negative pixel values in source image. Setting {np.sum(self.source_exposure < 0)} pixels to 0')
-                self.source_exposure[self.source_exposure < 0] = 0
+            Exposure.crop_edge_effects(self.lens_data, pad=3)
+            Exposure.crop_edge_effects(self.source_data, pad=3)
+            if np.any(self.lens_data < 0):
+                warnings.warn(f'Negative pixel values in lens image. Setting {np.sum(self.lens_data < 0)} pixels to 0')
+                self.lens_data[self.lens_data < 0] = 0
+            if np.any(self.source_data < 0):
+                warnings.warn(f'Negative pixel values in source image. Setting {np.sum(self.source_data < 0)} pixels to 0')
+                self.source_data[self.source_data < 0] = 0
 
         end = time.time()
         self.calc_time = end - start
@@ -144,9 +144,9 @@ class Exposure:
     def plot(self, show_snr=False, savepath=None):
         import matplotlib.pyplot as plt
 
-        plt.imshow(np.log10(self.exposure), origin='lower')
+        plt.imshow(np.log10(self.data), origin='lower')
 
-        title = f'{self.synthetic_image.strong_lens.name} (' + r'$z_{l}=$' + f'{self.synthetic_image.strong_lens.z_lens:.2f}, ' + r'$z_{s}=$' + f'{self.synthetic_image.strong_lens.z_source:.2f}' + f')\n{self.synthetic_image.instrument_name} {self.synthetic_image.band}, {self.exposure_time} s'
+        title = f'{self.synthetic_image.strong_lens.name} (' + r'$z_{l}=$' + f'{self.synthetic_image.strong_lens.z_lens:.2f}, ' + r'$z_{s}=$' + f'{self.synthetic_image.strong_lens.z_source:.2f}' + f')\n{self.synthetic_image.instrument_name} {self.synthetic_image.band}, {self.data_time} s'
         if show_snr:
             snr = self.get_snr()
             title += f'\nSNR: {snr:.2f}'
@@ -163,23 +163,23 @@ class Exposure:
     #     import matplotlib.pyplot as plt
 
     #     fig, axs = plt.subplots(1, 3, figsize=(15, 5))
-    #     axs[0].imshow(np.log10(self.exposure), cmap='viridis')
-    #     axs[0].set_title(f'Exposure: {self.synthetic_image.instrument_name} {self.synthetic_image.band} band, {self.exposure_time} s')
+    #     axs[0].imshow(np.log10(self.data), cmap='viridis')
+    #     axs[0].set_title(f'Exposure: {self.synthetic_image.instrument_name} {self.synthetic_image.band} band, {self.data_time} s')
     #     axs[0].set_xlabel('x [Pixels]')
     #     axs[0].set_ylabel('y [Pixels]')
     #     cbar = fig.colorbar(axs[0].images[0], ax=axs[0])
     #     cbar.set_label(r'log$_{10}$(Counts)')
 
-    #     if self.lens_exposure is not None:
-    #         axs[1].imshow(np.log10(self.lens_exposure), cmap='viridis')
+    #     if self.lens_data is not None:
+    #         axs[1].imshow(np.log10(self.lens_data), cmap='viridis')
     #         axs[1].set_title('Lens Image')
     #         axs[1].set_xlabel('x [Pixels]')
     #         axs[1].set_ylabel('y [Pixels]')
     #         cbar = fig.colorbar(axs[1].images[0], ax=axs[1])
     #         cbar.set_label(r'log$_{10}$(Counts)')
 
-    #     if self.source_exposure is not None:
-    #         axs[2].imshow(np.log10(self.source_exposure), cmap='viridis')
+    #     if self.source_data is not None:
+    #         axs[2].imshow(np.log10(self.source_data), cmap='viridis')
     #         axs[2].set_title('Source Image')
     #         axs[2].set_xlabel('x [Pixels]')
     #         axs[2].set_ylabel('y [Pixels]')

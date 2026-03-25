@@ -108,10 +108,10 @@ def main(args):
                 for is_strong_lens in [True, False]:
                     # create datasets
                     if is_strong_lens:
-                        dset = group_band.create_dataset(f'exposure_{str(uid).zfill(8)}_{band}_{is_strong_lens}', data=exposure.exposure)
+                        dset = group_band.create_dataset(f'exposure_{str(uid).zfill(8)}_{band}_{is_strong_lens}', data=exposure.data)
                         dset.attrs['is_strong_lens'] = True
                     else:
-                        lens_with_noise = exposure.exposure - exposure.source_exposure
+                        lens_with_noise = exposure.data - exposure.source_data
                         dset = group_band.create_dataset(f'exposure_{str(uid).zfill(8)}_{band}_{is_strong_lens}', data=lens_with_noise)
                         dset.attrs['is_strong_lens'] = False
 

@@ -54,8 +54,8 @@ def get_snr(exposure, snr_per_pixel_threshold=1):
     # calculate the SNR for each region
     snrs = []
     for i in range(1, num_regions + 1):
-        source_counts = np.sum(exposure.source_exposure[labeled_array == i])
-        total_counts = np.sum(exposure.exposure[labeled_array == i])
+        source_counts = np.sum(exposure.source_data[labeled_array == i])
+        total_counts = np.sum(exposure.data[labeled_array == i])
         snr = source_counts / np.sqrt(total_counts)
         snrs.append(snr)
         logger.debug(f'Region {i}: SNR = {snr}')
@@ -90,7 +90,7 @@ def get_snr_array(exposure):
         If the exposure was not created with `pieces=True`.
     """
     _validate_exposure_for_snr_calculation(exposure)
-    return np.nan_to_num(exposure.source_exposure / np.sqrt(exposure.exposure), nan=0, posinf=0, neginf=0)
+    return np.nan_to_num(exposure.source_data / np.sqrt(exposure.data), nan=0, posinf=0, neginf=0)
 
 
 def _validate_exposure_for_snr_calculation(exposure):
@@ -108,6 +108,6 @@ def _validate_exposure_for_snr_calculation(exposure):
         If either `lens_exposure` or `source_exposure` is None, indicating that the
         exposure does not have the required separate surface brightness calculations.
     """
-    if exposure.lens_exposure is None or exposure.source_exposure is None:
+    if exposure.lens_data is None or exposure.source_data is None:
         raise ValueError('Exposure must have lens and source surface brightnesses calculated separately by setting pieces=True.')
     

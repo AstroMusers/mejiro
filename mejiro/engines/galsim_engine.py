@@ -32,7 +32,7 @@ class GalSimEngine(Engine):
             rng = galsim.UniformDeviate()
 
         # import image to GalSim
-        image = galsim.Image(array=synthetic_image.image * exposure_time, scale=synthetic_image.pixel_scale, xmin=0, ymin=0, copy=True)
+        image = galsim.Image(array=synthetic_image.data * exposure_time, scale=synthetic_image.pixel_scale, xmin=0, ymin=0, copy=True)
 
         # add sky background
         if type(engine_params['sky_background']) is galsim.Image:
@@ -258,7 +258,7 @@ class GalSimEngine(Engine):
             rng = galsim.UniformDeviate()
 
         # import image to GalSim
-        image = galsim.Image(array=synthetic_image.image * exposure_time, scale=synthetic_image.pixel_scale, xmin=0, ymin=0, copy=True)
+        image = galsim.Image(array=synthetic_image.data * exposure_time, scale=synthetic_image.pixel_scale, xmin=0, ymin=0, copy=True)
 
         # add sky background
         if type(engine_params['sky_background']) is galsim.Image:

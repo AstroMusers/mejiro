@@ -105,15 +105,15 @@ def test_subtract_lens_on_exposure():
 
     # residual should have less total flux than the original
     # (the lens is the dominant light source in the center)
-    original_peak = np.max(exposure.exposure)
+    original_peak = np.max(exposure.data)
     residual_peak = np.max(np.abs(residual))
     assert residual_peak < original_peak, \
         f'Residual peak ({residual_peak:.1f}) should be smaller than original peak ({original_peak:.1f})'
 
     # the central region (lens-dominated) should be mostly subtracted
-    center = exposure.exposure.shape[0] // 2
+    center = exposure.data.shape[0] // 2
     half_width = 5  # pixels
-    central_original = np.sum(exposure.exposure[center-half_width:center+half_width,
+    central_original = np.sum(exposure.data[center-half_width:center+half_width,
                                                  center-half_width:center+half_width])
     central_residual = np.sum(np.abs(residual[center-half_width:center+half_width,
                                                center-half_width:center+half_width]))

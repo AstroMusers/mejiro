@@ -126,8 +126,8 @@ def test_build_adaptive_grid(strong_lens):
 
     # check that a huge grid is slimmed down to the size of the image
     huge_grid = synthetic_image.build_adaptive_grid(pad=1000)
-    assert huge_grid.shape[0] == synthetic_image.image.shape[0]
-    assert huge_grid.shape[1] == synthetic_image.image.shape[1]
+    assert huge_grid.shape[0] == synthetic_image.data.shape[0]
+    assert huge_grid.shape[1] == synthetic_image.data.shape[1]
 
     # unhappy path: negative padding
     with pytest.raises(ValueError, match='Padding value must be a non-negative integer'):

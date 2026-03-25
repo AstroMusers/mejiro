@@ -97,7 +97,7 @@ def process_lens(params):
         print(f'Failed to generate exposure for StrongLens {lens.name}: {e}')
         return lens.name, None, None
 
-    source_exposure = exposure_no_subhalo.source_exposure
+    source_exposure = exposure_no_subhalo.source_data
     sky_background = exposure_no_subhalo.sky_background
     poisson_noise = exposure_no_subhalo.poisson_noise
     dark_noise = exposure_no_subhalo.dark_noise
@@ -111,11 +111,11 @@ def process_lens(params):
     radius_pix = np.abs(coords_x_rad - coords_x)
 
     # build circular mask: True outside the circle, False inside
-    yy, xx = np.indices(exposure_no_subhalo.exposure.shape)
+    yy, xx = np.indices(exposure_no_subhalo.data.shape)
     mask = np.sqrt((xx - coords_x) ** 2 + (yy - coords_y) ** 2) > radius_pix
 
     # mask the exposure, leaving only the region around the subhalo position
-    masked_exposure_no_subhalo = np.ma.masked_array(exposure_no_subhalo.exposure, mask=mask)
+    masked_exposure_no_subhalo = np.ma.masked_array(exposure_no_subhalo.data, mask=mask)
 
     pixels_unmasked = np.count_nonzero(~mask)
     dof = pixels_unmasked - 3
@@ -180,7 +180,7 @@ def process_lens(params):
             print(f'Failed to generate exposure with subhalo for StrongLens {lens.name}: {e}')
             return lens.name, None, None
 
-        masked_exposure_with_subhalo = np.ma.masked_array(exposure.exposure, mask=mask)
+        masked_exposure_with_subhalo = np.ma.masked_array(exposure.data, mask=mask)
         chi_square = stats.chi_square(np.ma.compressed(masked_exposure_with_subhalo),
                                         np.ma.compressed(masked_exposure_no_subhalo))
 
@@ -213,8 +213,8 @@ def process_lens(params):
             # ax[0, 2].set_title(
             #     r'$\chi^2=$ ' + f'{chi_square:.2f}, ' + r'$\chi_{3\sigma}^2=$ ' + f'{threshold_chi2:.2f}')
 
-            # ax10 = ax[1, 0].imshow(synth.image - synth_no_subhalo.image, cmap='bwr', norm=CenteredNorm()) # 
-            # ax11 = ax[1, 1].imshow(np.log10(exposure.exposure), cmap='cubehelix')
+            # ax10 = ax[1, 0].imshow(synth.data - synth_no_subhalo.data, cmap='bwr', norm=CenteredNorm()) # 
+            # ax11 = ax[1, 1].imshow(np.log10(exposure.data), cmap='cubehelix')
             # ax12 = ax[1, 2].imshow(mask)
 
             # ax[1, 0].set_title('Synthetic Residual')
@@ -232,13 +232,13 @@ def process_lens(params):
 
             _, ax = plt.subplots(1, 2, figsize=(8, 4))
 
-            ax[0].imshow(np.log10(exposure.exposure), cmap='cubehelix')
+            ax[0].imshow(np.log10(exposure.data), cmap='cubehelix')
             ax[0].scatter(coords_x, coords_y, c='r', s=10, label=f'{m200:.2e}' + r' M$_\odot$ Subhalo')
             ax[0].set_title('Exposure With Subhalo')
             ax[0].legend()
             ax[0].axis('off')
 
-            ax[1].imshow(exposure.exposure - exposure_no_subhalo.exposure, cmap='bwr', norm=CenteredNorm())
+            ax[1].imshow(exposure.data - exposure_no_subhalo.data, cmap='bwr', norm=CenteredNorm())
             ax[1].set_title(
                 r'$\chi^2=$ ' + f'{chi_square:.2f}, ' + r'$\chi_{3\sigma}^2=$ ' + f'{threshold_chi2:.2f}')
             circle = Circle((coords_x, coords_y), radius_pix, edgecolor='black', facecolor='none', linewidth=1.5)
@@ -246,7 +246,7 @@ def process_lens(params):
             ax[1].axis('off')
 
             # plt.suptitle(
-                # f'StrongLens {lens.name} with {instrument.name}, Image Shape: {exposure.exposure.shape}')
+                # f'StrongLens {lens.name} with {instrument.name}, Image Shape: {exposure.data.shape}')
             plt.savefig(os.path.join(image_save_dir, f'{lens.name}_{run}_mass{mass_idx}.png'))
             plt.close()
 

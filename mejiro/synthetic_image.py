@@ -173,7 +173,7 @@ class SyntheticImage:
                                  source_model_class=self.strong_lens.source_light_model,
                                  lens_light_model_class=self.strong_lens.lens_light_model,
                                  kwargs_numerics=kwargs_numerics)
-        self.image = image_model.image(kwargs_lens=self.strong_lens.kwargs_lens,
+        self.data = image_model.image(kwargs_lens=self.strong_lens.kwargs_lens,
                                        kwargs_source=self.strong_lens.kwargs_source,
                                        kwargs_lens_light=self.strong_lens.kwargs_lens_light,
                                        kwargs_ps=self.strong_lens.kwargs_ps,
@@ -203,7 +203,7 @@ class SyntheticImage:
         float
             The total flux of the synthetic image in counts/sec.
         """
-        return np.sum(self.image)
+        return np.sum(self.data)
 
     def get_maggies(self):
         """
@@ -318,7 +318,7 @@ class SyntheticImage:
         """
         import matplotlib.pyplot as plt
 
-        plt.imshow(np.log10(self.image), origin='lower')
+        plt.imshow(np.log10(self.data), origin='lower')
         plt.title(f'{self.strong_lens.name} (' + r'$z_{l}=$' + f'{self.strong_lens.z_lens:.2f}, ' + r'$z_{s}=$' + f'{self.strong_lens.z_source:.2f}' + f')\n{self.instrument_name} {self.band}')
         cbar = plt.colorbar()
         cbar.set_label(r'log$_{10}$(Counts/sec)')
@@ -343,8 +343,8 @@ class SyntheticImage:
             else:
                 plt.scatter(*self.coords.map_coord2pix(halo.x, halo.y), marker='.', color='#FF9500', alpha=alpha)
 
-        plt.imshow(np.log10(self.image), origin='lower', cmap='binary')
-        plt.title(f'{self.strong_lens.name}: {self.instrument_name} {self.band} band {self.image.shape}')
+        plt.imshow(np.log10(self.data), origin='lower', cmap='binary')
+        plt.title(f'{self.strong_lens.name}: {self.instrument_name} {self.band} band {self.data.shape}')
         cbar = plt.colorbar()
         cbar.set_label(r'log$_{10}$(Counts)')
         plt.xlabel('x [Pixels]')

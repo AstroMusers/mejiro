@@ -312,7 +312,7 @@ def process_cps(args):
         if spot_check and run == 0:  # Only first run to avoid too many figures
             fig, axes = plt.subplots(7, 7, figsize=(20, 20))
             for ax, (exposure, snr) in zip(axes.flatten(), exposures_and_snrs):
-                ax.imshow(exposure.exposure, norm=LogNorm(), cmap='cubehelix')
+                ax.imshow(exposure.data, norm=LogNorm(), cmap='cubehelix')
                 ax.set_title(f'SNR: {snr:.2f}')
                 ax.axis('off')
             plt.suptitle(f'healpix pixel {idx}, background level {cps:.2f} counts/sec/pixel, detectable lenses: {num_detectable} of {num_lenses} ({(num_detectable/num_lenses*100) if num_lenses > 0 else 0:.2f}%)', fontsize=16)

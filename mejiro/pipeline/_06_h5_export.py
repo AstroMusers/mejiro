@@ -140,17 +140,17 @@ def main(args):
             snr = exposure.get_snr(snr_per_pixel_threshold=snr_config['snr_per_pixel_threshold'])
 
             # create datasets
-            dataset_exposure = group_lens.create_dataset(f'exposure_{str(uid).zfill(8)}_{band}', data=exposure.exposure)
+            dataset_exposure = group_lens.create_dataset(f'exposure_{str(uid).zfill(8)}_{band}', data=exposure.data)
             dset_list = [dataset_exposure]
 
             # set exposure dataset attributes
             dataset_exposure.attrs['snr'] = (str(snr), 'Signal-to-noise ratio')
-            dataset_exposure.attrs['exposure_time'] = (str(exposure.exposure_time), 'Exposure time [seconds]')
+            dataset_exposure.attrs['exposure_time'] = (str(exposure.data_time), 'Exposure time [seconds]')
             dataset_exposure.attrs['pixel_scale'] = (str(synthetic_image.pixel_scale), 'Pixel scale [arcsec/pixel]')
-            dataset_exposure.attrs['fov'] = (str(round(synthetic_image.pixel_scale * exposure.exposure.shape[0], 2)), 'Field of view [arcsec]')
+            dataset_exposure.attrs['fov'] = (str(round(synthetic_image.pixel_scale * exposure.data.shape[0], 2)), 'Field of view [arcsec]')
 
             if dataset_config['include_synthetic_images']:
-                dataset_synth = group_lens.create_dataset(f'synthetic_image_{str(uid).zfill(8)}_{band}', data=synthetic_image.image)
+                dataset_synth = group_lens.create_dataset(f'synthetic_image_{str(uid).zfill(8)}_{band}', data=synthetic_image.data)
                 dset_list.append(dataset_synth)
 
                 # set synthetic image dataset attributes

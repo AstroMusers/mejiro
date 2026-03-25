@@ -40,7 +40,7 @@ def test_exposure_with_galsim_engine(strong_lens):
                         engine='galsim')
 
     assert exposure.synthetic_image == synthetic_image
-    assert exposure.exposure_time == 146
+    assert exposure.data_time == 146
     assert exposure.engine == 'galsim'
 
     # check engine param defaulting
@@ -56,8 +56,8 @@ def test_exposure_with_galsim_engine(strong_lens):
     # engine-specific noise components are tested in the engine-specific tests
 
     # exposure
-    assert type(exposure.exposure) is np.ndarray
-    assert exposure.exposure.shape == (synthetic_image.num_pix, synthetic_image.num_pix)
+    assert type(exposure.data) is np.ndarray
+    assert exposure.data.shape == (synthetic_image.num_pix, synthetic_image.num_pix)
 
     # image
     assert type(exposure.image) is galsim.Image
@@ -77,7 +77,7 @@ def test_exposure_with_galsim_engine(strong_lens):
 #                         psf_cache_dir=TEST_DATA_DIR)
 
 #     assert exposure.synthetic_image == synthetic_image
-#     assert exposure.exposure_time == 146
+#     assert exposure.data_time == 146
 #     assert exposure.engine == 'lenstronomy'
 
 #     # check engine param defaulting
@@ -90,8 +90,8 @@ def test_exposure_with_galsim_engine(strong_lens):
 #     # engine-specific noise components are tested in the engine-specific tests
 
 #     # exposure
-#     assert type(exposure.exposure) is np.ndarray
-#     assert exposure.exposure.shape == (synthetic_image.native_num_pix, synthetic_image.native_num_pix)
+#     assert type(exposure.data) is np.ndarray
+#     assert exposure.data.shape == (synthetic_image.native_num_pix, synthetic_image.native_num_pix)
 
 # TODO need to fix Pandeia engine for new version
 # def test_exposure_with_pandeia_engine():
@@ -111,7 +111,7 @@ def test_exposure_with_galsim_engine(strong_lens):
 #                         psf_cache_dir=TEST_DATA_DIR)
 
 #     assert exposure.synthetic_image == synthetic_image
-#     assert exposure.exposure_time == 146
+#     assert exposure.data_time == 146
 #     assert exposure.engine == 'pandeia'
 
 #     # check engine param defaulting
@@ -124,8 +124,8 @@ def test_exposure_with_galsim_engine(strong_lens):
 #     # engine-specific noise components are tested in the engine-specific tests
 
 #     # exposure
-#     assert type(exposure.exposure) is np.ndarray
-#     assert exposure.exposure.shape == (synthetic_image.native_num_pix, synthetic_image.native_num_pix)
+#     assert type(exposure.data) is np.ndarray
+#     assert exposure.data.shape == (synthetic_image.native_num_pix, synthetic_image.native_num_pix)
 
 # TODO TEMP
 # def test_default_engine():

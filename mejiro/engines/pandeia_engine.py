@@ -68,7 +68,7 @@ class PandeiaEngine(Engine):
     def get_roman_exposure(synthetic_image, exposure_time, psf=None, engine_params=defaults('Roman'),
                         show_progress_bar=False, **kwargs):
         band = synthetic_image.band
-        image = synthetic_image.image
+        image = synthetic_image.data
         strong_lens = synthetic_image.strong_lens
         num_samples = engine_params['num_samples']
         oversample_factor = synthetic_image.oversample

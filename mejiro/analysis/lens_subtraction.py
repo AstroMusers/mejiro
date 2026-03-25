@@ -11,7 +11,7 @@ def fit_sersic(image, pixel_scale, initial_kwargs=None, psf_kernel=None):
     Parameters
     ----------
     image : np.ndarray
-        2D image array (e.g., exposure.exposure or synthetic_image.image).
+        2D image array (e.g., exposure.data or synthetic_image.data).
     pixel_scale : float
         Pixel scale in arcsec/pix.
     initial_kwargs : dict, optional
@@ -134,7 +134,7 @@ def subtract_lens(exposure, initial_kwargs=None, psf_kernel=None):
     fit_result : scipy.optimize.OptimizeResult
         Full optimization result from scipy.
     """
-    image = exposure.exposure
+    image = exposure.data
     pixel_scale = exposure.synthetic_image.pixel_scale
 
     # derive initial guesses from the strong lens if not provided
@@ -167,7 +167,7 @@ def plot_lens_subtraction(image, model, residual, savepath=None):
     Parameters
     ----------
     image : np.ndarray
-        Original 2D image (e.g., exposure.exposure).
+        Original 2D image (e.g., exposure.data).
     model : np.ndarray
         Best-fit Sersic model image.
     residual : np.ndarray

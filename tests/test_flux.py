@@ -52,15 +52,15 @@ def test_noiseless_exposure_flux():
     Test that a noiseless exposure conserves flux from the synthetic image.
 
     With all noise and detector effects disabled, the exposure should be
-    approximately synthetic_image.image * exposure_time, with only integer
+    approximately synthetic_image.data * exposure_time, with only integer
     quantization error.
     """
     strong_lens = SampleGG()
     exposure_time = 146
     synthetic_image, exposure = _make_noiseless_exposure(strong_lens, exposure_time=exposure_time)
 
-    expected_total = np.sum(synthetic_image.image) * exposure_time
-    actual_total = np.sum(exposure.exposure)
+    expected_total = np.sum(synthetic_image.data) * exposure_time
+    actual_total = np.sum(exposure.data)
 
     # quantization error: at most 0.5 per pixel
     max_quantization_error = 0.5 * synthetic_image.num_pix ** 2
@@ -77,7 +77,7 @@ def test_pieces_sum_to_total():
 
     # at the SyntheticImage level, lens + source should equal total
     pieces_sum = synthetic_image.lens_surface_brightness + synthetic_image.source_surface_brightness
-    np.testing.assert_allclose(synthetic_image.image, pieces_sum, rtol=1e-10,
+    np.testing.assert_allclose(synthetic_image.data, pieces_sum, rtol=1e-10,
                                err_msg='Lens + source surface brightness does not sum to total image')
 
 
@@ -170,7 +170,7 @@ def test_exposure_counts_match_synthetic_flux():
         strong_lens, exposure_time=exposure_time, pieces=False)
 
     expected_counts = synthetic_image.get_flux() * exposure_time
-    actual_counts = np.sum(exposure.exposure)
+    actual_counts = np.sum(exposure.data)
 
     relative_error = abs(actual_counts - expected_counts) / expected_counts
     assert relative_error < 1e-3, \

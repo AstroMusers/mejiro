@@ -36,7 +36,7 @@ def test_hwo_pieces():
                                      band='J',
                                      pieces=True)
 
-    assert synthetic_image.image.shape == (291, 291)
+    assert synthetic_image.data.shape == (291, 291)
     assert synthetic_image.lens_surface_brightness.shape == (291, 291)
     assert synthetic_image.source_surface_brightness.shape == (291, 291)
 
@@ -44,9 +44,9 @@ def test_hwo_pieces():
                         exposure_time=146,
                         engine='galsim')
 
-    assert exposure.exposure.shape == (291, 291)
-    assert exposure.lens_exposure.shape == (291, 291)
-    assert exposure.source_exposure.shape == (291, 291)
+    assert exposure.data.shape == (291, 291)
+    assert exposure.lens_data.shape == (291, 291)
+    assert exposure.source_data.shape == (291, 291)
 
     # TODO checks on the images
 
@@ -79,7 +79,7 @@ def test_hwo_noise():
                          engine='galsim',
                          engine_params=engine_params)
 
-    assert np.array_equal(exposure2.exposure, exposure.exposure)
+    assert np.array_equal(exposure2.data, exposure.data)
     assert np.array_equal(poisson_noise.array, exposure2.poisson_noise.array)
     assert np.array_equal(dark_noise.array, exposure2.dark_noise.array)
     assert np.array_equal(read_noise.array, exposure2.read_noise.array)
