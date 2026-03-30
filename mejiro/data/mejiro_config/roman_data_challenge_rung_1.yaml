@@ -13,16 +13,16 @@ cores:
   script_01: 60
   script_01a: 60
   script_01b: 32
-  script_03: 60
-  script_04: 60
-  script_05: 60
+  script_03: 36
+  script_04: 32
+  script_05: 32
   script_snr: 1
 jaxtronomy: 
   use_jax: False
   jax_platform: cpu  # cpu or gpu
 instrument: roman
 survey:
-  runs: 7042
+  runs: 7056
   num_galaxy_tables: 100  # number of independent galaxy tables for _01a; higher = more intrinsic diversity
   speed_factor: 1  # set >1 for faster but less complete population draws in _01b
   area: 0.5

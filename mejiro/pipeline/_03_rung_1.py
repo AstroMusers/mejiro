@@ -12,7 +12,6 @@ Arguments:
 """
 import argparse
 import os
-import shutil
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -60,19 +59,15 @@ def main(args):
             count = pipeline.limit
     logger.info(f'Processing {count} lens(es)')
 
-    # add subhalos to a subset of systems
-    if subhalo_config['fraction'] < 1.0:
-        logger.info(f'Adding subhalos to {subhalo_config["fraction"] * 100}% of the systems')
-        np.random.seed(pipeline.config['seed'])
-        mask = np.zeros(count, dtype=bool)
-        num_true = int(np.round(subhalo_config['fraction'] * count))
-        mask[:num_true] = True
-        np.random.shuffle(mask)
-    else:
-        mask = np.ones(count, dtype=bool)
+    # assign half the systems CDM realizations, half ULDM, randomly
+    np.random.seed(pipeline.config['seed'])
+    half = count // 2
+    realization_types = ['CDM'] * half + ['ULDM'] * (count - half)
+    np.random.shuffle(realization_types)
+    logger.info(f'Assigning {half} system(s) CDM realizations and {count - half} system(s) ULDM realizations')
 
     # tuple the parameters
-    tuple_list = [(pipeline, subhalo_config, use_jax, input_pickle, add_subhalos) for input_pickle, add_subhalos in zip(input_pickles, mask)]
+    tuple_list = [(pipeline, subhalo_config, use_jax, input_pickle, rt) for input_pickle, rt in zip(input_pickles, realization_types)]
 
     # submit tasks to the executor
     with ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(count)) as executor:
@@ -91,9 +86,9 @@ def add(tuple):
     np.random.seed()
 
     # unpack tuple
-    (pipeline, subhalo_config, use_jax, input_pickle, add_subhalos) = tuple
+    (pipeline, subhalo_config, use_jax, input_pickle, realization_type) = tuple
 
-    if add_subhalos:
+    if realization_type == 'CDM':
         # load the lens
         lens = util.unpickle(input_pickle)
 
@@ -113,7 +108,7 @@ def add(tuple):
         except Exception as e:
             failed_pickle_path = os.path.join(pipeline.output_dir, f'failed_{lens.name}.pkl')
             util.pickle(failed_pickle_path, lens)
-            logger.warning(f'Failed to generate subhalos for {lens.name}: {e}. Pickling to {failed_pickle_path}')
+            logger.warning(f'Failed to generate CDM subhalos for {lens.name}: {e}. Pickling to {failed_pickle_path}')
             return
 
         # add subhalos
@@ -130,13 +125,49 @@ def add(tuple):
             pipeline.output_dir = os.path.join(pipeline.output_dir, sca_string)
         pickle_target = os.path.join(pipeline.output_dir, f'lens_{lens.name}.pkl')
         util.pickle(pickle_target, lens)
-    else:
-        # if not adding subhalos, just copy the input pickle to the output directory
+
+    elif realization_type == 'ULDM':
+        # load the lens
+        lens = util.unpickle(input_pickle)
+
+        log_main_halo_mass = np.log10(lens.get_main_halo_mass())
+        log_mlow = subhalo_config['realization_kwargs']['log_mlow']
+        log_mhigh = subhalo_config['realization_kwargs']['log_mhigh']
+
+        # generate ULDM realization
+        try:
+            ULDM = preset_model_from_name('ULDM')
+            realization = ULDM(round(lens.z_lens, 2),
+                               round(lens.z_source, 2),
+                               log10_m_uldm=-21,
+                               cone_opening_angle_arcsec=5,
+                               log_m_host=log_main_halo_mass,
+                               flucs_shape='ring',
+                               flucs_args={'angle': 0.0, 'rmin': 0.9, 'rmax': 1.1},
+                               log10_fluc_amplitude=-1.6,
+                               n_cut=1000000,
+                               log_mlow=log_mlow,
+                               log_mhigh=log_mhigh)
+        except Exception as e:
+            failed_pickle_path = os.path.join(pipeline.output_dir, f'failed_{lens.name}.pkl')
+            util.pickle(failed_pickle_path, lens)
+            logger.warning(f'Failed to generate ULDM realization for {lens.name}: {e}. Pickling to {failed_pickle_path}')
+            return
+
+        # add realization
+        lens.add_realization(realization, use_jax=use_jax)
+
+        # pickle the subhalo realization
+        subhalo_dir = os.path.join(pipeline.output_dir, 'subhalos')
+        util.create_directory_if_not_exists(subhalo_dir)
+        util.pickle(os.path.join(subhalo_dir, f'subhalo_realization_{lens.name}.pkl'), realization)
+
+        # pickle the lens with realization
         if pipeline.instrument_name == 'roman':
             sca_string = os.path.dirname(input_pickle).split('/')[-1]
             pipeline.output_dir = os.path.join(pipeline.output_dir, sca_string)
-        target = os.path.join(pipeline.output_dir, os.path.basename(input_pickle))
-        shutil.copy2(input_pickle, target)
+        pickle_target = os.path.join(pipeline.output_dir, f'lens_{lens.name}.pkl')
+        util.pickle(pickle_target, lens)
 
 
 if __name__ == '__main__':

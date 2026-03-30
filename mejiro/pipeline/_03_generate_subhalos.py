@@ -47,7 +47,7 @@ def main(args):
         input_pickles = pipeline.retrieve_roman_pickles(prefix='lens', suffix='', extension='.pkl')
         pipeline.create_roman_sca_output_directories()
     elif pipeline.instrument_name == 'hwo':
-        input_pickles = pipeline.retrieve_pickles(prefix='lens', suffix='', extension='.pkl')
+        input_pickles = pipeline.retrieve_hwo_pickles(prefix='lens', suffix='', extension='.pkl')
     else:
         raise ValueError(f'Unknown instrument {pipeline.instrument_name}. Supported instruments are {SUPPORTED_INSTRUMENTS}.')
 
