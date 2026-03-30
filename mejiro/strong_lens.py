@@ -123,6 +123,7 @@ class StrongLens(ABC):
         # fields to initialize: these can be computed on demand
         self.lens_cosmo = None
         self.realization = None
+        self.interpol_deflection_map = None
         self.kwargs_lens_macromodel = None
         self.lens_redshift_list_macromodel = None
         self.lens_model_list_macromodel = None
