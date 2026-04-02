@@ -40,7 +40,7 @@ def test_exposure_with_galsim_engine(strong_lens):
                         engine='galsim')
 
     assert exposure.synthetic_image == synthetic_image
-    assert exposure.data_time == 146
+    assert exposure.exposure_time == 146
     assert exposure.engine == 'galsim'
 
     # check engine param defaulting
@@ -77,7 +77,7 @@ def test_exposure_with_galsim_engine(strong_lens):
 #                         psf_cache_dir=TEST_DATA_DIR)
 
 #     assert exposure.synthetic_image == synthetic_image
-#     assert exposure.data_time == 146
+#     assert exposure.exposure_time == 146
 #     assert exposure.engine == 'lenstronomy'
 
 #     # check engine param defaulting
@@ -111,7 +111,7 @@ def test_exposure_with_galsim_engine(strong_lens):
 #                         psf_cache_dir=TEST_DATA_DIR)
 
 #     assert exposure.synthetic_image == synthetic_image
-#     assert exposure.data_time == 146
+#     assert exposure.exposure_time == 146
 #     assert exposure.engine == 'pandeia'
 
 #     # check engine param defaulting

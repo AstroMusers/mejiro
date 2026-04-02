@@ -21,7 +21,7 @@ class Exposure:
         start = time.time()
 
         self.synthetic_image = synthetic_image
-        self.data_time = exposure_time
+        self.exposure_time = exposure_time
         self.engine = engine
         self.noise = None
 
@@ -148,7 +148,7 @@ class Exposure:
 
         plt.imshow(np.log10(self.data), origin='lower')
 
-        title = f'{self.synthetic_image.strong_lens.name} (' + r'$z_{l}=$' + f'{self.synthetic_image.strong_lens.z_lens:.2f}, ' + r'$z_{s}=$' + f'{self.synthetic_image.strong_lens.z_source:.2f}' + f')\n{self.synthetic_image.instrument_name} {self.synthetic_image.band}, {self.data_time} s'
+        title = f'{self.synthetic_image.strong_lens.name} (' + r'$z_{l}=$' + f'{self.synthetic_image.strong_lens.z_lens:.2f}, ' + r'$z_{s}=$' + f'{self.synthetic_image.strong_lens.z_source:.2f}' + f')\n{self.synthetic_image.instrument_name} {self.synthetic_image.band}, {self.exposure_time} s'
         if show_snr:
             snr = self.get_snr()
             title += f'\nSNR: {snr:.2f}'
@@ -166,7 +166,7 @@ class Exposure:
 
     #     fig, axs = plt.subplots(1, 3, figsize=(15, 5))
     #     axs[0].imshow(np.log10(self.data), cmap='viridis')
-    #     axs[0].set_title(f'Exposure: {self.synthetic_image.instrument_name} {self.synthetic_image.band} band, {self.data_time} s')
+    #     axs[0].set_title(f'Exposure: {self.synthetic_image.instrument_name} {self.synthetic_image.band} band, {self.exposure_time} s')
     #     axs[0].set_xlabel('x [Pixels]')
     #     axs[0].set_ylabel('y [Pixels]')
     #     cbar = fig.colorbar(axs[0].images[0], ax=axs[0])
