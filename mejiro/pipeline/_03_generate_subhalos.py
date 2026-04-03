@@ -120,9 +120,9 @@ def add(tuple):
         lens.add_realization(realization, use_jax=use_jax)
 
         # pickle the subhalo realization
-        subhalo_dir = os.path.join(pipeline.output_dir, 'subhalos')
-        util.create_directory_if_not_exists(subhalo_dir)
-        util.pickle(os.path.join(subhalo_dir, f'subhalo_realization_{lens.name}.pkl'), realization)
+        # subhalo_dir = os.path.join(pipeline.output_dir, 'subhalos')
+        # util.create_directory_if_not_exists(subhalo_dir)
+        # util.pickle(os.path.join(subhalo_dir, f'subhalo_realization_{lens.name}.pkl'), realization)
 
         # pickle the lens with subhalos
         if pipeline.instrument_name == 'roman':
