@@ -54,15 +54,92 @@ def smooth_negative_pixels(image, kernel_size=3):
     n_neg = np.sum(image < 0)
 
     if n_neg > 0:
-        logger.info(f"Replacing {n_neg} negative pixels in image with local {kernel_size}x{kernel_size} median")
-        neg_mask = image < 0
-        filled = generic_filter(
-            np.where(neg_mask, np.nan, image), np.nanmedian, size=kernel_size
-        )
-        image[neg_mask] = filled[neg_mask]
+        # Track pixels that started negative — smoothing may turn some into NaN
+        # when the entire local window is negative. We need to keep iterating
+        # until all originally-negative pixels have valid non-negative values.
+        bad_mask = image < 0
+        iteration = 0
+        while np.any(bad_mask):
+            iteration += 1
+            n_bad = np.sum(bad_mask)
+            logger.info(f"Iteration {iteration}: replacing {n_bad} bad pixels with local {kernel_size}x{kernel_size} median")
+            filled = generic_filter(
+                np.where(bad_mask, np.nan, image), np.nanmedian, size=kernel_size
+            )
+            image[bad_mask] = filled[bad_mask]
+            bad_mask = (image < 0) | np.isnan(image)
+        logger.info(f"All negative pixels replaced after {iteration} iteration(s)")
     else:
         logger.info("No negative pixels in image")
 
+    return image
+
+
+def smooth_nan_pixels(image, kernel_size=3):
+    """
+    Replace NaN pixels in an image with local median values.
+
+    This function identifies NaN pixels in an image and replaces them with
+    the median value computed from a local neighborhood around each NaN pixel.
+    Non-NaN pixels remain unchanged.
+
+    Parameters
+    ----------
+    image : ndarray
+        Input image array that may contain NaN pixels.
+    kernel_size : int, optional
+        Size of the square kernel used to compute local median values.
+        Default is 3, meaning a 3x3 neighborhood.
+
+    Returns
+    -------
+    ndarray
+        Image array with NaN pixels replaced by local median values.
+        The original array is modified in-place.
+    """
+    n_nan = np.count_nonzero(np.isnan(image))
+
+    if n_nan > 0:
+        iteration = 0
+        while n_nan > 0:
+            iteration += 1
+            logger.info(f"Iteration {iteration}: replacing {n_nan} NaN pixels with local {kernel_size}x{kernel_size} median")
+            nan_mask = np.isnan(image)
+            filled = generic_filter(
+                image, np.nanmedian, size=kernel_size
+            )
+            image[nan_mask] = filled[nan_mask]
+            n_nan = np.count_nonzero(np.isnan(image))
+        logger.info(f"All NaN pixels replaced after {iteration} iteration(s)")
+    else:
+        logger.info("No NaN pixels in image")
+
+    return image
+
+
+def smooth_pixels(image, kernel_size=3):
+    """
+    Replace NaN and negative pixels in an image with local median values.
+
+    This function first replaces NaN pixels, then replaces negative pixels,
+    each using the median value computed from a local neighborhood.
+
+    Parameters
+    ----------
+    image : ndarray
+        Input image array that may contain NaN and/or negative pixels.
+    kernel_size : int, optional
+        Size of the square kernel used to compute local median values.
+        Default is 3, meaning a 3x3 neighborhood.
+
+    Returns
+    -------
+    ndarray
+        Image array with NaN and negative pixels replaced by local median values.
+        The original array is modified in-place.
+    """
+    image = smooth_nan_pixels(image, kernel_size=kernel_size)
+    image = smooth_negative_pixels(image, kernel_size=kernel_size)
     return image
 
 
