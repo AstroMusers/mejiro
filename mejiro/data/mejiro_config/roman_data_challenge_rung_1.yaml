@@ -5,17 +5,17 @@ dev: False
 nice: 19
 show_progress_bar: True
 suppress_warnings: True
-logging_level: INFO
-limit: null
+logging_level: WARNING
+limit: 100
 seed: &seed 42
 cores:
   script_00: 60
   script_01: 60
   script_01a: 60
   script_01b: 32
-  script_03: 36
-  script_04: 32
-  script_05: 32
+  script_03: 60
+  script_04: 60
+  script_05: 60
   script_snr: 1
 jaxtronomy: 
   use_jax: False

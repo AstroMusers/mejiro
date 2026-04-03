@@ -16,27 +16,27 @@ set -e
 # python3 mejiro/pipeline/_00_cache_psfs.py --config $config
 # echo 'Cached PSFs.'
 
-echo 'Running survey simulation...'
-python3 mejiro/pipeline/_01_run_survey_simulation.py --config $config
-echo 'Identified detectable strong lenses.'
+# echo 'Running survey simulation...'
+# python3 mejiro/pipeline/_01_run_survey_simulation.py --config $config
+# echo 'Identified detectable strong lenses.'
 
-echo 'Building lens list from SkyPy...'
-python3 mejiro/pipeline/_02_build_lens_list.py --config $config
-echo 'Built lens list.'
+# echo 'Building lens list from SkyPy...'
+# python3 mejiro/pipeline/_02_build_lens_list.py --config $config
+# echo 'Built lens list.'
 
-# if [ $config != "training_set" ]; then
-#     echo 'Adding subhalos with PyHalo...'
-#     python3 mejiro/pipeline/_03_generate_subhalos.py --config $config
-#     echo 'Added subhalos.'
-# fi
+if [ $config != "training_set" ]; then
+    echo 'Adding subhalos with PyHalo...'
+    python3 mejiro/pipeline/_03_generate_subhalos.py --config $config
+    echo 'Added subhalos.'
+fi
 
-# echo 'Building models...'
-# python3 mejiro/pipeline/_04_create_synthetic_images.py --config $config
-# echo 'Built models.'
+echo 'Building models...'
+python3 mejiro/pipeline/_04_create_synthetic_images.py --config $config
+echo 'Built models.'
 
-# echo 'Simulating images...'
-# python3 mejiro/pipeline/_05_create_exposures.py --config $config
-# echo 'GalSim simulations complete.'
+echo 'Simulating images...'
+python3 mejiro/pipeline/_05_create_exposures.py --config $config
+echo 'GalSim simulations complete.'
 
 # echo 'Calculating SNRs...'
 # python3 mejiro/pipeline/calculate_snrs.py --config $config
