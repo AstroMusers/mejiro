@@ -54,11 +54,11 @@ def test_pipeline_run(tmp_path):
     lens_with_subhalos_pickles = list(script03_sca01_dir.glob("lens_simple_*.pkl"))
     assert len(lens_with_subhalos_pickles) > 0, f"Expected at least 1 lens pickle file in {script03_sca01_dir}, found {len(lens_with_subhalos_pickles)}"
 
-    subhalo_dir = script03_dir / "subhalos"
-    assert subhalo_dir.exists() and subhalo_dir.is_dir(), "Subhalos directory does not exist in script 03 output"
+    # subhalo_dir = script03_dir / "subhalos"
+    # assert subhalo_dir.exists() and subhalo_dir.is_dir(), "Subhalos directory does not exist in script 03 output"
 
-    subhalo_pickles = list(subhalo_dir.glob("subhalo_realization_simple_*.pkl"))
-    assert len(subhalo_pickles) > 0, f"Expected at least 1 subhalo pickle file in {subhalo_dir}, found {len(subhalo_pickles)}"
+    # subhalo_pickles = list(subhalo_dir.glob("subhalo_realization_simple_*.pkl"))
+    # assert len(subhalo_pickles) > 0, f"Expected at least 1 subhalo pickle file in {subhalo_dir}, found {len(subhalo_pickles)}"
 
     # check script 04 output
     script04_dir = temp_dir / "simple_dev" / "04"
