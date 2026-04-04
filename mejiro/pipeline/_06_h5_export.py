@@ -145,7 +145,7 @@ def main(args):
 
             # set exposure dataset attributes
             dataset_exposure.attrs['snr'] = (str(snr), 'Signal-to-noise ratio')
-            dataset_exposure.attrs['exposure_time'] = (str(exposure.data_time), 'Exposure time [seconds]')
+            dataset_exposure.attrs['exposure_time'] = (str(exposure.exposure_time), 'Exposure time [seconds]')
             dataset_exposure.attrs['pixel_scale'] = (str(synthetic_image.pixel_scale), 'Pixel scale [arcsec/pixel]')
             dataset_exposure.attrs['fov'] = (str(round(synthetic_image.pixel_scale * exposure.data.shape[0], 2)), 'Field of view [arcsec]')
 
