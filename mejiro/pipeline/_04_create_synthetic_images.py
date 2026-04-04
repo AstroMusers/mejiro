@@ -68,11 +68,16 @@ def main(args):
     tuple_list = [(pipeline, synthetic_image_config, psf_config, input_pickle) for input_pickle in input_pickles]
 
     # submit tasks to the executor
-    with ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(count)) as executor:
-        futures = {executor.submit(create_synthetic_image, task): task for task in tuple_list}
+    try:
+        with ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(count)) as executor:
+            futures = {executor.submit(create_synthetic_image, task): task for task in tuple_list}
 
-        for future in tqdm(as_completed(futures), total=len(futures)):
-            future.result()  # Get the result to propagate exceptions if any
+            for future in tqdm(as_completed(futures), total=len(futures)):
+                future.result()  # Get the result to propagate exceptions if any
+    except KeyboardInterrupt:
+        logger.info('Interrupted, shutting down workers...')
+        executor.shutdown(wait=False, cancel_futures=True)
+        raise
 
     stop = time.time()
     execution_time = util.print_execution_time(start, stop, return_string=True)

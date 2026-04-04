@@ -90,11 +90,16 @@ def main(args):
     logger.info(f'Spinning up {process_count} process(es) on {cpu_count} core(s) to generate {count} PSF(s)')
 
     # process the tasks with ProcessPoolExecutor
-    with ProcessPoolExecutor(max_workers=process_count) as executor:
-        futures = [executor.submit(generate_psf, args) for args in arg_list]
+    try:
+        with ProcessPoolExecutor(max_workers=process_count) as executor:
+            futures = [executor.submit(generate_psf, args) for args in arg_list]
 
-        for future in tqdm(as_completed(futures), total=len(futures)):
-            future.result()  # Get the result to propagate exceptions if any
+            for future in tqdm(as_completed(futures), total=len(futures)):
+                future.result()  # Get the result to propagate exceptions if any
+    except KeyboardInterrupt:
+        logger.info('Interrupted, shutting down workers...')
+        executor.shutdown(wait=False, cancel_futures=True)
+        raise
 
     stop = time.time()
     util.print_execution_time(start, stop)

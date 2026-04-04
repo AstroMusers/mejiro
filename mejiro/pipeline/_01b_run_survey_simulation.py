@@ -116,11 +116,16 @@ def main(args):
 
     # process the remaining tasks with ProcessPoolExecutor
     num_workers = pipeline.calculate_process_count(len(filtered_tuple_list))
-    with ProcessPoolExecutor(max_workers=num_workers) as executor:
-        futures = [executor.submit(run_slsim, task) for task in filtered_tuple_list]
+    try:
+        with ProcessPoolExecutor(max_workers=num_workers) as executor:
+            futures = [executor.submit(run_slsim, task) for task in filtered_tuple_list]
 
-        for future in tqdm(as_completed(futures), total=len(filtered_tuple_list)):
-            num_detectable += future.result()
+            for future in tqdm(as_completed(futures), total=len(filtered_tuple_list)):
+                num_detectable += future.result()
+    except KeyboardInterrupt:
+        logger.info('Interrupted, shutting down workers...')
+        executor.shutdown(wait=False, cancel_futures=True)
+        raise
 
     logger.info(f'{num_detectable} detectable lenses found')
     logger.info(f'{num_detectable / pipeline.config["survey"]["area"] / pipeline.runs:.2f} per square degree')

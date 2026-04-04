@@ -75,11 +75,16 @@ def main(args):
     tuple_list = [(pipeline, subhalo_config, use_jax, input_pickle, add_subhalos) for input_pickle, add_subhalos in zip(input_pickles, mask)]
 
     # submit tasks to the executor
-    with ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(count)) as executor:
-        futures = {executor.submit(add, task): task for task in tuple_list}
+    try:
+        with ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(count)) as executor:
+            futures = {executor.submit(add, task): task for task in tuple_list}
 
-        for future in tqdm(as_completed(futures), total=len(futures)):
-            future.result()  # get the result to propagate exceptions if any
+            for future in tqdm(as_completed(futures), total=len(futures)):
+                future.result()  # get the result to propagate exceptions if any
+    except KeyboardInterrupt:
+        logger.info('Interrupted, shutting down workers...')
+        executor.shutdown(wait=False, cancel_futures=True)
+        raise
 
     stop = time.time()
     execution_time = util.print_execution_time(start, stop, return_string=True)

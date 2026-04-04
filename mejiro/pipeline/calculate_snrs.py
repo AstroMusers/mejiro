@@ -51,11 +51,16 @@ def main(args):
 
     # process the tasks with ProcessPoolExecutor
     name_snr_pairs = []
-    with ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(count)) as executor:
-        futures = [executor.submit(calculate_snr, task) for task in tuple_list]
+    try:
+        with ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(count)) as executor:
+            futures = [executor.submit(calculate_snr, task) for task in tuple_list]
 
-        for future in tqdm(as_completed(futures), total=len(futures)):
-            name_snr_pairs.append(future.result())
+            for future in tqdm(as_completed(futures), total=len(futures)):
+                name_snr_pairs.append(future.result())
+    except KeyboardInterrupt:
+        logger.info('Interrupted, shutting down workers...')
+        executor.shutdown(wait=False, cancel_futures=True)
+        raise
 
     output_path = os.path.join(pipeline.output_dir, 'name_snr_pairs.pkl')
     util.pickle(output_path, name_snr_pairs)

@@ -65,11 +65,16 @@ def main(args):
 
     # process the tasks with ProcessPoolExecutor
     execution_times = []
-    with ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(count)) as executor:
-        futures = [executor.submit(get_image, task) for task in tuple_list]
+    try:
+        with ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(count)) as executor:
+            futures = [executor.submit(get_image, task) for task in tuple_list]
 
-        for future in tqdm(as_completed(futures), total=len(futures)):
-            execution_times.append(future.result())
+            for future in tqdm(as_completed(futures), total=len(futures)):
+                execution_times.append(future.result())
+    except KeyboardInterrupt:
+        logger.info('Interrupted, shutting down workers...')
+        executor.shutdown(wait=False, cancel_futures=True)
+        raise
 
     np.save(os.path.join(pipeline.output_dir, 'execution_times.npy'), execution_times)
 

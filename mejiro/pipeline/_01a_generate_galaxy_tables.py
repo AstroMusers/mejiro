@@ -71,11 +71,16 @@ def main(args):
 
     # process the tasks with ProcessPoolExecutor
     num_workers = pipeline.calculate_process_count(num_galaxy_tables)
-    with ProcessPoolExecutor(max_workers=num_workers) as executor:
-        futures = [executor.submit(generate_galaxy_table, task) for task in tuple_list]
+    try:
+        with ProcessPoolExecutor(max_workers=num_workers) as executor:
+            futures = [executor.submit(generate_galaxy_table, task) for task in tuple_list]
 
-        for future in tqdm(as_completed(futures), total=len(futures)):
-            future.result()  # propagate any exceptions
+            for future in tqdm(as_completed(futures), total=len(futures)):
+                future.result()  # propagate any exceptions
+    except KeyboardInterrupt:
+        logger.info('Interrupted, shutting down workers...')
+        executor.shutdown(wait=False, cancel_futures=True)
+        raise
 
     logger.info(f'Generated {num_galaxy_tables} galaxy table(s)')
 
