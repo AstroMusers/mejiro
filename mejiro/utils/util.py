@@ -62,15 +62,15 @@ def smooth_negative_pixels(image, kernel_size=3):
         while np.any(bad_mask):
             iteration += 1
             n_bad = np.sum(bad_mask)
-            logger.info(f"Iteration {iteration}: replacing {n_bad} bad pixels with local {kernel_size}x{kernel_size} median")
+            logger.debug(f"Iteration {iteration}: replacing {n_bad} bad pixels with local {kernel_size}x{kernel_size} median")
             filled = generic_filter(
                 np.where(bad_mask, np.nan, image), np.nanmedian, size=kernel_size
             )
             image[bad_mask] = filled[bad_mask]
             bad_mask = (image < 0) | np.isnan(image)
-        logger.info(f"All negative pixels replaced after {iteration} iteration(s)")
+        logger.debug(f"All negative pixels replaced after {iteration} iteration(s)")
     else:
-        logger.info("No negative pixels in image")
+        logger.debug("No negative pixels in image")
 
     return image
 
@@ -103,16 +103,16 @@ def smooth_nan_pixels(image, kernel_size=3):
         iteration = 0
         while n_nan > 0:
             iteration += 1
-            logger.info(f"Iteration {iteration}: replacing {n_nan} NaN pixels with local {kernel_size}x{kernel_size} median")
+            logger.debug(f"Iteration {iteration}: replacing {n_nan} NaN pixels with local {kernel_size}x{kernel_size} median")
             nan_mask = np.isnan(image)
             filled = generic_filter(
                 image, np.nanmedian, size=kernel_size
             )
             image[nan_mask] = filled[nan_mask]
             n_nan = np.count_nonzero(np.isnan(image))
-        logger.info(f"All NaN pixels replaced after {iteration} iteration(s)")
+        logger.debug(f"All NaN pixels replaced after {iteration} iteration(s)")
     else:
-        logger.info("No NaN pixels in image")
+        logger.debug("No NaN pixels in image")
 
     return image
 
@@ -697,7 +697,7 @@ def combine_all_csvs(path, prefix="", filename=None):
     # save as combined CSV
     if filename is not None:
         df_res.to_csv(filename)
-        logger.info(f"Wrote combined CSV to {filename}")
+        logger.debug(f"Wrote combined CSV to {filename}")
 
     # return as DataFrame
     return df_res
