@@ -21,6 +21,8 @@ os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["JAX_PLATFORM_NAME"] = "cpu"  # prevent JAX from claiming GPU before config is loaded
+os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"  # prevent greedy GPU memory preallocation
 
 import argparse
 import time
@@ -61,8 +63,7 @@ def main(args):
 
     # set configuration parameters
     pipeline.config['survey']['cosmo'] = default_cosmology.get()
-    if pipeline.config['jaxtronomy']['use_jax']:
-        os.environ['JAX_PLATFORM_NAME'] = pipeline.config['jaxtronomy'].get('jax_platform', 'cpu')
+    os.environ['JAX_PLATFORM_NAME'] = pipeline.config['jaxtronomy'].get('jax_platform', 'cpu')
 
     # discover pre-computed galaxy tables from _01a
     galaxy_table_paths = sorted(glob(os.path.join(pipeline.input_dir, 'galaxy_table_*.pkl')))
