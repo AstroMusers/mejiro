@@ -27,7 +27,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-PREV_SCRIPT_NAME = '02'
+PREV_SCRIPT_NAME = '03'
 SCRIPT_NAME = '04'
 SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
 

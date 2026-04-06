@@ -34,7 +34,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-PREV_SCRIPT_NAME = '02'
+PREV_SCRIPT_NAME = '03'
 SCRIPT_NAME = '04'
 SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
 
@@ -128,7 +128,10 @@ def _compute_interpol_deflection_map(lens, fov_arcsec, pixel_scale, supersamplin
     kwargs_lens = lens.kwargs_lens
 
     alpha_x, alpha_y = lens_model.alpha(x_flat, y_flat, kwargs_lens)
-    potential = lens_model.potential(x_flat, y_flat, kwargs_lens)
+    try:
+        potential = lens_model.potential(x_flat, y_flat, kwargs_lens)
+    except ValueError:
+        potential = np.zeros_like(x_flat)
     f_xx, f_xy, _, f_yy = lens_model.hessian(x_flat, y_flat, kwargs_lens)
 
     shape = (num_pix_interp, num_pix_interp)
