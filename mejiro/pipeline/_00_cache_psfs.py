@@ -89,6 +89,9 @@ def main(args):
     process_count = pipeline.config['cores']['script_00']
     logger.info(f'Spinning up {process_count} process(es) on {cpu_count} core(s) to generate {count} PSF(s)')
 
+    # suppress expected warning since this script's purpose is to generate PSFs
+    logging.getLogger('mejiro.engines.stpsf_engine').setLevel(logging.ERROR)
+
     # process the tasks with ProcessPoolExecutor
     try:
         with ProcessPoolExecutor(max_workers=process_count) as executor:
