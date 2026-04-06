@@ -1,127 +1,200 @@
-# %%
-import logging
-logging.basicConfig(
-    level=logging.WARNING,
-    format='%(asctime)s %(levelname)s %(name)s: %(message)s'
-)
-logger = logging.getLogger(__name__)
+"""
+Runs romanisim detector simulation on tiled synthetic images.
 
-import json
+This script tiles SyntheticImage pickles into 4088x4088 detector arrays, runs romanisim
+to apply detector effects, and extracts individual cutouts. Systems are processed in
+batches of 3136 (56x56 grid of 73x73 tiles) until all systems for each SCA/band are
+complete. Multiprocessing is used to parallelize batch processing.
+
+Usage:
+    python3 romanisim_pipeline.py --config <config.yaml>
+
+Arguments:
+    --config: Path to the YAML configuration file.
+"""
 import os
-import sys
-import yaml
-from glob import glob
-from collections import defaultdict
-from copy import deepcopy
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
-from tqdm import tqdm
-from astropy.io import fits
-from astropy.coordinates import SkyCoord
-from astropy import units as u
-from astropy import table, time
+import argparse
+import logging
+import math
+import time
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import Pool
+from copy import deepcopy
+from glob import glob
 
 import galsim
-from galsim import roman
-from romanisim import image, parameters, catalog, psf, util, wcs
+import matplotlib.pyplot as plt
+import numpy as np
+from astropy import table, time as astro_time
+from astropy.coordinates import SkyCoord
+from astropy import units as u
+from matplotlib.colors import LogNorm
+from tqdm import tqdm
+
 import romanisim.bandpass
+from romanisim import image, parameters, wcs
 
 import mejiro
 from mejiro.utils import util as mejiro_util
 
-# read config
-config_file = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'mejiro_config', 'roman_data_challenge_rung_1.yaml')
-with open(config_file, 'r') as f:
-    config = yaml.load(f, Loader=yaml.SafeLoader)
-if config['dev']:
-    config['pipeline_label'] += '_dev'
+logger = logging.getLogger(__name__)
 
-rng = galsim.UniformDeviate(42)
-
-# %%
-# discover SCA directories and group SyntheticImage pickles by SCA and band
-data_dir = os.path.join(config['data_dir'], config['pipeline_label'], '04')
-
-sca_dirs = sorted(glob(os.path.join(data_dir, 'sca*')))
-print(f'Found {len(sca_dirs)} SCA directories in {data_dir}')
-
-pickles_by_sca_band = {}
-for sca_dir in sca_dirs:
-    sca_name = os.path.basename(sca_dir)
-    sca_num = int(sca_name[3:])
-
-    sca_pickles = sorted(glob(os.path.join(sca_dir, 'SyntheticImage_*.pkl')))
-
-    by_band = defaultdict(list)
-    for p in sca_pickles:
-        bn = os.path.basename(p)
-        parts = bn.replace('.pkl', '').split('_')
-        band = parts[-1]
-        by_band[band].append(p)
-
-    pickles_by_sca_band[sca_num] = dict(by_band)
-    for band, ps in sorted(by_band.items()):
-        print(f'  SCA {sca_num:02d}, {band}: {len(ps)} pickles')
-
-# %%
-# tiling and simulation parameters
 TILE_SIZE = 73
 GRID_SIDE = 56
 N_TILES = GRID_SIDE * GRID_SIDE  # 3136
 
-bands = config['synthetic_image']['bands']
-exposure_time = config['imaging']['exposure_time']
 
-# output directory
-output_dir = os.path.join(config['data_dir'], config['pipeline_label'], '05_romanisim')
-os.makedirs(output_dir, exist_ok=True)
+def _load_pickle(pickle_path):
+    return mejiro_util.unpickle(pickle_path)
 
-print(f'Tile size: {TILE_SIZE}x{TILE_SIZE}')
-print(f'Grid: {GRID_SIDE}x{GRID_SIDE} = {N_TILES} tiles per band')
-print(f'Full array: {GRID_SIDE * TILE_SIZE}x{GRID_SIDE * TILE_SIZE}')
-print(f'Bands: {bands}')
-print(f'Exposure time: {exposure_time} s')
 
-# %%
-ma_table_number = 17
-date           = "2027-01-01T00:00:00"
-coord = SkyCoord(ra=270.0 * u.deg, dec=66.0 * u.deg)
+def main(args):
+    start = time.time()
 
-read_pattern = parameters.read_pattern[ma_table_number]
-exptime = parameters.read_time * read_pattern[-1][-1]
-print(f"Total exposure time (MA table {ma_table_number}): {exptime:.1f} s")
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s %(levelname)s %(name)s: %(message)s'
+    )
 
-# %%
-# for each SCA, for each band: tile, simulate with romanisim, extract cutouts
-for sca_num, bands_dict in sorted(pickles_by_sca_band.items()):
-    sca_output_dir = os.path.join(output_dir, f'sca{str(sca_num).zfill(2)}')
-    os.makedirs(sca_output_dir, exist_ok=True)
-    mejiro_util.clear_directory(sca_output_dir)
+    # read config
+    config_file = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'mejiro_config', args.config)
+    with open(config_file, 'r') as f:
+        import yaml
+        config = yaml.load(f, Loader=yaml.SafeLoader)
+    if config['dev']:
+        config['pipeline_label'] += '_dev'
 
-    for band in bands:
-        if band not in bands_dict:
-            print(f'Skipping SCA {sca_num:02d}, {band}: no pickles found')
-            continue
+    num_workers = config['cores']['script_05_romanisim']
+    threads_per_worker = max(2, 64 // num_workers)
+    bands = config['synthetic_image']['bands']
+    seed = config['seed']
+    ma_table_number = config['exposure']['ma_table_number']
+    date = config['exposure']['date']
+    if not isinstance(date, str):
+        date = date.isoformat()
+    coord = SkyCoord(ra=config['exposure']['coordinates']['ra'] * u.deg, dec=config['exposure']['coordinates']['dec'] * u.deg)
+
+    read_pattern = parameters.read_pattern[ma_table_number]
+    exptime = parameters.read_time * read_pattern[-1][-1]
+    logger.info(f'Total exposure time (MA table {ma_table_number}): {exptime:.1f} s')
+
+    # discover SCA directories and group SyntheticImage pickles by SCA and band
+    data_dir = os.path.join(config['data_dir'], config['pipeline_label'], '04')
+    sca_dirs = sorted(glob(os.path.join(data_dir, 'sca*')))
+    logger.info(f'Found {len(sca_dirs)} SCA directories in {data_dir}')
+
+    pickles_by_sca_band = {}
+    for sca_dir in sca_dirs:
+        sca_name = os.path.basename(sca_dir)
+        sca_num = int(sca_name[3:])
+
+        sca_pickles = sorted(glob(os.path.join(sca_dir, 'SyntheticImage_*.pkl')))
+
+        by_band = defaultdict(list)
+        for p in sca_pickles:
+            bn = os.path.basename(p)
+            parts = bn.replace('.pkl', '').split('_')
+            band = parts[-1]
+            by_band[band].append(p)
+
+        pickles_by_sca_band[sca_num] = dict(by_band)
+        for band, ps in sorted(by_band.items()):
+            logger.debug(f'  SCA {sca_num:02d}, {band}: {len(ps)} pickles')
+
+    # output directory
+    output_dir = os.path.join(config['data_dir'], config['pipeline_label'], '05_romanisim')
+    os.makedirs(output_dir, exist_ok=True)
+
+    logger.info(f'Tile size: {TILE_SIZE}x{TILE_SIZE}')
+    logger.info(f'Grid: {GRID_SIDE}x{GRID_SIDE} = {N_TILES} tiles per batch')
+    logger.info(f'Bands: {bands}')
+
+    # build task list and prepare output directories
+    tasks = []
+    for sca_num, bands_dict in sorted(pickles_by_sca_band.items()):
+        sca_output_dir = os.path.join(output_dir, f'sca{str(sca_num).zfill(2)}')
+        os.makedirs(sca_output_dir, exist_ok=True)
+        mejiro_util.clear_directory(sca_output_dir)
+
+        for band_idx, band in enumerate(bands):
+            if band not in bands_dict:
+                logger.info(f'Skipping SCA {sca_num:02d}, {band}: no pickles found')
+                continue
+
+            all_pickles = bands_dict[band]
+            n_batches = math.ceil(len(all_pickles) / N_TILES)
+            logger.info(f'SCA {sca_num:02d}, {band}: {len(all_pickles)} images in {n_batches} batch(es)')
+
+            for batch_idx in range(n_batches):
+                batch_start = batch_idx * N_TILES
+                batch_end = min(batch_start + N_TILES, len(all_pickles))
+                batch_pickles = all_pickles[batch_start:batch_end]
+
+                tasks.append((
+                    batch_pickles,
+                    sca_num,
+                    band,
+                    batch_idx,
+                    n_batches,
+                    sca_output_dir,
+                    exptime,
+                    seed,
+                    ma_table_number,
+                    date,
+                    coord,
+                    band_idx,
+                    threads_per_worker,
+                ))
+
+    logger.info(f'Submitting {len(tasks)} batch(es) with {num_workers} workers')
+
+    # process tasks in parallel; maxtasksperchild=1 recycles each worker after one batch,
+    # releasing all C-extension caches (romanisim, galsim) that gc.collect() cannot touch
+    with Pool(processes=num_workers, maxtasksperchild=1) as pool:
+        for _ in tqdm(pool.imap_unordered(process_batch, tasks), total=len(tasks)):
+            pass
+
+    stop = time.time()
+    execution_time = mejiro_util.print_execution_time(start, stop, return_string=True)
+    logger.info(f'Total execution time: {execution_time}')
+
+
+def process_batch(task):
+    (batch_pickles, sca_num, band, batch_idx, n_batches,
+    sca_output_dir, exptime, seed, ma_table_number, date, coord,
+    band_idx, threads_per_worker) = task
+
+    try:
+        n_images = len(batch_pickles)
+        logger.info(f'SCA {sca_num:02d}, {band}, batch {batch_idx + 1}/{n_batches}: {n_images} images')
+
+        # per-batch deterministic RNGs
+        batch_seed = seed + sca_num * 10000 + band_idx * 1000 + batch_idx
+        rng = galsim.UniformDeviate(batch_seed)
+        rng_np = np.random.default_rng(batch_seed)
 
         # get AB flux
         abflux = romanisim.bandpass.get_abflux(band, sca_num)
-
-        band_pickles = bands_dict[band][:N_TILES]
-        n_images = len(band_pickles)
-        print(f'Processing SCA {sca_num:02d}, {band}: {n_images} images')
-        print(f'  AB flux: {abflux:.6e} e-/s per maggy, exptime: {exptime:.6f} s')
+        logger.info(f'  AB flux: {abflux:.6e} e-/s per maggy, exptime: {exptime:.6f} s')
 
         # 1. tile synthetic images into a 4088x4088 extra_counts array
         counts = np.zeros((4088, 4088), dtype=np.float64)
-        n_bad_tiles = 0
-        max_tile_value = -np.inf
-        min_tile_value = np.inf
 
-        for idx, pickle_path in enumerate(tqdm(band_pickles, desc='Loading')):
-            # load synthetic image
-            synth = mejiro_util.unpickle(pickle_path)
+        logger.info(f'  Loading {len(batch_pickles)} pickles with {threads_per_worker} threads...')
+        load_start = time.time()
+        with ThreadPoolExecutor(max_workers=threads_per_worker) as pool:
+            synth_images = list(pool.map(_load_pickle, batch_pickles))
+        load_stop = time.time()
+        logger.info(f'  Loaded {len(batch_pickles)} pickles in {mejiro_util.print_execution_time(load_start, load_stop, return_string=True)}')
+
+        for idx, synth in enumerate(synth_images):
 
             # deal with negative and nan pixels
             smooth_data = np.asarray(mejiro_util.smooth_pixels(synth.data), dtype=np.float64)
@@ -141,15 +214,13 @@ for sca_num, bands_dict in sorted(pickles_by_sca_band.items()):
 
         plt.imshow(counts, norm=LogNorm(), origin='lower')
         plt.colorbar(label='Electrons')
-        plt.title(f'SCA {sca_num:02d}, {band} - Tiled Synthetic Images')
-        plt.savefig(os.path.join(sca_output_dir, f'sca{sca_num:02d}_{band}_tiled.png'))
+        plt.title(f'SCA {sca_num:02d}, {band} batch {batch_idx} - Tiled Synthetic Images')
+        plt.savefig(os.path.join(sca_output_dir, f'sca{sca_num:02d}_{band}_batch{batch_idx}_tiled.png'))
         plt.close()
 
         # 2. add Poisson noise
-        print(counts.max(), counts.min(), np.isnan(counts).sum(), np.isinf(counts).sum())
-        rng_np = np.random.default_rng(42)
         realized = rng_np.poisson(counts).astype(np.int32)
-        extra_counts = galsim.ImageI(realized)  # ImageI for integer type
+        extra_counts = galsim.ImageI(realized)
 
         # 3. set up romanisim metadata with the correct SCA
         meta = deepcopy(parameters.default_parameters_dictionary)
@@ -157,11 +228,11 @@ for sca_num, bands_dict in sorted(pickles_by_sca_band.items()):
         meta['instrument']['optical_element'] = band
         meta['exposure']['ma_table_number'] = ma_table_number
         meta['exposure']['read_pattern'] = parameters.read_pattern[ma_table_number]
-        meta['exposure']['start_time'] = time.Time(date, format='isot')
+        meta['exposure']['start_time'] = astro_time.Time(date)
         wcs.fill_in_parameters(meta, coord, boresight=True)
 
-        # 4. create source table
-        catalog = table.Table({
+        # 4. create empty source table
+        source_catalog = table.Table({
             'ra': np.array([], dtype='f8'),
             'dec': np.array([], dtype='f8'),
             'type': np.array([], dtype='U3'),
@@ -173,9 +244,9 @@ for sca_num, bands_dict in sorted(pickles_by_sca_band.items()):
         })
 
         # 5. simulate
-        print(f'  Running romanisim for SCA {sca_num:02d}, {band}...')
+        logger.info(f'  Running romanisim for SCA {sca_num:02d}, {band} batch {batch_idx}...')
         im, extras = image.simulate(
-            meta, catalog,
+            meta, source_catalog,
             usecrds=False,
             psftype='galsim',
             level=2,
@@ -185,13 +256,13 @@ for sca_num, bands_dict in sorted(pickles_by_sca_band.items()):
         )
 
         # save the romanisim output
-        mejiro_util.pickle(os.path.join(sca_output_dir, f'im_sca{sca_num:02d}_{band}.pkl'), im)
-        mejiro_util.pickle(os.path.join(sca_output_dir, f'extras_sca{sca_num:02d}_{band}.pkl'), extras)
+        mejiro_util.pickle(os.path.join(sca_output_dir, f'im_sca{sca_num:02d}_{band}_batch{batch_idx}.pkl'), im)
+        mejiro_util.pickle(os.path.join(sca_output_dir, f'extras_sca{sca_num:02d}_{band}_batch{batch_idx}.pkl'), extras)
 
         # 6. extract cutouts and save as .npy
         result_data = im.data
-        np.save(os.path.join(sca_output_dir, f'full_array_sca{sca_num:02d}_{band}.npy'), result_data)
-        for idx, pickle_path in enumerate(band_pickles):
+        np.save(os.path.join(sca_output_dir, f'full_array_sca{sca_num:02d}_{band}_batch{batch_idx}.npy'), result_data)
+        for idx, pickle_path in enumerate(batch_pickles):
             row = idx // GRID_SIDE
             col = idx % GRID_SIDE
             r0 = row * TILE_SIZE
@@ -201,29 +272,14 @@ for sca_num, bands_dict in sorted(pickles_by_sca_band.items()):
             output_name = os.path.basename(pickle_path).replace('.pkl', '.npy').replace('SyntheticImage_', 'Exposure_')
             np.save(os.path.join(sca_output_dir, output_name), cutout)
 
-        print(f'  Saved {n_images} cutouts to {sca_output_dir}')
+        logger.info(f'  Saved {n_images} cutouts to {sca_output_dir}')
+    except Exception:
+        logger.exception(f'Batch failed for SCA {sca_num:02d}, {band}, batch {batch_idx + 1}/{n_batches}')
+        raise
 
-# %%
-# verification: compare input SyntheticImages with output cutouts
-sample_sca = sorted(pickles_by_sca_band.keys())[0]
-sample_band = bands[0]
-sample_pickles = pickles_by_sca_band[sample_sca][sample_band][:4]
 
-fig, axes = plt.subplots(2, 4, figsize=(16, 8), constrained_layout=True)
-
-for i, pickle_path in enumerate(sample_pickles):
-    synth = mejiro_util.unpickle(pickle_path)
-    output_name = os.path.basename(pickle_path).replace('.pkl', '.npy').replace('SyntheticImage_', 'Exposure_')
-    cutout = np.load(os.path.join(output_dir, f'sca{str(sample_sca).zfill(2)}', output_name))
-
-    axes[0, i].imshow(np.log10(np.clip(synth.data, 1e-10, None)), origin='lower')
-    axes[0, i].set_title('Input', fontsize=8)
-    axes[0, i].axis('off')
-
-    axes[1, i].imshow(np.log10(np.clip(cutout, 1, None)), origin='lower')
-    axes[1, i].set_title('Output', fontsize=8)
-    axes[1, i].axis('off')
-
-plt.suptitle(f'SCA {sample_sca:02d}, {sample_band}: SyntheticImage vs romanisim Exposure')
-plt.savefig('rung_1_romanisim_verification.png', dpi=300)
-plt.close()
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Run romanisim detector simulation on tiled synthetic images.")
+    parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    args = parser.parse_args()
+    main(args)

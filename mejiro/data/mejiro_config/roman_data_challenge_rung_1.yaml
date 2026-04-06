@@ -6,7 +6,7 @@ nice: 19
 show_progress_bar: True
 suppress_warnings: True
 logging_level: WARNING
-limit: 100
+limit: 10000
 seed: &seed 42
 cores:
   script_00: 60
@@ -16,6 +16,7 @@ cores:
   script_03: 60
   script_04: 60
   script_05: 60
+  script_05_romanisim: 12
   script_snr: 1
 jaxtronomy: 
   use_jax: False
@@ -77,6 +78,12 @@ synthetic_image:
   supersampling_compute_mode: adaptive
   supersampling_factor: &supersampling_factor 5
   pieces: True
+exposure:
+  ma_table_number: 17
+  date: 2027-01-01T00:00:00
+  coordinates:
+    ra: 270.
+    dec: 66.
 imaging:
   exposure_time: &exposure_time 642
   engine: galsim
