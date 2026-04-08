@@ -49,8 +49,16 @@ def plot(array, title='', cmap='viridis', colorbar=False, colorbar_label=None):
     plt.show()
 
 
-def rgb_plot_grid(array_list, side, titles=False, save=None):
-    f, ax = plt.subplots(side, side, figsize=(20, 20), gridspec_kw={'hspace': 0.02, 'wspace': 0.02})
+def rgb_plot_grid(array_list, side, titles=None, save=None):
+    subplot_kwargs = {
+        'nrows': side, 'ncols': side, 'figsize': (20, 20)
+    }
+    if titles is not None:
+        subplot_kwargs['constrained_layout'] = True
+    else:
+        subplot_kwargs['gridspec_kw'] = {'hspace': 0.02, 'wspace': 0.02}
+
+    f, ax = plt.subplots(**subplot_kwargs)
 
     i = 0
     for x in range(side):
@@ -58,7 +66,7 @@ def rgb_plot_grid(array_list, side, titles=False, save=None):
             ax[x][y].imshow(array_list[i])
             ax[x][y].set_axis_off()
             if titles:
-                ax[x][y].set_title(f'{i}', color='red')
+                ax[x][y].set_title(f'{titles[i]}')
             i += 1
 
     if save is not None:
