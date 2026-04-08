@@ -8,6 +8,26 @@ from mejiro.synthetic_image import SyntheticImage
 from mejiro.utils import util
 
 
+def test_band_specific_source_image():
+    """SyntheticImage should swap kwargs_source[0]['image'] to the band-specific image."""
+    strong_lens = Sample1()  # INTERPOL source
+
+    img_f106 = np.ones((10, 10)) * 1.0
+    img_f129 = np.ones((10, 10)) * 2.0
+    strong_lens.kwargs_params['source_images'] = {'F106': img_f106, 'F129': img_f129}
+
+    SyntheticImage(strong_lens=strong_lens,
+                   instrument=Roman(),
+                   band='F106',
+                   fov_arcsec=5,
+                   instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                   kwargs_numerics={},
+                   kwargs_psf={},
+                   pieces=False)
+
+    np.testing.assert_array_equal(strong_lens.kwargs_source[0]['image'], img_f106)
+
+
 @pytest.mark.parametrize("strong_lens", [Sample1(), Sample2(), SampleGG()])
 def test_magnitudes(strong_lens):
     synthetic_image = SyntheticImage(strong_lens=strong_lens,

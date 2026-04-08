@@ -138,6 +138,11 @@ class SyntheticImage:
             self.strong_lens.kwargs_lens_light[0]['magnitude'] = lens_magnitude
             self.strong_lens.kwargs_source[0]['magnitude'] = source_magnitude
 
+            # update band-specific source image if available (e.g. COSMOS_WEB)
+            source_images = self.strong_lens.kwargs_params.get('source_images')
+            if source_images and self.band in source_images:
+                self.strong_lens.kwargs_source[0]['image'] = source_images[self.band]
+
             # convert magnitudes to lenstronomy amplitudes
             self.strong_lens.kwargs_lens_light = data_util.magnitude2amplitude(light_model_class=self.strong_lens.lens_light_model,
                                                                   kwargs_light_mag=self.strong_lens.kwargs_lens_light,

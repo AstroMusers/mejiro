@@ -95,6 +95,15 @@ class GalaxyGalaxy(StrongLens):
         # get kwargs_model and kwargs_params
         kwargs_model, kwargs_params = slsim_gglens.lenstronomy_kwargs(band=bands[0])
 
+        # collect band-specific source images (only populated for catalog sources e.g. COSMOS_WEB)
+        source_images = {}
+        for band in bands:
+            _, band_kwargs = slsim_gglens.lenstronomy_kwargs(band=band)
+            if 'image' in band_kwargs['kwargs_source'][0]:
+                source_images[band] = band_kwargs['kwargs_source'][0]['image']
+        if source_images:
+            kwargs_params['source_images'] = source_images
+
         # add additional necessary key/value pairs to kwargs_model
         kwargs_model['lens_redshift_list'] = [z_lens] * len(kwargs_params['kwargs_lens'])
         kwargs_model['source_redshift_list'] = [z_source]

@@ -247,7 +247,7 @@ def run_slsim(tuple):
         )
     real_galaxy_kwargs = {
         "extended_source_type": "catalog_source",
-        "extendedsource_kwargs": survey_config["catalog_source_kwargs"]
+        "extended_source_kwargs": survey_config["catalog_source_kwargs"]
     } if use_real_sources else {}
     source_galaxies = sources.Galaxies(
         galaxy_list=galaxy_data['blue_galaxies'],
