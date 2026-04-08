@@ -134,9 +134,10 @@ class GalaxyGalaxy(StrongLens):
             physical_params['main_halo_mass'] = slsim_gglens.deflector.halo_properties[0]
             physical_params['main_halo_concentration'] = slsim_gglens.deflector.halo_properties[1]
 
-        # record galaxy ID if the source is a real galaxy
-        galaxy_id = slsim_gglens._source[0]._source.__dict__.get("galaxy_ID")
-        if galaxy_id is not None: physical_params['galaxy_id'] = galaxy_id
+        # record matched source if the source is a real galaxy from an SLSim real source catalog
+        slsim_gglens_source = slsim_gglens._source[0]._source
+        if hasattr(slsim_gglens_source, '_matched_source'):
+            physical_params['matched_source'] = dict(slsim_gglens_source._matched_source)
 
         return GalaxyGalaxy(name=name,
                             coords=coords,
