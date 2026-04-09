@@ -150,6 +150,16 @@ class SyntheticImage:
             self.strong_lens.kwargs_source = data_util.magnitude2amplitude(light_model_class=self.strong_lens.source_light_model,
                                                                   kwargs_light_mag=self.strong_lens.kwargs_source,
                                                                   magnitude_zero_point=self.magnitude_zeropoint)
+
+            # convert point source magnitudes to amplitudes if present
+            if self.strong_lens.kwargs_ps:
+                for ps_kwargs in self.strong_lens.kwargs_ps:
+                    if 'magnitude' in ps_kwargs:
+                        ps_kwargs['point_amp'] = [
+                            data_util.magnitude2cps(mag, self.magnitude_zeropoint)
+                            for mag in ps_kwargs['magnitude']
+                        ]
+                        del ps_kwargs['magnitude']
         else:
             self.magnitude_zeropoint = None
             
@@ -171,12 +181,25 @@ class SyntheticImage:
             kwargs_psf = SyntheticImage.DEFAULT_KWARGS_PSF
         self.psf_class = PSF(**kwargs_psf)
 
+        # build point source class if needed
+        ps_model_list = self.strong_lens.kwargs_model.get('point_source_model_list', [])
+        if ps_model_list:
+            from lenstronomy.PointSource.point_source import PointSource
+            point_source_class = PointSource(
+                point_source_type_list=ps_model_list,
+                lens_model=self.strong_lens.lens_model,
+                fixed_magnification_list=[False] * len(ps_model_list)
+            )
+        else:
+            point_source_class = None
+
         # ray-shoot
         image_model = ImageModel(data_class=self.pixel_grid,
                                  psf_class=self.psf_class,
                                  lens_model_class=self.strong_lens.lens_model,
                                  source_model_class=self.strong_lens.source_light_model,
                                  lens_light_model_class=self.strong_lens.lens_light_model,
+                                 point_source_class=point_source_class,
                                  kwargs_numerics=kwargs_numerics)
         self.data = image_model.image(kwargs_lens=self.strong_lens.kwargs_lens,
                                        kwargs_source=self.strong_lens.kwargs_source,
