@@ -173,7 +173,8 @@ def run_slsim(tuple):
         'compute_mode': snr_supersampling_compute_mode,
     }
     snr_detector = detector
-    snr_detector_position = (2554, 2554)
+    _snr_pos = snr_config.get('snr_detector_position', (2554, 2554))
+    snr_detector_position = (_snr_pos[0], _snr_pos[1])
 
     # set run identifier
     if instrument.name == 'Roman':

@@ -70,8 +70,15 @@ class PipelineHelper:
         self.psf_cache_dir = config['psf_cache_dir']
         if self.psf_cache_dir is None:
             self.psf_cache_dir = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'psfs', self.instrument_name.lower())
+        elif os.path.isabs(self.psf_cache_dir):
+            pass
         else:
-            self.psf_cache_dir = os.path.join(self.data_dir, self.psf_cache_dir)
+            candidate = os.path.join(self.data_dir, self.psf_cache_dir)
+            if not os.path.isdir(candidate):
+                pkg_candidate = os.path.abspath(os.path.join(os.path.dirname(mejiro.__file__), '..', self.psf_cache_dir))
+                if os.path.isdir(pkg_candidate):
+                    candidate = pkg_candidate
+            self.psf_cache_dir = candidate
 
         # set up top directory for all pipeline output
         self.pipeline_dir = os.path.join(self.data_dir, self.config['pipeline_label'])

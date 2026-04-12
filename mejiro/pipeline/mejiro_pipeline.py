@@ -33,7 +33,8 @@ class Pipeline:
     """
     def __init__(self, config_file=None, data_dir=None, _test_mode=False):
         if config_file is None:
-            config_file = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'mejiro_config', 'simple.yaml')
+            config_name = 'test.yaml' if _test_mode else 'simple.yaml'
+            config_file = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'mejiro_config', config_name)
         self.config_file = config_file
 
         parser = argparse.ArgumentParser(description="Run the mejiro pipeline")
