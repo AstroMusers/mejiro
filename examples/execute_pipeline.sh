@@ -2,7 +2,8 @@
 
 # this bash script is a less-polished way of executing the `mejiro` pipeline that is useful for development
 
-config="/grad/bwedig/mejiro/mejiro/data/mejiro_config/test.yaml"
+# config="/grad/bwedig/mejiro/mejiro/data/mejiro_config/test.yaml"
+config="/grad/bwedig/mejiro/mejiro/data/mejiro_config/roman_data_challenge_rung_1.yaml"
 # config="/grad/bwedig/mejiro/mejiro/data/mejiro_config/roman_data_challenge_rung_1_unlabeled.yaml"
 
 # change directory to the root of the repository
@@ -20,9 +21,9 @@ set -e
 # python3 mejiro/pipeline/_01_run_survey_simulation.py --config $config
 # echo 'Identified detectable strong lenses.'
 
-echo 'Generating galaxy tables...'
-python3 mejiro/pipeline/_01a_generate_galaxy_tables.py --config $config
-echo 'Generated galaxy tables.'
+# echo 'Generating galaxy tables...'
+# python3 mejiro/pipeline/_01a_generate_galaxy_tables.py --config $config
+# echo 'Generated galaxy tables.'
 
 echo 'Running survey simulation...'
 python3 mejiro/pipeline/_01b_run_survey_simulation.py --config $config
@@ -50,10 +51,10 @@ echo 'Calculating SNRs...'
 python3 mejiro/pipeline/calculate_snrs.py --config $config
 echo 'SNR calculation complete.'
 
-echo 'Generating h5 file...'
-if [ $config == "training_set" ]; then
-    python3 mejiro/pipeline/_06_h5_export_training_set.py --config $config
-else
-    python3 mejiro/pipeline/_06_h5_export.py --config $config
-fi
-echo 'h5 file generation complete.'
+# echo 'Generating h5 file...'
+# if [ $config == "training_set" ]; then
+#     python3 mejiro/pipeline/_06_h5_export_training_set.py --config $config
+# else
+#     python3 mejiro/pipeline/_06_h5_export.py --config $config
+# fi
+# echo 'h5 file generation complete.'

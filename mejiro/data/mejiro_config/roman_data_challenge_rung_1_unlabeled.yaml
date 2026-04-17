@@ -12,7 +12,7 @@ cores:
   script_00: 60
   script_01: 60
   script_01a: 60
-  script_01b: 32
+  script_01b: 18
   script_03: 32
   script_04: 32
   script_05: 32
@@ -85,7 +85,7 @@ exposure:
     ra: 270.
     dec: 66.
 imaging:
-  exposure_time: &exposure_time 642
+  exposure_time: &exposure_time 600
   engine: galsim
   engine_params:
     rng_seed: *seed
