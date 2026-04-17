@@ -32,10 +32,20 @@ survey:
   total_population: False
   use_real_sources: True
   catalog_source_kwargs:
-    catalog_path: /data/bwedig/COSMOS
-    catalog_type: COSMOS
-    sersic_fallback: True
+    catalog_path: /nfsdata1/bwedig/slsim_source_catalogs/COSMOSWeb_galaxy_catalog
+    catalog_type: COSMOS_WEB
+    sersic_fallback: False
     max_scale: 1
+  # Override which catalog cutout backs each band in source_images.
+  # {destination_band: source_band}; both must be keys in source_images
+  # (i.e. listed in survey.bands). Self-mappings are no-ops; omit a band
+  # to leave its default in place.
+  # SLSim COSMOS-Web wavelength-ordering puts the pure JWST cutouts at:
+  #   F062=F115W, F106=F150W, F158=F277W, F213=F444W
+  remap_bands:
+    F106: F062
+    F129: F106
+    F158: F158
   use_slhammocks_pipeline: True
   slhammocks_pipeline_kwargs:
     skypy_config: slhammocks

@@ -56,3 +56,53 @@ def write_lens_population_to_csv(output_path, lens_population, snr_list, bands=N
     df = pd.DataFrame(data)
     df.to_csv(output_path, index=False)
     logger.info(f'Wrote lens population to {output_path}.')
+
+
+def remap_source_images(strong_lens, mapping):
+    """
+    Override entries in ``strong_lens.kwargs_params['source_images']`` by
+    copying one band's source-image array into another band's slot.
+
+    The dict ``source_images`` is populated by ``GalaxyGalaxy.from_slsim``
+    (and equivalents) for catalog sources that ship per-band pixelated
+    cutouts (e.g. SLSim's COSMOS-Web). Whichever per-band image is sitting
+    under a key at construction time defines the morphology that
+    ``SyntheticImage`` will ray-shoot for that band. This helper lets the
+    caller swap which cutout backs which band — useful for experimenting
+    with alternative catalog→instrument band mappings without modifying
+    the underlying catalog code.
+
+    Mutates ``strong_lens.kwargs_params['source_images']`` in place.
+
+    Parameters
+    ----------
+    strong_lens : mejiro.strong_lens.StrongLens
+        StrongLens (e.g. GalaxyGalaxy, LensedSupernova) built from a SLSim
+        catalog source. Must have a populated
+        ``kwargs_params['source_images']`` dict.
+    mapping : dict[str, str]
+        ``{destination_band: source_band}``. Both keys must be present in
+        ``source_images`` *before* the call. After the call,
+        ``source_images[destination_band]`` is the array previously stored
+        under ``source_images[source_band]``. Self-mappings are no-ops.
+    """
+    source_images = strong_lens.kwargs_params.get('source_images')
+    if not source_images:
+        raise ValueError(
+            "strong_lens.kwargs_params has no 'source_images' entry; "
+            "remap_source_images only applies to lenses built from a "
+            "catalog source (e.g. SLSim COSMOS-Web)."
+        )
+    snapshot = dict(source_images)
+    for dest_band, src_band in mapping.items():
+        if src_band not in snapshot:
+            raise KeyError(
+                f"Source band '{src_band}' (for destination '{dest_band}') "
+                f"not present in source_images. Available keys: {sorted(snapshot)}"
+            )
+        if dest_band not in source_images:
+            raise KeyError(
+                f"Destination band '{dest_band}' not present in source_images. "
+                f"Available keys: {sorted(source_images)}"
+            )
+        source_images[dest_band] = snapshot[src_band]

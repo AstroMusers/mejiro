@@ -19,6 +19,7 @@ from tqdm import tqdm
 from mejiro.galaxy_galaxy import GalaxyGalaxy
 from mejiro.utils import util
 from mejiro.utils.pipeline_helper import PipelineHelper
+from mejiro.utils.slsim_util import remap_source_images
 
 import logging
 logger = logging.getLogger(__name__)
@@ -39,6 +40,7 @@ def main(args):
     use_jax = pipeline.config['jaxtronomy']['use_jax']
     scas = pipeline.config['survey']['detectors']
     bands = pipeline.config['survey']['bands']
+    remap_bands = pipeline.config['survey'].get('remap_bands')  # may be None
 
     # tell script where the output of previous script is
     detectable_gglens_pickles = sorted(glob(pipeline.input_dir + '/detectable_gglenses_*.pkl'))
@@ -68,6 +70,8 @@ def main(args):
 
                 for slsim_lens in tqdm(gglenses, desc="Strong Lenses", position=2, leave=False):
                     mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=f'{pipeline.name}_{str(uid).zfill(8)}', bands=bands, use_jax=use_jax)
+                    if remap_bands and 'source_images' in mejiro_lens.kwargs_params:
+                        remap_source_images(mejiro_lens, remap_bands)
                     mejiro_lens_pickle_target = os.path.join(pipeline.output_dir, f'sca{sca}/lens_{mejiro_lens.name}.pkl')
                     util.pickle(mejiro_lens_pickle_target, mejiro_lens)
                     uid += 1
@@ -81,6 +85,8 @@ def main(args):
 
             for slsim_lens in tqdm(gglenses, desc="Strong Lenses", position=2, leave=False):
                 mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=f'{pipeline.name}_{str(uid).zfill(8)}', bands=bands, use_jax=use_jax)
+                if remap_bands and 'source_images' in mejiro_lens.kwargs_params:
+                    remap_source_images(mejiro_lens, remap_bands)
                 mejiro_lens_pickle_target = os.path.join(pipeline.output_dir, f'lens_{mejiro_lens.name}.pkl')
                 util.pickle(mejiro_lens_pickle_target, mejiro_lens)
                 uid += 1
