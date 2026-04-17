@@ -62,6 +62,10 @@ def main(args):
     else:
         raise ValueError(f'Unknown instrument {pipeline.instrument_name}. Supported instruments are {SUPPORTED_INSTRUMENTS}.')
 
+    # directory containing SyntheticImage pickles from step 04; Exposure pickles no longer
+    # embed the SyntheticImage, so metadata and optional synthetic image data are read here
+    synth_input_dir = os.path.join(pipeline.pipeline_dir, '04')
+
     # create h5 file
     dataset_version = str(dataset_config['version'])
     version_string = dataset_version.replace('.', '_')
@@ -100,9 +104,11 @@ def main(args):
         # unpickle the Exposure
         exposure_pickles = sorted(glob(pipeline.input_dir + f'/sca*/Exposure_{pipeline.name}_{uid}_*.pkl'))  # TODO this is Roman-specific
 
-        # grab an exposure and strong lens
-        exposure = util.unpickle(exposure_pickles[0])
-        synthetic_image = exposure.synthetic_image
+        # load the matching SyntheticImage pickles from step 04 for metadata (redshifts, einstein
+        # radius, magnitudes, detector info) and optional synthetic image data
+        synth_pickles = sorted(glob(os.path.join(synth_input_dir, f'sca*/SyntheticImage_{pipeline.name}_{uid}_*.pkl')))
+
+        synthetic_image = util.unpickle(synth_pickles[0])
         lens = synthetic_image.strong_lens
 
         if not labeled:
@@ -135,6 +141,11 @@ def main(args):
         for i, band in enumerate(bands):
             # load exposure
             exposure = util.unpickle(exposure_pickles[i])
+
+            # rebind to the band-matched SyntheticImage so synthetic_image.data below
+            # is the right band when include_synthetic_images=True
+            if i < len(synth_pickles):
+                synthetic_image = util.unpickle(synth_pickles[i])
 
             # calculate SNR
             snr = exposure.get_snr(snr_per_pixel_threshold=snr_config['snr_per_pixel_threshold'])

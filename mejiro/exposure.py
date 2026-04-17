@@ -140,6 +140,14 @@ class Exposure:
         self.calc_time = end - start
         logger.info(f'Exposure calculation time with {self.engine} engine: {util.calculate_execution_time(start, end, unit="s")}')
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # drop the SyntheticImage reference on pickle: it's already written to disk in step 04,
+        # so embedding it here fully duplicates that output (~2.77 MB per Exposure).
+        # step 06 loads the SyntheticImage from step 04's pickle directly.
+        state['synthetic_image'] = None
+        return state
+
     def get_snr(self, snr_per_pixel_threshold=1):
         return get_snr(self, snr_per_pixel_threshold=snr_per_pixel_threshold)[0]
 

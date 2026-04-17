@@ -222,6 +222,13 @@ class SyntheticImage:
         self.calc_time = end - start
         logger.info(f'Synthetic image calculation time: {util.calculate_execution_time(start, end, unit="s")}')
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # drop the PSF kernel on pickle: it's already cached on disk under psf_cache_dir
+        # and is only consumed during __init__, so persisting it just duplicates ~2 MB per pickle
+        state['psf_class'] = None
+        return state
+
     def get_flux(self):
         """
         Calculate the total flux in counts/sec of the synthetic image by summing over all pixel values.
