@@ -69,7 +69,7 @@ def main(args):
         with ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(pipeline.runs)) as executor:
             futures = [executor.submit(run_slsim, task) for task in tuple_list]
 
-            for future in tqdm(as_completed(futures), total=len(futures)):
+            for future in tqdm(as_completed(futures), total=len(futures), desc='Runs'):
                 num_detectable += future.result()
     except KeyboardInterrupt:
         logger.info('Interrupted, shutting down workers...')
@@ -285,7 +285,7 @@ def run_slsim(tuple):
         logger.info(f'Computing SNRs for {len(total_lens_population)} lenses')
         snr_list = []
         num_exceptions = 0
-        for candidate in tqdm(total_lens_population, disable=not show_progress_bar):
+        for candidate in tqdm(total_lens_population, desc=f'Run {run}: SNR candidates', disable=not show_progress_bar):
             strong_lens = GalaxyGalaxy.from_slsim(candidate, bands=bands, use_jax=use_jax)
 
             # TODO temporary fix to make sure that there are two images formed
@@ -340,12 +340,12 @@ def run_slsim(tuple):
 
     # apply additional detectability criteria
     detectable_gglenses, detectable_snr_list, masked_snr_array_list = [], [], []
-    for candidate in tqdm(lens_population, disable=not show_progress_bar):
+    for candidate in tqdm(lens_population, desc=f'Run {run}: Detectable candidates', disable=not show_progress_bar):
         # convert from SLSim gglens to mejiro GalaxyGalaxy
         try:
             strong_lens = GalaxyGalaxy.from_slsim(candidate, bands=bands, use_jax=use_jax)
-        except:
-            logger.warning(f'Error processing candidate {candidate["name"]}')
+        except Exception as e:
+            logger.error(f'Could not create mejiro GalaxyGalaxy from SLSim Lens: {e}')
             continue
 
         # TODO do something with the substract lens flag
