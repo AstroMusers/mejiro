@@ -84,7 +84,11 @@ def calculate_snr(input):
     # calculate SNR
     snr = exposure.get_snr(snr_per_pixel_threshold=snr_per_pixel_threshold)
 
-    return (exposure.synthetic_image.strong_lens.name, snr)
+    # parse pickle filename to get system name
+    parts = os.path.basename(input_pickle).split('_')
+    system_name = "_".join(parts[1:-1])
+
+    return (system_name, snr)
 
 
 if __name__ == '__main__':
