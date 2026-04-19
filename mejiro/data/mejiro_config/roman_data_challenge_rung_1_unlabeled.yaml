@@ -12,10 +12,10 @@ cores:
   script_00: 60
   script_01: 60
   script_01a: 60
-  script_01b: 18
-  script_03: 32
-  script_04: 32
-  script_05: 32
+  script_01b: 48
+  script_03: 60
+  script_04: 60
+  script_05: 60
   script_05_romanisim: 12
   script_snr: 1
 jaxtronomy: 
@@ -23,7 +23,7 @@ jaxtronomy:
   jax_platform: cpu  # cpu or gpu
 instrument: roman
 survey:
-  runs: 702  # 7056
+  runs: 7002  # 7056
   num_galaxy_tables: 100  # number of independent galaxy tables for _01a; higher = more intrinsic diversity
   speed_factor: 1  # set >1 for faster but less complete population draws in _01b
   area: 0.5
@@ -34,8 +34,18 @@ survey:
   catalog_source_kwargs:
     catalog_path: /nfsdata1/bwedig/slsim_source_catalogs/COSMOSWeb_galaxy_catalog
     catalog_type: COSMOS_WEB
-    sersic_fallback: False
+    sersic_fallback: True
     max_scale: 1
+  # Override which catalog cutout backs each band in source_images.
+  # {destination_band: source_band}; both must be keys in source_images
+  # (i.e. listed in survey.bands). Self-mappings are no-ops; omit a band
+  # to leave its default in place.
+  # SLSim COSMOS-Web wavelength-ordering puts the pure JWST cutouts at:
+  #   F062=F115W, F106=F150W, F158=F277W, F213=F444W
+  remap_bands:
+    F106: F062
+    F129: F106
+    F158: F158
   use_slhammocks_pipeline: True
   slhammocks_pipeline_kwargs:
     skypy_config: slhammocks
@@ -85,7 +95,7 @@ exposure:
     ra: 270.
     dec: 66.
 imaging:
-  exposure_time: &exposure_time 600
+  exposure_time: &exposure_time 642
   engine: galsim
   engine_params:
     rng_seed: *seed
