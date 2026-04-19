@@ -25,9 +25,9 @@ set -e
 # python3 mejiro/pipeline/_01a_generate_galaxy_tables.py --config $config
 # echo 'Generated galaxy tables.'
 
-echo 'Running survey simulation...'
-python3 mejiro/pipeline/_01b_run_survey_simulation.py --config $config
-echo 'Identified detectable strong lenses.'
+# echo 'Running survey simulation...'
+# python3 mejiro/pipeline/_01b_run_survey_simulation.py --config $config
+# echo 'Identified detectable strong lenses.'
 
 echo 'Building lens list from SkyPy...'
 python3 mejiro/pipeline/_02_build_lens_list.py --config $config
@@ -51,10 +51,10 @@ echo 'Calculating SNRs...'
 python3 mejiro/pipeline/calculate_snrs.py --config $config
 echo 'SNR calculation complete.'
 
-# echo 'Generating h5 file...'
-# if [ $config == "training_set" ]; then
-#     python3 mejiro/pipeline/_06_h5_export_training_set.py --config $config
-# else
-#     python3 mejiro/pipeline/_06_h5_export.py --config $config
-# fi
-# echo 'h5 file generation complete.'
+echo 'Generating h5 file...'
+if [ $config == "training_set" ]; then
+    python3 mejiro/pipeline/_06_h5_export_training_set.py --config $config
+else
+    python3 mejiro/pipeline/_06_h5_export.py --config $config
+fi
+echo 'h5 file generation complete.'
