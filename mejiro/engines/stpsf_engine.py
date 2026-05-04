@@ -26,14 +26,15 @@ class STPSFEngine(Engine):
         pass
 
     @staticmethod
-    def get_roman_psf_kwargs(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None):
+    def get_roman_psf_kwargs(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None, require_cached=False):
         kernel = STPSFEngine.get_roman_psf(band, detector, detector_position, oversample, num_pix,
-                                            check_cache=check_cache, psf_cache_dir=psf_cache_dir)
+                                            check_cache=check_cache, psf_cache_dir=psf_cache_dir,
+                                            require_cached=require_cached)
         return lenstronomy_util.get_pixel_psf_kwargs(kernel, oversample)
 
     @staticmethod
     def get_roman_psf(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None,
-                    **calc_psf_kwargs):
+                    require_cached=False, **calc_psf_kwargs):
         """
         Generate a Roman WFI PSF using STPSF.
 
@@ -68,6 +69,8 @@ class STPSFEngine(Engine):
             cached_psf = STPSFEngine.get_cached_psf(psf_id, psf_cache_dir)
             if cached_psf is not None:
                 return cached_psf
+            if require_cached:
+                raise RuntimeError(f'PSF {psf_id} not found in cache {psf_cache_dir}')
 
         logger.warning('Generating PSF with STPSF, which may be slow. Consider caching frequently-used PSFs.')
 
@@ -261,10 +264,10 @@ class STPSFEngine(Engine):
             module_path = os.path.dirname(mejiro.__file__)
             psf_cache_dir = os.path.join(module_path, 'data', 'cached_psfs')
 
-        psf_path = glob(os.path.join(psf_cache_dir, f'{id_string}.npy'))
-        if len(psf_path) == 1:
-            logger.debug(f'Loading cached PSF: {psf_path[0]}')
-            return np.load(psf_path[0])
+        psf_path = os.path.join(psf_cache_dir, f'{id_string}.npy')
+        if os.path.isfile(psf_path):
+            logger.debug(f'Loading cached PSF: {psf_path}')
+            return np.load(psf_path)
         else:
             logger.warning(f'PSF {id_string} not found in cache {psf_cache_dir}')
             return None
