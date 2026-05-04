@@ -10,8 +10,18 @@ Arguments:
     --config: Path to the YAML configuration file.
     --data_dir: Optional override for the data directory specified in the config file.
 """
-import argparse
 import os
+
+# Pin BLAS/OpenMP to a single thread per worker before numpy is imported. Each
+# ProcessPoolExecutor worker otherwise spawns its own BLAS thread pool, which
+# oversubscribes the cores when many workers run concurrently.
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
+
+import argparse
 import random
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -35,8 +45,10 @@ SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
 def main(args):
     start = time.time()
 
-    # initialize PipeLineHelper
-    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS)
+    # initialize PipeLineHelper; preserve any existing outputs so an interrupted
+    # run can be resumed (per-(lens, band) skip logic below handles dedup).
+    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS,
+                              delete_existing_output=False)
 
     # retrieve configuration parameters
     synthetic_image_config = pipeline.config['synthetic_image']
@@ -55,6 +67,36 @@ def main(args):
     else:
         raise ValueError(f'Unknown instrument {pipeline.instrument_name}. Supported instruments are {SUPPORTED_INSTRUMENTS}.')
 
+    # skip lenses whose outputs all already exist (resume an interrupted run).
+    bands = synthetic_image_config['bands']
+
+    def _output_dir_for(input_pickle):
+        if pipeline.instrument_name == 'roman':
+            sca = pipeline.parse_sca_from_filename(input_pickle)
+            return os.path.join(pipeline.output_dir, roman_util.get_sca_string(sca).lower())
+        return pipeline.output_dir
+
+    def _lens_name(input_pickle):
+        base = os.path.basename(input_pickle)
+        assert base.startswith('lens_') and base.endswith('.pkl'), base
+        return base[len('lens_'):-len('.pkl')]
+
+    def _is_complete(input_pickle):
+        out_dir = _output_dir_for(input_pickle)
+        name = _lens_name(input_pickle)
+        for band in bands:
+            done = os.path.exists(os.path.join(out_dir, f'SyntheticImage_{name}_{band}.pkl'))
+            failed = os.path.exists(os.path.join(out_dir, f'failed_{name}_{band}.pkl'))
+            if not (done or failed):
+                return False
+        return True
+
+    total_before = len(input_pickles)
+    input_pickles = [p for p in input_pickles if not _is_complete(p)]
+    skipped = total_before - len(input_pickles)
+    if skipped:
+        logger.info(f'Skipping {skipped} already-complete lens(es); {len(input_pickles)} remaining')
+
     # limit the number of systems to process, if limit imposed
     count = len(input_pickles)
     if pipeline.limit is not None and pipeline.limit < count:
@@ -63,6 +105,12 @@ def main(args):
         if pipeline.limit < count:
             count = pipeline.limit
     logger.info(f'Processing {count} lens(es)')
+
+    # Submit substructured systems first to flatten the long tail. Substructured
+    # lens pickles embed the pyhalo realization and are much larger on disk than
+    # non-substructured ones, so descending file size is a cheap, robust proxy
+    # that avoids unpickling every lens up front.
+    input_pickles.sort(key=os.path.getsize, reverse=True)
 
     # tuple the parameters
     tuple_list = [(pipeline, synthetic_image_config, psf_config, input_pickle) for input_pickle in input_pickles]
@@ -125,6 +173,12 @@ def create_synthetic_image(input):
 
     # generate synthetic images
     for band in bands:
+        # skip if output (or failure sentinel from a prior run) already exists
+        output_path = os.path.join(output_dir, f'SyntheticImage_{lens.name}_{band}.pkl')
+        failed_path = os.path.join(output_dir, f'failed_{lens.name}_{band}.pkl')
+        if os.path.exists(output_path) or os.path.exists(failed_path):
+            continue
+
         # get PSF
         get_psf_args |= {
             'band': band,
@@ -132,6 +186,7 @@ def create_synthetic_image(input):
             'num_pix': num_pix,
             'check_cache': True,
             'psf_cache_dir': pipeline.psf_cache_dir,
+            'require_cached': True,
         }
         kwargs_psf = pipeline.instrument.get_psf_kwargs(**get_psf_args)
 
@@ -145,11 +200,10 @@ def create_synthetic_image(input):
                                         kwargs_numerics=kwargs_numerics,
                                         kwargs_psf=kwargs_psf,
                                         pieces=pieces)
-            util.pickle(os.path.join(output_dir, f'SyntheticImage_{lens.name}_{band}.pkl'), synthetic_image)
+            util.pickle(output_path, synthetic_image)
         except Exception as e:
-            failed_pickle_path = os.path.join(output_dir, f'failed_{lens.name}_{band}.pkl')
-            util.pickle(failed_pickle_path, lens)
-            logger.warning(f'Error creating synthetic image for lens {lens.name} in band {band}: {e}. Pickling to {failed_pickle_path}')
+            util.pickle(failed_path, lens)
+            logger.warning(f'Error creating synthetic image for lens {lens.name} in band {band}: {e}. Pickling to {failed_path}')
             return
 
 
