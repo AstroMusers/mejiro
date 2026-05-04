@@ -87,7 +87,7 @@ synthetic_image:
   fov_arcsec: 8.03
   supersampling_compute_mode: adaptive
   supersampling_factor: &supersampling_factor 5
-  pieces: True
+  pieces: False
 exposure:
   ma_table_number: 17
   date: 2027-01-01T00:00:00
