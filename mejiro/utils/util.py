@@ -147,12 +147,17 @@ def get_gaussian_kernel(fwhm, size):
     """
     Generate a 2D Gaussian kernel using scipy.ndimage.gaussian_filter.
 
-    Parameters:
-    - fwhm: Full Width at Half Maximum of the Gaussian.
-    - size: The size of the generated 2D array (size x size).
+    Parameters
+    ----------
+    fwhm : float
+        Full Width at Half Maximum of the Gaussian.
+    size : int
+        The size of the generated 2D array (size x size).
 
-    Returns:
-    - 2D NumPy array representing the Gaussian kernel.
+    Returns
+    -------
+    numpy.ndarray
+        2D array representing the Gaussian kernel.
     """
     from scipy.ndimage import gaussian_filter
 
