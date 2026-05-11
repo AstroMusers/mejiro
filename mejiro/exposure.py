@@ -122,6 +122,10 @@ class Exposure:
                 self.data, self.lens_data, self.source_data = results, None, None
 
         # crop off edge effects (e.g., IPC)
+        # TODO crop_edge_effects returns a new (cropped) array but the result is
+        # discarded here, so self.data is left at its original size. Fixing this
+        # requires also cropping self.noise / self.image / self.lens_image /
+        # self.source_image to keep shapes consistent across the Exposure object.
         Exposure.crop_edge_effects(self.data, pad=3)
 
         # check for negative pixels
@@ -130,6 +134,7 @@ class Exposure:
             self.data[self.data < 0] = 0
 
         if self.synthetic_image.pieces:
+            # TODO same discarded-return issue as above
             Exposure.crop_edge_effects(self.lens_data, pad=3)
             Exposure.crop_edge_effects(self.source_data, pad=3)
             if np.any(self.lens_data < 0):
@@ -212,5 +217,5 @@ class Exposure:
     def crop_edge_effects(image, pad):
         num_pix = image.shape[0]
         assert num_pix % 2 != 0, 'Image has even number of pixels'
-        output_num_pix = num_pix - pad
+        output_num_pix = num_pix - 2 * pad
         return util.center_crop_image(image, (output_num_pix, output_num_pix))
