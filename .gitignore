@@ -30,3 +30,6 @@ __pycache__
 
 # Mac
 .DS_Store
+
+# Claude
+.claude
