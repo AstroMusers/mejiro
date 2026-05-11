@@ -75,7 +75,7 @@ class LSST(Instrument):
         return Quantity(0.2, 'arcsec / pix')
     
     def get_psf_fwhm(self, band):
-        return self.lenstronomy_band_obs[band]['seeing'] * u.Unit('arcsec')
+        return self.lenstronomy_band_obs[band].obs['seeing'] * u.Unit('arcsec')
 
     def get_psf_kwargs(self, band, **kwargs):
         from mejiro.utils import lenstronomy_util
