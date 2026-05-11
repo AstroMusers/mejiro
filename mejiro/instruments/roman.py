@@ -115,7 +115,19 @@ class Roman(Instrument):
             self.thermal_background = util.return_qtable(os.path.join(self.roman_technical_information_path, THERMAL_BACKGROUND_PATH))
         return self.thermal_background[self.thermal_background['filter'] == band]['rate']
     
-    def get_zeropoint_magnitude(self, band, detector):
+    def get_gain(self, band):
+        return self.gain
+
+    def get_dark_current(self, band):
+        raise NotImplementedError("Dark current is not yet implemented for Roman.")
+
+    def get_read_noise(self, band):
+        raise NotImplementedError("Read noise is not yet implemented for Roman.")
+
+    def get_sky_level(self, band):
+        raise NotImplementedError("Sky level is not yet implemented for Roman.")
+
+    def get_zeropoint_magnitude(self, band, detector=1):
         sca_number = roman_util.get_sca_int(detector)
         if self.zeropoints is None:
             self.zeropoints = util.return_qtable(os.path.join(self.roman_technical_information_path, ZEROPOINT_PATH))

@@ -25,6 +25,9 @@ class Exposure:
         self.engine = engine
         self.noise = None
 
+        if engine not in synthetic_image.instrument.engines:
+            raise ValueError(f"Engine '{engine}' is not supported by {synthetic_image.instrument.name}. Supported engines: {synthetic_image.instrument.engines}")
+
         if engine == 'galsim':
             from mejiro.engines.galsim_engine import GalSimEngine
 

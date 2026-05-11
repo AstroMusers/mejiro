@@ -43,7 +43,6 @@ class HST(Instrument):
         # set attributes
         self.gain = 2.5
         self.stray_light_fraction = 0.1
-        self.pixel_scale = None
         self.dark_current = {band: Quantity(0.00319, 'ct / pix / s') for band in filtnames}  # https://etc.stsci.edu/etcstatic/users_guide/1_ref_9_background.html
         self.read_noise = {band: Quantity(3.0, 'ct / pix / s') for band in filtnames}  # https://ntrs.nasa.gov/api/citations/20060047835/downloads/20060047835.pdf
         self.psf_fwhm = {
@@ -101,8 +100,8 @@ class HST(Instrument):
         """
         Estimate noise per pixel per second in given band. For now, sum of dark current and read noise.
         """
-        dark_current = self.dark_current[band]
-        read_noise = self.read_noise[band]  # TODO the units aren't right for this sum to work
+        dark_current = self.get_dark_current(band)
+        read_noise = self.get_read_noise(band)  # TODO the units aren't right for this sum to work
 
         return dark_current + read_noise
 

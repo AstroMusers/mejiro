@@ -65,7 +65,7 @@ class JWST(Instrument):
         return STPSFEngine.get_jwst_psf_kwargs(band, kwargs['oversample'], kwargs['num_pix'], kwargs.get('check_cache', False), kwargs.get('psf_cache_dir', None))
 
     def get_psf_fwhm(self, band):
-        pass
+        raise NotImplementedError("PSF FWHM is not yet implemented for JWST.")
 
     def get_sky_level(self, band):
         return self.sky_level[band]

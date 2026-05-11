@@ -88,6 +88,7 @@ class SyntheticImage:
         
         # set up attributes
         self.strong_lens = strong_lens
+        self.instrument = instrument
         self.instrument_name = instrument.name
         self.instrument_params = instrument_params
         self.band = band

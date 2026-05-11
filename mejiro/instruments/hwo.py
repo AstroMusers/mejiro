@@ -26,6 +26,19 @@ class HWO(Instrument):
     TODO
     """
     def __init__(self, eac='EAC1'):
+        """
+        Notes
+        -----
+        ``super().__init__`` is called after instantiating ``self.telescope``
+        and ``self.camera`` because ``bands`` is derived from
+        ``self.camera.bandnames`` — i.e., the supported filter set is
+        determined by syotools rather than declared statically. The
+        per-band detector and optical attributes are then reformatted from
+        the syotools objects into mejiro's band-keyed dict format via
+        ``get_attribute_from_syotools``. ``self.telescope`` and
+        ``self.camera`` are retained as instance attributes but are only
+        consulted during construction.
+        """
         self.telescope = Telescope()
         self.telescope.set_from_json(eac)
         self.camera = Camera()
@@ -112,8 +125,8 @@ class HWO(Instrument):
         """
         Estimate noise per pixel per second in given band. For now, sum of dark current and read noise.
         """
-        dark_current = self.dark_current[band]
-        read_noise = self.read_noise[band]  # TODO the units aren't right for this sum to work
+        dark_current = self.get_dark_current(band)
+        read_noise = self.get_read_noise(band)  # TODO the units aren't right for this sum to work
 
         return dark_current + read_noise
 
