@@ -658,11 +658,11 @@ def percent_difference(a, b):
 
     Examples
     --------
-    >>> percent_difference(10, 20)
-    100.0
+    >>> percent_difference(10, 10)
+    0.0
 
     >>> percent_difference(10, 15)
-    50.0
+    40.0
     """
     return np.abs(a - b) / ((a + b) / 2) * 100
 
@@ -812,43 +812,57 @@ def center_crop_image(array, shape):
     """
     Crop the input array to the specified shape by centering the image.
 
+    Both the input array and the requested shape must have odd dimensions, so
+    that the cropped block is unambiguously centered on a single pixel.
+
     Parameters
     ----------
     array : numpy.ndarray
-        The input array to be cropped.
+        The input array to be cropped. Both dimensions must be odd.
     shape : tuple
-        The desired shape of the cropped array.
+        The desired shape of the cropped array. Both dimensions must be odd
+        and no larger than the corresponding dimension of `array`.
 
     Returns
     -------
     numpy.ndarray
         The cropped array.
 
+    Raises
+    ------
+    ValueError
+        If either `array` or `shape` has an even dimension, or if `shape` is
+        larger than `array.shape` along either axis.
+
     Notes
     -----
-    If the input array already has the specified shape, it will be returned as is.
+    If the input array already has the specified shape, it is returned as is.
 
     Examples
     --------
-    >>> array = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-    >>> shape = (2, 2)
-    >>> center_crop_image(array, shape)
-    array([[5, 6],
-           [8, 9]])
-
-    >>> array = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-    >>> shape = (3, 3)
-    >>> center_crop_image(array, shape)
-    array([[1, 2, 3],
-           [4, 5, 6],
-           [7, 8, 9]])
+    >>> array = np.array([[1, 2, 3, 4, 5],
+    ...                   [6, 7, 8, 9, 10],
+    ...                   [11, 12, 13, 14, 15],
+    ...                   [16, 17, 18, 19, 20],
+    ...                   [21, 22, 23, 24, 25]])
+    >>> center_crop_image(array, (3, 3))
+    array([[ 7,  8,  9],
+           [12, 13, 14],
+           [17, 18, 19]])
     """
+    y, x = array.shape
+    y_out, x_out = shape
+
+    if y % 2 == 0 or x % 2 == 0:
+        raise ValueError(f'Input array must have odd dimensions, got {array.shape}')
+    if y_out % 2 == 0 or x_out % 2 == 0:
+        raise ValueError(f'Requested shape must have odd dimensions, got {shape}')
+    if y_out > y or x_out > x:
+        raise ValueError(f'Requested shape {shape} is larger than input shape {array.shape}')
+
     if array.shape == shape:
         return array
 
-    y_out, x_out = shape
-    tuple = array.shape
-    y, x = tuple[0], tuple[1]
     x_start = (x // 2) - (x_out // 2)
     y_start = (y // 2) - (y_out // 2)
     return array[y_start: y_start + y_out, x_start: x_start + x_out]
