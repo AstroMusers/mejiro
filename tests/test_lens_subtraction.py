@@ -1,17 +1,11 @@
-import os
 import numpy as np
 import pytest
 
-import mejiro
 from mejiro.exposure import Exposure
 from mejiro.synthetic_image import SyntheticImage
-from mejiro.galaxy_galaxy import SampleGG
 from mejiro.instruments.roman import Roman
 from mejiro.engines.stpsf_engine import STPSFEngine
 from mejiro.analysis.lens_subtraction import fit_sersic, subtract_lens
-
-
-TEST_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(mejiro.__file__)), 'tests', 'test_data')
 
 
 def test_fit_sersic_roundtrip():
@@ -62,24 +56,23 @@ def test_fit_sersic_roundtrip():
         f'Relative residual {relative_residual:.6e} too large'
 
 
-def test_subtract_lens_on_exposure():
+def test_subtract_lens_on_exposure(sample_gg, test_data_dir):
     """
     Test subtract_lens on a noiseless Exposure with SampleGG.
 
     After subtracting the lens, the residual should contain mostly the lensed
     source arcs and be significantly fainter than the original.
     """
-    strong_lens = SampleGG()
     band = 'F129'
     detector = 'SCA01'
     detector_position = (2048, 2048)
 
     kwargs_psf = STPSFEngine.get_roman_psf_kwargs(
         band, detector, detector_position, oversample=5, num_pix=101,
-        check_cache=True, psf_cache_dir=TEST_DATA_DIR)
+        check_cache=True, psf_cache_dir=test_data_dir)
 
     synthetic_image = SyntheticImage(
-        strong_lens=strong_lens,
+        strong_lens=sample_gg,
         instrument=Roman(),
         band=band,
         fov_arcsec=5,

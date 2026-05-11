@@ -1,16 +1,11 @@
-import os
 import galsim
 import numpy as np
 
-import mejiro
 from mejiro.engines import galsim_engine
 from mejiro.exposure import Exposure
 from mejiro.instruments.jwst import JWST
 from mejiro.galaxy_galaxy import SampleGG
 from mejiro.synthetic_image import SyntheticImage
-
-
-TEST_DATA_DIR = os.path.join(os.path.dirname(mejiro.__path__[0]), 'tests', 'test_data')
 
 
 def test_jwst_default_engine_params():

@@ -1,30 +1,23 @@
-import os
 import pytest
 import galsim
 import numpy as np
-import os
-import pytest
 
-import mejiro
 from mejiro.exposure import Exposure
 from mejiro.synthetic_image import SyntheticImage
-from mejiro.galaxy_galaxy import Sample1, Sample2, SampleGG, SampleSL2S, SampleBELLS
+from mejiro.galaxy_galaxy import Sample1, SampleGG
 from mejiro.instruments.roman import Roman
 from mejiro.engines.stpsf_engine import STPSFEngine
 
 
-TEST_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(mejiro.__file__)), 'tests', 'test_data')
-
-
 @pytest.mark.parametrize("strong_lens", [SampleGG(), Sample1()])
-def test_exposure_with_galsim_engine(strong_lens):
+def test_exposure_with_galsim_engine(strong_lens, test_data_dir):
     from mejiro.engines.galsim_engine import GalSimEngine
 
     band = 'F129'
     detector = 'SCA01'
     detector_position = (2048, 2048)
 
-    kwargs_psf = STPSFEngine.get_roman_psf_kwargs(band, detector, detector_position, oversample=5, num_pix=101, check_cache=True, psf_cache_dir=TEST_DATA_DIR)
+    kwargs_psf = STPSFEngine.get_roman_psf_kwargs(band, detector, detector_position, oversample=5, num_pix=101, check_cache=True, psf_cache_dir=test_data_dir)
 
     synthetic_image = SyntheticImage(strong_lens=strong_lens,
                                      instrument=Roman(),
@@ -78,7 +71,7 @@ def _circular_aperture_mask(shape, center_xy, radius):
     return (xx - cx) ** 2 + (yy - cy) ** 2 <= radius ** 2
 
 
-def test_noiseless_exposure_aperture_photometry():
+def test_noiseless_exposure_aperture_photometry(sample_gg, test_data_dir):
     """A noiseless galsim exposure should preserve flux locally at each
     lensed-image position, not just globally. The aperture flux in the
     exposure should match the aperture flux in the synthetic image
@@ -91,10 +84,10 @@ def test_noiseless_exposure_aperture_photometry():
 
     kwargs_psf = STPSFEngine.get_roman_psf_kwargs(
         band, detector, detector_position, oversample=5, num_pix=101,
-        check_cache=True, psf_cache_dir=TEST_DATA_DIR)
+        check_cache=True, psf_cache_dir=test_data_dir)
 
     synthetic_image = SyntheticImage(
-        strong_lens=SampleGG(),
+        strong_lens=sample_gg,
         instrument=Roman(),
         band=band,
         fov_arcsec=5,

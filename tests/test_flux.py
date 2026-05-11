@@ -1,27 +1,21 @@
-import os
 import numpy as np
 import pytest
 
-import mejiro
 from mejiro.exposure import Exposure
 from mejiro.synthetic_image import SyntheticImage
-from mejiro.galaxy_galaxy import SampleGG
 from mejiro.instruments.roman import Roman
 from mejiro.engines.stpsf_engine import STPSFEngine
 from lenstronomy.Util import data_util
 
 
-TEST_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(mejiro.__file__)), 'tests', 'test_data')
-
-
-def _make_noiseless_exposure(strong_lens, band='F129', exposure_time=146, pieces=True):
+def _make_noiseless_exposure(strong_lens, psf_cache_dir, band='F129', exposure_time=146, pieces=True):
     """Helper to create a noiseless exposure for flux testing."""
     detector = 'SCA01'
     detector_position = (2048, 2048)
 
     kwargs_psf = STPSFEngine.get_roman_psf_kwargs(
         band, detector, detector_position, oversample=5, num_pix=101,
-        check_cache=True, psf_cache_dir=TEST_DATA_DIR)
+        check_cache=True, psf_cache_dir=psf_cache_dir)
 
     synthetic_image = SyntheticImage(
         strong_lens=strong_lens,
@@ -47,7 +41,7 @@ def _make_noiseless_exposure(strong_lens, band='F129', exposure_time=146, pieces
     return synthetic_image, exposure
 
 
-def test_noiseless_exposure_flux():
+def test_noiseless_exposure_flux(sample_gg, test_data_dir):
     """
     Test that a noiseless exposure conserves flux from the synthetic image.
 
@@ -55,9 +49,9 @@ def test_noiseless_exposure_flux():
     approximately synthetic_image.data * exposure_time, with only integer
     quantization error.
     """
-    strong_lens = SampleGG()
     exposure_time = 146
-    synthetic_image, exposure = _make_noiseless_exposure(strong_lens, exposure_time=exposure_time)
+    synthetic_image, exposure = _make_noiseless_exposure(
+        sample_gg, test_data_dir, exposure_time=exposure_time)
 
     expected_total = np.sum(synthetic_image.data) * exposure_time
     actual_total = np.sum(exposure.data)
@@ -68,12 +62,11 @@ def test_noiseless_exposure_flux():
         f'Total flux mismatch: expected {expected_total:.1f}, got {actual_total:.1f}'
 
 
-def test_pieces_sum_to_total():
+def test_pieces_sum_to_total(sample_gg, test_data_dir):
     """
     Test that lens + source surface brightness components sum to the total image.
     """
-    strong_lens = SampleGG()
-    synthetic_image, exposure = _make_noiseless_exposure(strong_lens)
+    synthetic_image, exposure = _make_noiseless_exposure(sample_gg, test_data_dir)
 
     # at the SyntheticImage level, lens + source should equal total
     pieces_sum = synthetic_image.lens_surface_brightness + synthetic_image.source_surface_brightness
@@ -81,18 +74,17 @@ def test_pieces_sum_to_total():
                                err_msg='Lens + source surface brightness does not sum to total image')
 
 
-def test_lens_magnitude():
+def test_lens_magnitude(sample_gg, test_data_dir):
     """
     Test that the lens flux in the synthetic image recovers the input magnitude.
 
     Convert the total lens flux (sum of lens surface brightness) back to a magnitude
     using the zero-point, and compare to the input lens magnitude.
     """
-    strong_lens = SampleGG()
     band = 'F129'
-    expected_lens_mag = strong_lens.get_lens_magnitude(band)
+    expected_lens_mag = sample_gg.get_lens_magnitude(band)
 
-    synthetic_image, _ = _make_noiseless_exposure(strong_lens, band=band)
+    synthetic_image, _ = _make_noiseless_exposure(sample_gg, test_data_dir, band=band)
 
     # sum the lens surface brightness to get total lens flux in counts/sec
     lens_flux_cps = np.sum(synthetic_image.lens_surface_brightness)
@@ -106,16 +98,15 @@ def test_lens_magnitude():
         f'Lens magnitude mismatch: expected {expected_lens_mag}, measured {measured_mag:.3f}'
 
 
-def test_source_magnitude():
+def test_source_magnitude(sample_gg, test_data_dir):
     """
     Test that the lensed source flux recovers a magnitude brighter than the
     unlensed source (due to magnification).
     """
-    strong_lens = SampleGG()
     band = 'F129'
-    unlensed_source_mag = strong_lens.get_source_magnitude(band)
+    unlensed_source_mag = sample_gg.get_source_magnitude(band)
 
-    synthetic_image, _ = _make_noiseless_exposure(strong_lens, band=band)
+    synthetic_image, _ = _make_noiseless_exposure(sample_gg, test_data_dir, band=band)
 
     # sum the source surface brightness (this is the lensed source)
     source_flux_cps = np.sum(synthetic_image.source_surface_brightness)
@@ -128,16 +119,15 @@ def test_source_magnitude():
         f'Lensed source (mag={measured_mag:.3f}) should be brighter than unlensed (mag={unlensed_source_mag})'
 
 
-def test_total_image_maggies():
+def test_total_image_maggies(sample_gg, test_data_dir):
     """
     Test that SyntheticImage.get_maggies() returns a consistent value.
 
     The total maggies should be the sum of lens maggies and lensed source maggies.
     """
-    strong_lens = SampleGG()
     band = 'F129'
 
-    synthetic_image, _ = _make_noiseless_exposure(strong_lens, band=band)
+    synthetic_image, _ = _make_noiseless_exposure(sample_gg, test_data_dir, band=band)
 
     total_maggies = synthetic_image.get_maggies()
     assert total_maggies > 0, 'Total maggies should be positive'
@@ -159,15 +149,14 @@ def test_total_image_maggies():
                                err_msg='Total maggies does not equal sum of lens + source maggies')
 
 
-def test_exposure_counts_match_synthetic_flux():
+def test_exposure_counts_match_synthetic_flux(sample_gg, test_data_dir):
     """
     Test that the noiseless exposure total counts equal the synthetic image
     get_flux() * exposure_time, accounting for quantization.
     """
-    strong_lens = SampleGG()
     exposure_time = 146
     synthetic_image, exposure = _make_noiseless_exposure(
-        strong_lens, exposure_time=exposure_time, pieces=False)
+        sample_gg, test_data_dir, exposure_time=exposure_time, pieces=False)
 
     expected_counts = synthetic_image.get_flux() * exposure_time
     actual_counts = np.sum(exposure.data)

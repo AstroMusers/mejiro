@@ -3,15 +3,11 @@ import pytest
 import numpy as np
 from pyHalo.preset_models import preset_model_from_name
 
-import mejiro
 from mejiro.instruments.roman import Roman
 from mejiro.galaxy_galaxy import Sample1, Sample2, SampleGG, SampleSL2S, SampleBELLS
 from mejiro.synthetic_image import SyntheticImage
 from mejiro.engines.stpsf_engine import STPSFEngine
 from mejiro.utils import util
-
-
-TEST_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(mejiro.__file__)), 'tests', 'test_data')
 
 
 def _circular_aperture_mask(shape, center_xy, radius):
@@ -396,7 +392,7 @@ def test_synthetic_image_psf_convolution_changes_image():
         )
 
 
-def test_roman_psf_varies_with_detector_position():
+def test_roman_psf_varies_with_detector_position(test_data_dir):
     """Two SyntheticImages of the same lens, identical except for the
     Roman PSF used at two different detector positions, should produce
     measurably different rendered images while still conserving total
@@ -411,7 +407,7 @@ def test_roman_psf_varies_with_detector_position():
     # Skip cleanly if the second cached PSF hasn't been generated yet,
     # since computing one with STPSF at test time would be very slow.
     psf_id_b = STPSFEngine.get_psf_id(band, detector, pos_b, 5, 101)
-    psf_b_path = os.path.join(TEST_DATA_DIR, f'{psf_id_b}.npy')
+    psf_b_path = os.path.join(test_data_dir, f'{psf_id_b}.npy')
     if not os.path.exists(psf_b_path):
         pytest.skip(
             f"second cached Roman PSF not found at {psf_b_path}; "
@@ -420,10 +416,10 @@ def test_roman_psf_varies_with_detector_position():
 
     kwargs_psf_a = STPSFEngine.get_roman_psf_kwargs(
         band, detector, pos_a, oversample=5, num_pix=101,
-        check_cache=True, psf_cache_dir=TEST_DATA_DIR)
+        check_cache=True, psf_cache_dir=test_data_dir)
     kwargs_psf_b = STPSFEngine.get_roman_psf_kwargs(
         band, detector, pos_b, oversample=5, num_pix=101,
-        check_cache=True, psf_cache_dir=TEST_DATA_DIR)
+        check_cache=True, psf_cache_dir=test_data_dir)
 
     # Failsafe: confirm the underlying PSF kernels themselves differ.
     # If the cache lookup silently returned the same file twice, the
