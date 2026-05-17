@@ -9,18 +9,22 @@ from tqdm import tqdm
 
 import logging
 
+from mejiro.exposure import Exposure
+from mejiro.synthetic_image import SyntheticImage
 from mejiro.utils import util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
 logger = logging.getLogger(__name__)
 
-PREV_SCRIPT_NAME = '05'
+PREV_SCRIPT_NAME = '05_romanisim'
 SCRIPT_NAME = 'snr'
 SUPPORTED_INSTRUMENTS = ['roman', 'hwo']
 
 
 def main(args):
     start = time.time()
+
+    PipelineHelper.patch_astropy_for_mejiro_v2_pickles()  # remove after re-pickling inputs under mejiro-v3
 
     # initialize PipeLineHelper
     pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS)
@@ -30,7 +34,7 @@ def main(args):
 
     # set input and output directories
     if pipeline.instrument_name == 'roman':
-        input_pickles = pipeline.retrieve_roman_pickles(prefix='Exposure', suffix='', extension='.pkl')
+        input_pickles = pipeline.retrieve_roman_pickles(prefix='Exposure', suffix='', extension='.npy')
         pipeline.create_roman_sca_output_directories()
     elif pipeline.instrument_name == 'hwo':
         input_pickles = pipeline.retrieve_pickles(prefix='Exposure', suffix='', extension='.pkl')
@@ -75,24 +79,94 @@ def calculate_snr(input):
     # unpack tuple
     (pipeline, snr_config, input_pickle) = input
 
+    # parse pickle filename to get system name and band
+    basename = os.path.basename(input_pickle)
+    parts = basename.split('_')
+    system_name = "_".join(parts[1:-1])
+    band = parts[-1].rsplit('.', 1)[0]
+
     # unpack snr config
     snr_per_pixel_threshold = snr_config['snr_per_pixel_threshold']
 
     # load exposure
-    exposure = util.unpickle(input_pickle)
+    # exposure = util.unpickle(input_pickle)
+    exposure = None
 
     # calculate SNR
-    snr = exposure.get_snr(snr_per_pixel_threshold=snr_per_pixel_threshold)
-
-    # parse pickle filename to get system name
-    parts = os.path.basename(input_pickle).split('_')
-    system_name = "_".join(parts[1:-1])
+    # try:
+    #     snr = exposure.get_snr(snr_per_pixel_threshold=snr_per_pixel_threshold)
+    # except ValueError as e:
+        # logger.warning(f'Falling back to rebuild path for {input_pickle}: {e}')
+    snr = _rebuild_snr(pipeline, snr_config, input_pickle, system_name, band, exposure)
 
     return (system_name, snr)
 
 
+def _rebuild_snr(pipeline, snr_config, input_pickle, system_name, band, original_exposure):
+    # locate the StrongLens pickle (step 02 — no substructure attached) and the
+    # SyntheticImage pickle (step 04 — used only for instrument_params so the
+    # rebuilt PSF matches the original).
+    if pipeline.instrument_name == 'roman':
+        sca_dir = os.path.basename(os.path.dirname(input_pickle))
+        lens_pickle_path = os.path.join(pipeline.pipeline_dir, '02', sca_dir, f'lens_{system_name}.pkl')
+        synth_pickle_path = os.path.join(pipeline.pipeline_dir, '04', sca_dir, f'SyntheticImage_{system_name}_{band}.pkl')
+    else:
+        lens_pickle_path = os.path.join(pipeline.pipeline_dir, '02', f'lens_{system_name}.pkl')
+        synth_pickle_path = os.path.join(pipeline.pipeline_dir, '04', f'SyntheticImage_{system_name}_{band}.pkl')
+
+    try:
+        lens = util.unpickle(lens_pickle_path)
+        old_synthetic_image = util.unpickle(synth_pickle_path)
+        instrument_params = old_synthetic_image.instrument_params
+
+        supersampling_factor = snr_config['snr_supersampling_factor']
+        kwargs_numerics = {
+            'supersampling_factor': supersampling_factor,
+            'compute_mode': snr_config['snr_supersampling_compute_mode'],
+        }
+
+        psf_config = pipeline.config['psf']
+        num_pix = psf_config['num_pixes'][0]
+        get_psf_args = {
+            'band': band,
+            'oversample': supersampling_factor,
+            'num_pix': num_pix,
+            'check_cache': True,
+            'psf_cache_dir': pipeline.psf_cache_dir,
+            'require_cached': True,
+        }
+        if pipeline.instrument_name == 'roman':
+            get_psf_args['detector'] = instrument_params['detector']
+            get_psf_args['detector_position'] = instrument_params['detector_position']
+        kwargs_psf = pipeline.instrument.get_psf_kwargs(**get_psf_args)
+
+        synthetic_image = SyntheticImage(
+            strong_lens=lens,
+            instrument=pipeline.instrument,
+            band=band,
+            fov_arcsec=snr_config['snr_fov_arcsec'],
+            instrument_params=instrument_params,
+            kwargs_numerics=kwargs_numerics,
+            kwargs_psf=kwargs_psf,
+            pieces=True,
+        )
+
+        exposure = Exposure(
+            synthetic_image,
+            exposure_time=snr_config['snr_exposure_time'],
+            engine=pipeline.config['imaging']['engine'],
+            # engine_params=original_exposure.engine_params,
+            engine_params=pipeline.config['imaging']['engine_params']
+        )
+
+        return exposure.get_snr(snr_per_pixel_threshold=snr_config['snr_per_pixel_threshold'])
+    except Exception as e:
+        logger.warning(f'Rebuild failed for {input_pickle}: {e}')
+        return None
+
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Generate and cache Roman PSFs.")
+    parser = argparse.ArgumentParser(description="Calculate signal-to-noise ratios.")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
     args = parser.parse_args()
     main(args)
