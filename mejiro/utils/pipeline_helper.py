@@ -192,3 +192,45 @@ class PipelineHelper:
 
     def validate_instrument(self, instrument_name):
         assert self.instrument_name == instrument_name, f"This method is only for the {instrument_name} instrument."
+
+    @staticmethod
+    def patch_astropy_for_mejiro_v2_pickles():
+        """
+        Install ``sys.modules`` aliases so that pickles produced under the
+        ``mejiro-v2`` conda environment can be loaded under ``mejiro-v3``.
+
+        When this is needed
+        -------------------
+        Pickles created under ``mejiro-v2`` (which used astropy where
+        ``astropy.cosmology.flrw`` was a package containing the submodules
+        ``base``, ``lambdacdm``, ``w0cdm``, ``w0wacdm``, ``w0wzcdm``, ``wcdm``,
+        ``wpwazpcdm``, and the compiled ``scalar_inv_efuncs`` Cython extension)
+        embed those fully-qualified module paths in the pickle stream. In
+        ``mejiro-v3`` (astropy 7.x), the public ``astropy.cosmology.flrw`` is a
+        single flat module and the real submodules live under
+        ``astropy.cosmology._src.flrw``. Unpickling therefore fails with::
+
+            ModuleNotFoundError: No module named
+            'astropy.cosmology.flrw.lambdacdm';
+            'astropy.cosmology.flrw' is not a package
+
+        Call this function once, at the top of a pipeline script's ``main`` (or
+        before any unpickling), whenever that script consumes pickles produced
+        by ``mejiro-v2``. After re-pickling those artifacts under ``mejiro-v3``,
+        the call can be removed without further changes — it is a pure
+        ``sys.modules`` shim with no other side effects.
+        """
+        import sys
+        import importlib
+        submodules = (
+            'base', 'lambdacdm', 'w0cdm', 'w0wacdm', 'w0wzcdm',
+            'wcdm', 'wpwazpcdm', 'scalar_inv_efuncs',
+        )
+        for name in submodules:
+            try:
+                sys.modules.setdefault(
+                    f'astropy.cosmology.flrw.{name}',
+                    importlib.import_module(f'astropy.cosmology._src.flrw.{name}'),
+                )
+            except ModuleNotFoundError:
+                pass
