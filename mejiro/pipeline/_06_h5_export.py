@@ -45,7 +45,6 @@ def main(args):
     # initialize PipeLineHelper
     pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS)
 
-    # determine if labeled dataset
     labeled = False
 
     # retrieve configuration parameters

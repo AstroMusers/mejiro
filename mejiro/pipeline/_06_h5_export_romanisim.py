@@ -57,11 +57,10 @@ SUPPORTED_INSTRUMENTS = ['roman']
 def main(args):
     start = time.time()
 
+    PipelineHelper.patch_astropy_for_mejiro_v2_pickles()  # remove after re-pickling inputs under mejiro-v3
+
     # initialize PipelineHelper
     pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS)
-
-    # determine if labeled dataset
-    labeled = False
 
     # retrieve configuration parameters
     bands = pipeline.config['synthetic_image']['bands']
@@ -102,12 +101,12 @@ def main(args):
     f = h5py.File(filepath, 'a')
 
     # if not labeled, export the "answer key" file
-    if not labeled:
+    if not dataset_config['labeled']:
         answer_key_filepath = os.path.join(pipeline.output_dir, f'{pipeline.name}_answer_key_v_{version_string}.csv')
         if os.path.exists(answer_key_filepath):
             os.remove(answer_key_filepath)
 
-        df = pd.DataFrame(columns=['uid', 'einstein_radius'])
+        df = pd.DataFrame(columns=['uid', 'substructure_flag'])
 
     # set file-level attributes
     f.attrs['author'] = (f'{getpass.getuser()}@{platform.node()}', 'username@host for calculation')
@@ -135,14 +134,20 @@ def main(args):
         synthetic_image = util.unpickle(synth_pickles[0])
         lens = synthetic_image.strong_lens
 
-        if not labeled:
-            df.loc[len(df)] = [uid, lens.get_einstein_radius()]
+        if not dataset_config['labeled']:
+            # rung 1
+            if lens.realization is None:
+                substructure_flag = False
+            else:
+                substructure_flag = True
+
+            df.loc[len(df)] = [uid, substructure_flag]
 
         # set group-level attributes
         group_lens.attrs['uid'] = (uid, 'Unique identifier for system assigned by mejiro')
         group_lens.attrs['z_source'] = (str(lens.z_source), 'Source galaxy redshift')
         group_lens.attrs['z_lens'] = (str(lens.z_lens), 'Lens galaxy redshift')
-        if labeled:
+        if dataset_config['labeled']:
             group_lens.attrs['main_halo_mass'] = (str(lens.get_main_halo_mass()), 'Lens galaxy main halo mass [M_sun]')
             group_lens.attrs['theta_e'] = (str(lens.get_einstein_radius()), 'Einstein radius [arcsec]')
             group_lens.attrs['sigma_v'] = (str(lens.get_velocity_dispersion()), 'Lens galaxy velocity dispersion [km/s]')
@@ -193,7 +198,7 @@ def main(args):
             for dset in dset_list:
                 dset.attrs['units'] = ('DN/s', 'Units of pixel values')
                 dset.attrs['filter'] = (band, 'Filter')
-                if labeled:
+                if dataset_config['labeled']:
                     dset.attrs['source_magnitude'] = (str(lens.get_source_magnitude(band)), 'Unlensed source galaxy magnitude')
                     dset.attrs['lensed_source_magnitude'] = (
                         str(lens.get_lensed_source_magnitude(band)), 'Lensed source galaxy magnitude')
@@ -231,7 +236,7 @@ def main(args):
                     dataset_psf.attrs['oversample'] = (str(psf_oversample), 'See STPSF documentation')
 
     # if not labeled, save answer key
-    if not labeled:
+    if not dataset_config['labeled']:
         df.to_csv(answer_key_filepath, index=False)
         logger.info(f'Wrote answer key to {answer_key_filepath}')
 
