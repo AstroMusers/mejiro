@@ -1,11 +1,11 @@
 data_dir: &data_dir /data/bwedig/mejiro # where output data should be written
 pipeline_label: jwst
 psf_cache_dir: /grad/bwedig/mejiro/mejiro/data/psfs/jwst
-dev: False
+dev: True
 nice: 19
 show_progress_bar: False
 suppress_warnings: False
-logging_level: INFO
+logging_level: WARNING
 limit: null
 seed: &seed 42
 cores:
@@ -22,17 +22,17 @@ jaxtronomy:
   jax_platform: cpu  # cpu or gpu
 instrument: jwst
 survey:
-  runs: 100
-  num_galaxy_tables: 100  # number of independent galaxy tables for _01a; higher = more intrinsic diversity
+  runs: 32
+  num_galaxy_tables: 10  # number of independent galaxy tables for _01a; higher = more intrinsic diversity
   speed_factor: 1  # set >1 for faster but less complete population draws in _01b
   area: 0.5
   skypy_config: jwst
-  write_to_csv: False
-  total_population: False
+  write_to_csv: True
+  total_population: True
   use_real_sources: True
   catalog_source_kwargs:
-    catalog_path: /data/bwedig/COSMOS
-    catalog_type: COSMOS
+    catalog_path: /nfsdata1/bwedig/slsim_source_catalogs/COSMOSWeb_galaxy_catalog
+    catalog_type: COSMOS_WEB
     sersic_fallback: True
     max_scale: 1
   use_slhammocks_pipeline: True
@@ -42,7 +42,7 @@ survey:
     loghm_min: 11
     loghm_max: 15
   detectors: &detectors [1]  # 
-  bands: [F115W, F150W, F200W, F277W, F356W, F444W]  # SkyPy will calculate magnitudes for each of these bands; they'll be stored in the physical_params attribute of the strong_lens
+  bands: [F115W, F150W, F277W, F444W]  # SkyPy will calculate magnitudes for each of these bands; they'll be stored in the physical_params attribute of the strong_lens
   deflector_cut_band: F115W
   deflector_cut_band_max: 27
   deflector_z_min: 0.01
@@ -67,13 +67,13 @@ subhalos:
     concentration_model_fieldhalos: LUDLOW2016
     shmf_log_slope: -1.9
 synthetic_image:
-  bands: [ F115W, F150W, F200W ]
-  fov_arcsec: 6
+  bands: [ F115W, F150W, F277W, F444W ]
+  fov_arcsec: 10
   supersampling_compute_mode: adaptive
   supersampling_factor: &supersampling_factor 1
   pieces: True
 imaging:
-  exposure_time: &exposure_time 21000
+  exposure_time: &exposure_time 10000
   engine: galsim
   engine_params:
     rng_seed: *seed
@@ -87,15 +87,15 @@ imaging:
     ipc: True
     read_noise: True
 snr:
-  snr_band: F115W
+  snr_band: F150W
   snr_exposure_time: *exposure_time
-  snr_fov_arcsec: 6
+  snr_fov_arcsec: 10
   snr_supersampling_compute_mode: adaptive
   snr_supersampling_factor: &snr_supersampling_factor 1
-  snr_threshold: 100
+  snr_threshold: 20
   snr_per_pixel_threshold: 1
 psf:
-  bands: [ F115W, F277W ]
+  bands: [ F115W, F150W, F277W, F444W ]
   oversamples: [*snr_supersampling_factor, *supersampling_factor]
   num_pixes: [41]  # the first element of this list is used for the pipeline
   detectors: *detectors
