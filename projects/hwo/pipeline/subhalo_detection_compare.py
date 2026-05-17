@@ -16,7 +16,6 @@ from tqdm import tqdm
 from mejiro.analysis import stats
 from mejiro.synthetic_image import SyntheticImage
 from mejiro.exposure import Exposure
-from mejiro.plots import plot_util
 from mejiro.utils import lenstronomy_util, util
 from mejiro.instruments.hwo import HWO
 from mejiro.instruments.hst import HST
@@ -199,7 +198,6 @@ def process_lens(params):
         if run in idx_to_save and mass_idx in mass_indices and plot:
             # _, ax = plt.subplots(2, 3, figsize=(15, 10))
             # residual = masked_exposure_with_subhalo - masked_exposure_no_subhalo
-            # vmax = plot_util.get_limit(residual)
             # if vmax == 0.: vmax = 0.1
             # coords_x, coords_y = synth.coords.map_coord2pix(halo_x, halo_y)
 
