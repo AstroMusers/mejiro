@@ -5,7 +5,7 @@ dev: False
 nice: 19
 show_progress_bar: True
 suppress_warnings: True
-logging_level: INFO
+logging_level: WARNING
 limit: null
 seed: &seed 420
 cores:
@@ -16,7 +16,8 @@ cores:
   script_03: 32
   script_04: 32
   script_05: 32
-  script_snr: 32
+  script_05_romanisim: 12
+  script_snr: 1
 jaxtronomy: 
   use_jax: False
   jax_platform: cpu  # cpu or gpu
@@ -70,10 +71,16 @@ subhalos:
     sigma_sub: 0.055  # see Section 6.3 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract
 synthetic_image:
   bands: [ F106, F129, F158 ]
-  fov_arcsec: 10
+  fov_arcsec: 8.03
   supersampling_compute_mode: adaptive
   supersampling_factor: &supersampling_factor 5
   pieces: True
+exposure:
+  ma_table_number: 17
+  date: 2027-01-01T00:00:00
+  coordinates:
+    ra: 150.
+    dec: 2.
 imaging:
   exposure_time: &exposure_time 642
   engine: galsim
@@ -91,7 +98,7 @@ imaging:
 snr:
   snr_band: F129
   snr_exposure_time: *exposure_time
-  snr_fov_arcsec: 10
+  snr_fov_arcsec: 8.03
   snr_supersampling_compute_mode: adaptive
   snr_supersampling_factor: &snr_supersampling_factor 1
   snr_threshold: 20
@@ -99,10 +106,11 @@ snr:
 psf:
   bands: [ F106, F129, F158 ]
   oversamples: [*snr_supersampling_factor, *supersampling_factor]
-  num_pixes: [101]  # the first element of this list is used for the pipeline
+  num_pixes: [73]  # the first element of this list is used for the pipeline
   detectors: *detectors
-  divide_up_detector: 5  # this sets the detector positions, e.g., 5 means 25 positions on each detector
+  divide_up_detector: 4  # this sets the detector positions, e.g., 5 means 25 positions on each detector
 dataset:
-  version: 1.0  # used in the filename of the .h5 file
+  version: 2.0  # used in the filename of the .h5 file
+  labeled: False
   include_psfs: False
   include_synthetic_images: False
