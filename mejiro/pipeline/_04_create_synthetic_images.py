@@ -22,6 +22,7 @@ os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
 os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
 
 import argparse
+import json
 import random
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -205,6 +206,18 @@ def create_synthetic_image(input):
             util.pickle(failed_path, lens)
             logger.warning(f'Error creating synthetic image for lens {lens.name} in band {band}: {e}. Pickling to {failed_path}')
             return
+
+        # sidecar so step 05 can group images by PSF bucket without reloading pickles
+        if pipeline.instrument_name == 'roman':
+            sidecar_path = output_path + '.psfpos.json'
+            tmp_path = sidecar_path + '.tmp'
+            x, y = instrument_params['detector_position']
+            with open(tmp_path, 'w') as f:
+                json.dump({
+                    'detector_position': [int(x), int(y)],
+                    'divide_up_detector': int(divide_up_detector),
+                }, f)
+            os.replace(tmp_path, sidecar_path)
 
 
 if __name__ == '__main__':

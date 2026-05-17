@@ -20,10 +20,11 @@ os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
 import argparse
+import json
 import logging
 import math
 import time
-from collections import defaultdict
+from collections import defaultdict, deque
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Pool
 from copy import deepcopy
@@ -43,6 +44,7 @@ from romanisim import image, parameters, wcs
 
 import mejiro
 from mejiro.utils import util as mejiro_util
+from mejiro.utils.pipeline_helper import PipelineHelper
 
 logger = logging.getLogger(__name__)
 
@@ -52,11 +54,27 @@ N_TILES = GRID_SIDE * GRID_SIDE  # 3136
 
 
 def _load_pickle(pickle_path):
-    return mejiro_util.unpickle(pickle_path)
+    try:
+        return mejiro_util.unpickle(pickle_path)
+    except EOFError:
+        raise EOFError(f'Corrupted pickle file: {pickle_path}')
+
+
+def _read_detector_position(pickle_path):
+    sidecar = pickle_path + '.psfpos.json'
+    if os.path.exists(sidecar):
+        with open(sidecar) as f:
+            x, y = json.load(f)['detector_position']
+        return int(x), int(y)
+    obj = _load_pickle(pickle_path)
+    x, y = obj.instrument_params['detector_position']
+    return int(x), int(y)
 
 
 def main(args):
     start = time.time()
+
+    PipelineHelper.patch_astropy_for_mejiro_v2_pickles()  # remove after re-pickling inputs under mejiro-v3
 
     logging.basicConfig(
         level=logging.INFO,
@@ -75,6 +93,17 @@ def main(args):
     threads_per_worker = max(2, 64 // num_workers)
     bands = config['synthetic_image']['bands']
     seed = config['seed']
+    divide_up_detector = int(config['psf']['divide_up_detector'])
+    assert GRID_SIDE % divide_up_detector == 0, (
+        f'GRID_SIDE ({GRID_SIDE}) must be divisible by divide_up_detector '
+        f'({divide_up_detector}); valid values: 1, 2, 4, 7, 8, 14, 28, 56'
+    )
+    assert 4088 % divide_up_detector == 0, (
+        f'4088 must be divisible by divide_up_detector ({divide_up_detector})'
+    )
+    tps = GRID_SIDE // divide_up_detector          # tiles per bucket along one axis
+    tiles_per_bucket = tps * tps                   # e.g. 196 for N=4
+    sub_px = 4088 // divide_up_detector            # detector pixels per bucket along one axis
     ma_table_number = config['exposure']['ma_table_number']
     date = config['exposure']['date']
     if not isinstance(date, str):
@@ -114,6 +143,8 @@ def main(args):
 
     logger.info(f'Tile size: {TILE_SIZE}x{TILE_SIZE}')
     logger.info(f'Grid: {GRID_SIDE}x{GRID_SIDE} = {N_TILES} tiles per batch')
+    logger.info(f'PSF buckets: {divide_up_detector}x{divide_up_detector} = {divide_up_detector * divide_up_detector} '
+                f'({tps}x{tps} = {tiles_per_bucket} tiles per bucket)')
     logger.info(f'Bands: {bands}')
 
     # build task list and prepare output directories
@@ -129,16 +160,35 @@ def main(args):
                 continue
 
             all_pickles = bands_dict[band]
-            n_batches = math.ceil(len(all_pickles) / N_TILES)
-            logger.info(f'SCA {sca_num:02d}, {band}: {len(all_pickles)} images in {n_batches} batch(es)')
 
+            # resolve detector_position for each pickle (sidecar JSON fast-path, pickle-load fallback)
+            with ThreadPoolExecutor(max_workers=threads_per_worker) as exe:
+                positions = list(exe.map(_read_detector_position, all_pickles))
+
+            # group by PSF bucket; preserve input (sorted) order within each bucket
+            by_bucket = defaultdict(deque)
+            for pickle_path, (x, y) in zip(all_pickles, positions):
+                bi = min(divide_up_detector - 1, x // sub_px)
+                bj = min(divide_up_detector - 1, y // sub_px)
+                by_bucket[(bi, bj)].append(pickle_path)
+
+            n_batches = max((math.ceil(len(q) / tiles_per_bucket) for q in by_bucket.values()), default=0)
+            logger.info(f'SCA {sca_num:02d}, {band}: {len(all_pickles)} images in {n_batches} batch(es); '
+                        f'bucket sizes: {sorted(len(q) for q in by_bucket.values())}')
+
+            # round-robin pop up to tiles_per_bucket per bucket per batch; each batch is a
+            # list of (pickle_path, tile_r, tile_c) triples placed inside the bucket's sub-grid.
             for batch_idx in range(n_batches):
-                batch_start = batch_idx * N_TILES
-                batch_end = min(batch_start + N_TILES, len(all_pickles))
-                batch_pickles = all_pickles[batch_start:batch_end]
+                batch_items = []
+                for (bi, bj), q in by_bucket.items():
+                    for k in range(min(tiles_per_bucket, len(q))):
+                        pickle_path = q.popleft()
+                        tile_r = bj * tps + (k // tps)
+                        tile_c = bi * tps + (k % tps)
+                        batch_items.append((pickle_path, tile_r, tile_c))
 
                 tasks.append((
-                    batch_pickles,
+                    batch_items,
                     sca_num,
                     band,
                     batch_idx,
@@ -167,12 +217,12 @@ def main(args):
 
 
 def process_batch(task):
-    (batch_pickles, sca_num, band, batch_idx, n_batches,
+    (batch_items, sca_num, band, batch_idx, n_batches,
     sca_output_dir, exptime, seed, ma_table_number, date, coord,
     band_idx, threads_per_worker) = task
 
     try:
-        n_images = len(batch_pickles)
+        n_images = len(batch_items)
         logger.info(f'SCA {sca_num:02d}, {band}, batch {batch_idx + 1}/{n_batches}: {n_images} images')
 
         # per-batch deterministic RNGs
@@ -187,6 +237,7 @@ def process_batch(task):
         # 1. tile synthetic images into a 4088x4088 extra_counts array
         counts = np.zeros((4088, 4088), dtype=np.float64)
 
+        batch_pickles = [item[0] for item in batch_items]
         logger.info(f'  Loading {len(batch_pickles)} pickles with {threads_per_worker} threads...')
         load_start = time.time()
         with ThreadPoolExecutor(max_workers=threads_per_worker) as pool:
@@ -194,7 +245,7 @@ def process_batch(task):
         load_stop = time.time()
         logger.info(f'  Loaded {len(batch_pickles)} pickles in {mejiro_util.print_execution_time(load_start, load_stop, return_string=True)}')
 
-        for idx, synth in enumerate(synth_images):
+        for (_, tile_r, tile_c), synth in zip(batch_items, synth_images):
 
             # deal with negative and nan pixels
             smooth_data = np.asarray(mejiro_util.smooth_pixels(synth.data), dtype=np.float64)
@@ -205,11 +256,9 @@ def process_batch(task):
             total_electrons = maggies * abflux * exptime
             lens_electrons = (smooth_data / synth_sum) * total_electrons
 
-            # put it in the right place
-            row = idx // GRID_SIDE
-            col = idx % GRID_SIDE
-            r0 = row * TILE_SIZE
-            c0 = col * TILE_SIZE
+            # place inside the PSF-bucket sub-grid assigned to this image
+            r0 = tile_r * TILE_SIZE
+            c0 = tile_c * TILE_SIZE
             counts[r0:r0 + TILE_SIZE, c0:c0 + TILE_SIZE] = lens_electrons
 
         plt.imshow(counts, norm=LogNorm(), origin='lower')
@@ -262,11 +311,9 @@ def process_batch(task):
         # 6. extract cutouts and save as .npy
         result_data = im.data
         np.save(os.path.join(sca_output_dir, f'full_array_sca{sca_num:02d}_{band}_batch{batch_idx}.npy'), result_data)
-        for idx, pickle_path in enumerate(batch_pickles):
-            row = idx // GRID_SIDE
-            col = idx % GRID_SIDE
-            r0 = row * TILE_SIZE
-            c0 = col * TILE_SIZE
+        for pickle_path, tile_r, tile_c in batch_items:
+            r0 = tile_r * TILE_SIZE
+            c0 = tile_c * TILE_SIZE
             cutout = result_data[r0:r0 + TILE_SIZE, c0:c0 + TILE_SIZE]
 
             output_name = os.path.basename(pickle_path).replace('.pkl', '.npy').replace('SyntheticImage_', 'Exposure_')
@@ -275,7 +322,6 @@ def process_batch(task):
         logger.info(f'  Saved {n_images} cutouts to {sca_output_dir}')
     except Exception:
         logger.exception(f'Batch failed for SCA {sca_num:02d}, {band}, batch {batch_idx + 1}/{n_batches}')
-        raise
 
 
 if __name__ == '__main__':
