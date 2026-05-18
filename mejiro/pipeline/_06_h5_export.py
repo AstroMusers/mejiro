@@ -16,7 +16,6 @@ import getpass
 import h5py
 import lenstronomy
 import os
-import pandas as pd
 import platform
 import time
 import stpsf
@@ -45,8 +44,6 @@ def main(args):
     # initialize PipeLineHelper
     pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS)
 
-    labeled = False
-
     # retrieve configuration parameters
     bands = pipeline.config['synthetic_image']['bands']
     subhalo_config = pipeline.config['subhalos']
@@ -72,15 +69,6 @@ def main(args):
     if os.path.exists(filepath):
         os.remove(filepath)
     f = h5py.File(filepath, 'a')  # append mode: read/write if exists, create otherwise
-
-    # if not labeled, export the "answer key" file
-    if not labeled:
-        answer_key_filepath = os.path.join(pipeline.output_dir, f'{pipeline.name}_answer_key_v_{version_string}.csv')
-        if os.path.exists(answer_key_filepath):
-            os.remove(answer_key_filepath)
-
-        # create answer key df
-        df = pd.DataFrame(columns=['uid', 'einstein_radius'])
 
     # set file-level attributes
     f.attrs['author'] = (f'{getpass.getuser()}@{platform.node()}', 'username@host for calculation')
@@ -110,18 +98,14 @@ def main(args):
         synthetic_image = util.unpickle(synth_pickles[0])
         lens = synthetic_image.strong_lens
 
-        if not labeled:
-            df.loc[len(df)] = [uid, lens.get_einstein_radius()]
-
         # set group-level attributes
         group_lens.attrs['uid'] = (uid, 'Unique identifier for system assigned by mejiro')
         group_lens.attrs['z_source'] = (str(lens.z_source), 'Source galaxy redshift')
         group_lens.attrs['z_lens'] = (str(lens.z_lens), 'Lens galaxy redshift')
-        if labeled:
-            group_lens.attrs['main_halo_mass'] = (str(lens.get_main_halo_mass()), 'Lens galaxy main halo mass [M_sun]')
-            group_lens.attrs['theta_e'] = (str(lens.get_einstein_radius()), 'Einstein radius [arcsec]')
-            group_lens.attrs['sigma_v'] = (str(lens.get_velocity_dispersion()), 'Lens galaxy velocity dispersion [km/s]')
-            group_lens.attrs['mu'] = (str(lens.get_magnification()), 'Flux-weighted magnification of source')
+        group_lens.attrs['main_halo_mass'] = (str(lens.get_main_halo_mass()), 'Lens galaxy main halo mass [M_sun]')
+        group_lens.attrs['theta_e'] = (str(lens.get_einstein_radius()), 'Einstein radius [arcsec]')
+        group_lens.attrs['sigma_v'] = (str(lens.get_velocity_dispersion()), 'Lens galaxy velocity dispersion [km/s]')
+        group_lens.attrs['mu'] = (str(lens.get_magnification()), 'Flux-weighted magnification of source')
         group_lens.attrs['detector'] = (str(synthetic_image.instrument_params['detector']), 'Detector')
         group_lens.attrs['detector_position_x'] = (str(synthetic_image.instrument_params['detector_position'][0]), 'Detector X position')
         group_lens.attrs['detector_position_y'] = (str(synthetic_image.instrument_params['detector_position'][1]), 'Detector Y position')
@@ -169,13 +153,12 @@ def main(args):
 
             # attributes to set on both
             for dset in dset_list:
-                dset.attrs['units'] = ('Counts/sec', 'Units of pixel values')
+                dset.attrs['units'] = ('Counts', 'Units of pixel values')
                 dset.attrs['filter'] = (band, 'Filter')
-                if labeled:
-                    dset.attrs['source_magnitude'] = (str(lens.get_source_magnitude(band)), 'Unlensed source galaxy magnitude')
-                    dset.attrs['lensed_source_magnitude'] = (
-                        str(lens.get_lensed_source_magnitude(band)), 'Lensed source galaxy magnitude')
-                    dset.attrs['lens_magnitude'] = (str(lens.get_lens_magnitude(band)), 'Lens galaxy magnitude')
+                dset.attrs['source_magnitude'] = (str(lens.get_source_magnitude(band)), 'Unlensed source galaxy magnitude')
+                dset.attrs['lensed_source_magnitude'] = (
+                    str(lens.get_lensed_source_magnitude(band)), 'Lensed source galaxy magnitude')
+                dset.attrs['lens_magnitude'] = (str(lens.get_lens_magnitude(band)), 'Lens galaxy magnitude')
 
     if dataset_config['include_psfs']:
         # ---------------------------CREATE PSF DATASET--------------------------------
@@ -213,11 +196,6 @@ def main(args):
                     dataset_psf.attrs['detector_position_y'] = (str(det_pos[1]), 'Detector Y position')
                     dataset_psf.attrs['fov_pixels'] = (str(psf_pixels), 'See STPSF documentation')
                     dataset_psf.attrs['oversample'] = (str(psf_oversample), 'See STPSF documentation')
-
-    # if not labeled, save answer key
-    if not labeled:
-        df.to_csv(answer_key_filepath, index=False)
-        logger.info(f'Wrote answer key to {answer_key_filepath}')
 
     stop = time.time()
     util.print_execution_time(start, stop)

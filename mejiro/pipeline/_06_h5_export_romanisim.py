@@ -9,7 +9,7 @@ sourced differently:
     - exposure data: loaded from .npy cutout files (05_romanisim/sca*/)
     - exposure_time: from config['imaging']['exposure_time']
     - pixel_scale: from the SyntheticImage object (04/sca*/)
-    - SNR: not available (romanisim does not provide separate source/lens channels)
+    - SNR: read from name_snr_pairs.pkl produced by calculate_snrs.py (optional)
     - units: DN/s
 
 All lens and synthetic image metadata (redshifts, Einstein radius, magnitudes, detector
@@ -26,7 +26,6 @@ import getpass
 import h5py
 import lenstronomy
 import os
-import pandas as pd
 import platform
 import romanisim
 import slsim
@@ -92,6 +91,16 @@ def main(args):
     # directory containing SyntheticImage pickles from step 04
     synth_input_dir = os.path.join(pipeline.pipeline_dir, '04')
 
+    # load SNR lookup from calculate_snrs.py output, if available
+    snr_lookup = {}
+    snr_pairs_path = os.path.join(pipeline.pipeline_dir, 'snr', 'name_snr_pairs.pkl')
+    if os.path.exists(snr_pairs_path):
+        name_snr_pairs = util.unpickle(snr_pairs_path)
+        snr_lookup = {name: snr for name, snr in name_snr_pairs}
+        logger.info(f'Loaded {len(snr_lookup)} SNR entries from {snr_pairs_path}')
+    else:
+        logger.warning(f'SNR pickle not found at {snr_pairs_path}; SNR will not be written to the dataset')
+
     # create h5 file
     dataset_version = str(dataset_config['version'])
     version_string = dataset_version.replace('.', '_')
@@ -99,14 +108,6 @@ def main(args):
     if os.path.exists(filepath):
         os.remove(filepath)
     f = h5py.File(filepath, 'a')
-
-    # if not labeled, export the "answer key" file
-    if not dataset_config['labeled']:
-        answer_key_filepath = os.path.join(pipeline.output_dir, f'{pipeline.name}_answer_key_v_{version_string}.csv')
-        if os.path.exists(answer_key_filepath):
-            os.remove(answer_key_filepath)
-
-        df = pd.DataFrame(columns=['uid', 'substructure_flag'])
 
     # set file-level attributes
     f.attrs['author'] = (f'{getpass.getuser()}@{platform.node()}', 'username@host for calculation')
@@ -134,24 +135,14 @@ def main(args):
         synthetic_image = util.unpickle(synth_pickles[0])
         lens = synthetic_image.strong_lens
 
-        if not dataset_config['labeled']:
-            # rung 1
-            if lens.realization is None:
-                substructure_flag = False
-            else:
-                substructure_flag = True
-
-            df.loc[len(df)] = [uid, substructure_flag]
-
         # set group-level attributes
         group_lens.attrs['uid'] = (uid, 'Unique identifier for system assigned by mejiro')
         group_lens.attrs['z_source'] = (str(lens.z_source), 'Source galaxy redshift')
         group_lens.attrs['z_lens'] = (str(lens.z_lens), 'Lens galaxy redshift')
-        if dataset_config['labeled']:
-            group_lens.attrs['main_halo_mass'] = (str(lens.get_main_halo_mass()), 'Lens galaxy main halo mass [M_sun]')
-            group_lens.attrs['theta_e'] = (str(lens.get_einstein_radius()), 'Einstein radius [arcsec]')
-            group_lens.attrs['sigma_v'] = (str(lens.get_velocity_dispersion()), 'Lens galaxy velocity dispersion [km/s]')
-            group_lens.attrs['mu'] = (str(lens.get_magnification()), 'Flux-weighted magnification of source')
+        group_lens.attrs['main_halo_mass'] = (str(lens.get_main_halo_mass()), 'Lens galaxy main halo mass [M_sun]')
+        group_lens.attrs['theta_e'] = (str(lens.get_einstein_radius()), 'Einstein radius [arcsec]')
+        group_lens.attrs['sigma_v'] = (str(lens.get_velocity_dispersion()), 'Lens galaxy velocity dispersion [km/s]')
+        group_lens.attrs['mu'] = (str(lens.get_magnification()), 'Flux-weighted magnification of source')
         group_lens.attrs['detector'] = (str(synthetic_image.instrument_params['detector']), 'Detector')
         group_lens.attrs['detector_position_x'] = (str(synthetic_image.instrument_params['detector_position'][0]), 'Detector X position')
         group_lens.attrs['detector_position_y'] = (str(synthetic_image.instrument_params['detector_position'][1]), 'Detector Y position')
@@ -186,6 +177,9 @@ def main(args):
             dataset_exposure.attrs['exposure_time'] = (str(exposure_time), 'Exposure time [seconds]')
             dataset_exposure.attrs['pixel_scale'] = (str(synthetic_image.pixel_scale), 'Pixel scale [arcsec/pixel]')
             dataset_exposure.attrs['fov'] = (str(round(synthetic_image.pixel_scale * exposure_data.shape[0], 2)), 'Field of view [arcsec]')
+            snr = snr_lookup.get(f'{pipeline.name}_{uid}_{band}')
+            if snr is not None:
+                dataset_exposure.attrs['snr'] = (str(snr), 'Signal-to-noise ratio')
 
             if dataset_config['include_synthetic_images']:
                 dataset_synth = group_lens.create_dataset(f'synthetic_image_{str(uid).zfill(8)}_{band}', data=synthetic_image.data)
@@ -198,11 +192,10 @@ def main(args):
             for dset in dset_list:
                 dset.attrs['units'] = ('DN/s', 'Units of pixel values')
                 dset.attrs['filter'] = (band, 'Filter')
-                if dataset_config['labeled']:
-                    dset.attrs['source_magnitude'] = (str(lens.get_source_magnitude(band)), 'Unlensed source galaxy magnitude')
-                    dset.attrs['lensed_source_magnitude'] = (
-                        str(lens.get_lensed_source_magnitude(band)), 'Lensed source galaxy magnitude')
-                    dset.attrs['lens_magnitude'] = (str(lens.get_lens_magnitude(band)), 'Lens galaxy magnitude')
+                dset.attrs['source_magnitude'] = (str(lens.get_source_magnitude(band)), 'Unlensed source galaxy magnitude')
+                dset.attrs['lensed_source_magnitude'] = (
+                    str(lens.get_lensed_source_magnitude(band)), 'Lensed source galaxy magnitude')
+                dset.attrs['lens_magnitude'] = (str(lens.get_lens_magnitude(band)), 'Lens galaxy magnitude')
 
     if dataset_config['include_psfs']:
         # ---------------------------CREATE PSF DATASET--------------------------------
@@ -234,11 +227,6 @@ def main(args):
                     dataset_psf.attrs['detector_position_y'] = (str(det_pos[1]), 'Detector Y position')
                     dataset_psf.attrs['fov_pixels'] = (str(psf_pixels), 'See STPSF documentation')
                     dataset_psf.attrs['oversample'] = (str(psf_oversample), 'See STPSF documentation')
-
-    # if not labeled, save answer key
-    if not dataset_config['labeled']:
-        df.to_csv(answer_key_filepath, index=False)
-        logger.info(f'Wrote answer key to {answer_key_filepath}')
 
     stop = time.time()
     util.print_execution_time(start, stop)
