@@ -60,6 +60,12 @@ def _load_pickle(pickle_path):
         raise EOFError(f'Corrupted pickle file: {pickle_path}')
 
 
+def _lens_id_from_pickle(pickle_path, band):
+    bn = os.path.basename(pickle_path)
+    assert bn.startswith('SyntheticImage_') and bn.endswith(f'_{band}.pkl'), bn
+    return bn[len('SyntheticImage_'):-len(f'_{band}.pkl')]
+
+
 def _read_detector_position(pickle_path):
     sidecar = pickle_path + '.psfpos.json'
     if os.path.exists(sidecar):
@@ -88,6 +94,8 @@ def main(args):
         config = yaml.load(f, Loader=yaml.SafeLoader)
     if config['dev']:
         config['pipeline_label'] += '_dev'
+
+    limit = config.get('limit')
 
     num_workers = config['cores']['script_05_romanisim']
     threads_per_worker = max(2, 64 // num_workers)
@@ -154,12 +162,33 @@ def main(args):
         os.makedirs(sca_output_dir, exist_ok=True)
         mejiro_util.clear_directory(sca_output_dir)
 
+        # pick the lens-ID subsample once per SCA so every band processes the same
+        # systems in the same order — otherwise a per-band np.random.choice puts the
+        # same lens at different tile positions in each band's tiled PNG
+        all_lens_ids_per_band = {
+            band: sorted({_lens_id_from_pickle(p, band) for p in ps})
+            for band, ps in bands_dict.items()
+        }
+        union_lens_ids = sorted(set().union(*all_lens_ids_per_band.values())) if all_lens_ids_per_band else []
+        if limit is not None and limit < len(union_lens_ids):
+            if args.sequential:
+                selected_lens_ids = union_lens_ids[:limit]
+            else:
+                rng = np.random.default_rng(seed + sca_num)
+                selected_lens_ids = sorted(rng.choice(union_lens_ids, limit, replace=False).tolist())
+            logger.info(f'SCA {sca_num:02d}: limiting to {limit} lens system(s)')
+        else:
+            selected_lens_ids = union_lens_ids
+        selected_set = set(selected_lens_ids)
+
         for band_idx, band in enumerate(bands):
             if band not in bands_dict:
                 logger.info(f'Skipping SCA {sca_num:02d}, {band}: no pickles found')
                 continue
 
-            all_pickles = bands_dict[band]
+            all_pickles = sorted(p for p in bands_dict[band] if _lens_id_from_pickle(p, band) in selected_set)
+            count = len(all_pickles)
+            logger.info(f'SCA {sca_num:02d}, {band}: processing {count} image(s)')
 
             # resolve detector_position for each pickle (sidecar JSON fast-path, pickle-load fallback)
             with ThreadPoolExecutor(max_workers=threads_per_worker) as exe:
@@ -327,5 +356,7 @@ def process_batch(task):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Run romanisim detector simulation on tiled synthetic images.")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    parser.add_argument('--sequential', action='store_true', default=False,
+                        help='Process systems sequentially from the start instead of randomly when limit is imposed.')
     args = parser.parse_args()
     main(args)
