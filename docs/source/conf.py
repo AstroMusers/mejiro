@@ -27,6 +27,8 @@ extensions = [
     'sphinx.ext.viewcode'  # link to source code
 ]
 
+autosectionlabel_prefix_document = True
+
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 napoleon_use_ivar = True  # for math
