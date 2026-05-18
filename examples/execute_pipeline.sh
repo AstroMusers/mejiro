@@ -2,7 +2,7 @@
 
 # this bash script is a less-polished way of executing the `mejiro` pipeline that is useful for development
 
-config="/grad/bwedig/mejiro/mejiro/data/mejiro_config/jwst.yaml"
+config="/grad/bwedig/mejiro/mejiro/data/mejiro_config/test.yaml"
 # config="/grad/bwedig/mejiro/mejiro/data/mejiro_config/roman_data_challenge_rung_1.yaml"
 # config="/grad/bwedig/mejiro/mejiro/data/mejiro_config/roman_data_challenge_rung_1_unlabeled.yaml"
 
@@ -13,48 +13,46 @@ cd "$(dirname "$0")/.."
 set -e
 
 # execute Python scripts sequentially
-# echo 'Caching PSFs...'
-# python3 mejiro/pipeline/_00_cache_psfs.py --config $config
-# echo 'Cached PSFs.'
+echo 'Caching PSFs...'
+python3 mejiro/pipeline/_00_cache_psfs.py --config $config
+echo 'Cached PSFs.'
 
 # echo 'Running survey simulation...'
 # python3 mejiro/pipeline/_01_run_survey_simulation.py --config $config
 # echo 'Identified detectable strong lenses.'
 
-# echo 'Generating galaxy tables...'
-# python3 mejiro/pipeline/_01a_generate_galaxy_tables.py --config $config
-# echo 'Generated galaxy tables.'
+echo 'Generating galaxy tables...'
+python3 mejiro/pipeline/_01a_generate_galaxy_tables.py --config $config
+echo 'Generated galaxy tables.'
 
 echo 'Running survey simulation...'
 python3 mejiro/pipeline/_01b_run_survey_simulation.py --config $config
 echo 'Identified detectable strong lenses.'
 
-# echo 'Building lens list from SkyPy...'
-# python3 mejiro/pipeline/_02_build_lens_list.py --config $config
-# echo 'Built lens list.'
+echo 'Building lens list from SkyPy...'
+python3 mejiro/pipeline/_02_build_lens_list.py --config $config
+echo 'Built lens list.'
 
-# if [ $config != "training_set" ]; then
-#     echo 'Adding subhalos with PyHalo...'
-#     python3 mejiro/pipeline/_03_generate_subhalos.py --config $config
-#     echo 'Added subhalos.'
-# fi
+echo 'Adding subhalos with PyHalo...'
+python3 mejiro/pipeline/_03_generate_subhalos.py --config $config
+echo 'Added subhalos.'
 
-# echo 'Building models...'
-# python3 mejiro/pipeline/_04_create_synthetic_images.py --config $config
-# echo 'Built models.'
+echo 'Building models...'
+python3 mejiro/pipeline/_04_create_synthetic_images.py --config $config
+echo 'Built models.'
 
 # echo 'Simulating images...'
 # python3 mejiro/pipeline/_05_create_exposures.py --config $config
 # echo 'GalSim simulations complete.'
 
-# echo 'Simulating images...'
-# python3 mejiro/pipeline/romanisim_pipeline.py --config $config
-# echo 'romanisim simulations complete.'
+echo 'Simulating images...'
+python3 mejiro/pipeline/romanisim_pipeline.py --config $config
+echo 'romanisim simulations complete.'
 
-# echo 'Calculating SNRs...'
-# python3 mejiro/pipeline/calculate_snrs.py --config $config
-# echo 'SNR calculation complete.'
+echo 'Calculating SNRs...'
+python3 mejiro/pipeline/calculate_snrs.py --config $config
+echo 'SNR calculation complete.'
 
-# echo 'Generating h5 file...'
-#     python3 mejiro/pipeline/_06_h5_export_romanisim.py --config $config
-# echo 'h5 file generation complete.'
+echo 'Generating h5 file...'
+    python3 mejiro/pipeline/_06_h5_export_romanisim.py --config $config
+echo 'h5 file generation complete.'
