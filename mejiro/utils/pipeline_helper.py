@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class PipelineHelper:
-    def __init__(self, args, prev_script_name, script_name, supported_instruments, delete_existing_output=True):
+    def __init__(self, args, prev_script_name, script_name, supported_instruments, delete_existing_output=False):
         self.prev_script_name = prev_script_name
         self.script_name = script_name
         self.supported_instruments = supported_instruments

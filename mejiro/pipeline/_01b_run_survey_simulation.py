@@ -58,8 +58,17 @@ SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
 def main(args):
     start = time.time()
 
-    # initialize PipelineHelper
+    # initialize PipelineHelper (we handle the --force wipe ourselves so we can count + warn first)
     pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS, delete_existing_output=False)
+
+    if args.force:
+        existing = glob(os.path.join(pipeline.output_dir, '*'))
+        if existing:
+            logger.warning(
+                f'--force set: deleting {len(existing)} existing output file(s) in '
+                f'{pipeline.output_dir} and rebuilding from scratch.'
+            )
+            util.clear_directory(pipeline.output_dir)
 
     # set configuration parameters
     pipeline.config['survey']['cosmo'] = default_cosmology.get()
@@ -103,8 +112,10 @@ def main(args):
         else:
             filtered_tuple_list.append(params)
 
-    if skipped:
-        logger.info(f'Skipping {skipped} already-completed run(s); resuming {len(filtered_tuple_list)} remaining run(s).')
+    logger.info(
+        f'Resuming: {skipped} of {len(tuple_list)} run(s) already complete, '
+        f'{len(filtered_tuple_list)} remaining. Pass --force to rebuild from scratch.'
+    )
 
     if not filtered_tuple_list:
         logger.info('All runs already completed. Nothing to do.')
@@ -429,5 +440,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Simulate survey using pre-computed galaxy tables")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
     parser.add_argument('--data_dir', type=str, required=False, help='Parent directory of pipeline output. Overrides data_dir in config file if provided.')
+    parser.add_argument('--force', action='store_true', help='Delete existing output and rerun from scratch.')
     args = parser.parse_args()
     main(args)

@@ -26,6 +26,7 @@ import json
 import random
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from glob import glob
 
 import numpy as np
 from tqdm import tqdm
@@ -46,10 +47,20 @@ SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
 def main(args):
     start = time.time()
 
-    # initialize PipeLineHelper; preserve any existing outputs so an interrupted
+    # initialize PipelineHelper; preserve any existing outputs so an interrupted
     # run can be resumed (per-(lens, band) skip logic below handles dedup).
     pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS,
                               delete_existing_output=False)
+
+    if args.force:
+        existing = [p for p in glob(os.path.join(pipeline.output_dir, '**', '*'), recursive=True)
+                    if os.path.isfile(p)]
+        if existing:
+            logger.warning(
+                f'--force set: deleting {len(existing)} existing output file(s) in '
+                f'{pipeline.output_dir} and rebuilding from scratch.'
+            )
+            util.clear_directory(pipeline.output_dir)
 
     # retrieve configuration parameters
     synthetic_image_config = pipeline.config['synthetic_image']
@@ -83,35 +94,40 @@ def main(args):
         return base[len('lens_'):-len('.pkl')]
 
     def _is_complete(input_pickle):
+        # A lens counts as complete only if every band has a real output pickle.
+        # failed_*.pkl is NOT treated as done -- failed bands are retried.
         out_dir = _output_dir_for(input_pickle)
         name = _lens_name(input_pickle)
         for band in bands:
-            done = os.path.exists(os.path.join(out_dir, f'SyntheticImage_{name}_{band}.pkl'))
-            failed = os.path.exists(os.path.join(out_dir, f'failed_{name}_{band}.pkl'))
-            if not (done or failed):
+            if not os.path.exists(os.path.join(out_dir, f'SyntheticImage_{name}_{band}.pkl')):
                 return False
         return True
 
     total_before = len(input_pickles)
     input_pickles = [p for p in input_pickles if not _is_complete(p)]
     skipped = total_before - len(input_pickles)
-    if skipped:
-        logger.info(f'Skipping {skipped} already-complete lens(es); {len(input_pickles)} remaining')
+    logger.info(
+        f'Resuming: {skipped} of {total_before} lens(es) already complete, '
+        f'{len(input_pickles)} remaining. Pass --force to rebuild from scratch.'
+    )
 
     # limit the number of systems to process, if limit imposed
     count = len(input_pickles)
     if pipeline.limit is not None and pipeline.limit < count:
         logger.info(f'Limiting to {pipeline.limit} lens(es)')
-        input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
-        if pipeline.limit < count:
-            count = pipeline.limit
+        if args.sequential:
+            input_pickles = input_pickles[:pipeline.limit]
+        else:
+            input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
+        count = pipeline.limit
     logger.info(f'Processing {count} lens(es)')
 
     # Submit substructured systems first to flatten the long tail. Substructured
     # lens pickles embed the pyhalo realization and are much larger on disk than
     # non-substructured ones, so descending file size is a cheap, robust proxy
     # that avoids unpickling every lens up front.
-    input_pickles.sort(key=os.path.getsize, reverse=True)
+    if not args.sequential:
+        input_pickles.sort(key=os.path.getsize, reverse=True)
 
     # tuple the parameters
     tuple_list = [(pipeline, synthetic_image_config, psf_config, input_pickle) for input_pickle in input_pickles]
@@ -174,11 +190,16 @@ def create_synthetic_image(input):
 
     # generate synthetic images
     for band in bands:
-        # skip if output (or failure sentinel from a prior run) already exists
+        # skip if real output already exists; failed_*.pkl from a prior run is NOT skipped, the band is retried
         output_path = os.path.join(output_dir, f'SyntheticImage_{lens.name}_{band}.pkl')
         failed_path = os.path.join(output_dir, f'failed_{lens.name}_{band}.pkl')
-        if os.path.exists(output_path) or os.path.exists(failed_path):
+        if os.path.exists(output_path):
             continue
+        if os.path.exists(failed_path):
+            try:
+                os.remove(failed_path)
+            except OSError:
+                pass
 
         # get PSF
         get_psf_args |= {
@@ -223,5 +244,8 @@ def create_synthetic_image(input):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Generate synthetic images")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    parser.add_argument('--sequential', action='store_true', default=False,
+                        help='Process systems sequentially from the start instead of randomly when limit is imposed.')
+    parser.add_argument('--force', action='store_true', help='Delete existing output and rerun from scratch.')
     args = parser.parse_args()
     main(args)

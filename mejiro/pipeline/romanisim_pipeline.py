@@ -149,6 +149,16 @@ def main(args):
     output_dir = os.path.join(config['data_dir'], config['pipeline_label'], '05_romanisim')
     os.makedirs(output_dir, exist_ok=True)
 
+    if args.force:
+        existing = [p for p in glob(os.path.join(output_dir, '**', '*'), recursive=True)
+                    if os.path.isfile(p)]
+        if existing:
+            logger.warning(
+                f'--force set: deleting {len(existing)} existing output file(s) in '
+                f'{output_dir} and rebuilding from scratch.'
+            )
+            mejiro_util.clear_directory(output_dir)
+
     logger.info(f'Tile size: {TILE_SIZE}x{TILE_SIZE}')
     logger.info(f'Grid: {GRID_SIDE}x{GRID_SIDE} = {N_TILES} tiles per batch')
     logger.info(f'PSF buckets: {divide_up_detector}x{divide_up_detector} = {divide_up_detector * divide_up_detector} '
@@ -160,7 +170,6 @@ def main(args):
     for sca_num, bands_dict in sorted(pickles_by_sca_band.items()):
         sca_output_dir = os.path.join(output_dir, f'sca{str(sca_num).zfill(2)}')
         os.makedirs(sca_output_dir, exist_ok=True)
-        mejiro_util.clear_directory(sca_output_dir)
 
         # pick the lens-ID subsample once per SCA so every band processes the same
         # systems in the same order — otherwise a per-band np.random.choice puts the
@@ -231,6 +240,25 @@ def main(args):
                     band_idx,
                     threads_per_worker,
                 ))
+
+    # resume: skip batches whose completion sentinel already exists
+    def _batch_sentinel(sca_output_dir, sca_num, band, batch_idx):
+        return os.path.join(sca_output_dir, f'batch_complete_sca{sca_num:02d}_{band}_batch{batch_idx}.txt')
+
+    total_batches = len(tasks)
+    tasks = [t for t in tasks if not os.path.exists(_batch_sentinel(t[5], t[1], t[2], t[3]))]
+    skipped = total_batches - len(tasks)
+    logger.info(
+        f'Resuming: {skipped} of {total_batches} batch(es) already complete, '
+        f'{len(tasks)} remaining. Pass --force to rebuild from scratch.'
+    )
+
+    if not tasks:
+        logger.info('All batches already complete. Nothing to do.')
+        stop = time.time()
+        execution_time = mejiro_util.print_execution_time(start, stop, return_string=True)
+        logger.info(f'Total execution time: {execution_time}')
+        return
 
     logger.info(f'Submitting {len(tasks)} batch(es) with {num_workers} workers')
 
@@ -349,6 +377,11 @@ def process_batch(task):
             np.save(os.path.join(sca_output_dir, output_name), cutout)
 
         logger.info(f'  Saved {n_images} cutouts to {sca_output_dir}')
+
+        # write the completion sentinel only after all artifacts for this batch are on disk
+        sentinel_path = os.path.join(sca_output_dir, f'batch_complete_sca{sca_num:02d}_{band}_batch{batch_idx}.txt')
+        with open(sentinel_path, 'w') as f:
+            f.write(str(n_images))
     except Exception:
         logger.exception(f'Batch failed for SCA {sca_num:02d}, {band}, batch {batch_idx + 1}/{n_batches}')
 
@@ -358,5 +391,6 @@ if __name__ == '__main__':
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
     parser.add_argument('--sequential', action='store_true', default=False,
                         help='Process systems sequentially from the start instead of randomly when limit is imposed.')
+    parser.add_argument('--force', action='store_true', help='Delete existing output and rerun from scratch.')
     args = parser.parse_args()
     main(args)

@@ -66,9 +66,11 @@ def main(args):
     count = len(input_pickles)
     if pipeline.limit is not None and pipeline.limit < count:
         logger.info(f'Limiting to {pipeline.limit} lens(es)')
-        input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
-        if pipeline.limit < count:
-            count = pipeline.limit
+        if args.sequential:
+            input_pickles = input_pickles[:pipeline.limit]
+        else:
+            input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
+        count = pipeline.limit
     logger.info(f'Processing {count} lens(es)')
 
     # tuple the parameters
@@ -319,5 +321,7 @@ def create_synthetic_image(input):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Generate synthetic images with interpolated deflection map")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    parser.add_argument('--sequential', action='store_true', default=False,
+                        help='Process systems sequentially from the start instead of randomly when limit is imposed.')
     args = parser.parse_args()
     main(args)

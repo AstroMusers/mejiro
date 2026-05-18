@@ -15,6 +15,7 @@ import os
 import shutil
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from glob import glob
 
 import numpy as np
 from pyHalo.preset_models import preset_model_from_name
@@ -35,8 +36,19 @@ SUPPORTED_INSTRUMENTS = ['roman', 'hwo']
 def main(args):
     start = time.time()
 
-    # initialize PipeLineHelper
-    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS)
+    # initialize PipelineHelper (we handle the --force wipe ourselves so we can count + warn first)
+    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS,
+                              delete_existing_output=False)
+
+    if args.force:
+        existing = [p for p in glob(os.path.join(pipeline.output_dir, '**', '*'), recursive=True)
+                    if os.path.isfile(p)]
+        if existing:
+            logger.warning(
+                f'--force set: deleting {len(existing)} existing output file(s) in '
+                f'{pipeline.output_dir} and rebuilding from scratch.'
+            )
+            util.clear_directory(pipeline.output_dir)
 
     # retrieve configuration parameters
     use_jax = pipeline.config['jaxtronomy']['use_jax']
@@ -55,9 +67,11 @@ def main(args):
     count = len(input_pickles)
     if pipeline.limit is not None and pipeline.limit < count:
         logger.info(f'Limiting to {pipeline.limit} lens(es)')
-        input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
-        if pipeline.limit < count:
-            count = pipeline.limit
+        if args.sequential:
+            input_pickles = input_pickles[:pipeline.limit]
+        else:
+            input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
+        count = pipeline.limit
     logger.info(f'Processing {count} lens(es)')
 
     # add subhalos to a subset of systems
@@ -74,10 +88,27 @@ def main(args):
     # tuple the parameters
     tuple_list = [(pipeline, subhalo_config, use_jax, input_pickle, add_subhalos) for input_pickle, add_subhalos in zip(input_pickles, mask)]
 
+    # resume: skip systems whose output pickle already exists. failed_*.pkl is NOT treated as done -- it will be retried.
+    total = len(tuple_list)
+    filtered_tuple_list = [t for t in tuple_list if not os.path.exists(_output_target(pipeline, t[3]))]
+    skipped = total - len(filtered_tuple_list)
+    logger.info(
+        f'Resuming: {skipped} of {total} lens(es) already complete, '
+        f'{len(filtered_tuple_list)} remaining. Pass --force to rebuild from scratch.'
+    )
+
+    if not filtered_tuple_list:
+        logger.info('All systems already processed. Nothing to do.')
+        stop = time.time()
+        execution_time = util.print_execution_time(start, stop, return_string=True)
+        util.write_execution_time(execution_time, SCRIPT_NAME,
+                                  os.path.join(pipeline.pipeline_dir, 'execution_times.json'))
+        return
+
     # submit tasks to the executor
     try:
-        with ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(count)) as executor:
-            futures = {executor.submit(add, task): task for task in tuple_list}
+        with ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(len(filtered_tuple_list))) as executor:
+            futures = {executor.submit(add, task): task for task in filtered_tuple_list}
 
             for future in tqdm(as_completed(futures), total=len(futures)):
                 future.result()  # get the result to propagate exceptions if any
@@ -92,11 +123,29 @@ def main(args):
                               os.path.join(pipeline.pipeline_dir, 'execution_times.json'))
 
 
+def _output_target(pipeline, input_pickle):
+    """Compute the per-lens output pickle path that `add()` will write to."""
+    base = os.path.basename(input_pickle)
+    if pipeline.instrument_name == 'roman':
+        sca_string = os.path.dirname(input_pickle).split('/')[-1]
+        return os.path.join(pipeline.output_dir, sca_string, base)
+    return os.path.join(pipeline.output_dir, base)
+
+
 def add(tuple):
     np.random.seed()
 
     # unpack tuple
     (pipeline, subhalo_config, use_jax, input_pickle, add_subhalos) = tuple
+
+    # remove any stale failure sentinel from a prior attempt so failed work is fully retried
+    lens_name_for_failed = os.path.basename(input_pickle).replace('lens_', '').replace('.pkl', '')
+    stale_failed = os.path.join(pipeline.output_dir, f'failed_{lens_name_for_failed}.pkl')
+    if os.path.exists(stale_failed):
+        try:
+            os.remove(stale_failed)
+        except OSError:
+            pass
 
     if add_subhalos:
         # load the lens
@@ -147,5 +196,8 @@ def add(tuple):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Generate dark matter substructure realizations")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    parser.add_argument('--sequential', action='store_true', default=False,
+                        help='Process systems sequentially from the start instead of randomly when limit is imposed.')
+    parser.add_argument('--force', action='store_true', help='Delete existing output and rerun from scratch.')
     args = parser.parse_args()
     main(args)

@@ -28,6 +28,7 @@ import argparse
 import time
 import warnings
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from glob import glob
 
 import numpy as np
 from astropy.cosmology import default_cosmology
@@ -52,25 +53,52 @@ SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
 def main(args):
     start = time.time()
 
-    # initialize PipelineHelper
-    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS)
+    # initialize PipelineHelper (we handle the --force wipe ourselves so we can count + warn first)
+    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS,
+                              delete_existing_output=False)
+
+    if args.force:
+        existing = glob(os.path.join(pipeline.output_dir, '*'))
+        if existing:
+            logger.warning(
+                f'--force set: deleting {len(existing)} existing output file(s) in '
+                f'{pipeline.output_dir} and rebuilding from scratch.'
+            )
+            util.clear_directory(pipeline.output_dir)
 
     # set configuration parameters
     pipeline.config['survey']['cosmo'] = default_cosmology.get()
 
     num_galaxy_tables = pipeline.config['survey'].get('num_galaxy_tables', pipeline.runs)
 
-    # build task list: one task per galaxy table
+    # build task list: one task per galaxy table, filtering out tables that already exist (resume mode)
     tuple_list = []
+    skipped = 0
     for table_index in range(num_galaxy_tables):
         if pipeline.instrument.num_detectors > 1:
             detector = pipeline.detectors[table_index % len(pipeline.detectors)]
         else:
             detector = None
+        output_path = os.path.join(pipeline.output_dir, f'galaxy_table_{str(table_index).zfill(4)}.pkl')
+        if os.path.exists(output_path):
+            skipped += 1
+            continue
         tuple_list.append((table_index, detector, pipeline.config, pipeline.output_dir, pipeline.instrument))
 
+    logger.info(
+        f'Resuming: {skipped} of {num_galaxy_tables} galaxy table(s) already complete, '
+        f'{len(tuple_list)} remaining. Pass --force to rebuild from scratch.'
+    )
+
+    if not tuple_list:
+        logger.info('All galaxy tables already generated. Nothing to do.')
+        stop = time.time()
+        execution_time = util.print_execution_time(start, stop, return_string=True)
+        util.write_execution_time(execution_time, '01a', os.path.join(pipeline.pipeline_dir, 'execution_times.json'))
+        return
+
     # process the tasks with ProcessPoolExecutor
-    num_workers = pipeline.calculate_process_count(num_galaxy_tables)
+    num_workers = pipeline.calculate_process_count(len(tuple_list))
     try:
         with ProcessPoolExecutor(max_workers=num_workers) as executor:
             futures = [executor.submit(generate_galaxy_table, task) for task in tuple_list]
@@ -198,5 +226,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Generate galaxy population tables for survey simulation")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
     parser.add_argument('--data_dir', type=str, required=False, help='Parent directory of pipeline output. Overrides data_dir in config file if provided.')
+    parser.add_argument('--force', action='store_true', help='Delete existing output and rerun from scratch.')
     args = parser.parse_args()
     main(args)

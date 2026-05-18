@@ -33,8 +33,26 @@ SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
 def main(args):
     start = time.time()
 
-    # initialize PipeLineHelper
-    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS)
+    # initialize PipelineHelper (we handle the --force wipe ourselves so we can count + warn first)
+    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS,
+                              delete_existing_output=False)
+
+    if args.force:
+        existing = glob(os.path.join(pipeline.output_dir, '**', '*'), recursive=True)
+        existing_files = [p for p in existing if os.path.isfile(p)]
+        if existing_files:
+            logger.warning(
+                f'--force set: deleting {len(existing_files)} existing output file(s) in '
+                f'{pipeline.output_dir} and rebuilding from scratch.'
+            )
+            util.clear_directory(pipeline.output_dir)
+    else:
+        existing = glob(os.path.join(pipeline.output_dir, '**', 'lens_*.pkl'), recursive=True)
+        if existing:
+            logger.info(
+                f'Resuming: {len(existing)} existing lens pickle(s) found in {pipeline.output_dir}; '
+                f'these will be skipped. Pass --force to rebuild from scratch.'
+            )
 
     # retrieve configuration parameters
     use_jax = pipeline.config['jaxtronomy']['use_jax']
@@ -69,10 +87,14 @@ def main(args):
                 gglenses = util.unpickle(pickled_list)
 
                 for slsim_lens in tqdm(gglenses, desc="Strong Lenses", position=2, leave=False):
-                    mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=f'{pipeline.name}_{str(uid).zfill(8)}', bands=bands, use_jax=use_jax)
+                    lens_name = f'{pipeline.name}_{str(uid).zfill(8)}'
+                    mejiro_lens_pickle_target = os.path.join(pipeline.output_dir, f'sca{sca}/lens_{lens_name}.pkl')
+                    if os.path.exists(mejiro_lens_pickle_target):
+                        uid += 1
+                        continue
+                    mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=lens_name, bands=bands, use_jax=use_jax)
                     if remap_bands and 'source_images' in mejiro_lens.kwargs_params:
                         remap_source_images(mejiro_lens, remap_bands)
-                    mejiro_lens_pickle_target = os.path.join(pipeline.output_dir, f'sca{sca}/lens_{mejiro_lens.name}.pkl')
                     util.pickle(mejiro_lens_pickle_target, mejiro_lens)
                     uid += 1
 
@@ -84,10 +106,14 @@ def main(args):
             gglenses = util.unpickle(pickled_list)
 
             for slsim_lens in tqdm(gglenses, desc="Strong Lenses", position=2, leave=False):
-                mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=f'{pipeline.name}_{str(uid).zfill(8)}', bands=bands, use_jax=use_jax)
+                lens_name = f'{pipeline.name}_{str(uid).zfill(8)}'
+                mejiro_lens_pickle_target = os.path.join(pipeline.output_dir, f'lens_{lens_name}.pkl')
+                if os.path.exists(mejiro_lens_pickle_target):
+                    uid += 1
+                    continue
+                mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=lens_name, bands=bands, use_jax=use_jax)
                 if remap_bands and 'source_images' in mejiro_lens.kwargs_params:
                     remap_source_images(mejiro_lens, remap_bands)
-                mejiro_lens_pickle_target = os.path.join(pipeline.output_dir, f'lens_{mejiro_lens.name}.pkl')
                 util.pickle(mejiro_lens_pickle_target, mejiro_lens)
                 uid += 1
 
@@ -105,5 +131,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Build mejiro StrongLens objects.")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
     parser.add_argument('--data_dir', type=str, required=False, help='Parent directory of pipeline output. Overrides data_dir in config file if provided.')
+    parser.add_argument('--force', action='store_true', help='Delete existing output and rerun from scratch.')
     args = parser.parse_args()
     main(args)

@@ -3,6 +3,7 @@ import os
 import time
 import yaml
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from glob import glob
 
 import numpy as np
 from tqdm import tqdm
@@ -26,8 +27,23 @@ def main(args):
 
     PipelineHelper.patch_astropy_for_mejiro_v2_pickles()  # remove after re-pickling inputs under mejiro-v3
 
-    # initialize PipeLineHelper
-    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS)
+    # initialize PipelineHelper (we handle the --force wipe ourselves so we can count + warn first)
+    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS,
+                              delete_existing_output=False)
+
+    output_path = os.path.join(pipeline.output_dir, 'name_snr_pairs.pkl')
+
+    if args.force:
+        existing = [p for p in glob(os.path.join(pipeline.output_dir, '*')) if os.path.isfile(p)]
+        if existing:
+            logger.warning(
+                f'--force set: deleting {len(existing)} existing output file(s) in '
+                f'{pipeline.output_dir} and rebuilding from scratch.'
+            )
+            util.clear_directory(pipeline.output_dir)
+    elif os.path.exists(output_path):
+        logger.info(f'Output already exists at {output_path}; skipping (pass --force to rebuild).')
+        return
 
     # retrieve configuration parameters
     snr_config = pipeline.config['snr']
@@ -44,9 +60,11 @@ def main(args):
     count = len(input_pickles)
     if pipeline.limit is not None and pipeline.limit < count:
         logger.info(f'Limiting to {pipeline.limit} lens(es)')
-        input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
-        if pipeline.limit < count:
-            count = pipeline.limit
+        if args.sequential:
+            input_pickles = input_pickles[:pipeline.limit]
+        else:
+            input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
+        count = pipeline.limit
     logger.info(f'Processing {count} exposure(s)')
 
     # tuple the parameters
@@ -65,7 +83,6 @@ def main(args):
         executor.shutdown(wait=False, cancel_futures=True)
         raise
 
-    output_path = os.path.join(pipeline.output_dir, 'name_snr_pairs.pkl')
     util.pickle(output_path, name_snr_pairs)
 
     stop = time.time()
@@ -167,5 +184,8 @@ def _rebuild_snr(pipeline, snr_config, input_pickle, system_name, band, original
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Calculate signal-to-noise ratios.")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    parser.add_argument('--sequential', action='store_true', default=False,
+                        help='Process systems sequentially from the start instead of randomly when limit is imposed.')
+    parser.add_argument('--force', action='store_true', help='Delete existing output and rerun from scratch.')
     args = parser.parse_args()
     main(args)
