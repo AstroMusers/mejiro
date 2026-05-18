@@ -73,6 +73,9 @@ class SyntheticImage:
         - Magnitudes are converted to lenstronomy amplitudes if not already provided.
         - The pixel grid is set up to ensure an odd number of pixels per side.
         - Adaptive supersampling grid is built if requested.
+        - ``self.data`` is in **counts/sec** (surface brightness units from lenstronomy's
+          ``ImageModel.image()``). Multiply by exposure time to get counts before passing
+          to a detector-effects engine.
         """
         start = time.time()
 

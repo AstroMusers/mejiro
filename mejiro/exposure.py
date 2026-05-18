@@ -11,13 +11,31 @@ logger = logging.getLogger(__name__)
 
 class Exposure:
 
-    def __init__(self, 
-                 synthetic_image, 
-                 exposure_time, 
+    def __init__(self,
+                 synthetic_image,
+                 exposure_time,
                  engine='galsim',
                  engine_params={}
                  ):
-        
+        """
+        Parameters
+        ----------
+        synthetic_image : SyntheticImage
+            Source image in counts/sec.
+        exposure_time : float
+            Exposure time in seconds.
+        engine : str
+            Detector-effects engine. Determines the units of ``self.data``:
+
+            * ``'galsim'``: **Counts** (= DN for Roman, where gain = 1.0 e-/DN).
+              Computed as ``synthetic_image.data * exposure_time`` with sky, Poisson,
+              dark, and read noise added, then divided by instrument gain.
+            * ``'romanisim'``: **DN/s** (calibrated level-2 rate image, romanisim
+              gain = 2 e-/DN). Divide by exposure time and multiply by 2 to convert
+              to the galsim-engine electron scale.
+        engine_params : dict, optional
+            Engine-specific configuration.
+        """
         start = time.time()
 
         self.synthetic_image = synthetic_image
