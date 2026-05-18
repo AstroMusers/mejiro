@@ -39,6 +39,8 @@ class Pipeline:
 
         parser = argparse.ArgumentParser(description="Run the mejiro pipeline")
         parser.add_argument('--config')
+        parser.add_argument('--force', action='store_true', default=False)
+        parser.add_argument('--sequential', action='store_true', default=False)
         arg_list = ["--config", self.config_file]
         if data_dir is not None:
             parser.add_argument('--data_dir')
