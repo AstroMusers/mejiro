@@ -42,9 +42,5 @@ echo 'Built lens list.'
 # echo 'SNR calculation complete.'
 
 # echo 'Generating h5 file...'
-# if [ $config == "training_set" ]; then
-#     python3 mejiro/pipeline/_06_h5_export_training_set.py --config $config
-# else
 #     python3 mejiro/pipeline/_06_h5_export.py --config $config
-# fi
 # echo 'h5 file generation complete.'
