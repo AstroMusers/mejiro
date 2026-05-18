@@ -13,11 +13,8 @@ cores:
   script_01: 32
   script_01a: 32
   script_01b: 32
-  script_03: 32
-  script_04: 32
-  script_05: 32
-  script_snr: 32
-jaxtronomy: 
+  script_02: 32
+jaxtronomy:
   use_jax: False
   jax_platform: cpu  # cpu or gpu
 instrument: hwo
@@ -41,7 +38,7 @@ survey:
     slhammocks_config: null
     loghm_min: 11
     loghm_max: 15
-  detectors: &detectors [1]  # 
+  detectors: &detectors [1]
   bands: [B, FUV, H, I, J, K, NUV, R, U, V]
   deflector_cut_band: I
   deflector_cut_band_max: 27
@@ -56,25 +53,7 @@ survey:
   mag_arc_limit_band: I
   mag_arc_limit: 30
   magnification: 3
-subhalos:
-  fraction: 1.  # fraction of systems to add substructure to
-  pyhalo_model: CDM
-  realization_kwargs:
-    log_mlow: 6
-    log_mhigh: 12
-    LOS_normalization: 1.
-    concentration_model_subhalos: LUDLOW2016
-    concentration_model_fieldhalos: LUDLOW2016
-    shmf_log_slope: -1.9
-synthetic_image:
-  bands: [ I, J, K ]
-  fov_arcsec: 6
-  supersampling_compute_mode: adaptive
-  supersampling_factor: &supersampling_factor 1
-  pieces: True
 imaging:
-  exposure_time: &exposure_time 21000
-  engine: galsim
   engine_params:
     rng_seed: *seed
     min_zodi_factor: 1.
@@ -88,19 +67,11 @@ imaging:
     read_noise: True
 snr:
   snr_band: I
-  snr_exposure_time: *exposure_time
+  snr_exposure_time: 21000
   snr_fov_arcsec: 6
   snr_supersampling_compute_mode: adaptive
-  snr_supersampling_factor: &snr_supersampling_factor 1
+  snr_supersampling_factor: 1
   snr_threshold: 500
   snr_per_pixel_threshold: 1
 psf:
-  bands: [ F115W, F277W ]
-  oversamples: [*snr_supersampling_factor, *supersampling_factor]
-  num_pixes: [41]  # the first element of this list is used for the pipeline
-  detectors: *detectors
-  divide_up_detector: 1  # this sets the detector positions, e.g., 5 means 25 positions on each detector
-dataset:
-  version: 0.1  # used in the filename of the .h5 file
-  include_psfs: False
-  include_synthetic_images: False
+  num_pixes: [41]  # the first element of this list is used for _01b SNR PSF

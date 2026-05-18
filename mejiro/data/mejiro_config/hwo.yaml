@@ -87,7 +87,7 @@ imaging:
     ipc: True
     read_noise: True
 snr:
-  snr_band: F115W
+  snr_band: J
   snr_exposure_time: *exposure_time
   snr_fov_arcsec: 6
   snr_supersampling_compute_mode: adaptive
@@ -95,7 +95,7 @@ snr:
   snr_threshold: 100
   snr_per_pixel_threshold: 1
 psf:
-  bands: [ F115W, F277W ]
+  bands: [ I, J, K ]
   oversamples: [*snr_supersampling_factor, *supersampling_factor]
   num_pixes: [41]  # the first element of this list is used for the pipeline
   detectors: *detectors

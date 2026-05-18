@@ -77,7 +77,7 @@ synthetic_image:
   pieces: True
 exposure:
   ma_table_number: 17
-  date: 2027-01-01T00:00:00
+  date: 2027-04-15T00:00:00
   coordinates:
     ra: 150.
     dec: 2.

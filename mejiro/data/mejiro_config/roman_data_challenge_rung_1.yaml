@@ -68,9 +68,6 @@ survey:
   mag_arc_limit: 27
   magnification: 3
 subhalos:
-  split:
-    model_1: CDM
-    model_2: WDM
   fraction: 0.5  # fraction of systems to add substructure to
   pyhalo_model: CDM
   realization_kwargs:
@@ -90,7 +87,7 @@ synthetic_image:
   pieces: False
 exposure:
   ma_table_number: 17
-  date: 2027-01-01T00:00:00
+  date: 2027-04-15T00:00:00
   coordinates:
     ra: 150.
     dec: 2.
