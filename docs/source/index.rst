@@ -3,7 +3,7 @@ mejiro documentation
 
 .. toctree::
    :maxdepth: 1
-   :caption: Getting Started
+   :caption: Usage
 
    getting_started/installation.rst
    getting_started/running.rst

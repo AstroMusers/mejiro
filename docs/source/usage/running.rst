@@ -16,7 +16,7 @@ The following lines will run a simple test version of the end-to-end pipeline.
 Tweaking the Configuration
 --------------------------
 
-The test version of the pipeline is not scientifically useful. To run the pipeline with customized settings:
+To run the pipeline with customized settings:
 
 1. Create a configuration file by copying one of the ``mejiro`` configuration files in ``mejiro/data/mejiro_config/`` to your working directory and modifying it as needed. See the comments in the file for explanations of the various options.
 2. Create a ``Pipeline`` object with the path to your configuration file as an argument, then run the pipeline.
