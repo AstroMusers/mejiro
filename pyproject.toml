@@ -42,6 +42,7 @@ dev = [
     "jupyter",
     "sphinx",
     "sphinx-rtd-theme",
+    "pydeps",
 ]
 jax = [
     "jax[cuda12]",
