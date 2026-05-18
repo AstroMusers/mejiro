@@ -35,7 +35,6 @@ def main(args):
     # set input and output directories
     if pipeline.instrument_name == 'roman':
         input_pickles = pipeline.retrieve_roman_pickles(prefix='Exposure', suffix='', extension='.npy')
-        pipeline.create_roman_sca_output_directories()
     elif pipeline.instrument_name == 'hwo':
         input_pickles = pipeline.retrieve_pickles(prefix='Exposure', suffix='', extension='.pkl')
     else:
@@ -99,7 +98,7 @@ def calculate_snr(input):
         # logger.warning(f'Falling back to rebuild path for {input_pickle}: {e}')
     snr = _rebuild_snr(pipeline, snr_config, input_pickle, system_name, band, exposure)
 
-    return (system_name, snr)
+    return (f'{system_name}_{band}', snr)
 
 
 def _rebuild_snr(pipeline, snr_config, input_pickle, system_name, band, original_exposure):
@@ -161,7 +160,7 @@ def _rebuild_snr(pipeline, snr_config, input_pickle, system_name, band, original
 
         return exposure.get_snr(snr_per_pixel_threshold=snr_config['snr_per_pixel_threshold'])
     except Exception as e:
-        logger.warning(f'Rebuild failed for {input_pickle}: {e}')
+        logger.error(f'Rebuild failed for {input_pickle}: {e}')
         return None
 
 
