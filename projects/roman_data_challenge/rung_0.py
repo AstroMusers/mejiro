@@ -42,6 +42,8 @@ SUPPORTED_INSTRUMENTS = ['roman']
 def main(args):
     start = time.time()
 
+    PipelineHelper.patch_astropy_for_mejiro_v2_pickles()  # remove after re-pickling inputs under mejiro-v3
+
     # initialize PipeLineHelper
     pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS)
 
@@ -67,17 +69,27 @@ def main(args):
     dataset_version = str(dataset_config['version'])
     version_string = dataset_version.replace('.', '_')
     filepath = os.path.join(pipeline.output_dir, f'{pipeline.name}_v_{version_string}.h5')
-    if os.path.exists(filepath):
-        os.remove(filepath)
+    answer_key_filepath = os.path.join(pipeline.output_dir, f'{pipeline.name}_answer_key_v_{version_string}.csv')
+
+    if not args.resume:
+        candidates = (filepath,) if dataset_config['labeled'] else (filepath, answer_key_filepath)
+        existing = [p for p in candidates if os.path.exists(p)]
+        if existing:
+            logger.warning(
+                f'Deleting {len(existing)} existing output file(s) '
+                f'({", ".join(os.path.basename(p) for p in existing)}) and rebuilding from scratch. '
+                f'Pass --resume to keep them.'
+            )
+            for p in existing:
+                os.remove(p)
+    elif os.path.exists(filepath):
+        logger.info(f'Output already exists at {filepath}; skipping.')
+        return
+
     f = h5py.File(filepath, 'a')  # append mode: read/write if exists, create otherwise
 
     # if not labeled, export the "answer key" file
     if not dataset_config['labeled']:
-        answer_key_filepath = os.path.join(pipeline.output_dir, f'{pipeline.name}_answer_key_v_{version_string}.csv')
-        if os.path.exists(answer_key_filepath):
-            os.remove(answer_key_filepath)
-
-        # create answer key df
         df = pd.DataFrame(columns=['uid', 'einstein_radius'])
 
     # set file-level attributes
@@ -211,7 +223,7 @@ def main(args):
                     dataset_psf.attrs['fov_pixels'] = (str(psf_pixels), 'See STPSF documentation')
                     dataset_psf.attrs['oversample'] = (str(psf_oversample), 'See STPSF documentation')
 
-    # if not labeled, save answer key
+    # if unlabeled, save answer key
     if not dataset_config['labeled']:
         df.to_csv(answer_key_filepath, index=False)
         logger.info(f'Wrote answer key to {answer_key_filepath}')
@@ -225,5 +237,6 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Export the dataset to HDF5 format.")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    parser.add_argument('--resume', action='store_true', default=False, help='Preserve existing output and skip already-completed items. Default is to delete and rebuild from scratch.')
     args = parser.parse_args()
     main(args)

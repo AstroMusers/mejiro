@@ -1,5 +1,5 @@
 """
-Exports romanisim exposures and synthetic images to HDF5 format.
+Exports romanisim exposures and synthetic images to HDF5 format (rung 1).
 
 This script reads romanisim exposure cutouts (.npy) and the corresponding SyntheticImage
 pickles from previous pipeline steps, and writes them to an HDF5 file with relevant
@@ -7,7 +7,7 @@ metadata. Since romanisim output does not produce Exposure objects, certain fiel
 sourced differently:
 
     - exposure data: loaded from .npy cutout files (05_romanisim/sca*/)
-    - exposure_time: from config['imaging']['exposure_time']
+    - exposure_time: from config['exposure']['ma_table_number'] via romanisim parameters
     - pixel_scale: from the SyntheticImage object (04/sca*/)
     - SNR: loaded from pre-computed name_snr_pairs.pkl (snr pipeline step)
     - units: DN/s
@@ -16,7 +16,7 @@ All lens and synthetic image metadata (redshifts, Einstein radius, magnitudes, d
 info, etc.) is read from the original SyntheticImage pickles in step 04.
 
 Usage:
-    python3 _06_h5_export_romanisim.py --config <config.yaml>
+    python3 rung_1.py --config <config.yaml>
 
 Arguments:
     --config: Path to the YAML configuration file.
@@ -25,6 +25,7 @@ import argparse
 import getpass
 import h5py
 import lenstronomy
+import numpy as np
 import os
 import pandas as pd
 import platform
@@ -37,8 +38,6 @@ from glob import glob
 from tqdm import tqdm
 
 import logging
-
-import numpy as np
 
 from romanisim import parameters as romanisim_params
 
@@ -59,7 +58,7 @@ def main(args):
 
     PipelineHelper.patch_astropy_for_mejiro_v2_pickles()  # remove after re-pickling inputs under mejiro-v3
 
-    # initialize PipelineHelper (we handle the --force wipe ourselves so we can count + warn first)
+    # initialize PipelineHelper
     pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS,
                               delete_existing_output=False)
 
@@ -109,17 +108,18 @@ def main(args):
     filepath = os.path.join(pipeline.output_dir, f'{pipeline.name}_v_{version_string}.h5')
     answer_key_filepath = os.path.join(pipeline.output_dir, f'{pipeline.name}_answer_key_v_{version_string}.csv')
 
-    if args.force:
+    if not args.resume:
         existing = [p for p in (filepath, answer_key_filepath) if os.path.exists(p)]
         if existing:
             logger.warning(
-                f'--force set: deleting {len(existing)} existing output file(s) '
-                f'({", ".join(os.path.basename(p) for p in existing)}) and rebuilding from scratch.'
+                f'Deleting {len(existing)} existing output file(s) '
+                f'({", ".join(os.path.basename(p) for p in existing)}) and rebuilding from scratch. '
+                f'Pass --resume to keep them.'
             )
             for p in existing:
                 os.remove(p)
     elif os.path.exists(filepath):
-        logger.info(f'Output already exists at {filepath}; skipping (pass --force to rebuild).')
+        logger.info(f'Output already exists at {filepath}; skipping.')
         return
 
     f = h5py.File(filepath, 'a')
@@ -136,13 +136,14 @@ def main(args):
     f.attrs['mejiro_version'] = (mejiro.__version__, 'mejiro version')
     f.attrs['lenstronomy_version'] = (lenstronomy.__version__, 'lenstronomy version')
     f.attrs['slsim_version'] = (slsim.__version__, 'SLSim version')
-    f.attrs['romanisim_version'] = (romanisim.__version__, 'romanisim version')
     f.attrs['stpsf_version'] = (stpsf.__version__, 'STPSF version')
+    f.attrs['romanisim_version'] = (romanisim.__version__, 'romanisim version')
 
     # ---------------------------CREATE IMAGE DATASET--------------------------------
     group_images = f.create_group('images')
 
     for uid in tqdm(uids):
+        # create group for StrongLens
         group_lens = group_images.create_group(f'strong_lens_{str(uid).zfill(8)}')
 
         # load SyntheticImage pickles to get metadata
@@ -168,10 +169,10 @@ def main(args):
         group_lens.attrs['uid'] = (uid, 'Unique identifier for system assigned by mejiro')
         group_lens.attrs['z_source'] = (str(lens.z_source), 'Source galaxy redshift')
         group_lens.attrs['z_lens'] = (str(lens.z_lens), 'Lens galaxy redshift')
+        group_lens.attrs['mu'] = (str(lens.get_magnification()), 'Flux-weighted magnification of source')
         group_lens.attrs['main_halo_mass'] = (str(lens.get_main_halo_mass()), 'Lens galaxy main halo mass [M_sun]')
         group_lens.attrs['theta_e'] = (str(lens.get_einstein_radius()), 'Einstein radius [arcsec]')
         group_lens.attrs['sigma_v'] = (str(lens.get_velocity_dispersion()), 'Lens galaxy velocity dispersion [km/s]')
-        group_lens.attrs['mu'] = (str(lens.get_magnification()), 'Flux-weighted magnification of source')
         group_lens.attrs['detector'] = (str(synthetic_image.instrument_params['detector']), 'Detector')
         group_lens.attrs['detector_position_x'] = (str(synthetic_image.instrument_params['detector_position'][0]), 'Detector X position')
         group_lens.attrs['detector_position_y'] = (str(synthetic_image.instrument_params['detector_position'][1]), 'Detector Y position')
@@ -219,6 +220,7 @@ def main(args):
                 dataset_synth = group_lens.create_dataset(f'synthetic_image_{str(uid).zfill(8)}_{band}', data=synthetic_image.data)
                 dset_list.append(dataset_synth)
 
+                # set synthetic image dataset attributes
                 dataset_synth.attrs['pixel_scale'] = (str(synthetic_image.pixel_scale), 'Pixel scale [arcsec/pixel]')
                 dataset_synth.attrs['fov'] = (str(synthetic_image.fov_arcsec), 'Field of view [arcsec]')
 
@@ -233,6 +235,7 @@ def main(args):
 
     if dataset_config['include_psfs']:
         # ---------------------------CREATE PSF DATASET--------------------------------
+        # set detectors and detector_positions
         detectors = psf_config['detectors']
         detector_positions = roman_util.divide_up_sca(psf_config['divide_up_detector'])
 
@@ -240,13 +243,16 @@ def main(args):
         psf_pixels = psf_config['num_pixes'][0]
         psf_oversample = synthetic_image_config['supersampling_factor']
 
+        # create psfs dataset
         group_psfs = f.create_group('psfs')
 
         for det in tqdm(detectors, desc='Detectors', position=0, leave=True):
+            # create group for detector
             group_detector = group_psfs.create_group(f'sca{str(det).zfill(2)}')
 
             for det_pos in tqdm(detector_positions, desc='Detector Positions', position=1, leave=False):
                 for i, band in enumerate(bands):
+                    # get cached PSF
                     psf_id_string = STPSFEngine.get_psf_id(band, det, det_pos, psf_oversample, psf_pixels)
                     psf = STPSFEngine.get_cached_psf(psf_id_string, pipeline.psf_cache_dir)
 
@@ -254,8 +260,10 @@ def main(args):
                         logger.warning(f'Cached PSF not found for {psf_id_string}. Skipping PSF dataset creation.')
                         continue
 
+                    # create psf dataset
                     dataset_psf = group_detector.create_dataset(f'psf_{psf_id_string}', data=psf)
 
+                    # set psf dataset attributes
                     dataset_psf.attrs['detector'] = (str(det), 'Detector')
                     dataset_psf.attrs['detector_position_x'] = (str(det_pos[0]), 'Detector X position')
                     dataset_psf.attrs['detector_position_y'] = (str(det_pos[1]), 'Detector Y position')
@@ -274,8 +282,8 @@ def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Export romanisim dataset to HDF5 format.")
+    parser = argparse.ArgumentParser(description="Export romanisim rung 1 dataset to HDF5 format.")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
-    parser.add_argument('--force', action='store_true', help='Delete existing output and rerun from scratch.')
+    parser.add_argument('--resume', action='store_true', default=False, help='Preserve existing output and skip already-completed items. Default is to delete and rebuild from scratch.')
     args = parser.parse_args()
     main(args)
