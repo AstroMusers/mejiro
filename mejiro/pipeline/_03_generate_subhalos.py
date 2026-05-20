@@ -36,17 +36,17 @@ SUPPORTED_INSTRUMENTS = ['roman', 'hwo']
 def main(args):
     start = time.time()
 
-    # initialize PipelineHelper (we handle the --force wipe ourselves so we can count + warn first)
+    # initialize PipelineHelper (we handle the default wipe ourselves so we can count + warn first)
     pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS,
                               delete_existing_output=False)
 
-    if args.force:
+    if not args.resume:
         existing = [p for p in glob(os.path.join(pipeline.output_dir, '**', '*'), recursive=True)
                     if os.path.isfile(p)]
         if existing:
             logger.warning(
-                f'--force set: deleting {len(existing)} existing output file(s) in '
-                f'{pipeline.output_dir} and rebuilding from scratch.'
+                f'Deleting {len(existing)} existing output file(s) in '
+                f'{pipeline.output_dir} and rebuilding from scratch. Pass --resume to keep them.'
             )
             util.clear_directory(pipeline.output_dir)
 
@@ -90,12 +90,15 @@ def main(args):
 
     # resume: skip systems whose output pickle already exists. failed_*.pkl is NOT treated as done -- it will be retried.
     total = len(tuple_list)
-    filtered_tuple_list = [t for t in tuple_list if not os.path.exists(_output_target(pipeline, t[3]))]
-    skipped = total - len(filtered_tuple_list)
-    logger.info(
-        f'Resuming: {skipped} of {total} lens(es) already complete, '
-        f'{len(filtered_tuple_list)} remaining. Pass --force to rebuild from scratch.'
-    )
+    if args.resume:
+        filtered_tuple_list = [t for t in tuple_list if not os.path.exists(_output_target(pipeline, t[3]))]
+        skipped = total - len(filtered_tuple_list)
+        logger.info(
+            f'Resuming: {skipped} of {total} lens(es) already complete, '
+            f'{len(filtered_tuple_list)} remaining.'
+        )
+    else:
+        filtered_tuple_list = tuple_list
 
     if not filtered_tuple_list:
         logger.info('All systems already processed. Nothing to do.')
@@ -198,6 +201,6 @@ if __name__ == '__main__':
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
     parser.add_argument('--sequential', action='store_true', default=False,
                         help='Process systems sequentially from the start instead of randomly when limit is imposed.')
-    parser.add_argument('--force', action='store_true', help='Delete existing output and rerun from scratch.')
+    parser.add_argument('--resume', action='store_true', default=False, help='Preserve existing output and skip already-completed items. Default is to delete and rebuild from scratch.')
     args = parser.parse_args()
     main(args)

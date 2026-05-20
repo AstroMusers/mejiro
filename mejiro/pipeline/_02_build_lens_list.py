@@ -33,17 +33,17 @@ SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
 def main(args):
     start = time.time()
 
-    # initialize PipelineHelper (we handle the --force wipe ourselves so we can count + warn first)
+    # initialize PipelineHelper (we handle the default wipe ourselves so we can count + warn first)
     pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS,
                               delete_existing_output=False)
 
-    if args.force:
+    if not args.resume:
         existing = glob(os.path.join(pipeline.output_dir, '**', '*'), recursive=True)
         existing_files = [p for p in existing if os.path.isfile(p)]
         if existing_files:
             logger.warning(
-                f'--force set: deleting {len(existing_files)} existing output file(s) in '
-                f'{pipeline.output_dir} and rebuilding from scratch.'
+                f'Deleting {len(existing_files)} existing output file(s) in '
+                f'{pipeline.output_dir} and rebuilding from scratch. Pass --resume to keep them.'
             )
             util.clear_directory(pipeline.output_dir)
     else:
@@ -51,7 +51,7 @@ def main(args):
         if existing:
             logger.info(
                 f'Resuming: {len(existing)} existing lens pickle(s) found in {pipeline.output_dir}; '
-                f'these will be skipped. Pass --force to rebuild from scratch.'
+                f'these will be skipped.'
             )
 
     # retrieve configuration parameters
@@ -131,6 +131,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Build mejiro StrongLens objects.")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
     parser.add_argument('--data_dir', type=str, required=False, help='Parent directory of pipeline output. Overrides data_dir in config file if provided.')
-    parser.add_argument('--force', action='store_true', help='Delete existing output and rerun from scratch.')
+    parser.add_argument('--resume', action='store_true', default=False, help='Preserve existing output and skip already-completed items. Default is to delete and rebuild from scratch.')
     args = parser.parse_args()
     main(args)

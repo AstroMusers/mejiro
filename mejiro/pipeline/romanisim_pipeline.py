@@ -149,13 +149,13 @@ def main(args):
     output_dir = os.path.join(config['data_dir'], config['pipeline_label'], '05_romanisim')
     os.makedirs(output_dir, exist_ok=True)
 
-    if args.force:
+    if not args.resume:
         existing = [p for p in glob(os.path.join(output_dir, '**', '*'), recursive=True)
                     if os.path.isfile(p)]
         if existing:
             logger.warning(
-                f'--force set: deleting {len(existing)} existing output file(s) in '
-                f'{output_dir} and rebuilding from scratch.'
+                f'Deleting {len(existing)} existing output file(s) in '
+                f'{output_dir} and rebuilding from scratch. Pass --resume to keep them.'
             )
             mejiro_util.clear_directory(output_dir)
 
@@ -245,13 +245,14 @@ def main(args):
     def _batch_sentinel(sca_output_dir, sca_num, band, batch_idx):
         return os.path.join(sca_output_dir, f'batch_complete_sca{sca_num:02d}_{band}_batch{batch_idx}.txt')
 
-    total_batches = len(tasks)
-    tasks = [t for t in tasks if not os.path.exists(_batch_sentinel(t[5], t[1], t[2], t[3]))]
-    skipped = total_batches - len(tasks)
-    logger.info(
-        f'Resuming: {skipped} of {total_batches} batch(es) already complete, '
-        f'{len(tasks)} remaining. Pass --force to rebuild from scratch.'
-    )
+    if args.resume:
+        total_batches = len(tasks)
+        tasks = [t for t in tasks if not os.path.exists(_batch_sentinel(t[5], t[1], t[2], t[3]))]
+        skipped = total_batches - len(tasks)
+        logger.info(
+            f'Resuming: {skipped} of {total_batches} batch(es) already complete, '
+            f'{len(tasks)} remaining.'
+        )
 
     if not tasks:
         logger.info('All batches already complete. Nothing to do.')
@@ -391,6 +392,6 @@ if __name__ == '__main__':
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
     parser.add_argument('--sequential', action='store_true', default=False,
                         help='Process systems sequentially from the start instead of randomly when limit is imposed.')
-    parser.add_argument('--force', action='store_true', help='Delete existing output and rerun from scratch.')
+    parser.add_argument('--resume', action='store_true', default=False, help='Preserve existing output and skip already-completed items. Default is to delete and rebuild from scratch.')
     args = parser.parse_args()
     main(args)

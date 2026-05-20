@@ -53,16 +53,16 @@ SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
 def main(args):
     start = time.time()
 
-    # initialize PipelineHelper (we handle the --force wipe ourselves so we can count + warn first)
+    # initialize PipelineHelper (we handle the default wipe ourselves so we can count + warn first)
     pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS,
                               delete_existing_output=False)
 
-    if args.force:
+    if not args.resume:
         existing = glob(os.path.join(pipeline.output_dir, '*'))
         if existing:
             logger.warning(
-                f'--force set: deleting {len(existing)} existing output file(s) in '
-                f'{pipeline.output_dir} and rebuilding from scratch.'
+                f'Deleting {len(existing)} existing output file(s) in '
+                f'{pipeline.output_dir} and rebuilding from scratch. Pass --resume to keep them.'
             )
             util.clear_directory(pipeline.output_dir)
 
@@ -85,10 +85,11 @@ def main(args):
             continue
         tuple_list.append((table_index, detector, pipeline.config, pipeline.output_dir, pipeline.instrument))
 
-    logger.info(
-        f'Resuming: {skipped} of {num_galaxy_tables} galaxy table(s) already complete, '
-        f'{len(tuple_list)} remaining. Pass --force to rebuild from scratch.'
-    )
+    if args.resume:
+        logger.info(
+            f'Resuming: {skipped} of {num_galaxy_tables} galaxy table(s) already complete, '
+            f'{len(tuple_list)} remaining.'
+        )
 
     if not tuple_list:
         logger.info('All galaxy tables already generated. Nothing to do.')
@@ -226,6 +227,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Generate galaxy population tables for survey simulation")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
     parser.add_argument('--data_dir', type=str, required=False, help='Parent directory of pipeline output. Overrides data_dir in config file if provided.')
-    parser.add_argument('--force', action='store_true', help='Delete existing output and rerun from scratch.')
+    parser.add_argument('--resume', action='store_true', default=False, help='Preserve existing output and skip already-completed items. Default is to delete and rebuild from scratch.')
     args = parser.parse_args()
     main(args)

@@ -66,8 +66,21 @@ def main(args):
     dataset_version = str(dataset_config['version'])
     version_string = dataset_version.replace('.', '_')
     filepath = os.path.join(pipeline.output_dir, f'{pipeline.name}_v_{version_string}.h5')
-    if os.path.exists(filepath):
-        os.remove(filepath)
+
+    if not args.resume:
+        existing = [p for p in (filepath,) if os.path.exists(p)]
+        if existing:
+            logger.warning(
+                f'Deleting {len(existing)} existing output file(s) '
+                f'({", ".join(os.path.basename(p) for p in existing)}) and rebuilding from scratch. '
+                f'Pass --resume to keep them.'
+            )
+            for p in existing:
+                os.remove(p)
+    elif os.path.exists(filepath):
+        logger.info(f'Output already exists at {filepath}; skipping.')
+        return
+
     f = h5py.File(filepath, 'a')  # append mode: read/write if exists, create otherwise
 
     # set file-level attributes
@@ -206,5 +219,6 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Export the dataset to HDF5 format.")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    parser.add_argument('--resume', action='store_true', default=False, help='Preserve existing output and skip already-completed items. Default is to delete and rebuild from scratch.')
     args = parser.parse_args()
     main(args)

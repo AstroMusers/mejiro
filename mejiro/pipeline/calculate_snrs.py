@@ -27,22 +27,21 @@ def main(args):
 
     PipelineHelper.patch_astropy_for_mejiro_v2_pickles()  # remove after re-pickling inputs under mejiro-v3
 
-    # initialize PipelineHelper (we handle the --force wipe ourselves so we can count + warn first)
+    # initialize PipelineHelper (we handle the default wipe ourselves so we can count + warn first)
     pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS,
                               delete_existing_output=False)
 
     output_path = os.path.join(pipeline.output_dir, 'name_snr_pairs.pkl')
 
-    if args.force:
-        existing = [p for p in glob(os.path.join(pipeline.output_dir, '*')) if os.path.isfile(p)]
-        if existing:
+    if not args.resume:
+        if os.path.exists(output_path):
             logger.warning(
-                f'--force set: deleting {len(existing)} existing output file(s) in '
-                f'{pipeline.output_dir} and rebuilding from scratch.'
+                f'Deleting existing output file {os.path.basename(output_path)} and '
+                f'rebuilding from scratch. Pass --resume to keep it.'
             )
-            util.clear_directory(pipeline.output_dir)
+            os.remove(output_path)
     elif os.path.exists(output_path):
-        logger.info(f'Output already exists at {output_path}; skipping (pass --force to rebuild).')
+        logger.info(f'Output already exists at {output_path}; skipping.')
         return
 
     # retrieve configuration parameters
@@ -186,6 +185,6 @@ if __name__ == '__main__':
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
     parser.add_argument('--sequential', action='store_true', default=False,
                         help='Process systems sequentially from the start instead of randomly when limit is imposed.')
-    parser.add_argument('--force', action='store_true', help='Delete existing output and rerun from scratch.')
+    parser.add_argument('--resume', action='store_true', default=False, help='Preserve existing output and skip already-completed items. Default is to delete and rebuild from scratch.')
     args = parser.parse_args()
     main(args)

@@ -14,6 +14,7 @@ import argparse
 import os
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from glob import glob
 
 import numpy as np
 from tqdm import tqdm
@@ -34,8 +35,21 @@ SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
 def main(args):
     start = time.time()
 
-    # initialize PipeLineHelper
-    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS)
+    PipelineHelper.patch_astropy_for_mejiro_v2_pickles()  # remove after re-pickling inputs under mejiro-v3
+
+    # initialize PipelineHelper (we handle the default wipe ourselves so we can count + warn first)
+    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS,
+                              delete_existing_output=False)
+
+    if not args.resume:
+        existing = [p for p in glob(os.path.join(pipeline.output_dir, '**', '*'), recursive=True)
+                    if os.path.isfile(p)]
+        if existing:
+            logger.warning(
+                f'Deleting {len(existing)} existing output file(s) in '
+                f'{pipeline.output_dir} and rebuilding from scratch. Pass --resume to keep them.'
+            )
+            util.clear_directory(pipeline.output_dir)
 
     # retrieve configuration parameters
     imaging_config = pipeline.config['imaging']
@@ -48,6 +62,26 @@ def main(args):
         input_pickles = pipeline.retrieve_pickles(prefix='SyntheticImage', suffix='', extension='.pkl')
     else:
         raise ValueError(f'Unknown instrument {pipeline.instrument_name}. Supported instruments are {SUPPORTED_INSTRUMENTS}.')
+
+    # resume: skip inputs whose Exposure pickle already exists. mirror the input's directory
+    # layout (per-SCA for roman, flat otherwise) to derive the expected output path.
+    if args.resume:
+        def _expected_output(input_pickle):
+            base = os.path.basename(input_pickle)
+            assert base.startswith('SyntheticImage_') and base.endswith('.pkl'), base
+            out_name = 'Exposure_' + base[len('SyntheticImage_'):]
+            if pipeline.instrument_name == 'roman':
+                sca_dir = os.path.basename(os.path.dirname(input_pickle))
+                return os.path.join(pipeline.output_dir, sca_dir, out_name)
+            return os.path.join(pipeline.output_dir, out_name)
+
+        total_before = len(input_pickles)
+        input_pickles = [p for p in input_pickles if not os.path.exists(_expected_output(p))]
+        skipped = total_before - len(input_pickles)
+        logger.info(
+            f'Resuming: {skipped} of {total_before} image(s) already complete, '
+            f'{len(input_pickles)} remaining.'
+        )
 
     # limit the number of systems to process, if limit imposed
     count = len(input_pickles)
@@ -123,5 +157,7 @@ if __name__ == '__main__':
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
     parser.add_argument('--sequential', action='store_true', default=False,
                         help='Process systems sequentially from the start instead of randomly when limit is imposed.')
+    parser.add_argument('--resume', action='store_true', default=False,
+                        help='Preserve existing output and skip already-completed items. Default is to delete and rebuild from scratch.')
     args = parser.parse_args()
     main(args)
