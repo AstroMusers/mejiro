@@ -17,7 +17,7 @@ cores:
   script_04: 32
   script_05: 32
   script_05_romanisim: 12
-  script_snr: 1
+  script_snr: 32
 jaxtronomy: 
   use_jax: False
   jax_platform: cpu  # cpu or gpu
@@ -77,7 +77,7 @@ synthetic_image:
   pieces: True
 exposure:
   ma_table_number: 17
-  date: 2027-04-15T00:00:00
+  date: 2027-05-01T00:00:00
   coordinates:
     ra: 150.
     dec: 2.
