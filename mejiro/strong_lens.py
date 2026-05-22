@@ -314,6 +314,11 @@ class StrongLens(ABC):
         
     def get_lens_magnitude(self, band):
         """
+        Parameters
+        ----------
+        band : str
+            The name of the photometric band for which to retrieve the lens magnitude.
+
         Returns
         -------
         float

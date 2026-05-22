@@ -246,15 +246,15 @@ class SyntheticImage:
 
     def get_maggies(self):
         """
-        Calculate the total flux of the synthetic image in maggies. This is done by summing over all pixel values to get the total flux in counts, and then converting that flux to maggies using the instrument's zero-point magnitude for the specified band.
+        Calculate the total flux of the synthetic image in maggies. This is done by summing over all pixel values to get the total flux in counts/sec, and then converting that flux to maggies using the instrument's zero-point magnitude for the specified band.
 
         Returns
         -------
         float
             The total flux of the synthetic image in maggies.
         """
-        total_flux_counts = self.get_flux()
-        magnitude = data_util.cps2magnitude(total_flux_counts, self.magnitude_zeropoint)
+        total_flux_cps = self.get_flux()
+        magnitude = data_util.cps2magnitude(total_flux_cps, self.magnitude_zeropoint)
 
         # using `item()` below because it gives me numpy.ndarray with one element and I want a float
         return (10 ** (-0.4 * magnitude.value)).item()  
@@ -330,7 +330,7 @@ class SyntheticImage:
         Returns
         -------
         Tuple of arrays
-            ([x coordinates], [y coordinates]) of the image positions in lenstronomy "angle" units (often, arcseconds).
+            ([x coordinates], [y coordinates]) of the image positions. When ``pixel=True`` (default), coordinates are in pixels; when ``pixel=False``, coordinates are in lenstronomy's angular units (often arcseconds).
         """
         image_x, image_y = self.strong_lens.get_image_positions(ignore_substructure=ignore_substructure)
 

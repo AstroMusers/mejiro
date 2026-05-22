@@ -204,7 +204,7 @@ class STPSFEngine(Engine):
         psf_cache_dir : str, optional
             The directory where cached PSFs are stored. If None, defaults to the directory installed with mejiro. Default is None.
         **calc_psf_kwargs : dict
-            Additional keyword arguments to pass to WebbPSF's `calc_psf` method.
+            Additional keyword arguments to pass to STPSF's `calc_psf` method.
 
         Returns
         -------

@@ -1,3 +1,20 @@
+"""
+Calculates signal-to-noise ratios (SNRs) for simulated exposures.
+
+This script computes SNR values for each lensing system processed in previous
+pipeline steps and saves name-SNR pairs for downstream filtering or analysis.
+It reads a YAML configuration file specifying SNR calculation parameters and
+supports both sequential and parallel processing modes.
+
+Usage:
+    python3 calculate_snrs.py --config <config.yaml> [--sequential] [--resume]
+
+Arguments:
+    --config: Path to the YAML configuration file.
+    --sequential: Run in sequential mode instead of parallel.
+    --resume: Preserve existing output and skip already-completed items. Default is to delete and rebuild from scratch.
+"""
+
 import argparse
 import os
 import time
