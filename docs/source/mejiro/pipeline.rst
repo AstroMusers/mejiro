@@ -23,6 +23,20 @@ Step 1: Run Survey Simulation
     :members:
     :show-inheritance:
 
+Step 1a: Generate Galaxy Tables
+********************************
+
+.. automodule:: mejiro.pipeline._01a_generate_galaxy_tables
+    :members:
+    :show-inheritance:
+
+Step 1b: Run Survey Simulation (Pre-computed Tables)
+****************************************************
+
+.. automodule:: mejiro.pipeline._01b_run_survey_simulation
+    :members:
+    :show-inheritance:
+
 Step 2: Build Lens List
 ***********************
 
@@ -48,6 +62,20 @@ Step 5: Create Exposures
 ************************
 
 .. automodule:: mejiro.pipeline._05_create_exposures
+    :members:
+    :show-inheritance:
+
+Step 5 (Alternative): Create Exposures (romanisim)
+***************************************************
+
+.. automodule:: mejiro.pipeline.romanisim_pipeline
+    :members:
+    :show-inheritance:
+
+Calculate SNRs
+**************
+
+.. automodule:: mejiro.pipeline.calculate_snrs
     :members:
     :show-inheritance:
 
