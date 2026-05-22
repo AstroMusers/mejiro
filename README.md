@@ -4,18 +4,15 @@
 [![Documentation Status](https://readthedocs.org/projects/mejiro/badge/?version=latest)](https://mejiro.readthedocs.io/en/latest/)
 [![ApJ](https://img.shields.io/badge/ApJ-10.3847/1538--4357/adc24f-3c5492)](https://doi.org/10.3847/1538-4357/adc24f)
 [![arXiv](https://img.shields.io/badge/arXiv-2506.03390-b31b1b.svg)](https://arxiv.org/abs/2506.03390)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15377388.svg)](https://doi.org/10.5281/zenodo.15377388)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14216839.svg)](https://doi.org/10.5281/zenodo.14216839)
 
-`mejiro` ("MEH-ji-roe" or "meh-JI-roe")[^1] is a pipeline to simulate space telescope images of
+`mejiro`[^1] is a pipeline to simulate space telescope images of
 galaxy-galaxy strong gravitational lenses built
-on [SLSim](https://github.com/LSST-strong-lensing/slsim), [lenstronomy](https://github.com/lenstronomy/lenstronomy), [pyHalo](https://github.com/dangilman/pyHalo),
-and [GalSim](https://github.com/GalSim-developers/GalSim).
+on [SLSim](https://github.com/LSST-strong-lensing/slsim), [lenstronomy](https://github.com/lenstronomy/lenstronomy), [pyHalo](https://github.com/dangilman/pyHalo), [GalSim](https://github.com/GalSim-developers/GalSim), and [romanisim](https://github.com/spacetelescope/romanisim). It can produce detailed simulated images and can scale to large datasets suitable for neural networks. The primary science case is characterizing dark matter substructure via galaxy-scale strong gravitational lensing.
 
 ![Simulated Roman images of strong lenses](images/mosaic.png)
 
 > [!NOTE]  
-> `mejiro` will be used to generate >100k simulated Roman images for the [**Roman Strong Lens Data Challenge**](https://roman-data-challenge.readthedocs.io/en/latest/) in 2026.
+> `mejiro` is used to generate large datasets of simulated Roman images for the [**Roman Strong Lens Data Challenge**](https://roman-data-challenge.readthedocs.io/en/latest/).
 
 # Installation
 
