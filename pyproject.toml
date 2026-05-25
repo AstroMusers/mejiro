@@ -38,13 +38,18 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "pytest-cov",
     "pytest-forked",
     "jupyter",
     "sphinx",
     "sphinx-rtd-theme",
     "pydeps",
 ]
-jax = [
+jax-cpu = [
+    "jax",
+    "jaxtronomy",
+]
+jax-gpu = [
     "jax[cuda12]",
     "jaxtronomy",
 ]
@@ -57,7 +62,7 @@ hwo = [
     "syotools==1.3.0"
 ]
 all = [
-    "mejiro[dev,jax,roman,hwo]"
+    "mejiro[dev,jax-gpu,roman,hwo]"
 ]
 
 [tool.setuptools.packages.find]
@@ -77,3 +82,25 @@ testpaths = ["tests"]
 pythonpath = [
     "."
 ]
+
+[tool.coverage.run]
+source = ["mejiro"]
+omit = [
+    "mejiro/pipeline/*",
+    "mejiro/tests/*",
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+show_missing = true
+skip_covered = false
+precision = 1
+
+[tool.coverage.html]
+directory = "htmlcov"

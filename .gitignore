@@ -16,6 +16,12 @@ docs/build
 # pytest
 .pytest_cache/
 
+# coverage
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
 # Jupyter
 .ipynb_checkpoints
 

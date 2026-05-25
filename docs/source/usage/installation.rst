@@ -14,10 +14,11 @@ Install ``mejiro`` from `GitHub <https://github.com/AstroMusers/mejiro>`__. Curr
 The following optional dependencies can be installed for additional features:
 
 - ``dev``: run unit tests and build documentation
-- ``jax``: ``jaxtronomy`` and ``jax[cuda12]`` for faster survey simulation and ray-shooting steps
+- ``jax-cpu``: ``jaxtronomy`` plus CPU-only ``jax`` for faster survey simulation and ray-shooting on machines without a GPU
+- ``jax-gpu``: ``jaxtronomy`` plus ``jax[cuda12]`` for GPU-accelerated survey simulation and ray-shooting. Requires a CUDA-12-compatible NVIDIA driver on the host (``nvidia-smi`` should run); ``jax-gpu`` will install on a CPU-only machine but JAX will fall back to CPU at runtime with a warning.
 - ``roman``: simulate Roman PSFs with ``STPSF`` and Roman L2 and L3 data products with ``romanisim`` and ``romancal``
 - ``hwo``: simulate HWO exposures with ``syotools``
-- ``all``: install all optional dependencies
+- ``all``: install all optional dependencies (assumes a GPU host; uses ``jax-gpu``)
 
 .. code-block:: bash
 
@@ -25,7 +26,7 @@ The following optional dependencies can be installed for additional features:
 
 Note: if you are using zsh, the default shell on macOS, you will need to escape the square brackets, e.g., ``pip install -e .'[all]'``.
 
-.. Installing ``jaxtronomy`` can provide significant speed-ups for the survey simulation with `SL-Hammocks` and ray-shooting steps, especially if your machine has GPUs. To install ``jaxtronomy``, follow the instructions `here <https://github.com/lenstronomy/JAXtronomy>`__.
+Selecting the JAX backend at runtime: set ``JAX_PLATFORM_NAME=cpu`` or ``JAX_PLATFORM_NAME=gpu`` in the shell before launching Python (the variable must be set *before* ``jax`` is imported). The pipeline scripts read ``jaxtronomy.jax_platform`` from the YAML config and set this variable for you.
 
 To simulate images from *Roman*, you will need to download the ``roman-technical-information`` repository `here <https://github.com/RomanSpaceTelescope/roman-technical-information/>`__. Then, set the environment variable ``ROMAN_TECHNICAL_INFORMATION_PATH`` to the path where you downloaded the repository, e.g., in your ``.bashrc`` or ``.bash_profile``:
 
