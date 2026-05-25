@@ -132,17 +132,33 @@ def add(tuple):
 
         # generate realization
         t1 = time.time()
-        try:
-            REALIZATION = preset_model_from_name(subhalo_config["pyhalo_model"])
-            realization = REALIZATION(z_lens=round(lens.z_lens, 2),  # circumvent bug with pyhalo, sometimes fails when redshifts have more than 2 decimal places
-                                z_source=round(lens.z_source, 2),
-                                log_m_host=np.log10(lens.get_main_halo_mass()),
-                                kwargs_cosmo=util.get_kwargs_cosmo(lens.cosmo),
-                                **realization_kwargs)
-        except Exception as e:
+        REALIZATION = preset_model_from_name(subhalo_config["pyhalo_model"])
+        z_lens_rounded = round(lens.z_lens, 2)
+        z_source_rounded = round(lens.z_source, 2)
+        # circumvent bug with pyhalo, sometimes fails when redshifts have more than 2 decimal places.
+        # Also: at certain rounded z_lens values, pyHalo's generate_lens_plane_redshifts produces a
+        # duplicate plane at z_lens (FP issue with np.arange over 0.02 steps), giving delta_z=0 in
+        # the two-halo term and a "R = 0.00e+00 is too small" error from colossus. Retry once with
+        # z_lens shifted by +0.01 (~10 Mpc at z~2.4, well within our 2dp rounding) to avoid it.
+        realization = None
+        for z_lens_try in (z_lens_rounded, z_lens_rounded + 0.01):
+            try:
+                realization = REALIZATION(z_lens=z_lens_try,
+                                    z_source=z_source_rounded,
+                                    log_m_host=np.log10(lens.get_main_halo_mass()),
+                                    kwargs_cosmo=util.get_kwargs_cosmo(lens.cosmo),
+                                    **realization_kwargs)
+                if z_lens_try != z_lens_rounded:
+                    logger.warning(f'[{lens.name}] CDM realization succeeded after nudging z_lens '
+                                   f'{z_lens_rounded} -> {z_lens_try} (pyHalo duplicate-plane workaround)')
+                break
+            except Exception as e:
+                last_exc = e
+                continue
+        if realization is None:
             failed_pickle_path = os.path.join(pipeline.output_dir, f'failed_{lens.name}.pkl')
             util.pickle(failed_pickle_path, lens)
-            logger.warning(f'Failed to generate CDM subhalos for {lens.name}: {e}. Pickling to {failed_pickle_path}')
+            logger.warning(f'Failed to generate CDM subhalos for {lens.name}: {last_exc}. Pickling to {failed_pickle_path}')
             return
         logger.info(f'[{lens.name}] Generated CDM realization in {time.time() - t1:.2f}s')
 
@@ -158,23 +174,35 @@ def add(tuple):
 
         # generate ULDM realization
         t1 = time.time()
-        try:
-            ULDM = preset_model_from_name('ULDM')
-            realization = ULDM(round(lens.z_lens, 2),
-                               round(lens.z_source, 2),
-                               log10_m_uldm=-21,
-                               cone_opening_angle_arcsec=5,
-                               log_m_host=log_main_halo_mass,
-                               flucs_shape='ring',
-                               flucs_args={'angle': 0.0, 'rmin': 0.9, 'rmax': 1.1},
-                               log10_fluc_amplitude=-1.6,
-                               n_cut=1000000,
-                               log_mlow=log_mlow,
-                               log_mhigh=log_mhigh)
-        except Exception as e:
+        ULDM = preset_model_from_name('ULDM')
+        z_lens_rounded = round(lens.z_lens, 2)
+        z_source_rounded = round(lens.z_source, 2)
+        # See CDM branch above for rationale on the z_lens retry.
+        realization = None
+        for z_lens_try in (z_lens_rounded, z_lens_rounded + 0.01):
+            try:
+                realization = ULDM(z_lens_try,
+                                   z_source_rounded,
+                                   log10_m_uldm=-21,
+                                   cone_opening_angle_arcsec=5,
+                                   log_m_host=log_main_halo_mass,
+                                   flucs_shape='ring',
+                                   flucs_args={'angle': 0.0, 'rmin': 0.9, 'rmax': 1.1},
+                                   log10_fluc_amplitude=-1.6,
+                                   n_cut=1000000,
+                                   log_mlow=log_mlow,
+                                   log_mhigh=log_mhigh)
+                if z_lens_try != z_lens_rounded:
+                    logger.warning(f'[{lens.name}] ULDM realization succeeded after nudging z_lens '
+                                   f'{z_lens_rounded} -> {z_lens_try} (pyHalo duplicate-plane workaround)')
+                break
+            except Exception as e:
+                last_exc = e
+                continue
+        if realization is None:
             failed_pickle_path = os.path.join(pipeline.output_dir, f'failed_{lens.name}.pkl')
             util.pickle(failed_pickle_path, lens)
-            logger.warning(f'Failed to generate ULDM realization for {lens.name}: {e}. Pickling to {failed_pickle_path}')
+            logger.warning(f'Failed to generate ULDM realization for {lens.name}: {last_exc}. Pickling to {failed_pickle_path}')
             return
         logger.info(f'[{lens.name}] Generated ULDM realization in {time.time() - t1:.2f}s')
 

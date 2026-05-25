@@ -160,17 +160,33 @@ def add(tuple):
             realization_kwargs["cone_opening_angle_arcsec"] = lens.get_einstein_radius() * 3
 
         # generate realization
-        try:
-            REALIZATION = preset_model_from_name(subhalo_config["pyhalo_model"])
-            realization = REALIZATION(z_lens=round(lens.z_lens, 2),  # circumvent bug with pyhalo, sometimes fails when redshifts have more than 2 decimal places
-                                z_source=round(lens.z_source, 2),
-                                log_m_host=np.log10(lens.get_main_halo_mass()),
-                                kwargs_cosmo=util.get_kwargs_cosmo(lens.cosmo),
-                                **realization_kwargs)
-        except Exception as e:
+        REALIZATION = preset_model_from_name(subhalo_config["pyhalo_model"])
+        z_lens_rounded = round(lens.z_lens, 2)
+        z_source_rounded = round(lens.z_source, 2)
+        # circumvent bug with pyhalo, sometimes fails when redshifts have more than 2 decimal places.
+        # Also: at certain rounded z_lens values, pyHalo's generate_lens_plane_redshifts produces a
+        # duplicate plane at z_lens (FP issue with np.arange over 0.02 steps), giving delta_z=0 in
+        # the two-halo term and a "R = 0.00e+00 is too small" error from colossus. Retry once with
+        # z_lens shifted by +0.01 (~10 Mpc at z~2.4, well within our 2dp rounding) to avoid it.
+        realization = None
+        for z_lens_try in (z_lens_rounded, z_lens_rounded + 0.01):
+            try:
+                realization = REALIZATION(z_lens=z_lens_try,
+                                    z_source=z_source_rounded,
+                                    log_m_host=np.log10(lens.get_main_halo_mass()),
+                                    kwargs_cosmo=util.get_kwargs_cosmo(lens.cosmo),
+                                    **realization_kwargs)
+                if z_lens_try != z_lens_rounded:
+                    logger.warning(f'[{lens.name}] Realization succeeded after nudging z_lens '
+                                   f'{z_lens_rounded} -> {z_lens_try} (pyHalo duplicate-plane workaround)')
+                break
+            except Exception as e:
+                last_exc = e
+                continue
+        if realization is None:
             failed_pickle_path = os.path.join(pipeline.output_dir, f'failed_{lens.name}.pkl')
             util.pickle(failed_pickle_path, lens)
-            logger.warning(f'Failed to generate subhalos for {lens.name}: {e}. Pickling to {failed_pickle_path}')
+            logger.warning(f'Failed to generate subhalos for {lens.name}: {last_exc}. Pickling to {failed_pickle_path}')
             return
 
         # add subhalos
