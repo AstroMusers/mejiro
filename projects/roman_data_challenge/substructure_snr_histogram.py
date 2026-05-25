@@ -1,6 +1,7 @@
 """
-Compute a per-system "SNR of substructure signal" = sqrt(chi^2) across the
-rung-0 Roman dataset and produce a histogram per band.
+Compute a per-system "SNR of substructure signal" = sqrt(chi^2) across a
+Roman pipeline run (selected via the config's pipeline_label) and produce
+a histogram per band.
 
 For each SyntheticImage (which has substructure baked in from step _03):
     1. Render an Exposure with substructure (using the YAML's engine_params).
@@ -16,7 +17,7 @@ For each SyntheticImage (which has substructure baked in from step _03):
     5. chi^2 = sum_i (D_with[i] - D_no[i])^2 / D_no[i] over masked pixels.
     6. snr = sqrt(chi^2).
 
-Outputs (under <data_dir>/roman_data_challenge_rung_0/analysis/):
+Outputs (under <data_dir>/<pipeline_label>/analysis/):
     substructure_snr_<band>.npy
     substructure_snr_<band>_uids.npy
     substructure_snr_failures_<band>.json
@@ -44,8 +45,8 @@ from tqdm import tqdm
 logger = logging.getLogger(__name__)
 
 
-def discover_synth_pickles(rung0_dir, band):
-    pattern = os.path.join(rung0_dir, '04', 'sca[0-1][0-9]',
+def discover_synth_pickles(pipeline_dir, band):
+    pattern = os.path.join(pipeline_dir, '04', 'sca[0-1][0-9]',
                            f'SyntheticImage_*_{band}.pkl')
     return sorted(glob.glob(pattern))
 
@@ -56,8 +57,31 @@ def uid_from_path(synth_path):
     return base.replace('SyntheticImage_', '').rsplit('_', 1)[0]
 
 
+_INSTRUMENT_FACTORY = {
+    'Roman': ('mejiro.instruments.roman', 'Roman'),
+    'HST': ('mejiro.instruments.hst', 'HST'),
+    'LSST': ('mejiro.instruments.lsst', 'LSST'),
+    'JWST': ('mejiro.instruments.jwst', 'JWST'),
+    'HWO': ('mejiro.instruments.hwo', 'HWO'),
+}
+
+
+def get_instrument(synth):
+    instrument = getattr(synth, 'instrument', None)
+    if instrument is not None:
+        return instrument
+    name = getattr(synth, 'instrument_name', None)
+    if name not in _INSTRUMENT_FACTORY:
+        raise RuntimeError(f'cannot reconstruct instrument from name={name!r}')
+    import importlib
+    module_path, cls_name = _INSTRUMENT_FACTORY[name]
+    instrument = getattr(importlib.import_module(module_path), cls_name)()
+    synth.instrument = instrument
+    return instrument
+
+
 def build_kwargs_psf(synth, psf_cache_dir, supersampling_factor, num_pix):
-    return synth.instrument.get_psf_kwargs(
+    return get_instrument(synth).get_psf_kwargs(
         band=synth.band,
         detector=synth.instrument_params['detector'],
         detector_position=synth.instrument_params['detector_position'],
@@ -86,7 +110,7 @@ def make_no_substructure_synth(synth_with_sub, kwargs_psf):
 
     return SyntheticImage(
         strong_lens=sl,
-        instrument=synth_with_sub.instrument,
+        instrument=get_instrument(synth_with_sub),
         band=synth_with_sub.band,
         fov_arcsec=synth_with_sub.fov_arcsec,
         instrument_params=synth_with_sub.instrument_params,
@@ -112,7 +136,13 @@ def compute_substructure_snr(task):
 
         kwargs_psf = build_kwargs_psf(synth_with_sub, psf_cache_dir,
                                       supersampling_factor, num_pix)
-        synth_no_sub = make_no_substructure_synth(synth_with_sub, kwargs_psf)
+        try:
+            synth_no_sub = make_no_substructure_synth(synth_with_sub, kwargs_psf)
+        except RuntimeError as e:
+            if 'macromodel missing on strong_lens' in str(e):
+                return {'uid': uid, 'band': band, 'snr': None,
+                        'error': str(e), 'skipped': True}
+            raise
 
         exp_no_sub = Exposure(synth_no_sub,
                               exposure_time=exposure_time,
@@ -170,7 +200,7 @@ def compute_substructure_snr(task):
         return {'uid': uid, 'band': None, 'snr': None, 'error': repr(e)}
 
 
-def plot_histogram(vals, out_png, band):
+def plot_histogram(vals, out_png, band, pipeline_label):
     fig, ax = plt.subplots(figsize=(8, 5))
     lo = max(float(vals.min()), 0.1)
     hi = float(vals.max())
@@ -184,7 +214,7 @@ def plot_histogram(vals, out_png, band):
     ax.set_yscale('log')
     ax.set_xlabel(r'SNR of substructure ($\sqrt{\chi^2}$)')
     ax.set_ylabel('Count')
-    ax.set_title(f'Rung 0 — {band} (N={len(vals)})')
+    ax.set_title(f'{pipeline_label} — {band} (N={len(vals)})')
     fig.tight_layout()
     fig.savefig(out_png, dpi=150)
     plt.close(fig)
@@ -200,7 +230,7 @@ def main(args):
 
     data_dir = cfg['data_dir']
     pipeline_label = cfg['pipeline_label']
-    rung0_dir = os.path.join(data_dir, pipeline_label)
+    pipeline_dir = os.path.join(data_dir, pipeline_label)
     psf_cache_dir = os.path.join(data_dir, cfg['psf_cache_dir'])
     supersampling_factor = cfg['synthetic_image']['supersampling_factor']
     psf_num_pix = cfg['psf']['num_pixes'][0]
@@ -208,13 +238,19 @@ def main(args):
     base_engine_params = cfg['imaging']['engine_params']
     snr_quantile = 0.95
 
-    out_dir = os.path.join(rung0_dir, 'analysis')
+    out_dir = os.path.join(pipeline_dir, 'analysis')
     os.makedirs(out_dir, exist_ok=True)
+
+    log_path = os.path.join(out_dir, 'substructure_snr_failures.log')
+    file_handler = logging.FileHandler(log_path, mode='w')
+    file_handler.setLevel(logging.WARNING)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
+    logging.getLogger().addHandler(file_handler)
 
     workers = args.workers or max(1, multiprocessing.cpu_count() // 2)
 
     print(f'data_dir         = {data_dir}')
-    print(f'rung0_dir        = {rung0_dir}')
+    print(f'pipeline_dir     = {pipeline_dir}')
     print(f'psf_cache_dir    = {psf_cache_dir}')
     print(f'out_dir          = {out_dir}')
     print(f'exposure_time    = {exposure_time}')
@@ -225,7 +261,7 @@ def main(args):
 
     summary_rows = []
     for band in args.bands:
-        synth_paths = discover_synth_pickles(rung0_dir, band)
+        synth_paths = discover_synth_pickles(pipeline_dir, band)
         if args.limit is not None and args.limit < len(synth_paths):
             synth_paths = synth_paths[:args.limit]
         if not synth_paths:
@@ -254,7 +290,14 @@ def main(args):
                             dtype=float)
         uids = np.array([r['uid'] for r in results if r['snr'] is not None],
                         dtype=object)
-        failures = {r['uid']: r['error'] for r in results if r['snr'] is None}
+        failures = {r['uid']: r['error'] for r in results
+                    if r['snr'] is None and not r.get('skipped')}
+        skipped = {r['uid']: r['error'] for r in results if r.get('skipped')}
+
+        for uid, err in failures.items():
+            logger.warning('[%s] uid=%s error=%s', band, uid, err)
+        for uid, err in skipped.items():
+            logger.info('[%s] uid=%s skipped: %s', band, uid, err)
 
         np.save(os.path.join(out_dir, f'substructure_snr_{band}.npy'), snr_vals)
         np.save(os.path.join(out_dir, f'substructure_snr_{band}_uids.npy'), uids)
@@ -262,16 +305,17 @@ def main(args):
             json.dump(failures, f, indent=2)
 
         if len(snr_vals):
-            plot_histogram(snr_vals, os.path.join(out_dir, f'substructure_snr_hist_{band}.png'), band)
+            plot_histogram(snr_vals, os.path.join(out_dir, f'substructure_snr_hist_{band}.png'), band, pipeline_label)
 
         median = float(np.median(snr_vals)) if len(snr_vals) else float('nan')
         snr_max = float(np.max(snr_vals)) if len(snr_vals) else float('nan')
-        summary_rows.append((band, len(snr_vals), len(failures), median, snr_max, elapsed))
+        summary_rows.append((band, len(snr_vals), len(failures), len(skipped),
+                             median, snr_max, elapsed))
 
     print()
-    print(f'{"band":<6} {"ok":>6} {"fail":>6} {"median":>10} {"max":>10} {"sec":>8}')
-    for band, n_ok, n_fail, med, mx, sec in summary_rows:
-        print(f'{band:<6} {n_ok:>6d} {n_fail:>6d} {med:>10.3f} {mx:>10.3f} {sec:>8.1f}')
+    print(f'{"band":<6} {"ok":>6} {"fail":>6} {"skip":>6} {"median":>10} {"max":>10} {"sec":>8}')
+    for band, n_ok, n_fail, n_skip, med, mx, sec in summary_rows:
+        print(f'{band:<6} {n_ok:>6d} {n_fail:>6d} {n_skip:>6d} {med:>10.3f} {mx:>10.3f} {sec:>8.1f}')
 
 
 if __name__ == '__main__':
