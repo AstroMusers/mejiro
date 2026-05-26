@@ -266,7 +266,13 @@ class SyntheticImage:
         ip = self.instrument_params or {}
         det = ip.get('detector')
         if det is not None:
-            det = int(det)
+            # Roman detectors may flow through as int (pipeline path) or as
+            # an 'SCA01'-style string (some downstream/test paths); normalize.
+            from mejiro.utils import roman_util
+            try:
+                det = roman_util.get_sca_int(det)
+            except (TypeError, ValueError):
+                det = int(det)
         det_pos = ip.get('detector_position')
         if det_pos is not None:
             det_pos = [int(det_pos[0]), int(det_pos[1])]

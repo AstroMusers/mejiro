@@ -460,3 +460,99 @@ def test_roman_psf_varies_with_detector_position(test_data_dir):
     assert rel_l2 > 1e-3, (
         f"two Roman-PSF images barely differ (rel L2 = {rel_l2:.2e})"
     )
+
+
+def _build_lightweight_test_image(has_realization=False):
+    """Helper: construct a small Roman/F129 SyntheticImage suitable for lightweight tests.
+
+    Uses ``Sample1`` because the lightweight serializer needs every
+    ``StrongLens.get_*`` accessor to succeed (velocity dispersion, main halo
+    mass, etc.); ``SampleGG()`` ships with an empty ``physical_params``.
+
+    The realization=True case attaches a sentinel string to ``strong_lens.realization``
+    rather than running pyHalo, since the lightweight serializer only persists
+    ``realization is not None``.
+    """
+    si = SyntheticImage(
+        strong_lens=Sample1(),
+        instrument=Roman(),
+        band='F129',
+        fov_arcsec=5,
+        instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+        kwargs_numerics={},
+        kwargs_psf={},
+        pieces=False,
+    )
+    if has_realization:
+        si.strong_lens.realization = '<test-realization-sentinel>'
+    return si
+
+
+@pytest.mark.parametrize('has_realization', [False, True])
+def test_save_lightweight_roundtrip(tmp_path, has_realization):
+    """SyntheticImage.save_lightweight + load_synthetic_image preserves every
+    attribute and accessor downstream consumes."""
+    from mejiro.synthetic_image import LightweightSyntheticImage
+
+    orig = _build_lightweight_test_image(has_realization=has_realization)
+    path = str(tmp_path / 'roundtrip.npz')
+    orig.save_lightweight(path)
+
+    loaded = util.load_synthetic_image(path)
+    assert isinstance(loaded, LightweightSyntheticImage)
+
+    np.testing.assert_array_equal(loaded.data, orig.data.astype(np.float32))
+    assert loaded.band == orig.band
+    assert loaded.pixel_scale == pytest.approx(orig.pixel_scale)
+    assert loaded.fov_arcsec == pytest.approx(orig.fov_arcsec)
+    assert loaded.num_pix == orig.num_pix
+    assert loaded.instrument_name == orig.instrument_name
+    assert loaded.instrument_params['detector'] == 1
+    assert tuple(loaded.instrument_params['detector_position']) == (2048, 2048)
+
+    assert loaded.get_flux() == pytest.approx(float(np.sum(orig.data.astype(np.float32))), rel=1e-6)
+    assert loaded.get_maggies() == pytest.approx(orig.get_maggies(), rel=1e-5)
+
+    sl_loaded, sl_orig = loaded.strong_lens, orig.strong_lens
+    assert sl_loaded.z_lens == pytest.approx(sl_orig.z_lens)
+    assert sl_loaded.z_source == pytest.approx(sl_orig.z_source)
+    assert (sl_loaded.realization is None) == (sl_orig.realization is None)
+
+    assert sl_loaded.get_main_halo_mass() == pytest.approx(float(sl_orig.get_main_halo_mass()))
+    assert sl_loaded.get_einstein_radius() == pytest.approx(float(sl_orig.get_einstein_radius()))
+    assert sl_loaded.get_velocity_dispersion() == pytest.approx(float(sl_orig.get_velocity_dispersion()))
+    assert sl_loaded.get_magnification() == pytest.approx(float(sl_orig.get_magnification()))
+
+    band = orig.band
+    assert sl_loaded.get_lens_magnitude(band) == pytest.approx(float(sl_orig.get_lens_magnitude(band)))
+    assert sl_loaded.get_source_magnitude(band) == pytest.approx(float(sl_orig.get_source_magnitude(band)))
+    assert sl_loaded.get_lensed_source_magnitude(band) == pytest.approx(
+        float(sl_orig.get_lensed_source_magnitude(band))
+    )
+
+
+def test_lightweight_strong_lens_band_assertion(tmp_path):
+    """Each lightweight file is per-band; asking for a different band must raise."""
+    orig = _build_lightweight_test_image()
+    path = str(tmp_path / 'band_assert.npz')
+    orig.save_lightweight(path)
+
+    loaded = util.load_synthetic_image(path)
+    with pytest.raises(ValueError, match='F062'):
+        loaded.strong_lens.get_lens_magnitude('F062')
+
+
+def test_lightweight_file_size(tmp_path):
+    """Guard against regressions that accidentally embed the full StrongLens.
+
+    A 73-ish-pixel float32 image + JSON metadata should easily fit in 100 KB.
+    """
+    orig = _build_lightweight_test_image()
+    path = str(tmp_path / 'size_guard.npz')
+    orig.save_lightweight(path)
+
+    size_bytes = os.path.getsize(path)
+    assert size_bytes < 100_000, (
+        f"lightweight .npz unexpectedly large ({size_bytes} bytes); "
+        f"likely indicates the full StrongLens or other heavy state leaked in"
+    )
