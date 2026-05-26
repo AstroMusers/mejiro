@@ -12,7 +12,8 @@ def _sersic_b_n(n_sersic):
 
 
 def fit_sersic(image, pixel_scale, initial_kwargs=None, psf_kernel=None,
-               fit_sky=False, use_poisson_weights=False, read_noise=0.05):
+               fit_sky=False, use_poisson_weights=False, read_noise=0.05,
+               two_component=False):
     """
     Fit a Sersic profile (optionally + sky pedestal) to a 2D image.
 
@@ -23,10 +24,14 @@ def fit_sersic(image, pixel_scale, initial_kwargs=None, psf_kernel=None,
     pixel_scale : float
         Pixel scale in arcsec/pix.
     initial_kwargs : dict, optional
-        Initial guess for Sersic parameters. Keys: 'amp', 'R_sersic', 'n_sersic',
-        'center_x', 'center_y', 'e1', 'e2', and optionally 'sky'. If None,
-        defaults are derived from the image (amp from peak/exp(b_n), sky from
-        corner-median).
+        Initial guess for Sersic parameters. Single-component layout has flat
+        keys ('amp', 'R_sersic', 'n_sersic', 'center_x', 'center_y', 'e1',
+        'e2', and optionally 'sky'). Two-component layout is nested:
+        ``{'bulge': {...}, 'disk': {...}, 'center_x': float, 'center_y':
+        float, 'sky': float}`` where the per-component dicts hold 'amp',
+        'R_sersic', 'e1', 'e2' (n is fixed: bulge=4, disk=1, and centers
+        are tied across components). If None, defaults are derived from the
+        image (amp from peak/exp(b_n), sky from corner-median).
     psf_kernel : np.ndarray, optional
         PSF kernel to convolve the model with before comparing to data.
     fit_sky : bool, optional
@@ -42,15 +47,24 @@ def fit_sersic(image, pixel_scale, initial_kwargs=None, psf_kernel=None,
     read_noise : float, optional
         Noise floor added under the sqrt for the Poisson-weight denominator,
         in image units. Ignored when ``use_poisson_weights=False``. Default 0.05.
+    two_component : bool, optional
+        If True, fit a bulge+disk model: SERSIC_ELLIPSE with n=4 (bulge) plus
+        SERSIC_ELLIPSE with n=1 (disk), sharing a common (center_x, center_y)
+        but with independent amp / R_sersic / e1 / e2. n is fixed for both
+        components. The returned ``best_fit_kwargs`` becomes a nested dict
+        ``{'bulge': {...}, 'disk': {...}, 'sky': ...}``. Default False
+        (single-component, backward compatible).
 
     Returns
     -------
     best_fit_kwargs : dict
-        Best-fit Sersic parameters. Includes ``'sky'`` when ``fit_sky=True``.
+        Best-fit Sersic parameters. Flat dict in single-component mode
+        (includes ``'sky'`` when ``fit_sky=True``); nested
+        ``{'bulge', 'disk', ['sky']}`` dict in two-component mode.
     model_image : np.ndarray
         2D model image evaluated with the best-fit parameters. When
-        ``fit_sky=True`` this is the Sersic + sky sum (so ``image - model_image``
-        cleanly removes the lens and sky pedestal).
+        ``fit_sky=True`` this is the Sersic(s) + sky sum (so
+        ``image - model_image`` cleanly removes the lens and sky pedestal).
     fit_result : scipy.optimize.OptimizeResult
         Full optimization result from scipy.
     """
@@ -60,13 +74,8 @@ def fit_sersic(image, pixel_scale, initial_kwargs=None, psf_kernel=None,
     x, y, *_ = lenstronomy_util.make_grid_with_coordtransform(
         numPix=num_pix, deltapix=pixel_scale, subgrid_res=1,
         left_lower=False, inverse=False)
-    light_model = LightModel(['SERSIC_ELLIPSE'])
 
-    # initial guesses
-    if initial_kwargs is None:
-        initial_kwargs = {}
-    n_init = initial_kwargs.get('n_sersic', 4.0)
-    # corner-median sky estimate; only used if fit_sky=True
+    # Shared image-derived seeds (used by both single- and two-component paths)
     corner = min(8, num_pix // 4)
     sky_init = float(np.median(np.concatenate([
         image[:corner, :corner].ravel(),
@@ -74,10 +83,30 @@ def fit_sersic(image, pixel_scale, initial_kwargs=None, psf_kernel=None,
         image[-corner:, :corner].ravel(),
         image[-corner:, -corner:].ravel(),
     ])))
+    peak_above_sky = max(float(image.max()) - (sky_init if fit_sky else 0.0), 1e-6)
+
+    data_flat = image.ravel()
+    if use_poisson_weights:
+        inv_var_flat = (1.0 / (np.clip(image, 0, None) + read_noise ** 2 + 1e-12)).ravel()
+    else:
+        inv_var_flat = None
+
+    if two_component:
+        return _fit_two_component_sersic(
+            x=x, y=y, num_pix=num_pix, fov=fov,
+            data_flat=data_flat, inv_var_flat=inv_var_flat,
+            sky_init=sky_init, peak_above_sky=peak_above_sky,
+            initial_kwargs=initial_kwargs, psf_kernel=psf_kernel, fit_sky=fit_sky,
+        )
+
+    # --- single-component path ---
+    light_model = LightModel(['SERSIC_ELLIPSE'])
+    if initial_kwargs is None:
+        initial_kwargs = {}
+    n_init = initial_kwargs.get('n_sersic', 4.0)
     # peak-amp seed: for a SERSIC_ELLIPSE the central surface brightness is
     # amp * exp(b_n), so seeding amp = (peak - sky_init) / exp(b_n) puts the
     # initial central model flux near the observed peak.
-    peak_above_sky = max(float(image.max()) - (sky_init if fit_sky else 0.0), 1e-6)
     amp_init = peak_above_sky / np.exp(_sersic_b_n(n_init))
 
     defaults = {
@@ -92,13 +121,6 @@ def fit_sersic(image, pixel_scale, initial_kwargs=None, psf_kernel=None,
     }
     for k, v in defaults.items():
         initial_kwargs.setdefault(k, v)
-
-    data_flat = image.ravel()
-
-    if use_poisson_weights:
-        inv_var_flat = (1.0 / (np.clip(image, 0, None) + read_noise ** 2 + 1e-12)).ravel()
-    else:
-        inv_var_flat = None
 
     def _evaluate_sersic(params):
         amp, Rs, ns, cx, cy, e1, e2 = params[:7]
@@ -158,9 +180,92 @@ def fit_sersic(image, pixel_scale, initial_kwargs=None, psf_kernel=None,
     return best_fit_kwargs, model_image, result
 
 
+def _fit_two_component_sersic(*, x, y, num_pix, fov, data_flat, inv_var_flat,
+                              sky_init, peak_above_sky,
+                              initial_kwargs, psf_kernel, fit_sky):
+    """Bulge (n=4) + disk (n=1) Sersic fit with tied centers.
+
+    Param vector order (with fit_sky=True):
+        [amp_b, R_b, e1_b, e2_b, amp_d, R_d, e1_d, e2_d, cx, cy, sky]
+    """
+    N_BULGE, N_DISK = 4.0, 1.0
+    light_model = LightModel(['SERSIC_ELLIPSE', 'SERSIC_ELLIPSE'])
+
+    # Defaults: split the central flux 50/50 between bulge and disk via the
+    # per-n peak surface brightness amp * exp(b_n).
+    bulge_defaults = {
+        'amp': peak_above_sky / 2.0 / np.exp(_sersic_b_n(N_BULGE)),
+        'R_sersic': 0.3, 'e1': 0.0, 'e2': 0.0,
+    }
+    disk_defaults = {
+        'amp': peak_above_sky / 2.0 / np.exp(_sersic_b_n(N_DISK)),
+        'R_sersic': 0.8, 'e1': 0.0, 'e2': 0.0,
+    }
+    if initial_kwargs is None:
+        initial_kwargs = {}
+    bulge = dict(bulge_defaults, **initial_kwargs.get('bulge', {}))
+    disk  = dict(disk_defaults,  **initial_kwargs.get('disk',  {}))
+    center_x_init = float(initial_kwargs.get('center_x', 0.0))
+    center_y_init = float(initial_kwargs.get('center_y', 0.0))
+    sky_input     = float(initial_kwargs.get('sky', sky_init))
+
+    def _evaluate(params):
+        amp_b, Rb, e1_b, e2_b, amp_d, Rd, e1_d, e2_d, cx, cy = params[:10]
+        kwargs = [
+            {'amp': amp_b, 'R_sersic': Rb, 'n_sersic': N_BULGE,
+             'center_x': cx, 'center_y': cy, 'e1': e1_b, 'e2': e2_b},
+            {'amp': amp_d, 'R_sersic': Rd, 'n_sersic': N_DISK,
+             'center_x': cx, 'center_y': cy, 'e1': e1_d, 'e2': e2_d},
+        ]
+        m = light_model.surface_brightness(x, y, kwargs).reshape(num_pix, num_pix)
+        if psf_kernel is not None:
+            m = fftconvolve(m, psf_kernel, mode='same')
+        return m
+
+    def _model(params):
+        m = _evaluate(params)
+        if fit_sky:
+            m = m + params[10]
+        return m
+
+    def cost(params):
+        m_flat = _model(params).ravel()
+        sq = (data_flat - m_flat) ** 2
+        if inv_var_flat is not None:
+            sq = sq * inv_var_flat
+        return float(np.sum(sq))
+
+    x0 = [bulge['amp'], bulge['R_sersic'], bulge['e1'], bulge['e2'],
+          disk['amp'],  disk['R_sersic'],  disk['e1'],  disk['e2'],
+          center_x_init, center_y_init]
+    R_max = max(fov / 2.0, 0.1)
+    bounds = [
+        (1e-12, None), (0.05, R_max), (-0.5, 0.5), (-0.5, 0.5),  # bulge
+        (1e-12, None), (0.05, R_max), (-0.5, 0.5), (-0.5, 0.5),  # disk
+        (-0.2, 0.2), (-0.2, 0.2),                                # tied center
+    ]
+    if fit_sky:
+        x0.append(sky_input)
+        bounds.append((0, None))
+
+    result = minimize(cost, x0, method='L-BFGS-B', bounds=bounds)
+    cx, cy = result.x[8], result.x[9]
+    best_fit_kwargs = {
+        'bulge': {'amp': result.x[0], 'R_sersic': result.x[1], 'n_sersic': N_BULGE,
+                  'center_x': cx, 'center_y': cy, 'e1': result.x[2], 'e2': result.x[3]},
+        'disk':  {'amp': result.x[4], 'R_sersic': result.x[5], 'n_sersic': N_DISK,
+                  'center_x': cx, 'center_y': cy, 'e1': result.x[6], 'e2': result.x[7]},
+    }
+    if fit_sky:
+        best_fit_kwargs['sky'] = result.x[10]
+
+    model_image = _model(result.x)
+    return best_fit_kwargs, model_image, result
+
+
 def subtract_lens(exposure, initial_kwargs=None, derive_initial_kwargs=False,
                   psf_kernel=None, fit_sky=False, use_poisson_weights=False,
-                  read_noise=0.05):
+                  read_noise=0.05, two_component=False):
     """
     Fit a Sersic profile to the central lensing galaxy in an Exposure and subtract it.
 
@@ -186,6 +291,8 @@ def subtract_lens(exposure, initial_kwargs=None, derive_initial_kwargs=False,
         Pass-through to :func:`fit_sersic`.
     read_noise : float, optional
         Pass-through to :func:`fit_sersic`.
+    two_component : bool, optional
+        Pass-through to :func:`fit_sersic`. Fits bulge (n=4) + disk (n=1).
 
     Returns
     -------
@@ -218,7 +325,8 @@ def subtract_lens(exposure, initial_kwargs=None, derive_initial_kwargs=False,
 
     best_fit_kwargs, model_image, fit_result = fit_sersic(
         image, pixel_scale, initial_kwargs=initial_kwargs, psf_kernel=psf_kernel,
-        fit_sky=fit_sky, use_poisson_weights=use_poisson_weights, read_noise=read_noise)
+        fit_sky=fit_sky, use_poisson_weights=use_poisson_weights,
+        read_noise=read_noise, two_component=two_component)
 
     residual = image - model_image
 
