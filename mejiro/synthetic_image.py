@@ -1,4 +1,6 @@
+import json
 import logging
+import os
 import numpy as np
 import time
 import warnings
@@ -12,6 +14,8 @@ from lenstronomy.Util import data_util
 from lenstronomy.Util import util as lenstronomy_util
 
 from mejiro.utils import util
+
+LIGHTWEIGHT_SCHEMA_VERSION = 1
 
 
 class SyntheticImage:
@@ -233,6 +237,76 @@ class SyntheticImage:
         state['psf_class'] = None
         return state
 
+    def save_lightweight(self, path):
+        """Write the lightweight ``.npz`` representation used by the romanisim path.
+
+        Stores the image as ``float32`` plus a JSON metadata blob carrying only
+        the scalars that downstream consumers (``romanisim_pipeline``,
+        ``_06_h5_export_romanisim``, ``calculate_snrs``, ``projects/.../rung_1.py``)
+        actually read. The full ``StrongLens`` and lenstronomy plumbing are not
+        persisted; loaders should use :func:`mejiro.utils.util.load_synthetic_image`,
+        which returns a :class:`LightweightSyntheticImage` for ``.npz`` paths.
+
+        Parameters
+        ----------
+        path : str
+            Destination path. Should end in ``.npz``.
+
+        Notes
+        -----
+        Not compatible with the galsim path (``_05_create_exposures.py``); that
+        step requires the full SyntheticImage and will raise if it sees
+        lightweight outputs. ``self.pieces`` is ignored — per-piece arrays are
+        not serialized.
+        """
+        sl = self.strong_lens
+        band = self.band
+
+        zp = _to_plain_float(self.magnitude_zeropoint)
+        ip = self.instrument_params or {}
+        det = ip.get('detector')
+        if det is not None:
+            det = int(det)
+        det_pos = ip.get('detector_position')
+        if det_pos is not None:
+            det_pos = [int(det_pos[0]), int(det_pos[1])]
+
+        meta = {
+            'schema_version': LIGHTWEIGHT_SCHEMA_VERSION,
+            'band': band,
+            'pixel_scale': float(self.pixel_scale),
+            'fov_arcsec': float(self.fov_arcsec),
+            'num_pix': int(self.num_pix),
+            'instrument_name': str(self.instrument_name),
+            'instrument_params': {'detector': det, 'detector_position': det_pos},
+            'magnitude_zeropoint': zp,
+            'lens': {
+                'name': str(sl.name),
+                'z_lens': float(sl.z_lens),
+                'z_source': float(sl.z_source),
+                'has_realization': sl.realization is not None,
+                'main_halo_mass': float(sl.get_main_halo_mass()),
+                'einstein_radius': float(sl.get_einstein_radius()),
+                'velocity_dispersion': float(sl.get_velocity_dispersion()),
+                'magnification': float(sl.get_magnification()),
+                'lens_magnitude': float(sl.get_lens_magnitude(band)),
+                'source_magnitude': float(sl.get_source_magnitude(band)),
+                'lensed_source_magnitude': float(sl.get_lensed_source_magnitude(band)),
+            },
+        }
+        meta_bytes = json.dumps(meta).encode('utf-8')
+
+        # Write atomically: np.savez auto-appends ".npz" when given a path string,
+        # which makes atomic rename awkward, so pass an open file handle instead.
+        tmp_path = path + '.tmp'
+        with open(tmp_path, 'wb') as fh:
+            np.savez(
+                fh,
+                data=np.ascontiguousarray(self.data, dtype=np.float32),
+                meta=np.frombuffer(meta_bytes, dtype=np.uint8),
+            )
+        os.replace(tmp_path, path)
+
     def get_flux(self):
         """
         Calculate the total flux in counts/sec of the synthetic image by summing over all pixel values.
@@ -398,4 +472,141 @@ class SyntheticImage:
         if savepath is not None:
             plt.savefig(savepath)
         plt.show()
-        
+
+
+def _to_plain_float(value):
+    """Coerce a magnitude_zeropoint to a JSON-safe float, or None.
+
+    Roman's ``get_zeropoint_magnitude`` returns a one-row astropy ``Column`` /
+    ``Quantity`` slice; other instruments return plain scalars. Both paths need
+    to round-trip through JSON.
+    """
+    if value is None:
+        return None
+    if hasattr(value, 'value'):  # astropy Quantity
+        value = value.value
+    if hasattr(value, '__len__'):
+        if len(value) == 0:
+            return None
+        value = value[0]
+    return float(value)
+
+
+class LightweightStrongLens:
+    """Minimal ``StrongLens`` stand-in loaded from a lightweight ``.npz``.
+
+    Exposes only the attributes and accessor methods the romanisim-path
+    pipeline reads from ``synthetic_image.strong_lens`` — redshifts,
+    substructure flag, and the scalar ``get_*`` accessors. Each lightweight
+    file is per-band, so the per-band magnitude accessors assert the
+    requested band matches the stored band.
+    """
+
+    def __init__(self, meta):
+        self._band = meta['band']
+        lens_meta = meta['lens']
+        self.name = lens_meta['name']
+        self.z_lens = lens_meta['z_lens']
+        self.z_source = lens_meta['z_source']
+        # downstream only checks ``lens.realization is None`` to set the
+        # substructure flag; a sentinel string preserves that semantics
+        # without dragging a pyhalo realization onto disk.
+        self.realization = '<lightweight>' if lens_meta['has_realization'] else None
+        self._main_halo_mass = lens_meta['main_halo_mass']
+        self._einstein_radius = lens_meta['einstein_radius']
+        self._velocity_dispersion = lens_meta['velocity_dispersion']
+        self._magnification = lens_meta['magnification']
+        self._lens_magnitude = lens_meta['lens_magnitude']
+        self._source_magnitude = lens_meta['source_magnitude']
+        self._lensed_source_magnitude = lens_meta['lensed_source_magnitude']
+
+    def _check_band(self, band):
+        if band != self._band:
+            raise ValueError(
+                f"LightweightStrongLens stores only band {self._band!r}; "
+                f"cannot return magnitude for band {band!r}. Load the "
+                f"per-band lightweight file you actually want."
+            )
+
+    def get_main_halo_mass(self):
+        return self._main_halo_mass
+
+    def get_einstein_radius(self):
+        return self._einstein_radius
+
+    def get_velocity_dispersion(self):
+        return self._velocity_dispersion
+
+    def get_magnification(self):
+        return self._magnification
+
+    def get_lens_magnitude(self, band):
+        self._check_band(band)
+        return self._lens_magnitude
+
+    def get_source_magnitude(self, band):
+        self._check_band(band)
+        return self._source_magnitude
+
+    def get_lensed_source_magnitude(self, band):
+        self._check_band(band)
+        return self._lensed_source_magnitude
+
+
+class LightweightSyntheticImage:
+    """In-memory shim returned when loading a lightweight ``.npz``.
+
+    Quacks like ``SyntheticImage`` for the attributes and methods consumed by
+    the romanisim path. Not suitable for the galsim path (no lens model, PSF,
+    or pixel-grid plumbing).
+    """
+
+    def __init__(self, data, meta):
+        self.data = data
+        self.band = meta['band']
+        self.pixel_scale = meta['pixel_scale']
+        self.fov_arcsec = meta['fov_arcsec']
+        self.num_pix = meta['num_pix']
+        self.instrument_name = meta['instrument_name']
+        ip = dict(meta.get('instrument_params') or {})
+        det_pos = ip.get('detector_position')
+        if det_pos is not None:
+            # round-trip as a tuple to match the original SyntheticImage shape
+            ip['detector_position'] = tuple(det_pos)
+        self.instrument_params = ip
+        self.magnitude_zeropoint = meta['magnitude_zeropoint']
+        self.strong_lens = LightweightStrongLens(meta)
+        self._meta = meta  # retained for debugging / introspection
+
+    @classmethod
+    def load(cls, path):
+        with np.load(path) as f:
+            data = np.asarray(f['data'])
+            meta_bytes = f['meta'].tobytes()
+        meta = json.loads(meta_bytes.decode('utf-8'))
+        schema_version = meta.get('schema_version')
+        if schema_version != LIGHTWEIGHT_SCHEMA_VERSION:
+            raise ValueError(
+                f"Unsupported lightweight schema_version={schema_version!r} "
+                f"(expected {LIGHTWEIGHT_SCHEMA_VERSION}) in {path}"
+            )
+        return cls(data=data, meta=meta)
+
+    def get_flux(self):
+        """Total flux in counts/sec (sum over all pixels)."""
+        return float(np.sum(self.data))
+
+    def get_maggies(self):
+        """Total flux in maggies. Replicates ``SyntheticImage.get_maggies``.
+
+        Implemented in plain floats so it does not require the stored
+        ``magnitude_zeropoint`` to be an astropy ``Quantity``.
+        """
+        if self.magnitude_zeropoint is None:
+            raise ValueError(
+                "Cannot compute maggies: this lightweight file has no "
+                "magnitude_zeropoint (lenstronomy amplitudes were provided "
+                "at construction time)."
+            )
+        magnitude = -2.5 * np.log10(self.get_flux()) + self.magnitude_zeropoint
+        return float(10 ** (-0.4 * magnitude))

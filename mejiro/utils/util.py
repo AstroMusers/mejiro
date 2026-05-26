@@ -1015,6 +1015,32 @@ def unpickle(path):
                 return _pickle.load(results_file)
 
 
+def load_synthetic_image(path):
+    """Load a SyntheticImage written by step 04, in either pickle or lightweight format.
+
+    Auto-detects the on-disk format from the file extension:
+
+    - ``.pkl`` → returns the full :class:`mejiro.synthetic_image.SyntheticImage`
+      via :func:`unpickle`.
+    - ``.npz`` → returns a :class:`mejiro.synthetic_image.LightweightSyntheticImage`
+      (a shim exposing only the attributes/methods consumed by the romanisim
+      path).
+
+    Parameters
+    ----------
+    path : str
+        Path to the on-disk synthetic image file.
+
+    Returns
+    -------
+    SyntheticImage or LightweightSyntheticImage
+    """
+    if path.endswith('.npz'):
+        from mejiro.synthetic_image import LightweightSyntheticImage
+        return LightweightSyntheticImage.load(path)
+    return unpickle(path)
+
+
 def unpickle_all(dir_path, prefix="", suffix="", limit=None):
     """
     Load and unpickle all files in a directory.
