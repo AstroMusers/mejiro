@@ -16,6 +16,25 @@ Execution topology is selected from the YAML config's ``jaxtronomy.jax_platform`
   signature so the JIT cache is reused within each bucket. One in-flight kernel
   per GPU; oversubscribing N processes onto one device thrashes memory.
 
+Worker threading (CPU path):
+    Three layered controls keep N workers from collectively oversubscribing
+    the host:
+
+    1. BLAS/OMP env vars (``OMP_NUM_THREADS`` etc.) set below before numpy
+       imports, so NumPy/SciPy/galsim stay single-threaded in every worker.
+    2. ``XLA_FLAGS`` set in ``_worker_init`` (unconditional assignment, not
+       setdefault, so an inherited shell value cannot mask it):
+       ``--xla_cpu_multi_thread_eigen=false`` disables Eigen op-level
+       parallelism; ``--xla_force_host_platform_device_count=1`` keeps JAX
+       to one logical CPU device per worker.
+    3. ``os.sched_setaffinity`` in ``_worker_init`` pins each worker to a
+       single core (ids handed out via a ``multiprocessing.Queue`` built in
+       ``_run_spawn_pool``). This is the actual hard cap: JAX's CPU PJRT
+       client still allocates dispatch and JIT-compile threads sized to
+       ``hardware_concurrency()`` that ``XLA_FLAGS`` does not bound, but
+       affinity restricts them to one core so the system run queue stays
+       near ``workers`` rather than ``workers * ~3``.
+
 Outputs land in ``<pipeline_dir>/04_jax/`` with the same naming convention as
 step 04, so step 05 can consume either step 04 or step 04_jax outputs.
 
@@ -27,8 +46,9 @@ Config additions (optional):
 """
 import os
 
-# Pin BLAS/OpenMP to a single thread per worker BEFORE numpy is imported, and
-# also pin XLA's CPU runtime so workers do not oversubscribe each other.
+# Single-thread BLAS/OMP in every worker; must happen before numpy imports.
+# JAX/XLA threading and per-worker CPU affinity are handled later in
+# ``_worker_init`` -- see module docstring "Worker threading".
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
@@ -85,6 +105,15 @@ def main(args):
     psf_config = pipeline.config['psf']
     jax_platform = pipeline.config.get('jaxtronomy', {}).get('jax_platform', 'cpu')
 
+    # 'full' pickles the entire SyntheticImage (current default); 'lightweight'
+    # writes a compact .npz used by the romanisim path only.
+    serialization = synthetic_image_config.get('serialization', 'full')
+    if serialization not in ('full', 'lightweight'):
+        raise ValueError(
+            f"synthetic_image.serialization must be 'full' or 'lightweight', got {serialization!r}"
+        )
+    output_ext = '.npz' if serialization == 'lightweight' else '.pkl'
+
     # Verify JAX is importable and has devices for the requested platform. Run
     # in a subprocess so the main process's JAX platform stays unlocked; we
     # never import jax in this module.
@@ -123,7 +152,7 @@ def main(args):
         out_dir = _output_dir_for(input_pickle)
         name = _lens_name(input_pickle)
         for band in bands:
-            if not os.path.exists(os.path.join(out_dir, f'SyntheticImage_{name}_{band}.pkl')):
+            if not os.path.exists(os.path.join(out_dir, f'SyntheticImage_{name}_{band}{output_ext}')):
                 return False
         return True
 
@@ -155,7 +184,7 @@ def main(args):
         # to flatten the long tail.
         input_pickles.sort(key=os.path.getsize, reverse=True)
 
-    tuple_list = [(pipeline, synthetic_image_config, psf_config, input_pickle)
+    tuple_list = [(pipeline, synthetic_image_config, psf_config, input_pickle, serialization)
                   for input_pickle in input_pickles]
 
     if jax_platform == 'gpu':
@@ -218,12 +247,19 @@ def _run_spawn_pool(pipeline, tuple_list, compilation_cache_dir, jax_platform):
     logger.info(f'Spawning {workers} JAX-CPU worker(s)')
 
     ctx = multiprocessing.get_context('spawn')
+    # Each worker pops one CPU id and pins itself with sched_setaffinity. JAX's
+    # CPU runtime allocates thread pools sized to hardware_concurrency() that
+    # XLA_FLAGS does not cap; affinity is what actually keeps the run queue
+    # near `workers` instead of `workers * ~3`.
+    cpu_queue = ctx.Queue()
+    for cpu in range(workers):
+        cpu_queue.put(cpu)
     try:
         with ProcessPoolExecutor(
             max_workers=workers,
             mp_context=ctx,
             initializer=_worker_init,
-            initargs=(jax_platform, compilation_cache_dir),
+            initargs=(jax_platform, compilation_cache_dir, cpu_queue),
         ) as executor:
             futures = {executor.submit(create_synthetic_image, task): task for task in tuple_list}
             for future in tqdm(as_completed(futures), total=len(futures)):
@@ -241,7 +277,7 @@ def _run_sequential_bucketed(tuple_list, compilation_cache_dir, jax_platform):
     kernel, so unpickling the lens (cheap relative to compilation) up front to
     derive the signature is worth it.
     """
-    _worker_init(jax_platform, compilation_cache_dir)
+    _worker_init(jax_platform, compilation_cache_dir, None)
 
     buckets = defaultdict(list)
     for task in tqdm(tuple_list, desc='Bucketing by lens_model_list'):
@@ -261,16 +297,28 @@ def _run_sequential_bucketed(tuple_list, compilation_cache_dir, jax_platform):
                 pbar.update(1)
 
 
-def _worker_init(jax_platform, compilation_cache_dir):
+def _worker_init(jax_platform, compilation_cache_dir, cpu_queue):
     """Spawn worker entry point: pin platform, enable JIT cache, cache JAXXED set."""
+    # Pin this worker to a single core (Linux only). JAX's CPU runtime sizes
+    # its Eigen/dispatch pools from hardware_concurrency(), which XLA_FLAGS
+    # cannot cap; sched_setaffinity is what actually bounds load to ~workers
+    # instead of ~workers*3.
+    if cpu_queue is not None and hasattr(os, 'sched_setaffinity'):
+        try:
+            cpu_id = cpu_queue.get_nowait()
+            os.sched_setaffinity(0, {cpu_id})
+        except Exception:
+            pass
+
     os.environ['JAX_PLATFORM_NAME'] = jax_platform
     os.environ['JAX_PLATFORMS'] = jax_platform
-    # Pin XLA's CPU runtime to a single thread per worker so that N workers do
-    # not collectively oversubscribe the host. No-op for the GPU path.
-    os.environ.setdefault(
-        'XLA_FLAGS',
-        '--xla_cpu_multi_thread_eigen=false intra_op_parallelism_threads=1',
-    )
+    # Unconditional assignment: setdefault would silently skip if XLA_FLAGS was
+    # inherited from the calling shell, leaving JAX with its default multi-
+    # threaded Eigen pool. No-op effects for the GPU path.
+    os.environ['XLA_FLAGS'] = ' '.join([
+        '--xla_cpu_multi_thread_eigen=false',
+        '--xla_force_host_platform_device_count=1',
+    ])
 
     # JAX runs discover_pjrt_plugins() unconditionally on first import and
     # logs the cuda12 plugin's cuInit() failure at ERROR level when no GPU is
@@ -307,7 +355,8 @@ def create_synthetic_image(input):
     # lenstronomy's heavy import graph; only workers need it.
     from mejiro.synthetic_image import SyntheticImage
 
-    pipeline, synthetic_image_config, psf_config, input_pickle = input
+    pipeline, synthetic_image_config, psf_config, input_pickle, serialization = input
+    output_ext = '.npz' if serialization == 'lightweight' else '.pkl'
 
     bands = synthetic_image_config['bands']
     fov_arcsec = synthetic_image_config['fov_arcsec']
@@ -341,7 +390,7 @@ def create_synthetic_image(input):
         output_dir = pipeline.output_dir
 
     for band in bands:
-        output_path = os.path.join(output_dir, f'SyntheticImage_{lens.name}_{band}.pkl')
+        output_path = os.path.join(output_dir, f'SyntheticImage_{lens.name}_{band}{output_ext}')
         failed_path = os.path.join(output_dir, f'failed_{lens.name}_{band}.pkl')
         if os.path.exists(output_path):
             continue
@@ -370,7 +419,10 @@ def create_synthetic_image(input):
                                              kwargs_numerics=kwargs_numerics,
                                              kwargs_psf=kwargs_psf,
                                              pieces=pieces)
-            util.pickle(output_path, synthetic_image)
+            if serialization == 'lightweight':
+                synthetic_image.save_lightweight(output_path)
+            else:
+                util.pickle(output_path, synthetic_image)
         except Exception as e:
             util.pickle(failed_path, lens)
             logger.warning(
