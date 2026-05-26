@@ -139,13 +139,16 @@ def main(args):
     for uid in tqdm(uids):
         group_lens = group_images.create_group(f'strong_lens_{str(uid).zfill(8)}')
 
-        # load SyntheticImage pickles to get metadata
-        synth_pickles = sorted(glob(os.path.join(synth_input_dir, f'sca*/SyntheticImage_{pipeline.name}_{uid}_*.pkl')))
+        # load SyntheticImage files (full .pkl or lightweight .npz) to get metadata
+        synth_pickles = sorted(
+            glob(os.path.join(synth_input_dir, f'sca*/SyntheticImage_{pipeline.name}_{uid}_*.pkl'))
+            + glob(os.path.join(synth_input_dir, f'sca*/SyntheticImage_{pipeline.name}_{uid}_*.npz'))
+        )
         if not synth_pickles:
-            logger.warning(f'No SyntheticImage pickles found for UID {uid}, skipping')
+            logger.warning(f'No SyntheticImage files found for UID {uid}, skipping')
             continue
 
-        synthetic_image = util.unpickle(synth_pickles[0])
+        synthetic_image = util.load_synthetic_image(synth_pickles[0])
         lens = synthetic_image.strong_lens
 
         # set group-level attributes
@@ -180,7 +183,7 @@ def main(args):
 
             # load corresponding SyntheticImage for this band
             if i < len(synth_pickles):
-                synthetic_image = util.unpickle(synth_pickles[i])
+                synthetic_image = util.load_synthetic_image(synth_pickles[i])
 
             # create datasets
             dataset_exposure = group_lens.create_dataset(f'exposure_{str(uid).zfill(8)}_{band}', data=exposure_data)

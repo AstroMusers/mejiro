@@ -54,16 +54,31 @@ N_TILES = GRID_SIDE * GRID_SIDE  # 3136
 
 
 def _load_pickle(pickle_path):
+    # Despite the name, this also handles lightweight .npz files via the
+    # unified loader — kept as a single entry point so the ThreadPool below
+    # doesn't need to branch on extension.
     try:
-        return mejiro_util.unpickle(pickle_path)
+        return mejiro_util.load_synthetic_image(pickle_path)
     except EOFError:
-        raise EOFError(f'Corrupted pickle file: {pickle_path}')
+        raise EOFError(f'Corrupted SyntheticImage file: {pickle_path}')
 
 
 def _lens_id_from_pickle(pickle_path, band):
     bn = os.path.basename(pickle_path)
-    assert bn.startswith('SyntheticImage_') and bn.endswith(f'_{band}.pkl'), bn
-    return bn[len('SyntheticImage_'):-len(f'_{band}.pkl')]
+    for ext in ('.pkl', '.npz'):
+        suffix = f'_{band}{ext}'
+        if bn.startswith('SyntheticImage_') and bn.endswith(suffix):
+            return bn[len('SyntheticImage_'):-len(suffix)]
+    raise AssertionError(bn)
+
+
+def _glob_synthetic_images(directory):
+    """Return SyntheticImage files in ``directory`` regardless of extension."""
+    from glob import glob as _glob
+    return sorted(
+        _glob(os.path.join(directory, 'SyntheticImage_*.pkl'))
+        + _glob(os.path.join(directory, 'SyntheticImage_*.npz'))
+    )
 
 
 def _read_detector_position(pickle_path):
@@ -132,13 +147,14 @@ def main(args):
         sca_name = os.path.basename(sca_dir)
         sca_num = int(sca_name[3:])
 
-        sca_pickles = sorted(glob(os.path.join(sca_dir, 'SyntheticImage_*.pkl')))
+        sca_pickles = _glob_synthetic_images(sca_dir)
 
         by_band = defaultdict(list)
         for p in sca_pickles:
             bn = os.path.basename(p)
-            parts = bn.replace('.pkl', '').split('_')
-            band = parts[-1]
+            # strip either extension before splitting; band is the final token
+            stem = bn.replace('.pkl', '').replace('.npz', '')
+            band = stem.split('_')[-1]
             by_band[band].append(p)
 
         pickles_by_sca_band[sca_num] = dict(by_band)

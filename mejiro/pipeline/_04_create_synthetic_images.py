@@ -66,6 +66,15 @@ def main(args):
     synthetic_image_config = pipeline.config['synthetic_image']
     psf_config = pipeline.config['psf']
 
+    # 'full' pickles the entire SyntheticImage (current default); 'lightweight'
+    # writes a compact .npz used by the romanisim path only.
+    serialization = synthetic_image_config.get('serialization', 'full')
+    if serialization not in ('full', 'lightweight'):
+        raise ValueError(
+            f"synthetic_image.serialization must be 'full' or 'lightweight', got {serialization!r}"
+        )
+    output_ext = '.npz' if serialization == 'lightweight' else '.pkl'
+
     # set up jaxstronomy
     if pipeline.config['jaxtronomy']['use_jax']:
         os.environ['JAX_PLATFORM_NAME'] = pipeline.config['jaxtronomy'].get('jax_platform', 'cpu')
@@ -94,12 +103,12 @@ def main(args):
         return base[len('lens_'):-len('.pkl')]
 
     def _is_complete(input_pickle):
-        # A lens counts as complete only if every band has a real output pickle.
+        # A lens counts as complete only if every band has a real output file.
         # failed_*.pkl is NOT treated as done -- failed bands are retried.
         out_dir = _output_dir_for(input_pickle)
         name = _lens_name(input_pickle)
         for band in bands:
-            if not os.path.exists(os.path.join(out_dir, f'SyntheticImage_{name}_{band}.pkl')):
+            if not os.path.exists(os.path.join(out_dir, f'SyntheticImage_{name}_{band}{output_ext}')):
                 return False
         return True
 
@@ -131,7 +140,7 @@ def main(args):
         input_pickles.sort(key=os.path.getsize, reverse=True)
 
     # tuple the parameters
-    tuple_list = [(pipeline, synthetic_image_config, psf_config, input_pickle) for input_pickle in input_pickles]
+    tuple_list = [(pipeline, synthetic_image_config, psf_config, input_pickle, serialization) for input_pickle in input_pickles]
 
     # submit tasks to the executor
     try:
@@ -153,7 +162,8 @@ def main(args):
 
 def create_synthetic_image(input):
     # unpack tuple
-    (pipeline, synthetic_image_config, psf_config, input_pickle) = input
+    (pipeline, synthetic_image_config, psf_config, input_pickle, serialization) = input
+    output_ext = '.npz' if serialization == 'lightweight' else '.pkl'
 
     # unpack pipeline params
     bands = synthetic_image_config['bands']
@@ -192,7 +202,7 @@ def create_synthetic_image(input):
     # generate synthetic images
     for band in bands:
         # skip if real output already exists; failed_*.pkl from a prior run is NOT skipped, the band is retried
-        output_path = os.path.join(output_dir, f'SyntheticImage_{lens.name}_{band}.pkl')
+        output_path = os.path.join(output_dir, f'SyntheticImage_{lens.name}_{band}{output_ext}')
         failed_path = os.path.join(output_dir, f'failed_{lens.name}_{band}.pkl')
         if os.path.exists(output_path):
             continue
@@ -213,7 +223,7 @@ def create_synthetic_image(input):
         }
         kwargs_psf = pipeline.instrument.get_psf_kwargs(**get_psf_args)
 
-        # build and pickle synthetic image
+        # build and serialize synthetic image
         try:
             synthetic_image = SyntheticImage(strong_lens=lens,
                                         instrument=pipeline.instrument,
@@ -223,7 +233,10 @@ def create_synthetic_image(input):
                                         kwargs_numerics=kwargs_numerics,
                                         kwargs_psf=kwargs_psf,
                                         pieces=pieces)
-            util.pickle(output_path, synthetic_image)
+            if serialization == 'lightweight':
+                synthetic_image.save_lightweight(output_path)
+            else:
+                util.pickle(output_path, synthetic_image)
         except Exception as e:
             util.pickle(failed_path, lens)
             logger.warning(f'Error creating synthetic image for lens {lens.name} in band {band}: {e}. Pickling to {failed_path}')

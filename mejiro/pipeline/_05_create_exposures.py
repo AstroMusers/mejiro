@@ -54,6 +54,17 @@ def main(args):
     # retrieve configuration parameters
     imaging_config = pipeline.config['imaging']
 
+    # The galsim engine needs the full SyntheticImage (lens model, PSF, pixel
+    # grid, etc.), so lightweight inputs from step 04 are not usable here.
+    serialization = pipeline.config.get('synthetic_image', {}).get('serialization', 'full')
+    if serialization == 'lightweight':
+        raise ValueError(
+            "_05_create_exposures requires the full SyntheticImage but "
+            "synthetic_image.serialization is set to 'lightweight'. Either "
+            "re-run step 04 with serialization: full, or use the romanisim "
+            "path (romanisim_pipeline.py) which is compatible with lightweight."
+        )
+
     # set input and output directories
     if pipeline.instrument_name == 'roman':
         input_pickles = pipeline.retrieve_roman_pickles(prefix='SyntheticImage', suffix='', extension='.pkl')

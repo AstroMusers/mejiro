@@ -141,14 +141,19 @@ def _rebuild_snr(pipeline, snr_config, input_pickle, system_name, band, original
     if pipeline.instrument_name == 'roman':
         sca_dir = os.path.basename(os.path.dirname(input_pickle))
         lens_pickle_path = os.path.join(pipeline.pipeline_dir, '02', sca_dir, f'lens_{system_name}.pkl')
-        synth_pickle_path = os.path.join(pipeline.pipeline_dir, '04', sca_dir, f'SyntheticImage_{system_name}_{band}.pkl')
+        synth_dir = os.path.join(pipeline.pipeline_dir, '04', sca_dir)
     else:
         lens_pickle_path = os.path.join(pipeline.pipeline_dir, '02', f'lens_{system_name}.pkl')
-        synth_pickle_path = os.path.join(pipeline.pipeline_dir, '04', f'SyntheticImage_{system_name}_{band}.pkl')
+        synth_dir = os.path.join(pipeline.pipeline_dir, '04')
+
+    # step 04 may have written either a full pickle or a lightweight .npz
+    synth_pickle_path = os.path.join(synth_dir, f'SyntheticImage_{system_name}_{band}.pkl')
+    if not os.path.exists(synth_pickle_path):
+        synth_pickle_path = os.path.join(synth_dir, f'SyntheticImage_{system_name}_{band}.npz')
 
     try:
         lens = util.unpickle(lens_pickle_path)
-        old_synthetic_image = util.unpickle(synth_pickle_path)
+        old_synthetic_image = util.load_synthetic_image(synth_pickle_path)
         instrument_params = old_synthetic_image.instrument_params
 
         supersampling_factor = snr_config['snr_supersampling_factor']
