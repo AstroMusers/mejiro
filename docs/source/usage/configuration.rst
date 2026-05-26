@@ -256,6 +256,14 @@ Parameters for rendering idealized (PSF-convolved, noise-free) images. Each valu
 
    Used in ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, and ``_04_jax_create_synthetic_images.py``.
 
+``serialization``
+   String selecting the on-disk format for each ``SyntheticImage`` written by step 04. One of:
+
+   - ``full`` (default): pickle the entire ``SyntheticImage`` (including the embedded ``StrongLens`` and any pyhalo realization). Required by the galsim path (``_05_create_exposures.py``) and by analysis scripts that need the full lens model (e.g., ``projects/roman_data_challenge/substructure_snr_histogram.py``).
+   - ``lightweight``: write a compact ``.npz`` per (system, band) containing the image as ``float32`` plus a JSON metadata blob with only what the romanisim path consumes downstream (redshifts, Einstein radius, per-band magnitudes, detector position, ``magnitude_zeropoint``, etc.). Roughly 20× smaller per (system, band) than ``full``; incompatible with the galsim path. Loaded transparently by ``mejiro.utils.util.load_synthetic_image``, which auto-detects the extension and returns a :class:`mejiro.synthetic_image.LightweightSyntheticImage` shim.
+
+   Used in ``_04_create_synthetic_images.py`` and ``_04_jax_create_synthetic_images.py`` (writers); in ``romanisim_pipeline.py``, ``_06_h5_export_romanisim.py``, ``projects/roman_data_challenge/rung_1.py``, and ``calculate_snrs.py`` (readers, via the unified loader). ``_05_create_exposures.py`` raises at startup when ``serialization == 'lightweight'`` because the galsim engine requires the full ``SyntheticImage``.
+
 ``exposure``
 ------------
 
