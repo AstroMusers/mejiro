@@ -7,10 +7,13 @@ batches of 3136 (56x56 grid of 73x73 tiles) until all systems for each SCA/band 
 complete. Multiprocessing is used to parallelize batch processing.
 
 Usage:
-    python3 romanisim_pipeline.py --config <config.yaml>
+    python3 romanisim_pipeline.py --config <config.yaml> [--resume]
 
 Arguments:
     --config: Path to the YAML configuration file.
+    --resume: Preserve existing output and skip already-completed batches (those with a
+        batch_complete_*.txt sentinel). Default is to delete existing output and rebuild
+        from scratch.
 """
 import os
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -138,7 +141,7 @@ def main(args):
     logger.info(f'Total exposure time (MA table {ma_table_number}): {exptime:.1f} s')
 
     # discover SCA directories and group SyntheticImage pickles by SCA and band
-    data_dir = os.path.join(config['data_dir'], config['pipeline_label'], '04')
+    data_dir = os.path.join(config['data_dir'], config['pipeline_label'], '04_jax')
     sca_dirs = sorted(glob(os.path.join(data_dir, 'sca*')))
     logger.info(f'Found {len(sca_dirs)} SCA directories in {data_dir}')
 
