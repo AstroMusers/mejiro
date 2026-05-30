@@ -75,6 +75,16 @@ def _lens_id_from_pickle(pickle_path, band):
     raise AssertionError(bn)
 
 
+def exposure_cutout_name(input_path):
+    """Derive the Exposure ``.npy`` cutout filename from a SyntheticImage input path.
+
+    Handles both full ``.pkl`` pickles and lightweight ``.npz`` inputs by stripping
+    whatever extension is present before appending ``.npy`` (avoids ``.npz.npy``).
+    """
+    stem = os.path.splitext(os.path.basename(input_path))[0]
+    return stem.replace('SyntheticImage_', 'Exposure_') + '.npy'
+
+
 def _glob_synthetic_images(directory):
     """Return SyntheticImage files in ``directory`` regardless of extension."""
     from glob import glob as _glob
@@ -141,7 +151,9 @@ def main(args):
     logger.info(f'Total exposure time (MA table {ma_table_number}): {exptime:.1f} s')
 
     # discover SCA directories and group SyntheticImage pickles by SCA and band
-    data_dir = os.path.join(config['data_dir'], config['pipeline_label'], '04_jax')
+    # (read from the JAX step-04 variant when jaxtronomy.use_jax is set)
+    synth_step = '04_jax' if config['jaxtronomy']['use_jax'] else '04'
+    data_dir = os.path.join(config['data_dir'], config['pipeline_label'], synth_step)
     sca_dirs = sorted(glob(os.path.join(data_dir, 'sca*')))
     logger.info(f'Found {len(sca_dirs)} SCA directories in {data_dir}')
 
@@ -393,7 +405,7 @@ def process_batch(task):
             c0 = tile_c * TILE_SIZE
             cutout = result_data[r0:r0 + TILE_SIZE, c0:c0 + TILE_SIZE]
 
-            output_name = os.path.basename(pickle_path).replace('.pkl', '.npy').replace('SyntheticImage_', 'Exposure_')
+            output_name = exposure_cutout_name(pickle_path)
             np.save(os.path.join(sca_output_dir, output_name), cutout)
 
         logger.info(f'  Saved {n_images} cutouts to {sca_output_dir}')
