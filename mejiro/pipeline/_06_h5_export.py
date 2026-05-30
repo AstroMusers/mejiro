@@ -60,7 +60,7 @@ def main(args):
 
     # directory containing SyntheticImage pickles from step 04; Exposure pickles no longer
     # embed the SyntheticImage, so metadata and optional synthetic image data are read here
-    synth_input_dir = os.path.join(pipeline.pipeline_dir, '04')
+    synth_input_dir = pipeline.step_dir('04')
 
     # create h5 file
     dataset_version = str(dataset_config['version'])

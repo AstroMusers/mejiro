@@ -141,10 +141,10 @@ def _rebuild_snr(pipeline, snr_config, input_pickle, system_name, band, original
     if pipeline.instrument_name == 'roman':
         sca_dir = os.path.basename(os.path.dirname(input_pickle))
         lens_pickle_path = os.path.join(pipeline.pipeline_dir, '02', sca_dir, f'lens_{system_name}.pkl')
-        synth_dir = os.path.join(pipeline.pipeline_dir, '04', sca_dir)
+        synth_dir = os.path.join(pipeline.step_dir('04'), sca_dir)
     else:
         lens_pickle_path = os.path.join(pipeline.pipeline_dir, '02', f'lens_{system_name}.pkl')
-        synth_dir = os.path.join(pipeline.pipeline_dir, '04')
+        synth_dir = pipeline.step_dir('04')
 
     # step 04 may have written either a full pickle or a lightweight .npz
     synth_pickle_path = os.path.join(synth_dir, f'SyntheticImage_{system_name}_{band}.pkl')

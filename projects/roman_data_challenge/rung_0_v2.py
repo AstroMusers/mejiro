@@ -100,7 +100,7 @@ def main(args):
         snr_lookup = {_name: _snr for _name, _snr in _raw_snr_pairs}
 
     # directory containing SyntheticImage pickles from step 04
-    synth_input_dir = os.path.join(pipeline.pipeline_dir, '04')
+    synth_input_dir = pipeline.step_dir('04')
 
     # create h5 file
     dataset_version = str(dataset_config['version'])

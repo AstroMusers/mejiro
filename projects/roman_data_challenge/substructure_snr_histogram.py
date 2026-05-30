@@ -45,8 +45,9 @@ from tqdm import tqdm
 logger = logging.getLogger(__name__)
 
 
-def discover_synth_pickles(pipeline_dir, band):
-    pattern = os.path.join(pipeline_dir, '04', 'sca[0-1][0-9]',
+def discover_synth_pickles(pipeline_dir, band, use_jax=False):
+    step = '04_jax' if use_jax else '04'
+    pattern = os.path.join(pipeline_dir, step, 'sca[0-1][0-9]',
                            f'SyntheticImage_*_{band}.pkl')
     return sorted(glob.glob(pattern))
 
@@ -261,7 +262,7 @@ def main(args):
 
     summary_rows = []
     for band in args.bands:
-        synth_paths = discover_synth_pickles(pipeline_dir, band)
+        synth_paths = discover_synth_pickles(pipeline_dir, band, use_jax=cfg['jaxtronomy']['use_jax'])
         if args.limit is not None and args.limit < len(synth_paths):
             synth_paths = synth_paths[:args.limit]
         if not synth_paths:

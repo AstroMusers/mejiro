@@ -89,7 +89,7 @@ def main(args):
         logger.info(f'Limiting to {len(uids)} systems')
 
     # directory containing SyntheticImage pickles from step 04
-    synth_input_dir = os.path.join(pipeline.pipeline_dir, '04')
+    synth_input_dir = pipeline.step_dir('04')
 
     # load SNR lookup from calculate_snrs.py output, if available
     snr_lookup = {}

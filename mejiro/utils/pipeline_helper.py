@@ -9,6 +9,11 @@ from mejiro.utils import util
 
 logger = logging.getLogger(__name__)
 
+# Pipeline steps that have a JAX variant whose output lands in '<step>_jax/'
+# (e.g. '04' -> '04_jax'). Consumers should resolve the directory via
+# PipelineHelper.step_dir() so the variant follows jaxtronomy.use_jax.
+JAX_VARIANT_STEPS = {'01b', '04'}
+
 
 class PipelineHelper:
     def __init__(self, args, prev_script_name, script_name, supported_instruments, delete_existing_output=False):
@@ -85,9 +90,10 @@ class PipelineHelper:
         if self.dev:
             self.pipeline_dir += '_dev'
 
-        # set up input directory for current script
+        # set up input directory for current script (resolving the JAX variant of the
+        # previous step, e.g. '04' -> '04_jax', when jaxtronomy.use_jax is True)
         if self.prev_script_name is not None:
-            self.input_dir = os.path.join(self.pipeline_dir, self.prev_script_name)
+            self.input_dir = self.step_dir(self.prev_script_name)
 
         # set up output directory for current script
         if self.script_name is None:
@@ -96,6 +102,13 @@ class PipelineHelper:
         util.create_directory_if_not_exists(self.output_dir)
         if delete_existing_output:
             util.clear_directory(self.output_dir)
+
+    def step_dir(self, step):
+        """Absolute path to a pipeline step's directory, selecting the JAX variant
+        (e.g. '04' -> '04_jax') when jaxtronomy.use_jax is True and one exists."""
+        if step in JAX_VARIANT_STEPS and self.config['jaxtronomy']['use_jax']:
+            step = f'{step}_jax'
+        return os.path.join(self.pipeline_dir, step)
 
     def calculate_process_count(self, count):
         import multiprocessing
