@@ -100,7 +100,7 @@ def main(args):
         snr_lookup = {_name: _snr for _name, _snr in _raw_snr_pairs}
 
     # directory containing SyntheticImage pickles from step 04
-    synth_input_dir = os.path.join(pipeline.pipeline_dir, '04')
+    synth_input_dir = pipeline.step_dir('04')
 
     # create h5 file
     dataset_version = str(dataset_config['version'])
@@ -155,6 +155,13 @@ def main(args):
             logger.warning(f'No SyntheticImage files found for UID {uid}, skipping')
             continue
 
+        # map band -> synth file path; lightweight files are per-band, so the
+        # band must be resolved by name rather than by list position
+        synth_by_band = {}
+        for p in synth_pickles:
+            band_token = os.path.splitext(os.path.basename(p))[0].split('_')[-1]
+            synth_by_band[band_token] = p
+
         synthetic_image = util.load_synthetic_image(synth_pickles[0])
         lens = synthetic_image.strong_lens
 
@@ -205,9 +212,13 @@ def main(args):
                 logger.warning(f'SNR not found for {snr_key}')
             snr = snr_lookup.get(snr_key)
 
-            # load corresponding SyntheticImage for this band
-            if i < len(synth_pickles):
-                synthetic_image = util.load_synthetic_image(synth_pickles[i])
+            # load the SyntheticImage for THIS band (lightweight files are per-band)
+            synth_path = synth_by_band.get(band)
+            if synth_path is None:
+                logger.warning(f'No SyntheticImage file found for {pipeline.name}_{uid}_{band}, skipping')
+                continue
+            synthetic_image = util.load_synthetic_image(synth_path)
+            lens = synthetic_image.strong_lens
 
             # create datasets
             dataset_exposure = group_lens.create_dataset(f'exposure_{str(uid).zfill(8)}_{band}', data=exposure_data)
