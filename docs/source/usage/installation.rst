@@ -28,11 +28,7 @@ Note: if you are using zsh, the default shell on macOS, you will need to escape 
 
 Selecting the JAX backend at runtime: set ``JAX_PLATFORM_NAME=cpu`` or ``JAX_PLATFORM_NAME=gpu`` in the shell before launching Python (the variable must be set *before* ``jax`` is imported). The pipeline scripts read ``jaxtronomy.jax_platform`` from the YAML config and set this variable for you.
 
-To simulate images from *Roman*, you will need to download the ``roman-technical-information`` repository `here <https://github.com/RomanSpaceTelescope/roman-technical-information/>`__. Then, set the environment variable ``ROMAN_TECHNICAL_INFORMATION_PATH`` to the path where you downloaded the repository, e.g., in your ``.bashrc`` or ``.bash_profile``:
-
-.. code-block:: bash
-
-    export ROMAN_TECHNICAL_INFORMATION_PATH="/{your_path}"
+To simulate images from *Roman*, ``mejiro`` reads instrument parameters from the ``roman-technical-information`` package, which is installed automatically as part of the ``roman`` optional dependency (``pip install -e .[roman]``). No manual download or environment variable is required.
 
 To simulate images from *HWO*, `follow these instructions <https://github.com/spacetelescope/syotools>`__ for ``syotools`` to set the environment variables ``PYSYN_CDBS`` and ``SCI_ENG_DIR``.
 

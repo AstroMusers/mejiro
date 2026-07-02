@@ -7,7 +7,7 @@ from mejiro.instruments.instrument import Instrument
 from mejiro.utils import roman_util, util
 
 
-IMAGING_PATH = 'data/WideFieldInstrument/Imaging/'
+IMAGING_PATH = 'WideFieldInstrument/Imaging/'
 ZEROPOINT_PATH = IMAGING_PATH + 'ZeroPoints/Roman_zeropoints_*.ecsv'
 ZODIACAL_LIGHT_PATH = IMAGING_PATH + 'ZodiacalLight/zodiacal_light.ecsv'
 THERMAL_BACKGROUND_PATH = IMAGING_PATH + 'Backgrounds/internal_thermal_backgrounds.ecsv'
@@ -21,7 +21,7 @@ class Roman(Instrument):
     Attributes
     ----------
     roman_technical_information_path : str
-        Path to the roman-technical-information directory.
+        Path to the data directory of the installed ``roman-technical-information`` package.
     pixel_scale : Quantity
         Pixel scale of the instrument in arcsec/pix.
     gain : float
@@ -50,23 +50,17 @@ class Roman(Instrument):
             engines
         )        
 
-        # get path to roman-technical-information from environment variable
-        self.roman_technical_information_path = os.getenv("ROMAN_TECHNICAL_INFORMATION_PATH")
-        if self.roman_technical_information_path is None:
-            raise EnvironmentError("Environment variable 'ROMAN_TECHNICAL_INFORMATION_PATH' is not set.")
-
-        # record version of roman-technical-documentation
+        # get instrument parameters from the installed roman-technical-information package
         try:
-            version_path = os.path.join(self.roman_technical_information_path, 'VERSION.md')
-            with open(version_path, 'r', encoding='utf-8') as file:
-                lines = file.readlines()
+            import roman_technical_information
+        except ImportError as e:
+            raise ImportError(
+                "The 'roman-technical-information' package is required to use Roman. "
+                "Install it with: pip install \"mejiro[roman]\""
+            ) from e
 
-            if len(lines) == 1:
-                self.versions['roman-technical-information'] = lines[0].strip()
-            else:
-                raise IndexError(f"Error reading version number from VERSION.md due to unexpected format: {lines}.")
-        except FileNotFoundError:
-            raise FileNotFoundError(f"VERSION.md not found in {self.roman_technical_information_path}.")
+        self.roman_technical_information_path = str(roman_technical_information.PACKAGEDIR)
+        self.versions['roman-technical-information'] = roman_technical_information.__version__
         
         # set attributes
         self.pixel_scale = Quantity(0.11, 'arcsec / pix')

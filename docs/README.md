@@ -9,7 +9,7 @@ To build docs locally, from `docs/` run `sphinx-build -M html source build`
 #### Dependencies
 
 1. Grab the latest version of SLSim
-2. Grab the latest version of `roman-technical-information`
+2. Bump the pinned `roman-technical-information` version in `pyproject.toml` to the latest release
 3. Update pinned git branches for forked dependencies in `pyproject.toml` (`speclite`, `skypy`)
 4. Review and update all other dependency version constraints if needed
 
