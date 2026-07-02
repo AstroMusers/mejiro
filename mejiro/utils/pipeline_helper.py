@@ -15,6 +15,36 @@ logger = logging.getLogger(__name__)
 JAX_VARIANT_STEPS = {'01b', '04'}
 
 
+def _mejiro_v2_cosmology_setstate(self, state):
+    """``__setstate__`` for astropy cosmologies pickled under ``mejiro-v2``.
+
+    astropy 6.x stored FLRW parameters under private ``__dict__`` keys (``_H0``,
+    ``_Om0``, …) and cached neutrino state that astropy 7.x no longer uses (7.x
+    computes ``Onu0``/``Ok0`` from an internal ``_nu_info`` object the old pickle
+    lacks). Blindly restoring the old ``__dict__`` therefore yields a cosmology
+    whose parameter access and distance methods raise ``KeyError``/``AttributeError``.
+
+    For such legacy states we rebuild the object from its init parameters under the
+    current astropy, which recreates all correct 7.x internal state, then copy that
+    into ``self``. Native astropy-7 pickles (public param keys already present) fall
+    through to the default ``__dict__.update`` behavior untouched.
+    """
+    init_names = list(getattr(type(self), 'parameters', []) or [])
+    is_legacy = any(nm not in state and ('_' + nm) in state for nm in init_names)
+    if is_legacy and init_names:
+        try:
+            kwargs = {nm: (state[nm] if nm in state else state['_' + nm]) for nm in init_names}
+            kwargs['name'] = state.get('name', state.get('_name'))
+            meta = state.get('meta', state.get('_meta', None))
+            kwargs['meta'] = dict(meta) if meta else None
+            fresh = type(self)(**kwargs)
+            self.__dict__.update(fresh.__dict__)
+            return
+        except Exception:
+            pass
+    self.__dict__.update(state)
+
+
 class PipelineHelper:
     def __init__(self, args, prev_script_name, script_name, supported_instruments, delete_existing_output=False):
         self.prev_script_name = prev_script_name
@@ -209,8 +239,8 @@ class PipelineHelper:
     @staticmethod
     def patch_astropy_for_mejiro_v2_pickles():
         """
-        Install ``sys.modules`` aliases so that pickles produced under the
-        ``mejiro-v2`` conda environment can be loaded under ``mejiro-v3``.
+        Make astropy cosmology objects pickled under the ``mejiro-v2`` conda
+        environment loadable and usable under ``mejiro-v3``.
 
         When this is needed
         -------------------
@@ -227,11 +257,26 @@ class PipelineHelper:
             'astropy.cosmology.flrw.lambdacdm';
             'astropy.cosmology.flrw' is not a package
 
-        Call this function once, at the top of a pipeline script's ``main`` (or
-        before any unpickling), whenever that script consumes pickles produced
-        by ``mejiro-v2``. After re-pickling those artifacts under ``mejiro-v3``,
-        the call can be removed without further changes — it is a pure
-        ``sys.modules`` shim with no other side effects.
+        This installs two shims:
+
+        1. ``sys.modules`` aliases mapping the old package submodules to their
+           ``astropy.cosmology._src.flrw`` locations, so the class can be resolved.
+        2. A translating ``__setstate__`` on the astropy cosmology base class. The
+           module aliases alone are insufficient: astropy 6.x stored FLRW
+           parameters under private ``__dict__`` keys (``_H0``, …) that astropy
+           7.x's ``Parameter`` descriptors don't read, and 7.x derives
+           ``Onu0``/``Ok0`` from an internal ``_nu_info`` object the old pickle
+           lacks — so the loaded cosmology's distance methods would raise. The
+           ``__setstate__`` rebuilds such legacy cosmologies from their init
+           parameters; native astropy-7 pickles are unaffected. See
+           :func:`_mejiro_v2_cosmology_setstate`.
+
+        Call this function once, at the top of a pipeline script's ``main`` (or,
+        for spawn-based multiprocessing, inside the worker initializer since
+        spawned processes do not inherit these mutations), whenever that script
+        consumes pickles produced by ``mejiro-v2``. After re-pickling those
+        artifacts under ``mejiro-v3``, the call can be removed without further
+        changes — it is a pure in-process shim with no other side effects.
         """
         import sys
         import importlib
@@ -247,3 +292,6 @@ class PipelineHelper:
                 )
             except ModuleNotFoundError:
                 pass
+
+        from astropy.cosmology._src.core import Cosmology
+        Cosmology.__setstate__ = _mejiro_v2_cosmology_setstate

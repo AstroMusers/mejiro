@@ -299,6 +299,11 @@ def _run_sequential_bucketed(tuple_list, compilation_cache_dir, jax_platform):
 
 def _worker_init(jax_platform, compilation_cache_dir, cpu_queue):
     """Spawn worker entry point: pin platform, enable JIT cache, cache JAXXED set."""
+    # Spawned workers do not inherit the parent's sys.modules/monkeypatch, so
+    # re-apply the mejiro-v2 pickle compatibility shim here before any lens is
+    # unpickled. The GPU path calls _worker_init directly in the main process.
+    PipelineHelper.patch_astropy_for_mejiro_v2_pickles()  # remove after re-pickling inputs under mejiro-v3
+
     # Pin this worker to a single core (Linux only). JAX's CPU runtime sizes
     # its Eigen/dispatch pools from hardware_concurrency(), which XLA_FLAGS
     # cannot cap; sched_setaffinity is what actually bounds load to ~workers

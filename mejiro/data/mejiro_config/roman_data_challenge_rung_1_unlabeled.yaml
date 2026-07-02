@@ -6,7 +6,7 @@ nice: 19
 show_progress_bar: True
 suppress_warnings: True
 logging_level: WARNING
-limit: null
+limit: 100
 seed: &seed 420
 cores:
   script_00: 60
