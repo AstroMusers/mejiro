@@ -2,9 +2,12 @@
 Runs romanisim detector simulation on tiled synthetic images.
 
 This script tiles SyntheticImage pickles into 4088x4088 detector arrays, runs romanisim
-to apply detector effects, and extracts individual cutouts. Systems are processed in
-batches of 3136 (56x56 grid of 73x73 tiles) until all systems for each SCA/band are
-complete. Multiprocessing is used to parallelize batch processing.
+to apply detector effects, and extracts individual cutouts. The tile size is derived from
+config['synthetic_image']['fov_arcsec'] (via util.set_odd_num_pix at Roman's 0.11"/pix),
+and the grid is built dynamically as ``grid_side = 4088 // tile_size`` tiles per side,
+origin-aligned to (0,0) and leaving the right/top remainder empty. Systems are processed in
+batches of ``grid_side**2`` until all systems for each SCA/band are complete.
+Multiprocessing is used to parallelize batch processing.
 
 Usage:
     python3 romanisim_pipeline.py --config <config.yaml> [--resume]
@@ -46,14 +49,13 @@ import romanisim.bandpass
 from romanisim import image, parameters, wcs
 
 import mejiro
+from mejiro.instruments.roman import Roman
 from mejiro.utils import util as mejiro_util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
 logger = logging.getLogger(__name__)
 
-TILE_SIZE = 73
-GRID_SIDE = 56
-N_TILES = GRID_SIDE * GRID_SIDE  # 3136
+DETECTOR_SIZE = 4088  # Roman WFI SCA pixel dimension
 
 
 def _load_pickle(pickle_path):
@@ -129,17 +131,31 @@ def main(args):
     threads_per_worker = max(2, 64 // num_workers)
     bands = config['synthetic_image']['bands']
     seed = config['seed']
+
+    # tile size follows the synthetic-image FOV; the grid is built to fit within the
+    # detector, origin-aligned to (0,0), leaving the right/top remainder empty.
+    pixel_scale = Roman().get_pixel_scale().value
+    tile_size = int(mejiro_util.set_odd_num_pix(config['synthetic_image']['fov_arcsec'], pixel_scale))
+    grid_side = DETECTOR_SIZE // tile_size
+    n_tiles = grid_side * grid_side
+
     divide_up_detector = int(config['psf']['divide_up_detector'])
-    assert GRID_SIDE % divide_up_detector == 0, (
-        f'GRID_SIDE ({GRID_SIDE}) must be divisible by divide_up_detector '
-        f'({divide_up_detector}); valid values: 1, 2, 4, 7, 8, 14, 28, 56'
+    assert DETECTOR_SIZE % divide_up_detector == 0, (
+        f'{DETECTOR_SIZE} must be divisible by divide_up_detector ({divide_up_detector})'
     )
-    assert 4088 % divide_up_detector == 0, (
-        f'4088 must be divisible by divide_up_detector ({divide_up_detector})'
+    assert grid_side >= divide_up_detector, (
+        f'grid_side ({grid_side}) must be >= divide_up_detector ({divide_up_detector}); '
+        f'reduce divide_up_detector or the synthetic_image fov_arcsec'
     )
-    tps = GRID_SIDE // divide_up_detector          # tiles per bucket along one axis
-    tiles_per_bucket = tps * tps                   # e.g. 196 for N=4
-    sub_px = 4088 // divide_up_detector            # detector pixels per bucket along one axis
+    tps = grid_side // divide_up_detector          # tiles per bucket along one axis (floor)
+    tiles_per_bucket = tps * tps
+    sub_px = DETECTOR_SIZE // divide_up_detector    # detector pixels per bucket along one axis
+    unused = grid_side - divide_up_detector * tps
+    if unused:
+        logger.warning(
+            f'grid_side ({grid_side}) is not divisible by divide_up_detector '
+            f'({divide_up_detector}); the last {unused} grid row(s)/col(s) will go unused.'
+        )
     ma_table_number = config['exposure']['ma_table_number']
     date = config['exposure']['date']
     if not isinstance(date, str):
@@ -190,8 +206,8 @@ def main(args):
             )
             mejiro_util.clear_directory(output_dir)
 
-    logger.info(f'Tile size: {TILE_SIZE}x{TILE_SIZE}')
-    logger.info(f'Grid: {GRID_SIDE}x{GRID_SIDE} = {N_TILES} tiles per batch')
+    logger.info(f'Tile size: {tile_size}x{tile_size} ({pixel_scale * tile_size:.2f} arcsec)')
+    logger.info(f'Grid: {grid_side}x{grid_side} = {n_tiles} tiles per batch')
     logger.info(f'PSF buckets: {divide_up_detector}x{divide_up_detector} = {divide_up_detector * divide_up_detector} '
                 f'({tps}x{tps} = {tiles_per_bucket} tiles per bucket)')
     logger.info(f'Bands: {bands}')
@@ -270,6 +286,7 @@ def main(args):
                     coord,
                     band_idx,
                     threads_per_worker,
+                    tile_size,
                 ))
 
     # resume: skip batches whose completion sentinel already exists
@@ -308,7 +325,7 @@ def main(args):
 def process_batch(task):
     (batch_items, sca_num, band, batch_idx, n_batches,
     sca_output_dir, exptime, seed, ma_table_number, date, coord,
-    band_idx, threads_per_worker) = task
+    band_idx, threads_per_worker, tile_size) = task
 
     try:
         n_images = len(batch_items)
@@ -324,7 +341,7 @@ def process_batch(task):
         logger.info(f'  AB flux: {abflux:.6e} e-/s per maggy, exptime: {exptime:.6f} s')
 
         # 1. tile synthetic images into a 4088x4088 extra_counts array
-        counts = np.zeros((4088, 4088), dtype=np.float64)
+        counts = np.zeros((DETECTOR_SIZE, DETECTOR_SIZE), dtype=np.float64)
 
         batch_pickles = [item[0] for item in batch_items]
         logger.info(f'  Loading {len(batch_pickles)} pickles with {threads_per_worker} threads...')
@@ -338,6 +355,10 @@ def process_batch(task):
 
             # deal with negative and nan pixels
             smooth_data = np.asarray(mejiro_util.smooth_pixels(synth.data), dtype=np.float64)
+            assert smooth_data.shape == (tile_size, tile_size), (
+                f'SyntheticImage shape {smooth_data.shape} does not match tile_size '
+                f'{tile_size} derived from config fov_arcsec'
+            )
 
             # convert the units
             synth_sum = np.sum(smooth_data, dtype=np.float64)
@@ -346,9 +367,9 @@ def process_batch(task):
             lens_electrons = (smooth_data / synth_sum) * total_electrons
 
             # place inside the PSF-bucket sub-grid assigned to this image
-            r0 = tile_r * TILE_SIZE
-            c0 = tile_c * TILE_SIZE
-            counts[r0:r0 + TILE_SIZE, c0:c0 + TILE_SIZE] = lens_electrons
+            r0 = tile_r * tile_size
+            c0 = tile_c * tile_size
+            counts[r0:r0 + tile_size, c0:c0 + tile_size] = lens_electrons
 
         plt.imshow(counts, norm=LogNorm(), origin='lower')
         plt.colorbar(label='Electrons')
@@ -401,9 +422,9 @@ def process_batch(task):
         result_data = im.data
         np.save(os.path.join(sca_output_dir, f'full_array_sca{sca_num:02d}_{band}_batch{batch_idx}.npy'), result_data)
         for pickle_path, tile_r, tile_c in batch_items:
-            r0 = tile_r * TILE_SIZE
-            c0 = tile_c * TILE_SIZE
-            cutout = result_data[r0:r0 + TILE_SIZE, c0:c0 + TILE_SIZE]
+            r0 = tile_r * tile_size
+            c0 = tile_c * tile_size
+            cutout = result_data[r0:r0 + tile_size, c0:c0 + tile_size]
 
             output_name = exposure_cutout_name(pickle_path)
             np.save(os.path.join(sca_output_dir, output_name), cutout)
