@@ -126,7 +126,7 @@ def generate_galaxy_table(tuple):
 
     # seed for reproducibility
     global_seed = config.get('seed', 42)
-    np.random.seed(hash((global_seed, 'table', table_index)) % (2**32))
+    np.random.seed(hash((global_seed, table_index, 0)) % (2**32))
 
     # suppress warnings
     if config['suppress_warnings']:
