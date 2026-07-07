@@ -616,3 +616,21 @@ class LightweightSyntheticImage:
             )
         magnitude = -2.5 * np.log10(self.get_flux()) + self.magnitude_zeropoint
         return float(10 ** (-0.4 * magnitude))
+
+    def plot(self, savepath=None):
+        """Quickly visualize the synthetic image (log10 counts/sec).
+
+        Mirrors :meth:`SyntheticImage.plot` so a lightweight image plots the
+        same way the full one does.
+        """
+        import matplotlib.pyplot as plt
+
+        plt.imshow(np.log10(self.data), origin='lower')
+        plt.title(f'{self.strong_lens.name} (' + r'$z_{l}=$' + f'{self.strong_lens.z_lens:.2f}, ' + r'$z_{s}=$' + f'{self.strong_lens.z_source:.2f}' + f')\n{self.instrument_name} {self.band}')
+        cbar = plt.colorbar()
+        cbar.set_label(r'log$_{10}$(Counts/sec)')
+        plt.xlabel('x [Pixels]')
+        plt.ylabel('y [Pixels]')
+        if savepath is not None:
+            plt.savefig(savepath)
+        plt.show()
