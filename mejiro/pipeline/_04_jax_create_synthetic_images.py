@@ -310,10 +310,18 @@ def _worker_init(jax_platform, compilation_cache_dir, cpu_queue):
     # instead of ~workers*3.
     if cpu_queue is not None and hasattr(os, 'sched_setaffinity'):
         try:
-            cpu_id = cpu_queue.get_nowait()
+            # Blocking get: exactly `workers` ids are enqueued before the pool
+            # is created, so this cannot deadlock or starve a later worker. A
+            # non-blocking get_nowait() races the Queue's feeder thread and
+            # raises Empty under host load, silently leaving the worker unpinned
+            # and letting JAX's CPU pools oversubscribe cores.
+            cpu_id = cpu_queue.get(timeout=30)
             os.sched_setaffinity(0, {cpu_id})
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(
+                f'CPU affinity pin failed ({e!r}); worker runs unpinned and JAX '
+                f'may oversubscribe cores.'
+            )
 
     os.environ['JAX_PLATFORM_NAME'] = jax_platform
     os.environ['JAX_PLATFORMS'] = jax_platform
