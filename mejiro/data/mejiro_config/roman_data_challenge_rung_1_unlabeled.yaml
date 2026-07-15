@@ -18,7 +18,7 @@ cores:
   script_04: 60
   script_04_jax: 60
   script_05: 60
-  script_05_romanisim: 12
+  script_05_romanisim: 60
   script_snr: 24
 jaxtronomy: 
   use_jax: True
@@ -83,19 +83,19 @@ subhalos:
     sigma_sub: 0.055  # see Section 6.3 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract
 synthetic_image:
   bands: [ F106, F129, F158 ]
-  fov_arcsec: 10.01
+  fov_arcsec: &fov_arcsec 10.01
   supersampling_compute_mode: adaptive
   supersampling_factor: &supersampling_factor 5
   pieces: False
   serialization: lightweight
 exposure:
-  ma_table_number: 17
+  ma_table_number: 11
   date: 2027-05-01T00:00:00
   coordinates:
     ra: 150.
     dec: 2.
 imaging:
-  exposure_time: &exposure_time 610
+  exposure_time: &exposure_time 3908.8
   engine: galsim
   engine_params:
     rng_seed: *seed
@@ -111,7 +111,7 @@ imaging:
 snr:
   snr_band: F129
   snr_exposure_time: *exposure_time
-  snr_fov_arcsec: 8.03
+  snr_fov_arcsec: *fov_arcsec
   snr_supersampling_compute_mode: adaptive
   snr_supersampling_factor: &snr_supersampling_factor 1
   snr_threshold: 20
@@ -123,7 +123,7 @@ psf:
   detectors: *detectors
   divide_up_detector: 4  # this sets the detector positions, e.g., 5 means 25 positions on each detector
 dataset:
-  version: 2.0  # used in the filename of the .h5 file
+  version: 3.0  # used in the filename of the .h5 file
   labeled: False
   include_psfs: False
   include_synthetic_images: False
