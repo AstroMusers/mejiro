@@ -83,7 +83,8 @@ from mejiro.pipeline.romanisim_pipeline import (
 logger = logging.getLogger(__name__)
 
 PATTERN_NAME = 'BOXGAP4_1'
-PA_APER = 0.0           # deg; aligns SCA detector rows with north (as in the notebook)
+PA_APER = 0.0           # deg; PA of the *observatory* Y axis (galsim PA_is_FPA=False), so the
+                        # detector grid sits ~+/-60 deg from north (see docs/l3_cutout_orientation.md)
 POSITION_ANGLE = 0.0    # WFI position angle passed to PointWFI
 DISTORTION_GUARD = 7    # px added to tile_size for the tile-center pitch (pitch = tile_size + this)
 MARGIN = 50             # extra px kept clear of each detector edge
@@ -186,6 +187,22 @@ def _place_tile(counts, electrons, cx, cy, tile_size):
         counts[src_y0:src_y1, src_x0:src_x1] = electrons[tile_y0:tile_y1, tile_x0:tile_x1]
 
 
+def _detector_y_pa_deg(imwcs):
+    """Position angle (deg east of north) of the detector +y axis at the detector center.
+
+    Passed as the resample step's ``rotation`` so the mosaic axes are parallel to the
+    detector axes; with ``rotation: None`` the mosaic comes out north-up because
+    romanisim's wcsinfo metadata does not describe the galsim WCS it simulates with
+    (see docs/l3_cutout_orientation.md).
+    """
+    center = DETECTOR_SIZE // 2
+    p0 = imwcs.toWorld(galsim.PositionD(center, center))
+    py = imwcs.toWorld(galsim.PositionD(center, center + 100))
+    dra = (py.ra - p0.ra).rad * math.cos(p0.dec.rad)
+    ddec = (py.dec - p0.dec).rad
+    return math.degrees(math.atan2(dra, ddec))
+
+
 def _extract_cutout(mos_data, cx, cy, tile_size):
     """Extract a ``tile_size`` x ``tile_size`` cutout centered at (cx, cy) from the mosaic,
     NaN-padding if needed."""
@@ -206,11 +223,6 @@ def main(args):
 
     PipelineHelper.patch_astropy_for_mejiro_v2_pickles()  # remove after re-pickling inputs under mejiro-v3
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s %(levelname)s %(name)s: %(message)s'
-    )
-
     # read config
     config_file = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'mejiro_config', args.config)
     with open(config_file, 'r') as f:
@@ -218,6 +230,12 @@ def main(args):
         config = yaml.load(f, Loader=yaml.SafeLoader)
     if config['dev']:
         config['pipeline_label'] += '_dev'
+
+    logging_level = config.get('logging_level', 'INFO')
+    logging.basicConfig(
+        level=getattr(logging, logging_level.upper(), logging.INFO),
+        format='%(asctime)s %(levelname)s %(name)s: %(message)s'
+    )
 
     limit = config.get('limit')
 
@@ -469,7 +487,8 @@ def process_batch(task):
                 'skymatch': {'skip': True},
                 'outlier_detection': {'skip': True},
                 'source_catalog': {'skip': True},
-                'resample': {'pixel_scale_ratio': 1.0, 'rotation': None},
+                # align the mosaic axes with the detector axes so tiles stay axis-aligned
+                'resample': {'pixel_scale_ratio': 1.0, 'rotation': _detector_y_pa_deg(wcses[0])},
             },
         )
 
@@ -491,7 +510,9 @@ def process_batch(task):
         for pickle_path, sky in zip(batch_pickles, source_skies):
             mx, my = mos_wcs.world_to_pixel(_cc_to_skycoord(sky))
             cutout = _extract_cutout(mos_data, int(round(float(mx))), int(round(float(my))), tile_size)
-            np.save(os.path.join(sca_output_dir, exposure_cutout_name(pickle_path)), cutout)
+            # the mosaic x axis is antiparallel to the detector x axis (the resample
+            # rotation cannot fix the parity mismatch), so flip to the input orientation
+            np.save(os.path.join(sca_output_dir, exposure_cutout_name(pickle_path)), np.fliplr(cutout))
 
         logger.info(f'  Saved {n_images} L3 cutouts to {sca_output_dir}')
 
