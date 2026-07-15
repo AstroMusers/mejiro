@@ -56,6 +56,7 @@ os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
 os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
 
 import argparse
+import hashlib
 import json
 import multiprocessing
 import random
@@ -83,6 +84,23 @@ SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
 # Populated per-worker by ``_worker_init`` so create_synthetic_image can flip
 # use_jax without re-importing jaxtronomy for every lens.
 _JAXXED_MODELS_SET = None
+
+
+def _is_deflector_only(name, seed, fraction):
+    """Deterministically decide whether a system is rendered deflector-only.
+
+    Keyed on ``seed`` + lens ``name`` (not on list order), so the same system is
+    galaxy-only in every band and the choice is stable across ``--resume`` and
+    the size-sort/limit reordering step 04 does. The realized fraction is
+    approximate (binomial); see ``_03_generate_subhalos.py`` for an exact-count
+    index-mask alternative if that is ever required.
+    """
+    if fraction <= 0.0:
+        return False
+    if fraction >= 1.0:
+        return True
+    h = hashlib.md5(f'{seed}_deflector_only_{name}'.encode()).hexdigest()
+    return int(h[:8], 16) / 0x100000000 < fraction
 
 
 def main(args):
@@ -184,7 +202,15 @@ def main(args):
         # to flatten the long tail.
         input_pickles.sort(key=os.path.getsize, reverse=True)
 
-    tuple_list = [(pipeline, synthetic_image_config, psf_config, input_pickle, serialization)
+    seed = pipeline.config['seed']
+    deflector_only_fraction = synthetic_image_config.get('deflector_only_fraction', 0.0)
+    if deflector_only_fraction:
+        logger.info(
+            f'Rendering ~{deflector_only_fraction * 100:.0f}% of systems as deflector-only '
+            f'(lens galaxy light only, no source or lensing)'
+        )
+    tuple_list = [(pipeline, synthetic_image_config, psf_config, input_pickle, serialization,
+                   _is_deflector_only(_lens_name(input_pickle), seed, deflector_only_fraction))
                   for input_pickle in input_pickles]
 
     if jax_platform == 'gpu':
@@ -368,7 +394,7 @@ def create_synthetic_image(input):
     # lenstronomy's heavy import graph; only workers need it.
     from mejiro.synthetic_image import SyntheticImage
 
-    pipeline, synthetic_image_config, psf_config, input_pickle, serialization = input
+    pipeline, synthetic_image_config, psf_config, input_pickle, serialization, deflector_only = input
     output_ext = '.npz' if serialization == 'lightweight' else '.pkl'
 
     bands = synthetic_image_config['bands']
@@ -431,7 +457,8 @@ def create_synthetic_image(input):
                                              instrument_params=instrument_params,
                                              kwargs_numerics=kwargs_numerics,
                                              kwargs_psf=kwargs_psf,
-                                             pieces=pieces)
+                                             pieces=pieces,
+                                             deflector_only=deflector_only)
             if serialization == 'lightweight':
                 synthetic_image.save_lightweight(output_path)
             else:

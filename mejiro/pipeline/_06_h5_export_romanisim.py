@@ -171,6 +171,11 @@ def main(args):
         else:
             group_lens.attrs['substructure'] = ('False', 'Is substructure present in this lens?')
 
+        # flag systems rendered as the deflector (lens galaxy) alone, with no source or lensing
+        group_lens.attrs['deflector_only'] = (
+            str(getattr(synthetic_image, 'deflector_only', False)),
+            'Only the deflector (lens galaxy) light was simulated; no source or lensing')
+
         for i, band in enumerate(bands):
             # load the .npy cutout
             sca_string = f'sca{str(synthetic_image.instrument_params["detector"]).zfill(2)}'
