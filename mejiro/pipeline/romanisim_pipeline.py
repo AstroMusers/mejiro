@@ -112,11 +112,6 @@ def main(args):
 
     PipelineHelper.patch_astropy_for_mejiro_v2_pickles()  # remove after re-pickling inputs under mejiro-v3
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s %(levelname)s %(name)s: %(message)s'
-    )
-
     # read config
     config_file = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'mejiro_config', args.config)
     with open(config_file, 'r') as f:
@@ -124,6 +119,12 @@ def main(args):
         config = yaml.load(f, Loader=yaml.SafeLoader)
     if config['dev']:
         config['pipeline_label'] += '_dev'
+
+    logging_level = config.get('logging_level', 'INFO')
+    logging.basicConfig(
+        level=getattr(logging, logging_level.upper(), logging.INFO),
+        format='%(asctime)s %(levelname)s %(name)s: %(message)s'
+    )
 
     limit = config.get('limit')
 
