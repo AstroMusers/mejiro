@@ -293,6 +293,31 @@ def test_synthetic_image_data_pieces(strong_lens):
 
 
 @pytest.mark.parametrize("strong_lens", [SampleGG(), SampleSL2S(), SampleBELLS()])
+def test_synthetic_image_deflector_only(strong_lens):
+    """deflector_only=True should render only the lens galaxy light: the image
+    must equal the lens_surface_brightness piece of the full render (no source,
+    no lensing) and carry less flux than the full lens+source image."""
+    common = dict(
+        instrument=Roman(),
+        band='F129',
+        fov_arcsec=5,
+        instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+        kwargs_numerics={},
+        kwargs_psf={},
+    )
+
+    full = SyntheticImage(strong_lens=strong_lens, pieces=True, **common)
+    deflector_only = SyntheticImage(strong_lens=strong_lens, deflector_only=True, **common)
+
+    assert deflector_only.deflector_only is True
+    # the deflector-only render is exactly the lens-light piece of the full render
+    np.testing.assert_allclose(deflector_only.data, full.lens_surface_brightness, rtol=1e-10)
+    # dropping the (lensed) source removes flux
+    assert deflector_only.get_flux() < full.get_flux()
+    assert np.sum(deflector_only.data) > 0, "deflector-only image should be non-empty"
+
+
+@pytest.mark.parametrize("strong_lens", [SampleGG(), SampleSL2S(), SampleBELLS()])
 def test_synthetic_image_aperture_photometry(strong_lens):
     """Aperture photometry at the predicted lensed-image positions should
     return real flux above the local background. This verifies pixel values
@@ -462,7 +487,7 @@ def test_roman_psf_varies_with_detector_position(test_data_dir):
     )
 
 
-def _build_lightweight_test_image(has_realization=False):
+def _build_lightweight_test_image(has_realization=False, deflector_only=False):
     """Helper: construct a small Roman/F129 SyntheticImage suitable for lightweight tests.
 
     Uses ``Sample1`` because the lightweight serializer needs every
@@ -482,6 +507,7 @@ def _build_lightweight_test_image(has_realization=False):
         kwargs_numerics={},
         kwargs_psf={},
         pieces=False,
+        deflector_only=deflector_only,
     )
     if has_realization:
         si.strong_lens.realization = '<test-realization-sentinel>'
@@ -489,12 +515,14 @@ def _build_lightweight_test_image(has_realization=False):
 
 
 @pytest.mark.parametrize('has_realization', [False, True])
-def test_save_lightweight_roundtrip(tmp_path, has_realization):
+@pytest.mark.parametrize('deflector_only', [False, True])
+def test_save_lightweight_roundtrip(tmp_path, has_realization, deflector_only):
     """SyntheticImage.save_lightweight + load_synthetic_image preserves every
     attribute and accessor downstream consumes."""
     from mejiro.synthetic_image import LightweightSyntheticImage
 
-    orig = _build_lightweight_test_image(has_realization=has_realization)
+    orig = _build_lightweight_test_image(has_realization=has_realization,
+                                         deflector_only=deflector_only)
     path = str(tmp_path / 'roundtrip.npz')
     orig.save_lightweight(path)
 
@@ -509,6 +537,7 @@ def test_save_lightweight_roundtrip(tmp_path, has_realization):
     assert loaded.instrument_name == orig.instrument_name
     assert loaded.instrument_params['detector'] == 1
     assert tuple(loaded.instrument_params['detector_position']) == (2048, 2048)
+    assert loaded.deflector_only == deflector_only
 
     assert loaded.get_flux() == pytest.approx(float(np.sum(orig.data.astype(np.float32))), rel=1e-6)
     assert loaded.get_maggies() == pytest.approx(orig.get_maggies(), rel=1e-5)

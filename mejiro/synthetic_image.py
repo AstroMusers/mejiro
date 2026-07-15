@@ -42,7 +42,8 @@ class SyntheticImage:
                  instrument_params={},
                  kwargs_numerics={},
                  kwargs_psf={},
-                 pieces=False
+                 pieces=False,
+                 deflector_only=False
                  ):
         """
         Initialize a SyntheticImage object.
@@ -65,6 +66,11 @@ class SyntheticImage:
             PSF settings for image simulation. If not provided, defaults are used.
         pieces : bool, optional
             If True, computes and stores lens/source surface brightness separately.
+        deflector_only : bool, optional
+            If True, renders only the deflector (lens galaxy) light: the source and
+            any point sources are not added, and the mass model is unused (it only
+            ray-shoots the source). The resulting ``data`` is a plain galaxy image,
+            equivalent to the ``lens_surface_brightness`` piece. Default is False.
 
         Raises
         ------
@@ -101,6 +107,7 @@ class SyntheticImage:
         self.band = band
         self.fov_arcsec = fov_arcsec
         self.pieces = pieces
+        self.deflector_only = deflector_only
 
         # calculate size of scene
         self.pixel_scale = instrument.get_pixel_scale(self.band).value  # an Astropy Quantity with units arcsec / pix
@@ -215,10 +222,10 @@ class SyntheticImage:
                                        kwargs_ps=self.strong_lens.kwargs_ps,
                                        kwargs_extinction=self.strong_lens.kwargs_extinction,
                                        kwargs_special=self.strong_lens.kwargs_special,
-                                       unconvolved=False, 
-                                       source_add=True, 
-                                       lens_light_add=True, 
-                                       point_source_add=True)
+                                       unconvolved=False,
+                                       source_add=not self.deflector_only,
+                                       lens_light_add=True,
+                                       point_source_add=not self.deflector_only)
 
         if self.pieces:
             self.lens_surface_brightness = image_model.lens_surface_brightness(kwargs_lens_light=self.strong_lens.kwargs_lens_light, unconvolved=False)
@@ -286,6 +293,7 @@ class SyntheticImage:
             'instrument_name': str(self.instrument_name),
             'instrument_params': {'detector': det, 'detector_position': det_pos},
             'magnitude_zeropoint': zp,
+            'deflector_only': bool(self.deflector_only),
             'lens': {
                 'name': str(sl.name),
                 'z_lens': float(sl.z_lens),
@@ -581,6 +589,7 @@ class LightweightSyntheticImage:
             ip['detector_position'] = tuple(det_pos)
         self.instrument_params = ip
         self.magnitude_zeropoint = meta['magnitude_zeropoint']
+        self.deflector_only = meta.get('deflector_only', False)
         self.strong_lens = LightweightStrongLens(meta)
         self._meta = meta  # retained for debugging / introspection
 
