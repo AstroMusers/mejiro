@@ -10,10 +10,11 @@ batches of ``grid_side**2`` until all systems for each SCA/band are complete.
 Multiprocessing is used to parallelize batch processing.
 
 Usage:
-    python3 romanisim_pipeline.py --config <config.yaml> [--resume]
+    python3 romanisim_pipeline.py --config <config.yaml> [--data_dir <dir>] [--resume]
 
 Arguments:
     --config: Path to the YAML configuration file.
+    --data_dir: Parent directory of pipeline output. Overrides data_dir in the config file.
     --resume: Preserve existing output and skip already-completed batches (those with a
         batch_complete_*.txt sentinel). Default is to delete existing output and rebuild
         from scratch.
@@ -48,7 +49,6 @@ from tqdm import tqdm
 import romanisim.bandpass
 from romanisim import image, parameters, wcs
 
-import mejiro
 from mejiro.instruments.roman import Roman
 from mejiro.utils import util as mejiro_util
 from mejiro.utils.pipeline_helper import PipelineHelper
@@ -113,20 +113,27 @@ def main(args):
     PipelineHelper.patch_astropy_for_mejiro_v2_pickles()  # remove after re-pickling inputs under mejiro-v3
 
     # read config
-    config_file = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'mejiro_config', args.config)
-    with open(config_file, 'r') as f:
+    with open(args.config, 'r') as f:
         import yaml
         config = yaml.load(f, Loader=yaml.SafeLoader)
     if config['dev']:
         config['pipeline_label'] += '_dev'
 
-    logging_level = config.get('logging_level', 'INFO')
+    logging_level = config['logging_level']
     logging.basicConfig(
         level=getattr(logging, logging_level.upper(), logging.INFO),
         format='%(asctime)s %(levelname)s %(name)s: %(message)s'
     )
 
-    limit = config.get('limit')
+    # root under which this pipeline_label's step directories live; --data_dir overrides the config
+    data_root = config['data_dir']
+    if getattr(args, 'data_dir', None) is not None:
+        logger.warning(f'Overriding data_dir in config file ({data_root}) with provided data_dir ({args.data_dir})')
+        data_root = args.data_dir
+    elif data_root is None:
+        raise ValueError("data_dir must be specified either in the config file or via the --data_dir argument.")
+
+    limit = config['limit']
 
     num_workers = config['cores']['script_05_romanisim']
     threads_per_worker = max(2, 64 // num_workers)
@@ -170,7 +177,7 @@ def main(args):
     # discover SCA directories and group SyntheticImage pickles by SCA and band
     # (read from the JAX step-04 variant when jaxtronomy.use_jax is set)
     synth_step = '04_jax' if config['jaxtronomy']['use_jax'] else '04'
-    data_dir = os.path.join(config['data_dir'], config['pipeline_label'], synth_step)
+    data_dir = os.path.join(data_root, config['pipeline_label'], synth_step)
     sca_dirs = sorted(glob(os.path.join(data_dir, 'sca*')))
     logger.info(f'Found {len(sca_dirs)} SCA directories in {data_dir}')
 
@@ -194,7 +201,7 @@ def main(args):
             logger.debug(f'  SCA {sca_num:02d}, {band}: {len(ps)} pickles')
 
     # output directory
-    output_dir = os.path.join(config['data_dir'], config['pipeline_label'], '05_romanisim')
+    output_dir = os.path.join(data_root, config['pipeline_label'], '05_romanisim')
     os.makedirs(output_dir, exist_ok=True)
 
     if not args.resume:
@@ -442,7 +449,9 @@ def process_batch(task):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Run romanisim detector simulation on tiled synthetic images.")
-    parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    parser.add_argument('--config', type=str, required=True, help='Path to the yaml configuration file.')
+    parser.add_argument('--data_dir', type=str, required=False,
+                        help='Parent directory of pipeline output. Overrides data_dir in config file if provided.')
     parser.add_argument('--sequential', action='store_true', default=False,
                         help='Process systems sequentially from the start instead of randomly when limit is imposed.')
     parser.add_argument('--resume', action='store_true', default=False, help='Preserve existing output and skip already-completed items. Default is to delete and rebuild from scratch.')

@@ -23,11 +23,12 @@ Output lands in ``<data_dir>/<pipeline_label>/05_romanisim_l3_subpixel/sca##/`` 
 never clobber the BOXGAP outputs in ``05_romanisim_l3/``.
 
 Usage:
-    python3 romanisim_l3_pipeline_subpixel.py --config <config.yaml> [--dither-pattern SUB4]
+    python3 romanisim_l3_pipeline_subpixel.py --config <config.yaml> [--data_dir <dir>] [--dither-pattern SUB4]
         [--resume] [--sequential]
 
 Arguments:
     --config: Path to the YAML configuration file.
+    --data_dir: Parent directory of pipeline output. Overrides data_dir in the config file.
     --dither-pattern: Sub-pixel dither pattern name from WfiImagingSubpixel.txt (default
         SUB4). Note the number of dither steps sets the effective depth.
     --sequential: Process systems sequentially from the start instead of randomly when a
@@ -59,7 +60,6 @@ from tqdm import tqdm
 
 from romanisim import parameters
 
-import mejiro
 from mejiro.instruments.roman import Roman
 from mejiro.point_wfi import PointWFI, _SUBPIXEL_FILE, _parse_dither_file
 from mejiro.utils import util as mejiro_util
@@ -106,20 +106,27 @@ def main(args):
         )
 
     # read config
-    config_file = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'mejiro_config', args.config)
-    with open(config_file, 'r') as f:
+    with open(args.config, 'r') as f:
         import yaml
         config = yaml.load(f, Loader=yaml.SafeLoader)
     if config['dev']:
         config['pipeline_label'] += '_dev'
 
-    logging_level = config.get('logging_level', 'INFO')
+    logging_level = config['logging_level']
     logging.basicConfig(
         level=getattr(logging, logging_level.upper(), logging.INFO),
         format='%(asctime)s %(levelname)s %(name)s: %(message)s'
     )
 
-    limit = config.get('limit')
+    # root under which this pipeline_label's step directories live; --data_dir overrides the config
+    data_root = config['data_dir']
+    if getattr(args, 'data_dir', None) is not None:
+        logger.warning(f'Overriding data_dir in config file ({data_root}) with provided data_dir ({args.data_dir})')
+        data_root = args.data_dir
+    elif data_root is None:
+        raise ValueError("data_dir must be specified either in the config file or via the --data_dir argument.")
+
+    limit = config['limit']
 
     # each task runs one romanisim sim per dither + one MosaicPipeline (multi-GB), so default low
     num_workers = config['cores'].get('script_05_romanisim_l3', config['cores'].get('script_05_romanisim', 4))
@@ -146,7 +153,7 @@ def main(args):
 
     # discover SyntheticImage inputs (JAX variant when jaxtronomy.use_jax is set)
     synth_step = '04_jax' if config['jaxtronomy']['use_jax'] else '04'
-    data_dir = os.path.join(config['data_dir'], config['pipeline_label'], synth_step)
+    data_dir = os.path.join(data_root, config['pipeline_label'], synth_step)
     sca_dirs = sorted(glob(os.path.join(data_dir, 'sca*')))
     logger.info(f'Found {len(sca_dirs)} SCA directories in {data_dir}')
 
@@ -160,7 +167,7 @@ def main(args):
         pickles_by_sca_band[sca_num] = dict(by_band)
 
     # output directory (separate from the BOXGAP script's 05_romanisim_l3)
-    output_dir = os.path.join(config['data_dir'], config['pipeline_label'], '05_romanisim_l3_subpixel')
+    output_dir = os.path.join(data_root, config['pipeline_label'], '05_romanisim_l3_subpixel')
     os.makedirs(output_dir, exist_ok=True)
 
     if not args.resume:
@@ -272,7 +279,9 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Run romanisim + MosaicPipeline with a sub-pixel dither pattern to produce L3 cutouts.")
-    parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    parser.add_argument('--config', type=str, required=True, help='Path to the yaml configuration file.')
+    parser.add_argument('--data_dir', type=str, required=False,
+                        help='Parent directory of pipeline output. Overrides data_dir in config file if provided.')
     parser.add_argument('--dither-pattern', type=str, default=DEFAULT_PATTERN,
                         help='Sub-pixel dither pattern from WfiImagingSubpixel.txt (default SUB4).')
     parser.add_argument('--sequential', action='store_true', default=False,
