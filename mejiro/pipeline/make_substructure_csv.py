@@ -16,7 +16,8 @@ from mejiro.utils import util
 import mejiro
 import pickle
 import pandas as pd
-config_file = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'mejiro_config', 'roman_data_challenge_rung_1.yaml')
+repo_root = os.path.dirname(os.path.dirname(mejiro.__file__))
+config_file = os.path.join(repo_root, 'projects', 'roman_data_challenge', 'roman_data_challenge_rung_1.yaml')
 with open(config_file, 'r') as f:
     config = yaml.load(f, Loader=yaml.SafeLoader)
 

@@ -1,53 +1,42 @@
 data_dir: &data_dir /nfsdata1/bwedig/mejiro  # where output data should be written
-pipeline_label: roman_data_challenge_rung_1
+pipeline_label: roman_data_challenge_rung_0_split
 psf_cache_dir: cached_psfs
 dev: False
 nice: 19
 show_progress_bar: True
 suppress_warnings: True
 logging_level: WARNING
-limit: 10000
+limit: null
 seed: &seed 42
 cores:
-  script_00: 60
-  script_01: 60
-  script_01a: 60
-  script_01b: 48
-  script_01b_jax: 60
-  script_03: 60
-  script_04: 60
-  script_04_jax: 60
-  script_05: 60
+  script_00: 32
+  script_01: 32
+  script_01a: 32
+  script_01b: 32
+  script_03: 32
+  script_04: 32
+  script_04_jax: 32
+  script_05: 32
   script_05_romanisim: 12
-  script_snr: 24
+  script_snr: 32
 jaxtronomy: 
   use_jax: True
   jax_platform: cpu  # cpu or gpu
 instrument: roman
 survey:
-  runs: 8064
-  num_galaxy_tables: 100  # number of independent galaxy tables for _01a; higher = more intrinsic diversity
-  speed_factor: 2  # set >1 for faster but less complete population draws in _01b
+  runs: 756 # 90
+  num_galaxy_tables: 756  # number of independent galaxy tables for _01a; higher = more intrinsic diversity
+  speed_factor: 1  # set >1 for faster but less complete population draws in _01b
   area: 0.5
   skypy_config: lsst-like_triple_SF
   write_to_csv: False
   total_population: False
   use_real_sources: True
   catalog_source_kwargs:
-    catalog_path: /nfsdata1/bwedig/slsim_source_catalogs/COSMOSWeb_galaxy_catalog
-    catalog_type: COSMOS_WEB
+    catalog_path: /data/bwedig/COSMOS
+    catalog_type: COSMOS
     sersic_fallback: True
     max_scale: 1
-  # Override which catalog cutout backs each band in source_images.
-  # {destination_band: source_band}; both must be keys in source_images
-  # (i.e. listed in survey.bands). Self-mappings are no-ops; omit a band
-  # to leave its default in place.
-  # SLSim COSMOS-Web wavelength-ordering puts the pure JWST cutouts at:
-  #   F062=F115W, F106=F150W, F158=F277W, F213=F444W
-  remap_bands:
-    F106: F062
-    F129: F106
-    F158: F158
   use_slhammocks_pipeline: True
   slhammocks_pipeline_kwargs:
     skypy_config: slhammocks
@@ -70,7 +59,7 @@ survey:
   mag_arc_limit: 27
   magnification: 3
 subhalos:
-  fraction: 0.5  # fraction of systems to add substructure to
+  fraction: 1.  # fraction of systems to add substructure to
   pyhalo_model: CDM
   realization_kwargs:
     log_mlow: 6
@@ -86,16 +75,17 @@ synthetic_image:
   fov_arcsec: &fov_arcsec 10.01
   supersampling_compute_mode: adaptive
   supersampling_factor: &supersampling_factor 5
-  pieces: False
-  serialization: lightweight
+  pieces: True
+  serialization: full
+  deflector_only_fraction: 0.4
 exposure:
-  ma_table_number: 11
+  ma_table_number: 4
   date: 2027-05-01T00:00:00
   coordinates:
     ra: 150.
     dec: 2.
 imaging:
-  exposure_time: &exposure_time 610
+  exposure_time: &exposure_time 556.6
   engine: galsim
   engine_params:
     rng_seed: *seed
@@ -123,7 +113,7 @@ psf:
   detectors: *detectors
   divide_up_detector: 4  # this sets the detector positions, e.g., 5 means 25 positions on each detector
 dataset:
-  version: 3.0  # used in the filename of the .h5 file
+  version: 1.0  # used in the filename of the .h5 file
   labeled: True
   include_psfs: False
   include_synthetic_images: False

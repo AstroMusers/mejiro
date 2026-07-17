@@ -76,6 +76,7 @@ synthetic_image:
   supersampling_compute_mode: adaptive
   supersampling_factor: &supersampling_factor 5
   pieces: True
+  serialization: full
   deflector_only_fraction: 0.  # fraction of systems rendered as lens galaxy only (no source or lensing)
 exposure:
   ma_table_number: 17
