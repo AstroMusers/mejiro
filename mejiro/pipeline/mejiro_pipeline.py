@@ -8,17 +8,14 @@ import mejiro
 logger = logging.getLogger(__name__)
 from mejiro.pipeline import (
     _00_cache_psfs as script_00_cache_psfs,
-    _01_run_survey_simulation as script_01_run_survey_simulation,
     _01a_generate_galaxy_tables as script_01a_generate_galaxy_tables,
     _01b_run_survey_simulation as script_01b_run_survey_simulation,
-    _01b_jax_run_survey_simulation as script_01b_jax_run_survey_simulation,
     _02_build_lens_list as script_02_build_lens_list,
     _03_generate_subhalos as script_03_generate_subhalos,
     _04_create_synthetic_images as script_04_create_synthetic_images,
     _04_jax_create_synthetic_images as script_04_jax_create_synthetic_images,
     _05_create_exposures as script_05_create_exposures,
     _06_h5_export as script_06_h5_export,
-    _06_h5_export_romanisim as script_06_h5_export_romanisim,
     romanisim_pipeline as script_romanisim_pipeline,
     calculate_snrs as script_calculate_snrs,
 )
@@ -58,11 +55,10 @@ class Pipeline:
         with open(self.config_file, 'r') as f:
             self.config = yaml.load(f, Loader=yaml.SafeLoader)
 
-        # jaxtronomy.use_jax selects the JAX-accelerated variants of steps 01b and 04;
-        # imaging.engine selects the exposure/export tail. Both default defensively so a
-        # missing key falls back to the original (non-JAX, GalSim) path.
-        self._use_jax = self.config.get('jaxtronomy', {}).get('use_jax', False)
-        self._engine = self.config.get('imaging', {}).get('engine', 'galsim')
+        # jaxtronomy.use_jax selects the JAX-accelerated variant of step 04 (step 01b
+        # reads the flag itself); imaging.engine selects the exposure/export tail.
+        self._use_jax = self.config['jaxtronomy']['use_jax']
+        self._engine = self.config['imaging']['engine']
 
     def run(self):
         """
@@ -89,18 +85,11 @@ class Pipeline:
         if not self._test_mode:
             script_00_cache_psfs.main(self.args)
         script_01a_generate_galaxy_tables.main(self.args)
-        self._run_01b()
+        script_01b_run_survey_simulation.main(self.args)
         script_02_build_lens_list.main(self.args)
         script_03_generate_subhalos.main(self.args)
         self._run_04()
         self._run_exposure_export_tail()
-
-    def _run_01b(self):
-        """Run step 01b, selecting the JAX variant when ``jaxtronomy.use_jax`` is True."""
-        if self._use_jax:
-            script_01b_jax_run_survey_simulation.main(self.args)
-        else:
-            script_01b_run_survey_simulation.main(self.args)
 
     def _run_04(self):
         """Run step 04, selecting the JAX variant when ``jaxtronomy.use_jax`` is True."""
@@ -113,17 +102,16 @@ class Pipeline:
         """Run the exposure and HDF5-export steps for the configured ``imaging.engine``.
 
         * ``galsim``    -> _05_create_exposures -> _06_h5_export
-        * ``romanisim`` -> romanisim_pipeline -> calculate_snrs -> _06_h5_export_romanisim
+        * ``romanisim`` -> romanisim_pipeline -> calculate_snrs -> _06_h5_export
         """
         if self._engine == 'galsim':
             script_05_create_exposures.main(self.args)
-            script_06_h5_export.main(self.args)
         elif self._engine == 'romanisim':
             script_romanisim_pipeline.main(self.args)
             script_calculate_snrs.main(self.args)
-            script_06_h5_export_romanisim.main(self.args)
         else:
             raise ValueError(f"Unsupported imaging engine: {self._engine!r}")
+        script_06_h5_export.main(self.args)
 
     def run_script(self, script_number):
         """
@@ -137,15 +125,14 @@ class Pipeline:
         Script numbers and their corresponding scripts
         ---------------------------------------------
         0 : Cache psfs
-        1 : Run survey simulation (original, single step)
         '1a' : Generate galaxy tables
-        '1b' : Run survey simulation (using pre-computed tables; JAX variant when jaxtronomy.use_jax)
+        '1b' : Run survey simulation (using pre-computed tables; JAX ray-shooting when jaxtronomy.use_jax)
         2 : Build lens list
         3 : Generate subhalos
         4 : Create synthetic images (JAX variant when jaxtronomy.use_jax)
         5 : Create exposures (romanisim_pipeline when imaging.engine is 'romanisim')
         'snr' : Calculate SNRs (romanisim tail only)
-        6 : Export to HDF5 file (romanisim exporter when imaging.engine is 'romanisim')
+        6 : Export to HDF5 file
 
         Raises
         ------
@@ -154,12 +141,10 @@ class Pipeline:
         """
         if script_number == 0:
             script_00_cache_psfs.main(self.args)
-        elif script_number == 1:
-            script_01_run_survey_simulation.main(self.args)
         elif script_number == '1a':
             script_01a_generate_galaxy_tables.main(self.args)
         elif script_number == '1b':
-            self._run_01b()
+            script_01b_run_survey_simulation.main(self.args)
         elif script_number == 2:
             script_02_build_lens_list.main(self.args)
         elif script_number == 3:
@@ -174,10 +159,7 @@ class Pipeline:
         elif script_number == 'snr':
             script_calculate_snrs.main(self.args)
         elif script_number == 6:
-            if self._engine == 'romanisim':
-                script_06_h5_export_romanisim.main(self.args)
-            else:
-                script_06_h5_export.main(self.args)
+            script_06_h5_export.main(self.args)
         else:
             raise ValueError(f"Script number {script_number} is not valid. Please choose a number between 0 and 6.")
 

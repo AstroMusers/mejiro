@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 # Pipeline steps that have a JAX variant whose output lands in '<step>_jax/'
 # (e.g. '04' -> '04_jax'). Consumers should resolve the directory via
 # PipelineHelper.step_dir() so the variant follows jaxtronomy.use_jax.
-JAX_VARIANT_STEPS = {'01b', '04'}
+JAX_VARIANT_STEPS = {'04'}
 
 
 def _mejiro_v2_cosmology_setstate(self, state):
@@ -66,7 +66,7 @@ class PipelineHelper:
         self.config = config
 
         # configure logging level
-        logging_level = config.get('logging_level', 'INFO')
+        logging_level = config['logging_level']
         logging.basicConfig(level=getattr(logging, logging_level.upper(), logging.INFO))
 
         # set data directory
@@ -88,7 +88,7 @@ class PipelineHelper:
         self.name = config['pipeline_label']
 
         # set nice level
-        os.nice(config.get('nice', 0))
+        os.nice(config['nice'])
 
         # suppress warnings
         if config['suppress_warnings']:

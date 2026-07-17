@@ -56,7 +56,7 @@ def main(args):
 
     # The galsim engine needs the full SyntheticImage (lens model, PSF, pixel
     # grid, etc.), so lightweight inputs from step 04 are not usable here.
-    serialization = pipeline.config.get('synthetic_image', {}).get('serialization', 'full')
+    serialization = pipeline.config['synthetic_image']['serialization']
     if serialization == 'lightweight':
         raise ValueError(
             "_05_create_exposures requires the full SyntheticImage but "

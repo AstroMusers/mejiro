@@ -77,7 +77,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-PREV_SCRIPT_NAME = '03'
+PREV_SCRIPT_NAME = '02'
 SCRIPT_NAME = '04_jax'
 SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
 
@@ -121,11 +121,11 @@ def main(args):
 
     synthetic_image_config = pipeline.config['synthetic_image']
     psf_config = pipeline.config['psf']
-    jax_platform = pipeline.config.get('jaxtronomy', {}).get('jax_platform', 'cpu')
+    jax_platform = pipeline.config['jaxtronomy']['jax_platform']
 
     # 'full' pickles the entire SyntheticImage (current default); 'lightweight'
     # writes a compact .npz used by the romanisim path only.
-    serialization = synthetic_image_config.get('serialization', 'full')
+    serialization = synthetic_image_config['serialization']
     if serialization not in ('full', 'lightweight'):
         raise ValueError(
             f"synthetic_image.serialization must be 'full' or 'lightweight', got {serialization!r}"

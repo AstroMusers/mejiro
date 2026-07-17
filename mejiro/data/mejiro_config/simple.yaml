@@ -73,6 +73,7 @@ synthetic_image:
   supersampling_compute_mode: adaptive
   supersampling_factor: &supersampling_factor 1
   pieces: True
+  serialization: full
 exposure:
   ma_table_number: 17
   date: 2027-04-15T00:00:00

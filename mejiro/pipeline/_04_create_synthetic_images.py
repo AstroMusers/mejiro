@@ -86,7 +86,7 @@ def main(args):
 
     # 'full' pickles the entire SyntheticImage (current default); 'lightweight'
     # writes a compact .npz used by the romanisim path only.
-    serialization = synthetic_image_config.get('serialization', 'full')
+    serialization = synthetic_image_config['serialization']
     if serialization not in ('full', 'lightweight'):
         raise ValueError(
             f"synthetic_image.serialization must be 'full' or 'lightweight', got {serialization!r}"
@@ -199,7 +199,7 @@ def create_synthetic_image(input):
     supersampling_factor = synthetic_image_config['supersampling_factor']
     pieces = synthetic_image_config['pieces']
     num_pix = psf_config['num_pixes'][0]
-    divide_up_detector = psf_config.get('divide_up_detector')  # Roman-specific parameter, not required for HWO
+    divide_up_detector = psf_config.get('divide_up_detector')  # Roman-specific parameter
 
     # unpickle the lens
     lens = util.unpickle(input_pickle)

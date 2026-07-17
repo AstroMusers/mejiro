@@ -72,6 +72,7 @@ synthetic_image:
   supersampling_compute_mode: adaptive
   supersampling_factor: &supersampling_factor 1
   pieces: True
+  serialization: full
 imaging:
   exposure_time: &exposure_time 10000
   engine: galsim

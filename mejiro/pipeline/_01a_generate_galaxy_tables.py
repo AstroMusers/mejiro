@@ -69,7 +69,7 @@ def main(args):
     # set configuration parameters
     pipeline.config['survey']['cosmo'] = default_cosmology.get()
 
-    num_galaxy_tables = pipeline.config['survey'].get('num_galaxy_tables', pipeline.runs)
+    num_galaxy_tables = pipeline.config['survey']['num_galaxy_tables']
 
     # build task list: one task per galaxy table, filtering out tables that already exist (resume mode)
     tuple_list = []
@@ -125,7 +125,7 @@ def generate_galaxy_table(tuple):
     table_index, detector, config, output_dir, instrument = tuple
 
     # seed for reproducibility
-    global_seed = config.get('seed', 42)
+    global_seed = config['seed']
     np.random.seed(hash((global_seed, table_index, 0)) % (2**32))
 
     # suppress warnings

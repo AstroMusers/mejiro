@@ -54,6 +54,7 @@ survey:
   mag_arc_limit: 30
   magnification: 3
 imaging:
+  engine: galsim
   engine_params:
     rng_seed: *seed
     min_zodi_factor: 1.

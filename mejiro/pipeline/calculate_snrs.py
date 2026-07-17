@@ -7,12 +7,15 @@ It reads a YAML configuration file specifying SNR calculation parameters and
 supports both sequential and parallel processing modes.
 
 Usage:
-    python3 calculate_snrs.py --config <config.yaml> [--sequential] [--resume]
+    python3 calculate_snrs.py --config <config.yaml> [--data_dir <dir>] [--sequential] [--resume] [--prev-step <step_dir>]
 
 Arguments:
     --config: Path to the YAML configuration file.
+    --data_dir: Parent directory of pipeline output. Overrides data_dir in the config file.
     --sequential: Run in sequential mode instead of parallel.
     --resume: Preserve existing output and skip already-completed items. Default is to delete and rebuild from scratch.
+    --prev-step: Pipeline step directory holding the input exposures (default: '05_romanisim').
+                 Use '05_romanisim_l3_subpixel' for the sub-pixel romanisim variant.
 """
 
 import argparse
@@ -44,8 +47,12 @@ def main(args):
 
     PipelineHelper.patch_astropy_for_mejiro_v2_pickles()  # remove after re-pickling inputs under mejiro-v3
 
+    # resolve which romanisim step produced the exposures (default matches the
+    # standard GalSim/romanisim step; override for variants like the sub-pixel L3 run)
+    prev_script_name = getattr(args, 'prev_step', None) or PREV_SCRIPT_NAME
+
     # initialize PipelineHelper (we handle the default wipe ourselves so we can count + warn first)
-    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS,
+    pipeline = PipelineHelper(args, prev_script_name, SCRIPT_NAME, SUPPORTED_INSTRUMENTS,
                               delete_existing_output=False)
 
     output_path = os.path.join(pipeline.output_dir, 'name_snr_pairs.pkl')
@@ -151,62 +158,64 @@ def _rebuild_snr(pipeline, snr_config, input_pickle, system_name, band, original
     if not os.path.exists(synth_pickle_path):
         synth_pickle_path = os.path.join(synth_dir, f'SyntheticImage_{system_name}_{band}.npz')
 
-    try:
-        lens = util.unpickle(lens_pickle_path)
-        old_synthetic_image = util.load_synthetic_image(synth_pickle_path)
-        instrument_params = old_synthetic_image.instrument_params
+    lens = util.unpickle(lens_pickle_path)
+    old_synthetic_image = util.load_synthetic_image(synth_pickle_path)
+    instrument_params = old_synthetic_image.instrument_params
 
-        supersampling_factor = snr_config['snr_supersampling_factor']
-        kwargs_numerics = {
-            'supersampling_factor': supersampling_factor,
-            'compute_mode': snr_config['snr_supersampling_compute_mode'],
-        }
+    supersampling_factor = snr_config['snr_supersampling_factor']
+    kwargs_numerics = {
+        'supersampling_factor': supersampling_factor,
+        'compute_mode': snr_config['snr_supersampling_compute_mode'],
+    }
 
-        psf_config = pipeline.config['psf']
-        num_pix = psf_config['num_pixes'][0]
-        get_psf_args = {
-            'band': band,
-            'oversample': supersampling_factor,
-            'num_pix': num_pix,
-            'check_cache': True,
-            'psf_cache_dir': pipeline.psf_cache_dir,
-            'require_cached': True,
-        }
-        if pipeline.instrument_name == 'roman':
-            get_psf_args['detector'] = instrument_params['detector']
-            get_psf_args['detector_position'] = instrument_params['detector_position']
-        kwargs_psf = pipeline.instrument.get_psf_kwargs(**get_psf_args)
+    psf_config = pipeline.config['psf']
+    num_pix = psf_config['num_pixes'][0]
+    get_psf_args = {
+        'band': band,
+        'oversample': supersampling_factor,
+        'num_pix': num_pix,
+        'check_cache': True,
+        'psf_cache_dir': pipeline.psf_cache_dir,
+        'require_cached': True,
+    }
+    if pipeline.instrument_name == 'roman':
+        get_psf_args['detector'] = instrument_params['detector']
+        get_psf_args['detector_position'] = instrument_params['detector_position']
+    kwargs_psf = pipeline.instrument.get_psf_kwargs(**get_psf_args)
 
-        synthetic_image = SyntheticImage(
-            strong_lens=lens,
-            instrument=pipeline.instrument,
-            band=band,
-            fov_arcsec=snr_config['snr_fov_arcsec'],
-            instrument_params=instrument_params,
-            kwargs_numerics=kwargs_numerics,
-            kwargs_psf=kwargs_psf,
-            pieces=True,
-        )
+    synthetic_image = SyntheticImage(
+        strong_lens=lens,
+        instrument=pipeline.instrument,
+        band=band,
+        fov_arcsec=snr_config['snr_fov_arcsec'],
+        instrument_params=instrument_params,
+        kwargs_numerics=kwargs_numerics,
+        kwargs_psf=kwargs_psf,
+        pieces=True,
+    )
 
-        exposure = Exposure(
-            synthetic_image,
-            exposure_time=snr_config['snr_exposure_time'],
-            engine=pipeline.config['imaging']['engine'],
-            # engine_params=original_exposure.engine_params,
-            engine_params=pipeline.config['imaging']['engine_params']
-        )
+    exposure = Exposure(
+        synthetic_image,
+        exposure_time=snr_config['snr_exposure_time'],
+        engine=pipeline.config['imaging']['engine'],
+        # engine_params=original_exposure.engine_params,
+        engine_params=pipeline.config['imaging']['engine_params']
+    )
 
-        return exposure.get_snr(snr_per_pixel_threshold=snr_config['snr_per_pixel_threshold'])
-    except Exception as e:
-        logger.error(f'Rebuild failed for {input_pickle}: {e}')
-        return None
+    return exposure.get_snr(snr_per_pixel_threshold=snr_config['snr_per_pixel_threshold'])
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Calculate signal-to-noise ratios.")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    parser.add_argument('--data_dir', type=str, required=False,
+                        help='Parent directory of pipeline output. Overrides data_dir in config file if provided.')
     parser.add_argument('--sequential', action='store_true', default=False,
                         help='Process systems sequentially from the start instead of randomly when limit is imposed.')
     parser.add_argument('--resume', action='store_true', default=False, help='Preserve existing output and skip already-completed items. Default is to delete and rebuild from scratch.')
+    parser.add_argument('--prev-step', dest='prev_step', type=str, default=None,
+                        help=f"Name of the pipeline step directory holding the input exposures "
+                             f"(default: '{PREV_SCRIPT_NAME}'). Use e.g. '05_romanisim_l3_subpixel' "
+                             f"for the sub-pixel romanisim variant.")
     args = parser.parse_args()
     main(args)

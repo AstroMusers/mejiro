@@ -58,7 +58,7 @@ def main(args):
     use_jax = pipeline.config['jaxtronomy']['use_jax']
     scas = pipeline.config['survey']['detectors']
     bands = pipeline.config['survey']['bands']
-    remap_bands = pipeline.config['survey'].get('remap_bands')  # may be None
+    remap_bands = pipeline.config['survey'].get('remap_bands')  # only required when lenses have catalog source images
 
     # tell script where the output of previous script is
     detectable_gglens_pickles = sorted(glob(pipeline.input_dir + '/detectable_gglenses_*.pkl'))
@@ -93,7 +93,12 @@ def main(args):
                         uid += 1
                         continue
                     mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=lens_name, bands=bands, use_jax=use_jax)
-                    if remap_bands and 'source_images' in mejiro_lens.kwargs_params:
+                    if 'source_images' in mejiro_lens.kwargs_params:
+                        if not remap_bands:
+                            raise ValueError(
+                                f"Lens {lens_name} has catalog source images, but "
+                                f"survey.remap_bands is not set in the config."
+                            )
                         remap_source_images(mejiro_lens, remap_bands)
                     util.pickle(mejiro_lens_pickle_target, mejiro_lens)
                     uid += 1
@@ -112,7 +117,12 @@ def main(args):
                     uid += 1
                     continue
                 mejiro_lens = GalaxyGalaxy.from_slsim(slsim_lens, name=lens_name, bands=bands, use_jax=use_jax)
-                if remap_bands and 'source_images' in mejiro_lens.kwargs_params:
+                if 'source_images' in mejiro_lens.kwargs_params:
+                    if not remap_bands:
+                        raise ValueError(
+                            f"Lens {lens_name} has catalog source images, but "
+                            f"survey.remap_bands is not set in the config."
+                        )
                     remap_source_images(mejiro_lens, remap_bands)
                 util.pickle(mejiro_lens_pickle_target, mejiro_lens)
                 uid += 1

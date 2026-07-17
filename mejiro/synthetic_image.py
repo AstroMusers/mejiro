@@ -249,8 +249,7 @@ class SyntheticImage:
 
         Stores the image as ``float32`` plus a JSON metadata blob carrying only
         the scalars that downstream consumers (``romanisim_pipeline``,
-        ``_06_h5_export_romanisim``, ``calculate_snrs``, ``projects/.../rung_1.py``)
-        actually read. The full ``StrongLens`` and lenstronomy plumbing are not
+        ``_06_h5_export``, ``calculate_snrs``) actually read. The full ``StrongLens`` and lenstronomy plumbing are not
         persisted; loaders should use :func:`mejiro.utils.util.load_synthetic_image`,
         which returns a :class:`LightweightSyntheticImage` for ``.npz`` paths.
 
