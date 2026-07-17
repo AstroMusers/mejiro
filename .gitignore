@@ -1,3 +1,4 @@
+notebooks/figures
 *.sh
 /archive
 .nfs*
