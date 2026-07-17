@@ -62,7 +62,7 @@ def main(args):
             "_05_create_exposures requires the full SyntheticImage but "
             "synthetic_image.serialization is set to 'lightweight'. Either "
             "re-run step 04 with serialization: full, or use the romanisim "
-            "path (romanisim_pipeline.py) which is compatible with lightweight."
+            "path (_05_romanisim.py) which is compatible with lightweight."
         )
 
     # set input and output directories

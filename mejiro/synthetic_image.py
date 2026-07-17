@@ -248,7 +248,7 @@ class SyntheticImage:
         """Write the lightweight ``.npz`` representation used by the romanisim path.
 
         Stores the image as ``float32`` plus a JSON metadata blob carrying only
-        the scalars that downstream consumers (``romanisim_pipeline``,
+        the scalars that downstream consumers (``_05_romanisim``,
         ``_06_h5_export``, ``calculate_snrs``) actually read. The full ``StrongLens`` and lenstronomy plumbing are not
         persisted; loaders should use :func:`mejiro.utils.util.load_synthetic_image`,
         which returns a :class:`LightweightSyntheticImage` for ``.npz`` paths.

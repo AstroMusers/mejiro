@@ -16,7 +16,7 @@ from mejiro.pipeline import (
     _04_jax_create_synthetic_images as script_04_jax_create_synthetic_images,
     _05_create_exposures as script_05_create_exposures,
     _06_h5_export as script_06_h5_export,
-    romanisim_pipeline as script_romanisim_pipeline,
+    _05_romanisim as script_05_romanisim,
     calculate_snrs as script_calculate_snrs,
 )
 
@@ -43,9 +43,15 @@ class Pipeline:
         parser.add_argument('--config')
         parser.add_argument('--resume', action='store_true', default=False)
         parser.add_argument('--sequential', action='store_true', default=False)
+        parser.add_argument('--data_dir', default=None)
+        # _05_romanisim flags (see its argparse for semantics); registered here so the
+        # dispatched Namespace is complete for every script
+        parser.add_argument('--level', choices=['l2', 'l3'], default='l2')
+        parser.add_argument('--dither-pattern', dest='dither_pattern',
+                            default=script_05_romanisim.DEFAULT_PATTERN)
+        parser.add_argument('--max-systems', dest='max_systems', type=int, default=None)
         arg_list = ["--config", self.config_file]
         if data_dir is not None:
-            parser.add_argument('--data_dir')
             arg_list += ["--data_dir", data_dir]
         self.args = parser.parse_args(arg_list)
 
@@ -102,12 +108,12 @@ class Pipeline:
         """Run the exposure and HDF5-export steps for the configured ``imaging.engine``.
 
         * ``galsim``    -> _05_create_exposures -> _06_h5_export
-        * ``romanisim`` -> romanisim_pipeline -> calculate_snrs -> _06_h5_export
+        * ``romanisim`` -> _05_romanisim -> calculate_snrs -> _06_h5_export
         """
         if self._engine == 'galsim':
             script_05_create_exposures.main(self.args)
         elif self._engine == 'romanisim':
-            script_romanisim_pipeline.main(self.args)
+            script_05_romanisim.main(self.args)
             script_calculate_snrs.main(self.args)
         else:
             raise ValueError(f"Unsupported imaging engine: {self._engine!r}")
@@ -130,7 +136,8 @@ class Pipeline:
         2 : Build lens list
         3 : Generate subhalos
         4 : Create synthetic images (JAX variant when jaxtronomy.use_jax)
-        5 : Create exposures (romanisim_pipeline when imaging.engine is 'romanisim')
+        5 : Create exposures (_05_romanisim when imaging.engine is 'romanisim';
+            its --level/--dither-pattern flags select the L2 or L3 variant, default L2)
         'snr' : Calculate SNRs (romanisim tail only)
         6 : Export to HDF5 file
 
@@ -153,7 +160,7 @@ class Pipeline:
             self._run_04()
         elif script_number == 5:
             if self._engine == 'romanisim':
-                script_romanisim_pipeline.main(self.args)
+                script_05_romanisim.main(self.args)
             else:
                 script_05_create_exposures.main(self.args)
         elif script_number == 'snr':

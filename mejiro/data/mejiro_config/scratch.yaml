@@ -4,7 +4,7 @@
 # must be invoked standalone -- can be pointed at it instead of at a real dataset.
 # engine: galsim is deliberate, matching every real rung config: imaging.engine selects how Exposure/
 # calculate_snrs rebuild SNR exposures, NOT which detector simulator runs. Setting it to 'romanisim'
-# makes Exposure raise NotImplementedError. Run romanisim_pipeline.py standalone against this config.
+# makes Exposure raise NotImplementedError. Run _05_romanisim.py standalone against this config.
 data_dir: &data_dir /nfsdata1/bwedig/mejiro
 pipeline_label: scratch
 psf_cache_dir: cached_psfs
@@ -24,6 +24,7 @@ cores:
   script_04: 1
   script_05: 1
   script_05_romanisim: 1
+  script_05_romanisim_l3: 1
   script_snr: 1
 jaxtronomy:
   use_jax: False
