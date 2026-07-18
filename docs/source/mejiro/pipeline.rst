@@ -58,10 +58,10 @@ Step 4: Create Synthetic Images (Ray-Shooting)
     :members:
     :show-inheritance:
 
-Step 5: Create Exposures
-************************
+Step 5: Create Exposures (galsim)
+*********************************
 
-.. automodule:: mejiro.pipeline._05_create_exposures
+.. automodule:: mejiro.pipeline._05_galsim
     :members:
     :show-inheritance:
 

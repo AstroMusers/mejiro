@@ -34,7 +34,7 @@ echo 'Built lens list.'
 # echo 'Built models.'
 
 # echo 'Simulating images...'
-# python3 mejiro/pipeline/_05_create_exposures.py --config $config
+# python3 mejiro/pipeline/_05_galsim.py --config $config
 # echo 'GalSim simulations complete.'
 
 # echo 'Calculating SNRs...'

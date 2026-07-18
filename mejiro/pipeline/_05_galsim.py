@@ -4,7 +4,7 @@ Generates exposures from synthetic images, i.e., apply sky background and detect
 This script processes synthetic images produced in previous pipeline steps, generating exposures for each lensing system using instrument-specific parameters and simulation engines. It reads a mejiro YAML configuration file specifying exposure options. Multiprocessing is used to parallelize exposure creation across available CPU cores.
 
 Usage:
-    python3 _05_create_exposures.py --config <config.yaml> [--data_dir <output_dir>]
+    python3 _05_galsim.py --config <config.yaml> [--data_dir <output_dir>]
 
 Arguments:
     --config: Path to the YAML configuration file.
@@ -59,7 +59,7 @@ def main(args):
     serialization = pipeline.config['synthetic_image']['serialization']
     if serialization == 'lightweight':
         raise ValueError(
-            "_05_create_exposures requires the full SyntheticImage but "
+            "_05_galsim requires the full SyntheticImage but "
             "synthetic_image.serialization is set to 'lightweight'. Either "
             "re-run step 04 with serialization: full, or use the romanisim "
             "path (_05_romanisim.py) which is compatible with lightweight."

@@ -14,7 +14,7 @@ from mejiro.pipeline import (
     _03_generate_subhalos as script_03_generate_subhalos,
     _04_create_synthetic_images as script_04_create_synthetic_images,
     _04_jax_create_synthetic_images as script_04_jax_create_synthetic_images,
-    _05_create_exposures as script_05_create_exposures,
+    _05_galsim as script_05_galsim,
     _06_h5_export as script_06_h5_export,
     _05_romanisim as script_05_romanisim,
     calculate_snrs as script_calculate_snrs,
@@ -107,11 +107,11 @@ class Pipeline:
     def _run_exposure_export_tail(self):
         """Run the exposure and HDF5-export steps for the configured ``imaging.engine``.
 
-        * ``galsim``    -> _05_create_exposures -> _06_h5_export
+        * ``galsim``    -> _05_galsim -> _06_h5_export
         * ``romanisim`` -> _05_romanisim -> calculate_snrs -> _06_h5_export
         """
         if self._engine == 'galsim':
-            script_05_create_exposures.main(self.args)
+            script_05_galsim.main(self.args)
         elif self._engine == 'romanisim':
             script_05_romanisim.main(self.args)
             script_calculate_snrs.main(self.args)
@@ -162,7 +162,7 @@ class Pipeline:
             if self._engine == 'romanisim':
                 script_05_romanisim.main(self.args)
             else:
-                script_05_create_exposures.main(self.args)
+                script_05_galsim.main(self.args)
         elif script_number == 'snr':
             script_calculate_snrs.main(self.args)
         elif script_number == 6:

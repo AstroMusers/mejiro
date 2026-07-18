@@ -53,7 +53,7 @@ These keys sit at the top level of the YAML file.
 ``limit``
    Maximum number of systems each script should process, or ``null`` for no limit.
 
-   Used in ``_01b_run_survey_simulation.py`` to cap the number of detectable lenses per run, in ``_02_build_lens_list.py`` to short-circuit the lens-conversion loop, in ``_03_generate_subhalos.py``, ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, ``_04_jax_create_synthetic_images.py``, ``_05_create_exposures.py``, and ``calculate_snrs.py`` to subsample input pickles (sequentially with ``--sequential``, otherwise via ``np.random.choice``), and in ``romanisim_pipeline.py`` to subsample lens IDs per SCA.
+   Used in ``_01b_run_survey_simulation.py`` to cap the number of detectable lenses per run, in ``_02_build_lens_list.py`` to short-circuit the lens-conversion loop, in ``_03_generate_subhalos.py``, ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, ``_04_jax_create_synthetic_images.py``, ``_05_galsim.py``, and ``calculate_snrs.py`` to subsample input pickles (sequentially with ``--sequential``, otherwise via ``np.random.choice``), and in ``romanisim_pipeline.py`` to subsample lens IDs per SCA.
 
 ``seed``
    Integer global random seed. Defaults to ``42`` when accessed via ``config.get('seed', 42)``.
@@ -84,7 +84,7 @@ Per-script worker counts for ``ProcessPoolExecutor``. Each key maps the script n
    Workers for ``_04_create_synthetic_images.py`` (and its interpol/JAX variants).
 
 ``script_05``
-   Workers for ``_05_create_exposures.py``.
+   Workers for ``_05_galsim.py``.
 
 ``script_05_romanisim``
    Workers for ``romanisim_pipeline.py``. Read directly as ``config['cores']['script_05_romanisim']``; the per-worker thread count is derived as ``max(2, 64 // num_workers)``.
@@ -259,10 +259,10 @@ Parameters for rendering idealized (PSF-convolved, noise-free) images. Each valu
 ``serialization``
    String selecting the on-disk format for each ``SyntheticImage`` written by step 04. One of:
 
-   - ``full`` (default): pickle the entire ``SyntheticImage`` (including the embedded ``StrongLens`` and any pyhalo realization). Required by the galsim path (``_05_create_exposures.py``) and by analysis scripts that need the full lens model (e.g., ``projects/roman_data_challenge/substructure_snr_histogram.py``).
+   - ``full`` (default): pickle the entire ``SyntheticImage`` (including the embedded ``StrongLens`` and any pyhalo realization). Required by the galsim path (``_05_galsim.py``) and by analysis scripts that need the full lens model (e.g., ``projects/roman_data_challenge/substructure_snr_histogram.py``).
    - ``lightweight``: write a compact ``.npz`` per (system, band) containing the image as ``float32`` plus a JSON metadata blob with only what the romanisim path consumes downstream (redshifts, Einstein radius, per-band magnitudes, detector position, ``magnitude_zeropoint``, etc.). Roughly 20× smaller per (system, band) than ``full``; incompatible with the galsim path. Loaded transparently by ``mejiro.utils.util.load_synthetic_image``, which auto-detects the extension and returns a :class:`mejiro.synthetic_image.LightweightSyntheticImage` shim.
 
-   Used in ``_04_create_synthetic_images.py`` and ``_04_jax_create_synthetic_images.py`` (writers); in ``romanisim_pipeline.py``, ``_06_h5_export_romanisim.py``, ``projects/roman_data_challenge/rung_1.py``, and ``calculate_snrs.py`` (readers, via the unified loader). ``_05_create_exposures.py`` raises at startup when ``serialization == 'lightweight'`` because the galsim engine requires the full ``SyntheticImage``.
+   Used in ``_04_create_synthetic_images.py`` and ``_04_jax_create_synthetic_images.py`` (writers); in ``romanisim_pipeline.py``, ``_06_h5_export_romanisim.py``, ``projects/roman_data_challenge/rung_1.py``, and ``calculate_snrs.py`` (readers, via the unified loader). ``_05_galsim.py`` raises at startup when ``serialization == 'lightweight'`` because the galsim engine requires the full ``SyntheticImage``.
 
 ``exposure``
 ------------
@@ -281,22 +281,22 @@ Parameters for rendering idealized (PSF-convolved, noise-free) images. Each valu
 ``imaging``
 -----------
 
-Parameters for the detector-effects step. Consumed by ``_05_create_exposures.py`` and ``calculate_snrs.py``.
+Parameters for the detector-effects step. Consumed by ``_05_galsim.py`` and ``calculate_snrs.py``.
 
 ``exposure_time``
    Exposure time in seconds (documented in the ``Exposure`` docstring). Typically referenced via a YAML anchor (``&exposure_time``) so ``snr.snr_exposure_time`` can reuse it.
 
-   Used in ``_05_create_exposures.py`` to build each ``Exposure``.
+   Used in ``_05_galsim.py`` to build each ``Exposure``.
 
 ``engine``
    String selecting the detector-effects engine, e.g., ``galsim`` (see :doc:`../mejiro/engines` for the available engines).
 
-   Used in ``_05_create_exposures.py`` and in ``calculate_snrs.py`` for the SNR-rebuild path.
+   Used in ``_05_galsim.py`` and in ``calculate_snrs.py`` for the SNR-rebuild path.
 
 ``engine_params``
    Dict of engine-specific parameters forwarded to the simulation engine. See :class:`mejiro.exposure.Exposure` and the engine modules under :mod:`mejiro.engines` for the accepted keys per engine. For the GalSim Roman engine, the example configs include ``rng_seed``, ``min_zodi_factor``, and boolean toggles ``sky_background``, ``detector_effects``, ``poisson_noise``, ``reciprocity_failure``, ``dark_noise``, ``nonlinearity``, ``ipc``, ``read_noise``.
 
-   Used in ``_01b_run_survey_simulation.py`` for the SNR-detection ``Exposure``, in ``_05_create_exposures.py`` for the production ``Exposure``, and in ``calculate_snrs.py`` for the SNR-rebuild ``Exposure``.
+   Used in ``_01b_run_survey_simulation.py`` for the SNR-detection ``Exposure``, in ``_05_galsim.py`` for the production ``Exposure``, and in ``calculate_snrs.py`` for the SNR-rebuild ``Exposure``.
 
 ``snr``
 -------

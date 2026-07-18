@@ -260,7 +260,7 @@ class SyntheticImage:
 
         Notes
         -----
-        Not compatible with the galsim path (``_05_create_exposures.py``); that
+        Not compatible with the galsim path (``_05_galsim.py``); that
         step requires the full SyntheticImage and will raise if it sees
         lightweight outputs. ``self.pieces`` is ignored — per-piece arrays are
         not serialized.
