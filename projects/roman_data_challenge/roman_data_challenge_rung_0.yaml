@@ -15,7 +15,6 @@ cores:
   script_01b: 32
   script_03: 32
   script_04: 32
-  script_04_jax: 32
   script_05: 32
   script_05_romanisim: 12
   script_05_romanisim_l3: 12  # each worker holds 4 L2s + a coadd (~1.5 GB); do not inherit script_05_romanisim

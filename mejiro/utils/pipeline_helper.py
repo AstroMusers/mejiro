@@ -9,12 +9,6 @@ from mejiro.utils import util
 
 logger = logging.getLogger(__name__)
 
-# Pipeline steps that have a JAX variant whose output lands in '<step>_jax/'
-# (e.g. '04' -> '04_jax'). Consumers should resolve the directory via
-# PipelineHelper.step_dir() so the variant follows jaxtronomy.use_jax.
-JAX_VARIANT_STEPS = {'04'}
-
-
 def _mejiro_v2_cosmology_setstate(self, state):
     """``__setstate__`` for astropy cosmologies pickled under ``mejiro-v2``.
 
@@ -120,8 +114,7 @@ class PipelineHelper:
         if self.dev:
             self.pipeline_dir += '_dev'
 
-        # set up input directory for current script (resolving the JAX variant of the
-        # previous step, e.g. '04' -> '04_jax', when jaxtronomy.use_jax is True)
+        # set up input directory for current script
         if self.prev_script_name is not None:
             self.input_dir = self.step_dir(self.prev_script_name)
 
@@ -134,10 +127,7 @@ class PipelineHelper:
             util.clear_directory(self.output_dir)
 
     def step_dir(self, step):
-        """Absolute path to a pipeline step's directory, selecting the JAX variant
-        (e.g. '04' -> '04_jax') when jaxtronomy.use_jax is True and one exists."""
-        if step in JAX_VARIANT_STEPS and self.config['jaxtronomy']['use_jax']:
-            step = f'{step}_jax'
+        """Absolute path to a pipeline step's directory."""
         return os.path.join(self.pipeline_dir, step)
 
     def calculate_process_count(self, count):

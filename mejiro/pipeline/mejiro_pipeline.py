@@ -13,7 +13,6 @@ from mejiro.pipeline import (
     _02_build_lens_list as script_02_build_lens_list,
     _03_generate_subhalos as script_03_generate_subhalos,
     _04_create_synthetic_images as script_04_create_synthetic_images,
-    _04_jax_create_synthetic_images as script_04_jax_create_synthetic_images,
     _05_galsim as script_05_galsim,
     _06_h5_export as script_06_h5_export,
     _05_romanisim as script_05_romanisim,
@@ -50,6 +49,8 @@ class Pipeline:
         parser.add_argument('--dither-pattern', dest='dither_pattern',
                             default=script_05_romanisim.DEFAULT_PATTERN)
         parser.add_argument('--max-systems', dest='max_systems', type=int, default=None)
+        # _04_create_synthetic_images flag: which step to read lens pickles from
+        parser.add_argument('--prev-step', dest='prev_step', choices=['02', '03'], default='03')
         arg_list = ["--config", self.config_file]
         if data_dir is not None:
             arg_list += ["--data_dir", data_dir]
@@ -61,9 +62,8 @@ class Pipeline:
         with open(self.config_file, 'r') as f:
             self.config = yaml.load(f, Loader=yaml.SafeLoader)
 
-        # jaxtronomy.use_jax selects the JAX-accelerated variant of step 04 (step 01b
-        # reads the flag itself); imaging.engine selects the exposure/export tail.
-        self._use_jax = self.config['jaxtronomy']['use_jax']
+        # imaging.engine selects the exposure/export tail; step 04 reads
+        # jaxtronomy.use_jax itself.
         self._engine = self.config['imaging']['engine']
 
     def run(self):
@@ -94,15 +94,8 @@ class Pipeline:
         script_01b_run_survey_simulation.main(self.args)
         script_02_build_lens_list.main(self.args)
         script_03_generate_subhalos.main(self.args)
-        self._run_04()
+        script_04_create_synthetic_images.main(self.args)
         self._run_exposure_export_tail()
-
-    def _run_04(self):
-        """Run step 04, selecting the JAX variant when ``jaxtronomy.use_jax`` is True."""
-        if self._use_jax:
-            script_04_jax_create_synthetic_images.main(self.args)
-        else:
-            script_04_create_synthetic_images.main(self.args)
 
     def _run_exposure_export_tail(self):
         """Run the exposure and HDF5-export steps for the configured ``imaging.engine``.
@@ -135,7 +128,7 @@ class Pipeline:
         '1b' : Run survey simulation (using pre-computed tables; JAX ray-shooting when jaxtronomy.use_jax)
         2 : Build lens list
         3 : Generate subhalos
-        4 : Create synthetic images (JAX variant when jaxtronomy.use_jax)
+        4 : Create synthetic images (JAX ray-shooting when jaxtronomy.use_jax)
         5 : Create exposures (_05_romanisim when imaging.engine is 'romanisim';
             its --level/--dither-pattern flags select the L2 or L3 variant, default L2)
         'snr' : Calculate SNRs (romanisim tail only)
@@ -157,7 +150,7 @@ class Pipeline:
         elif script_number == 3:
             script_03_generate_subhalos.main(self.args)
         elif script_number == 4:
-            self._run_04()
+            script_04_create_synthetic_images.main(self.args)
         elif script_number == 5:
             if self._engine == 'romanisim':
                 script_05_romanisim.main(self.args)
