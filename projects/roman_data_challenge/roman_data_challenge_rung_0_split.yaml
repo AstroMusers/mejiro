@@ -7,7 +7,7 @@ show_progress_bar: True
 suppress_warnings: True
 logging_level: WARNING
 limit: null
-seed: &seed 42
+seed: &seed 199
 cores:
   script_00: 32
   script_01: 32
@@ -15,7 +15,6 @@ cores:
   script_01b: 32
   script_03: 32
   script_04: 32
-  script_04_jax: 32
   script_05: 32
   script_05_romanisim: 12
   script_05_romanisim_l3: 12  # each worker holds 4 L2s + a coadd (~1.5 GB); do not inherit script_05_romanisim
@@ -75,10 +74,10 @@ synthetic_image:
   bands: [ F106, F129, F158 ]
   fov_arcsec: &fov_arcsec 10.01
   supersampling_compute_mode: adaptive
-  supersampling_factor: &supersampling_factor 5
+  supersampling_factor: &supersampling_factor 1
   pieces: True
   serialization: full
-  deflector_only_fraction: 0.4
+  deflector_only_fraction: 0.99
 exposure:
   ma_table_number: 4
   date: 2027-05-01T00:00:00
