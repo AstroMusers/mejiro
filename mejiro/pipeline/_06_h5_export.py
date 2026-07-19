@@ -22,7 +22,6 @@ Arguments:
     --config: Path to the YAML configuration file.
     --data_dir: Parent directory of pipeline output. Overrides data_dir in the config file.
     --prev-step: Pipeline step directory holding the input exposures (default: '05_romanisim').
-                 Use e.g. '05_romanisim_l3_subpixel' for the sub-pixel romanisim variant.
 """
 import argparse
 import getpass
@@ -50,7 +49,7 @@ from mejiro.utils.pipeline_helper import PipelineHelper
 
 logger = logging.getLogger(__name__)
 
-PREV_SCRIPT_NAME = '05_romanisim_l3'
+PREV_SCRIPT_NAME = '05_romanisim'
 SCRIPT_NAME = '06'
 SUPPORTED_INSTRUMENTS = ['roman']
 
@@ -222,7 +221,6 @@ if __name__ == '__main__':
                         help='Parent directory of pipeline output. Overrides data_dir in config file if provided.')
     parser.add_argument('--prev-step', dest='prev_step', type=str, default=None,
                         help=f"Name of the pipeline step directory holding the input exposures "
-                             f"(default: '{PREV_SCRIPT_NAME}'). Use e.g. '05_romanisim_l3_subpixel' "
-                             f"for the sub-pixel romanisim variant.")
+                             f"(default: '{PREV_SCRIPT_NAME}').")
     args = parser.parse_args()
     main(args)

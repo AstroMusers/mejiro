@@ -13,7 +13,7 @@ These keys sit at the top level of the YAML file.
 ``data_dir``
    Base directory under which all pipeline output is written. Required: if ``null``, the ``--data_dir`` CLI argument must be supplied to override it. The per-pipeline output directory is ``<data_dir>/<pipeline_label>``.
 
-   Used by ``PipelineHelper`` to set ``pipeline_dir`` for every pipeline script, and read directly in ``romanisim_pipeline.py`` to locate input synthetic images and write romanisim output.
+   Used by ``PipelineHelper`` to set ``pipeline_dir`` for every pipeline script, and read directly in ``_05_romanisim.py`` to locate input synthetic images and write romanisim output.
 
 ``pipeline_label``
    Name of the pipeline run. Used to construct the output directory (``<data_dir>/<pipeline_label>/``) and as a prefix for output filenames. When ``dev: True``, ``_dev`` is appended.
@@ -28,7 +28,7 @@ These keys sit at the top level of the YAML file.
 ``dev``
    Development-mode flag. When ``True``, ``_dev`` is appended to ``pipeline_label`` so dev runs do not overwrite production output.
 
-   Used by ``PipelineHelper`` and explicitly by ``romanisim_pipeline.py`` to set the pipeline directory.
+   Used by ``PipelineHelper`` and explicitly by ``_05_romanisim.py`` to set the pipeline directory.
 
 ``nice``
    Process ``nice`` value applied to every pipeline worker. Defaults to ``0`` if absent.
@@ -53,12 +53,12 @@ These keys sit at the top level of the YAML file.
 ``limit``
    Maximum number of systems each script should process, or ``null`` for no limit.
 
-   Used in ``_01b_run_survey_simulation.py`` to cap the number of detectable lenses per run, in ``_02_build_lens_list.py`` to short-circuit the lens-conversion loop, in ``_03_generate_subhalos.py``, ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, ``_04_jax_create_synthetic_images.py``, ``_05_galsim.py``, and ``calculate_snrs.py`` to subsample input pickles (sequentially with ``--sequential``, otherwise via ``np.random.choice``), and in ``romanisim_pipeline.py`` to subsample lens IDs per SCA.
+   Used in ``_01b_run_survey_simulation.py`` to cap the number of detectable lenses per run, in ``_02_build_lens_list.py`` to short-circuit the lens-conversion loop, in ``_03_generate_subhalos.py``, ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, ``_04_jax_create_synthetic_images.py``, ``_05_galsim.py``, and ``calculate_snrs.py`` to subsample input pickles (sequentially with ``--sequential``, otherwise via ``np.random.choice``), and in ``_05_romanisim.py`` to subsample lens IDs per SCA.
 
 ``seed``
    Integer global random seed. Defaults to ``42`` when accessed via ``config.get('seed', 42)``.
 
-   Used in ``_01a_generate_galaxy_tables.py`` to seed the per-table draw via ``hash((seed, 'table', table_index))``, in ``_01b_run_survey_simulation.py`` for the per-run draw via ``hash((seed, run))``, in ``_03_generate_subhalos.py`` to seed the substructure assignment mask, and in ``romanisim_pipeline.py`` to derive per-batch RNGs (``batch_seed = seed + sca_num * 10000 + band_idx * 1000 + batch_idx``). Typically also referenced from ``imaging.engine_params.rng_seed`` via a YAML anchor.
+   Used in ``_01a_generate_galaxy_tables.py`` to seed the per-table draw via ``hash((seed, 'table', table_index))``, in ``_01b_run_survey_simulation.py`` for the per-run draw via ``hash((seed, run))``, in ``_03_generate_subhalos.py`` to seed the substructure assignment mask, and in ``_05_romanisim.py`` to derive per-batch RNGs (``batch_seed = seed + sca_num * 10000 + band_idx * 1000 + batch_idx``). Typically also referenced from ``imaging.engine_params.rng_seed`` via a YAML anchor.
 
 ``cores``
 -----------
@@ -87,7 +87,7 @@ Per-script worker counts for ``ProcessPoolExecutor``. Each key maps the script n
    Workers for ``_05_galsim.py``.
 
 ``script_05_romanisim``
-   Workers for ``romanisim_pipeline.py``. Read directly as ``config['cores']['script_05_romanisim']``; the per-worker thread count is derived as ``max(2, 64 // num_workers)``.
+   Workers for ``_05_romanisim.py``. Read directly as ``config['cores']['script_05_romanisim']``; the per-worker thread count is derived as ``max(2, 64 // num_workers)``.
 
 ``script_snr``
    Workers for ``calculate_snrs.py``.
@@ -234,7 +234,7 @@ Parameters for rendering idealized (PSF-convolved, noise-free) images. Each valu
 ``bands``
    List of photometric bands for which to render synthetic images. May be a subset of ``survey.bands``.
 
-   Used in ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, ``_04_jax_create_synthetic_images.py``, ``romanisim_pipeline.py``, and ``_06_h5_export.py``.
+   Used in ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, ``_04_jax_create_synthetic_images.py``, ``_05_romanisim.py``, and ``_06_h5_export.py``.
 
 ``fov_arcsec``
    Field of view in arcseconds (documented in the ``SyntheticImage`` docstring). Forwarded to ``SyntheticImage(fov_arcsec=...)``.
@@ -262,12 +262,12 @@ Parameters for rendering idealized (PSF-convolved, noise-free) images. Each valu
    - ``full`` (default): pickle the entire ``SyntheticImage`` (including the embedded ``StrongLens`` and any pyhalo realization). Required by the galsim path (``_05_galsim.py``) and by analysis scripts that need the full lens model (e.g., ``projects/roman_data_challenge/substructure_snr_histogram.py``).
    - ``lightweight``: write a compact ``.npz`` per (system, band) containing the image as ``float32`` plus a JSON metadata blob with only what the romanisim path consumes downstream (redshifts, Einstein radius, per-band magnitudes, detector position, ``magnitude_zeropoint``, etc.). Roughly 20× smaller per (system, band) than ``full``; incompatible with the galsim path. Loaded transparently by ``mejiro.utils.util.load_synthetic_image``, which auto-detects the extension and returns a :class:`mejiro.synthetic_image.LightweightSyntheticImage` shim.
 
-   Used in ``_04_create_synthetic_images.py`` and ``_04_jax_create_synthetic_images.py`` (writers); in ``romanisim_pipeline.py``, ``_06_h5_export_romanisim.py``, ``projects/roman_data_challenge/rung_1.py``, and ``calculate_snrs.py`` (readers, via the unified loader). ``_05_galsim.py`` raises at startup when ``serialization == 'lightweight'`` because the galsim engine requires the full ``SyntheticImage``.
+   Used in ``_04_create_synthetic_images.py`` and ``_04_jax_create_synthetic_images.py`` (writers); in ``_05_romanisim.py``, ``_06_h5_export_romanisim.py``, ``projects/roman_data_challenge/rung_1.py``, and ``calculate_snrs.py`` (readers, via the unified loader). ``_05_galsim.py`` raises at startup when ``serialization == 'lightweight'`` because the galsim engine requires the full ``SyntheticImage``.
 
 ``exposure``
 ------------
 
-(Roman only.) Romanisim observation metadata. Consumed by ``romanisim_pipeline.py``.
+(Roman only.) Romanisim observation metadata. Consumed by ``_05_romanisim.py``.
 
 ``ma_table_number``
    Integer Multi-Accumulation (MA) table number. Indexes ``romanisim.parameters.read_pattern`` to determine the read pattern (and hence the total exposure time, ``parameters.read_time * read_pattern[-1][-1]``); also written to ``meta['exposure']['ma_table_number']`` for the simulated observation.
@@ -276,7 +276,7 @@ Parameters for rendering idealized (PSF-convolved, noise-free) images. Each valu
    Observation date as an ISO-8601 string (e.g., ``2027-04-15T00:00:00``). Converted to ``astropy.time.Time`` and assigned to ``meta['exposure']['start_time']``.
 
 ``coordinates.ra``, ``coordinates.dec``
-   Pointing right ascension and declination. ``romanisim_pipeline.py`` constructs ``SkyCoord(ra=ra * u.deg, dec=dec * u.deg)``, so the values are interpreted in degrees.
+   Pointing right ascension and declination. ``_05_romanisim.py`` constructs ``SkyCoord(ra=ra * u.deg, dec=dec * u.deg)``, so the values are interpreted in degrees.
 
 ``imaging``
 -----------
@@ -369,7 +369,7 @@ PSF cache and generation parameters. Consumed primarily by ``_00_cache_psfs.py``
 ``divide_up_detector``
    Integer ``N`` controlling how each detector is divided into an ``N x N`` grid of PSF-evaluation positions (e.g., ``5`` -> 25 positions per detector). Roman-specific; ``psf_config.get('divide_up_detector')`` is ``None`` for HWO.
 
-   Used in ``_00_cache_psfs.py`` (via ``roman_util.divide_up_sca``), in ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, and ``_04_jax_create_synthetic_images.py`` to pick a random detector position per image, in ``_06_h5_export.py`` to enumerate positions for the PSF HDF5 dataset, and in ``romanisim_pipeline.py`` to define the PSF buckets that group tiles within each 4088x4088 detector image (asserted to divide both ``GRID_SIDE`` and ``4088``).
+   Used in ``_00_cache_psfs.py`` (via ``roman_util.divide_up_sca``), in ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, and ``_04_jax_create_synthetic_images.py`` to pick a random detector position per image, in ``_06_h5_export.py`` to enumerate positions for the PSF HDF5 dataset, and in ``_05_romanisim.py`` to define the PSF buckets that group tiles within each 4088x4088 detector image (asserted to divide both ``GRID_SIDE`` and ``4088``).
 
 ``dataset``
 -----------

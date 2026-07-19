@@ -26,9 +26,9 @@ complete. Output lands in ``<data_dir>/<pipeline_label>/05_romanisim/sca##/`` in
        except the pixel values are the mosaic's native MJy/sr surface brightness rather
        than L2 DN/s.
 
-Sub-pixel patterns (those in WfiImagingSubpixel.txt) write to
-``05_romanisim_l3_subpixel/``; any other pattern writes to ``05_romanisim_l3/`` -- so
-sub-pixel runs can never clobber the BOXGAP outputs. Trade-off of sub-pixel patterns:
+Every invocation writes to ``05_romanisim/`` regardless of ``--level`` or
+``--dither-pattern``: the step directory names the step, not the flags it was run with.
+Trade-off of sub-pixel patterns (those in WfiImagingSubpixel.txt, e.g. SUB4):
 every exposure puts a system on nearly the same pixels, so fixed-pattern detector effects
 (flat error, hot pixels) stay correlated across the stack instead of averaging down the
 way they do with large dithers. Per-exposure noise still decorrelates (each dither gets
@@ -44,17 +44,20 @@ Arguments:
     --config: Path to the YAML configuration file.
     --data_dir: Parent directory of pipeline output. Overrides data_dir in the config file.
     --level: 'l2' (default) for single-exposure cutouts, 'l3' for co-added mosaic cutouts.
-    --dither-pattern: Dither pattern name for --level l3 (default BOXGAP4_1). Sub-pixel
-        patterns from WfiImagingSubpixel.txt (e.g. SUB4) write to 05_romanisim_l3_subpixel/.
-        Note the number of dither steps sets the effective depth.
+    --dither-pattern: Dither pattern name for --level l3 (default BOXGAP4_1); sub-pixel
+        patterns from WfiImagingSubpixel.txt (e.g. SUB4) are also accepted. Note the
+        number of dither steps sets the effective depth.
     --sequential: Process systems sequentially from the start instead of randomly when a
         limit is imposed.
     --max-systems: Process only the first N systems (lowest UIDs) across all SCAs, in
         total (unlike config['limit'], which is applied per SCA).
     --resume: Preserve existing output and skip already-completed batches (those with a
         batch_complete_*.txt sentinel). Default is to delete existing output and rebuild
-        from scratch. Note the sentinels do not record the dither pattern, so only resume
-        with the same --dither-pattern the original run used.
+        from scratch. Note the sentinels record neither --level nor --dither-pattern, and
+        all variants share the one 05_romanisim/ directory, so only resume with the same
+        --level and --dither-pattern the original run used -- otherwise the resumed run
+        will mix incompatible products. The default (non---resume) wipe is what keeps a
+        run with different flags from silently mixing with an earlier one.
 """
 import os
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -93,13 +96,14 @@ from romancal.associations import asn_from_list
 from romancal.pipeline import MosaicPipeline
 from stcal.alignment.util import compute_scale
 
-from mejiro.point_wfi import PointWFI, _make_wcs, _SUBPIXEL_FILE, _parse_dither_file
+from mejiro.point_wfi import PointWFI, _make_wcs
 from mejiro.utils import util as mejiro_util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
 logger = logging.getLogger(__name__)
 
 PREV_SCRIPT_NAME = '04'
+SCRIPT_NAME = '05_romanisim'
 SUPPORTED_INSTRUMENTS = ['roman']
 
 DETECTOR_SIZE = 4088    # Roman WFI SCA pixel dimension
@@ -178,11 +182,6 @@ def _read_detector_position(pickle_path):
     obj = _load_pickle(pickle_path)
     x, y = obj.instrument_params['detector_position']
     return int(x), int(y)
-
-
-def _subpixel_pattern_names():
-    """Sorted names of the sub-pixel dither patterns shipped in WfiImagingSubpixel.txt."""
-    return sorted(_parse_dither_file(_SUBPIXEL_FILE).keys())
 
 
 def _dither_pointings(coord, pattern_name):
@@ -314,16 +313,7 @@ def main(args):
 
     PipelineHelper.patch_astropy_for_mejiro_v2_pickles()  # remove after re-pickling inputs under mejiro-v3
 
-    # resolve the output step from the CLI: sub-pixel dither patterns get their own step
-    # directory so those runs can never clobber the BOXGAP outputs
-    if args.level == 'l2':
-        step_name = '05_romanisim'
-    elif args.dither_pattern in _subpixel_pattern_names():
-        step_name = '05_romanisim_l3_subpixel'
-    else:
-        step_name = '05_romanisim_l3'
-
-    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, step_name, SUPPORTED_INSTRUMENTS,
+    pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS,
                               delete_existing_output=False)
     config = pipeline.config
 
@@ -339,11 +329,7 @@ def main(args):
 
     limit = pipeline.limit
 
-    if args.level == 'l2':
-        num_workers = config['cores']['script_05_romanisim']
-    else:
-        # each task runs one romanisim sim per dither + one MosaicPipeline (multi-GB), so keep low
-        num_workers = config['cores']['script_05_romanisim_l3']
+    num_workers = config['cores']['script_05_romanisim']
     threads_per_worker = max(2, 64 // num_workers)
     bands = config['synthetic_image']['bands']
     seed = config['seed']
@@ -412,7 +398,7 @@ def main(args):
         # peak: a batch dir is removed as its batch ends, and anything a SIGKILL strands is
         # reclaimed here.
         scratch_dir = os.path.join(pipeline.data_dir, '_scratch',
-                                   os.path.basename(pipeline.pipeline_dir), step_name)
+                                   os.path.basename(pipeline.pipeline_dir), SCRIPT_NAME)
         os.makedirs(scratch_dir, exist_ok=True)
         mejiro_util.clear_directory(scratch_dir)
         logger.info(f'Scratch: {scratch_dir} (peak ~{num_workers * 1.5:.0f} GB across {num_workers} workers)')
@@ -846,7 +832,7 @@ if __name__ == '__main__':
                         help="'l2' (default) for single-exposure cutouts, 'l3' for co-added mosaic cutouts.")
     parser.add_argument('--dither-pattern', dest='dither_pattern', type=str, default=DEFAULT_PATTERN,
                         help=f'Dither pattern for --level l3 (default {DEFAULT_PATTERN}). Sub-pixel patterns '
-                             f'from WfiImagingSubpixel.txt (e.g. SUB4) write to 05_romanisim_l3_subpixel/.')
+                             f'from WfiImagingSubpixel.txt (e.g. SUB4) are also accepted.')
     parser.add_argument('--sequential', action='store_true', default=False,
                         help='Process systems sequentially from the start instead of randomly when limit is imposed.')
     parser.add_argument('--max-systems', dest='max_systems', type=int, default=None,
