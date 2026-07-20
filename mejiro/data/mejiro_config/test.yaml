@@ -19,7 +19,6 @@ cores:
   script_04: 1
   script_05: 1
   script_05_romanisim: 1
-  script_05_romanisim_l3: 1
   script_snr: 1
 jaxtronomy:
   use_jax: False

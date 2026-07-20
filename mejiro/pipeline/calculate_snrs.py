@@ -15,7 +15,6 @@ Arguments:
     --sequential: Run in sequential mode instead of parallel.
     --resume: Preserve existing output and skip already-completed items. Default is to delete and rebuild from scratch.
     --prev-step: Pipeline step directory holding the input exposures (default: '05_romanisim').
-                 Use '05_romanisim_l3_subpixel' for the sub-pixel romanisim variant.
 """
 
 import argparse
@@ -215,7 +214,6 @@ if __name__ == '__main__':
     parser.add_argument('--resume', action='store_true', default=False, help='Preserve existing output and skip already-completed items. Default is to delete and rebuild from scratch.')
     parser.add_argument('--prev-step', dest='prev_step', type=str, default=None,
                         help=f"Name of the pipeline step directory holding the input exposures "
-                             f"(default: '{PREV_SCRIPT_NAME}'). Use e.g. '05_romanisim_l3_subpixel' "
-                             f"for the sub-pixel romanisim variant.")
+                             f"(default: '{PREV_SCRIPT_NAME}').")
     args = parser.parse_args()
     main(args)

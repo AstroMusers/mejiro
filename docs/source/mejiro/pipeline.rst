@@ -16,13 +16,6 @@ Step 0: Cache PSFs
     :members:
     :show-inheritance:
 
-Step 1: Run Survey Simulation
-*****************************
-
-.. automodule:: mejiro.pipeline._01_run_survey_simulation
-    :members:
-    :show-inheritance:
-
 Step 1a: Generate Galaxy Tables
 ********************************
 
@@ -30,8 +23,8 @@ Step 1a: Generate Galaxy Tables
     :members:
     :show-inheritance:
 
-Step 1b: Run Survey Simulation (Pre-computed Tables)
-****************************************************
+Step 1b: Run Survey Simulation
+******************************
 
 .. automodule:: mejiro.pipeline._01b_run_survey_simulation
     :members:
@@ -68,7 +61,7 @@ Step 5: Create Exposures (galsim)
 Step 5 (Alternative): Create Exposures (romanisim)
 ***************************************************
 
-.. automodule:: mejiro.pipeline.romanisim_pipeline
+.. automodule:: mejiro.pipeline._05_romanisim
     :members:
     :show-inheritance:
 

@@ -1,14 +1,14 @@
 # L3 cutout orientation: corner triangles, rotation, and mirroring
 
 **Status:** diagnosed 2026-07-14; fix implemented in
-`mejiro/pipeline/romanisim_l3_pipeline.py` (per-SCA resample rotation + lossless parity
+`mejiro/pipeline/_05_romanisim.py` (per-SCA resample rotation + lossless parity
 flip at cutout extraction). Cutouts generated *before* that fix are rotated ~30°
 (mod 90°) and mirror-flipped relative to their input SyntheticImages.
 
 ## Symptom
 
 In `notebooks/view_05_romanisim_l3.ipynb`, some L3 cutouts produced by
-`mejiro/pipeline/romanisim_l3_pipeline.py` show dark **triangles in their corners**, and
+`mejiro/pipeline/_05_romanisim.py` show dark **triangles in their corners**, and
 cutouts are **not oriented the same way** as the input SyntheticImages. Only a minority
 of cutouts visibly show the triangles.
 
@@ -74,7 +74,7 @@ actually used** to place pixels on the sky.
 
 ### 3. romancal resample with `rotation: None` trusts that metadata
 
-`MosaicPipeline`'s resample step (called at `romanisim_l3_pipeline.py`,
+`MosaicPipeline`'s resample step (called at `_05_romanisim.py`,
 `process_batch`) builds the output mosaic WCS through
 `romancal.resample.resample_utils.make_output_wcs` →
 `stcal.alignment.util.wcs_from_sregions`. With `rotation=None` it uses the *first
@@ -109,7 +109,7 @@ correct sky position (`world_to_pixel` — centering is unaffected), so:
 The rotation affects **every** cutout identically. Visibility is brightness-selected:
 the tile boundary only shows when the system's flux at the tile edge stands above the
 sky background in the gaps. Verified empirically on
-`05_romanisim_l3/sca01` — the brightest/most extended systems all show a crisp
+`05_romanisim/sca01` — the brightest/most extended systems all show a crisp
 ~30°-rotated square boundary with dark corner triangles; median and faint systems are at
 sky level at their edges and look seamless. (Per-cutout `LogNorm` percentile stretches
 in the viewing notebook amplify this selection.)
@@ -117,7 +117,7 @@ in the viewing notebook amplify this selection.)
 ## Evidence
 
 - Diagnostic mosaic PNGs saved by the pipeline, e.g.
-  `<data_dir>/<label>/05_romanisim_l3/sca01/sca01_F106_batch0_mosaic.png`: the detector
+  `<data_dir>/<label>/05_romanisim/sca01/sca01_F106_batch0_mosaic.png`: the detector
   footprint (and the tiled overlap region at its center) is a ~30°-rotated square in
   the north-up mosaic frame.
 - Ranking sca01 cutouts by peak brightness: the top handful all show boundary +
@@ -125,7 +125,7 @@ in the viewing notebook amplify this selection.)
 
 ## Fix
 
-Implemented in `mejiro/pipeline/romanisim_l3_pipeline.py`:
+Implemented in `mejiro/pipeline/_05_romanisim.py`:
 
 1. **Per-batch resample rotation.** In `process_batch`, the position angle of the
    dither-0 detector +y axis is measured from `wcses[0]` at the detector center and
