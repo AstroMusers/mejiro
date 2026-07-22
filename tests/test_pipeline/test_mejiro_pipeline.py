@@ -1,11 +1,29 @@
+import os
+
+import pytest
+import yaml
+
+import mejiro
 from mejiro.pipeline.mejiro_pipeline import Pipeline
+from mejiro.utils import util
+
+TEST_CONFIG = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'mejiro_config', 'test.yaml')
 
 
-def test_pipeline_run(tmp_path):
+@pytest.mark.parametrize('serialization', ['full', 'lightweight'])
+def test_pipeline_run(tmp_path, serialization):
     temp_dir = tmp_path / "subdir"
     temp_dir.mkdir()
 
-    pipeline = Pipeline(data_dir=str(temp_dir), _test_mode=True)
+    # derive a test config with the subhalos serialization mode under test
+    with open(TEST_CONFIG) as f:
+        config = yaml.safe_load(f)
+    config['subhalos']['serialization'] = serialization
+    config_file = tmp_path / "test_config.yaml"
+    with open(config_file, 'w') as f:
+        yaml.safe_dump(config, f)
+
+    pipeline = Pipeline(config_file=str(config_file), data_dir=str(temp_dir), _test_mode=True)
     pipeline.run()
 
     # check script 01a output
@@ -53,6 +71,15 @@ def test_pipeline_run(tmp_path):
 
     lens_with_subhalos_pickles = list(script03_sca01_dir.glob("lens_test_*.pkl"))
     assert len(lens_with_subhalos_pickles) > 0, f"Expected at least 1 lens pickle file in {script03_sca01_dir}, found {len(lens_with_subhalos_pickles)}"
+
+    # verify the serialization mode on the step 03 pickle (fraction is 1.0, so this lens has substructure)
+    lens = util.unpickle(str(lens_with_subhalos_pickles[0]))
+    if serialization == 'lightweight':
+        assert lens.realization == '<lightweight>', "lightweight 03 pickle should carry the sentinel"
+        assert lens.substructure_flag == 'CDM', "lightweight 03 pickle should store the substructure flag"
+    else:
+        assert lens.realization is not None and not isinstance(lens.realization, str), \
+            "full 03 pickle should retain the pyHalo realization object"
 
     # subhalo_dir = script03_dir / "subhalos"
     # assert subhalo_dir.exists() and subhalo_dir.is_dir(), "Subhalos directory does not exist in script 03 output"

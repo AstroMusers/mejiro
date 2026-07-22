@@ -67,6 +67,7 @@ survey:
 subhalos:
   fraction: 1.
   pyhalo_model: CDM
+  serialization: full  # 'full' keeps the pyHalo realization object in 03 pickles; 'lightweight' strips it (see analysis.lensing.strip_realization)
   realization_kwargs:
     log_mlow: 9
     log_mhigh: 12
