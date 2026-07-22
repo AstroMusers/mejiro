@@ -1,5 +1,4 @@
 import os
-import re
 import yaml
 from glob import glob
 from pprint import pprint
@@ -43,12 +42,14 @@ for path in tqdm(lens_pickles):
     system_id = lens.name
 
     if realization is None:
+        # no substructure
         substructure_flag = None
+    elif hasattr(lens, 'substructure_flag'):
+        # lightweight serialization: realization stripped, flag stored at 03 time
+        substructure_flag = lens.substructure_flag
     else:
-        mf_name = realization.rendering_classes[0]._mass_function_model.__name__
-        conc_name = realization.kwargs_halo_model['concentration_model_subhalos'].__class__.__name__
-        match = re.match(r'^([A-Z]{2,}?)(?=[A-Z][a-z]|$)', mf_name) or re.search(r'([A-Z]{2,}?)(?=[A-Z][a-z]|$)', conc_name)
-        substructure_flag = match.group(1)
+        # full serialization: derive the flag from the realization object
+        substructure_flag = lensing.substructure_flag(realization)
 
     rows.append({"id": system_id, "substructure_flag": substructure_flag})
 

@@ -54,6 +54,7 @@ survey:
 subhalos:
   fraction: 1.  # fraction of systems to add substructure to
   pyhalo_model: CDM
+  serialization: full  # 'full' keeps the pyHalo realization object in 03 pickles; 'lightweight' strips it (see analysis.lensing.strip_realization)
   realization_kwargs:
     log_mlow: 4
     log_mhigh: 12

@@ -21,6 +21,7 @@ import numpy as np
 from pyHalo.preset_models import preset_model_from_name
 from tqdm import tqdm
 
+from mejiro.analysis import lensing
 from mejiro.utils import util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
@@ -53,6 +54,15 @@ def main(args):
     # retrieve configuration parameters
     use_jax = pipeline.config['jaxtronomy']['use_jax']
     subhalo_config = pipeline.config['subhalos']
+
+    # 'full' pickles the whole realization object; 'lightweight' strips it (~76%
+    # of a subhalo'd pickle) since step 04 ray-shoots from the baked-in
+    # kwargs_lens, not the realization. Mirrors synthetic_image.serialization.
+    serialization = subhalo_config['serialization']
+    if serialization not in ('full', 'lightweight'):
+        raise ValueError(
+            f"subhalos.serialization must be 'full' or 'lightweight', got {serialization!r}"
+        )
 
     # set input and output directories
     if pipeline.instrument_name == 'roman':
@@ -191,6 +201,12 @@ def add(tuple):
 
         # add subhalos
         lens.add_realization(realization, use_jax=use_jax)
+
+        # For lightweight serialization, drop the ~59 MB realization object
+        # (step 04 reads only the baked-in kwargs_lens); the substructure flag is
+        # recorded on the lens and a truthy sentinel preserves has_realization.
+        if subhalo_config['serialization'] == 'lightweight':
+            lensing.strip_realization(lens)
 
         # pickle the subhalo realization
         # subhalo_dir = os.path.join(pipeline.output_dir, 'subhalos')
