@@ -323,9 +323,11 @@ def main(args):
         format='%(asctime)s %(levelname)s %(name)s: %(message)s',
         force=True,
     )
-    if args.level == 'l3':
-        logging.getLogger('romanisim').setLevel(logging.ERROR)
-        logging.getLogger('romancal').setLevel(logging.WARNING)
+    # suppress logging from romanisim, romancal, etc.
+    logging.captureWarnings(True)
+    for _name in ('romanisim', 'romancal', 'stcal', 'roman_datamodels',
+                  'stpipe', 'tweakwcs', 'py.warnings'):
+        logging.getLogger(_name).setLevel(logging.ERROR)
 
     limit = pipeline.limit
 
@@ -773,6 +775,7 @@ def process_batch_l3(task):
         logger.info(f'  Running MosaicPipeline for {product_name}...')
         MosaicPipeline.call(
             asn_path, save_results=True, output_dir=batch_dir, resample_on_skycell=False,
+            configure_log=False,
             steps={
                 'skymatch': {'skip': True},
                 'outlier_detection': {'skip': True},
