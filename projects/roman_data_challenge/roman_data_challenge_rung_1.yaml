@@ -6,7 +6,7 @@ nice: 19
 show_progress_bar: True
 suppress_warnings: True
 logging_level: WARNING
-limit: 100
+limit: null
 seed: &seed 42
 cores:
   script_00: 60
@@ -16,7 +16,7 @@ cores:
   script_03: 60
   script_04: 60
   script_05: 60
-  script_05_romanisim: 12  # for --level l3, each worker holds 4 L2s + a coadd (~1.5 GB)
+  script_05_romanisim: 32
   script_snr: 24
 jaxtronomy: 
   use_jax: True
@@ -94,7 +94,7 @@ exposure:
     ra: 150.
     dec: 2.
 imaging:
-  exposure_time: &exposure_time 610
+  exposure_time: &exposure_time 4422
   engine: galsim
   engine_params:
     rng_seed: *seed
