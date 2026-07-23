@@ -913,7 +913,10 @@ def print_execution_time(start, stop, return_string=False):
 
     """
     execution_time = calculate_execution_time(start, stop)
-    logger.info(f"Execution time: {execution_time}")
+    # log at level 100 so the timing always prints, regardless of the logger's
+    # configured level or whether any handler was set up (level 100 clears every
+    # normal threshold and Python's last-resort stderr handler).
+    logger.log(100, f"Execution time: {execution_time}")
     if return_string:
         return execution_time
 
