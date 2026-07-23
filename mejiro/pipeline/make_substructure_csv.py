@@ -1,4 +1,5 @@
 import os
+import time
 import yaml
 from glob import glob
 from pprint import pprint
@@ -25,6 +26,8 @@ if config['dev']:
 
 input_dir = os.path.join(config['data_dir'], config['pipeline_label'], '03')
 output_dir = os.path.join(config['data_dir'], config['pipeline_label'])
+
+start = time.time()
 
 lens_pickles = sorted(glob(os.path.join(input_dir, 'sca*', 'lens_*.pkl')))
 print(f'Found {len(lens_pickles)} system(s) in {input_dir}')
@@ -59,3 +62,6 @@ print(df.head())
 csv_path = os.path.join(output_dir, "substructure_flags.csv")
 df.to_csv(csv_path, index=False)
 print(f"Wrote {len(df)} rows to {csv_path}")
+
+stop = time.time()
+util.print_execution_time(start, stop)

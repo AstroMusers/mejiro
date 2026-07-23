@@ -1,9 +1,11 @@
 import argparse
 import logging
 import os
+import time
 import yaml
 
 import mejiro
+from mejiro.utils import util
 
 logger = logging.getLogger(__name__)
 from mejiro.pipeline import (
@@ -88,6 +90,7 @@ class Pipeline:
         The method assumes that each script's `main` function accepts `self.args` as its argument.
         The PSF caching step is skipped if `_test_mode` is True.
         """
+        start = time.time()
         if not self._test_mode:
             script_00_cache_psfs.main(self.args)
         script_01a_generate_galaxy_tables.main(self.args)
@@ -96,6 +99,8 @@ class Pipeline:
         script_03_generate_subhalos.main(self.args)
         script_04_create_synthetic_images.main(self.args)
         self._run_exposure_export_tail()
+        stop = time.time()
+        util.print_execution_time(start, stop)
 
     def _run_exposure_export_tail(self):
         """Run the exposure and HDF5-export steps for the configured ``imaging.engine``.

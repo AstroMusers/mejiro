@@ -16,10 +16,13 @@ Arguments:
 import argparse
 import os
 import pickle
+import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from glob import glob
 
 from tqdm import tqdm
+
+from mejiro.utils import util
 
 
 def _check_pickle(path):
@@ -78,4 +81,7 @@ if __name__ == '__main__':
     parser.add_argument('--workers', type=int, default=36,
                         help='Number of parallel worker processes (default: 36).')
     args = parser.parse_args()
+    start = time.time()
     scan(args.directory, args.pattern, args.delete, args.workers)
+    stop = time.time()
+    util.print_execution_time(start, stop)

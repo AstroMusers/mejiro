@@ -135,9 +135,9 @@ def main(args):
     reclaimed = (f'{bytes_saved / 1024**3:.1f} GB' if bytes_saved >= 1024**3
                  else f'{bytes_saved / 1024**2:.0f} MB')
     logger.info(
-        f'Compacted {compacted} file(s) ({reclaimed} reclaimed), '
-        f'skipped {skipped}. Took {stop - start:.0f} s.'
+        f'Compacted {compacted} file(s) ({reclaimed} reclaimed), skipped {skipped}.'
     )
+    util.print_execution_time(start, stop)
 
 
 if __name__ == '__main__':
