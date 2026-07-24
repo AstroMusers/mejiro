@@ -54,6 +54,17 @@ def main(args):
     # retrieve configuration parameters
     imaging_config = pipeline.config['imaging']
 
+    # imaging.serialization selects how the Exposure OUTPUT is written: 'lightweight'
+    # writes a compact .npz (data + optional pieces + JSON metadata) via
+    # Exposure.save_lightweight; 'full' pickles the whole Exposure object. This is
+    # distinct from synthetic_image.serialization below, which governs the step-04 INPUT.
+    output_serialization = imaging_config['serialization']
+    if output_serialization not in ('full', 'lightweight'):
+        raise ValueError(
+            f"imaging.serialization must be 'full' or 'lightweight', got {output_serialization!r}"
+        )
+    output_ext = '.npz' if output_serialization == 'lightweight' else '.pkl'
+
     # The galsim engine needs the full SyntheticImage (lens model, PSF, pixel
     # grid, etc.), so lightweight inputs from step 04 are not usable here.
     serialization = pipeline.config['synthetic_image']['serialization']
@@ -74,13 +85,13 @@ def main(args):
     else:
         raise ValueError(f'Unknown instrument {pipeline.instrument_name}. Supported instruments are {SUPPORTED_INSTRUMENTS}.')
 
-    # resume: skip inputs whose Exposure pickle already exists. mirror the input's directory
+    # resume: skip inputs whose Exposure output already exists. mirror the input's directory
     # layout (per-SCA for roman, flat otherwise) to derive the expected output path.
     if args.resume:
         def _expected_output(input_pickle):
             base = os.path.basename(input_pickle)
             assert base.startswith('SyntheticImage_') and base.endswith('.pkl'), base
-            out_name = 'Exposure_' + base[len('SyntheticImage_'):]
+            out_name = 'Exposure_' + base[len('SyntheticImage_'):-len('.pkl')] + output_ext
             if pipeline.instrument_name == 'roman':
                 sca_dir = os.path.basename(os.path.dirname(input_pickle))
                 return os.path.join(pipeline.output_dir, sca_dir, out_name)
@@ -137,23 +148,29 @@ def get_image(input):
     exposure_time = imaging_config['exposure_time']
     engine = imaging_config['engine']
     engine_params = imaging_config['engine_params']
+    output_serialization = imaging_config['serialization']
+    output_ext = '.npz' if output_serialization == 'lightweight' else '.pkl'
 
     # load synthetic image
     synthetic_image = util.unpickle(input_pickle)
-        
+
     if pipeline.instrument_name == 'roman':
         sca_string = roman_util.get_sca_string(synthetic_image.instrument_params['detector']).lower()
         output_dir = os.path.join(pipeline.output_dir, sca_string)
     else:
         output_dir = pipeline.output_dir
 
-    # build and pickle exposure
+    # build and save exposure ('lightweight' -> compact .npz, 'full' -> whole-object pickle)
     try:
         exposure = Exposure(synthetic_image,
                         exposure_time=exposure_time,
                         engine=engine,
                         engine_params=engine_params)
-        util.pickle(os.path.join(output_dir, f'Exposure_{synthetic_image.strong_lens.name}_{synthetic_image.band}.pkl'), exposure)
+        output_path = os.path.join(output_dir, f'Exposure_{synthetic_image.strong_lens.name}_{synthetic_image.band}{output_ext}')
+        if output_serialization == 'lightweight':
+            exposure.save_lightweight(output_path)
+        else:
+            util.pickle(output_path, exposure)
     except Exception as e:
         failed_pickle_path = os.path.join(output_dir, f'failed_{synthetic_image.strong_lens.name}_{synthetic_image.band}.pkl')
         util.pickle(failed_pickle_path, synthetic_image)

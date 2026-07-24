@@ -6,8 +6,8 @@ corresponding SyntheticImage files from step 04, and writes them to an HDF5 file
 relevant metadata. The input step is given by --prev-step, and it determines both the file
 format and the pixel units:
 
-    - exposure data: bare arrays from 05_romanisim/sca*/Exposure_*.npy, or the .data of the
-      Exposure objects pickled to 05_galsim/sca*/Exposure_*.pkl
+    - exposure data: read via util.load_exposure -- bare arrays from 05_romanisim/sca*/Exposure_*.npy,
+      or the .data of the lightweight .npz / full .pkl Exposure written to 05_galsim/sca*/
     - exposure_time: for romanisim, from config['exposure']['ma_table_number'] via romanisim
       parameters; for galsim, config['imaging']['exposure_time']
     - units: galsim writes DN (counts; Roman gain is 1.0 e-/DN). romanisim writes L2 in DN/s
@@ -37,6 +37,7 @@ import os
 import pandas as pd
 import platform
 import romanisim
+import romancal
 import slsim
 import stpsf
 import time
@@ -76,7 +77,7 @@ def main(args):
     labeled = dataset_config['labeled']
 
     # exposure time and pixel units both depend on which step-05 variant wrote the input
-    extension = PipelineHelper.exposure_extension(prev_script_name)
+    extension = PipelineHelper.exposure_extension(prev_script_name, pipeline.config['imaging']['serialization'])
     if extension == '.npy':
         # romanisim: exposure time comes from the MA table, units from the data level.
         # Every level writes to the same directory, so the level is read from the sidecar
@@ -101,7 +102,7 @@ def main(args):
     # calculate and implement limit, if specified
     if pipeline.limit is not None:
         uids = uids[:pipeline.limit]
-        logger.info(f'Limiting to {len(uids)} systems')
+        logger.warn(f'Limiting to {len(uids)} systems')
 
     # directory containing SyntheticImage files from step 04
     synth_input_dir = pipeline.step_dir('04')
@@ -135,6 +136,7 @@ def main(args):
     f.attrs['slsim_version'] = (slsim.__version__, 'SLSim version')
     f.attrs['romanisim_version'] = (romanisim.__version__, 'romanisim version')
     f.attrs['stpsf_version'] = (stpsf.__version__, 'STPSF version')
+    f.attrs['romancal'] = (romancal.__version__, 'romancal version')
 
     group_images = f.create_group('images')
 
@@ -163,11 +165,6 @@ def main(args):
         group_lens.attrs['detector_position_x'] = (str(synthetic_image.instrument_params['detector_position'][0]), 'Detector X position')
         group_lens.attrs['detector_position_y'] = (str(synthetic_image.instrument_params['detector_position'][1]), 'Detector Y position')
 
-        # flag systems rendered as the deflector (lens galaxy) alone, with no source or lensing
-        group_lens.attrs['deflector_only'] = (
-            str(getattr(synthetic_image, 'deflector_only')),
-            'Only the deflector (lens galaxy) light was simulated; no source/lensing')
-
         # set truth attributes, including subhalo params
         if labeled:
             group_lens.attrs['main_halo_mass'] = (str(lens.get_main_halo_mass()), 'Lens galaxy main halo mass [M_sun]')
@@ -179,16 +176,19 @@ def main(args):
                     group_lens.attrs[key] = (str(value), 'See pyHalo documentation')
             else:
                 group_lens.attrs['substructure'] = ('False', 'Is substructure present in this lens?')
+            
+            # deflector-only
+            group_lens.attrs['deflector_only'] = (
+            str(getattr(synthetic_image, 'deflector_only')),
+            'Only the deflector (lens galaxy) light was simulated; no source/lensing')
 
         for band in bands:
-            # load the cutout: a bare array from romanisim, or an Exposure pickle from galsim
+            # load the cutout: bare .npy from romanisim, lightweight .npz or full .pkl from
+            # galsim. load_exposure dispatches on extension; only .data is needed here.
             sca_string = f'sca{str(synthetic_image.instrument_params["detector"]).zfill(2)}'
             exposure_path = os.path.join(pipeline.input_dir, sca_string,
                                          f'Exposure_{pipeline.name}_{uid}_{band}{extension}')
-            if extension == '.npy':
-                exposure_data = np.load(exposure_path)
-            else:
-                exposure_data = util.unpickle(exposure_path).data
+            exposure_data = util.load_exposure(exposure_path).data
 
             # load the SyntheticImage for this band
             synthetic_image = util.load_synthetic_image(synth_by_band[band])

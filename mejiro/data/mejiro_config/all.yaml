@@ -55,6 +55,7 @@ survey:
   magnification: 3
 imaging:
   engine: galsim
+  serialization: lightweight  # Exposure OUTPUT format: lightweight -> compact .npz (data + pieces + metadata); full -> whole-object pickle
   engine_params:
     rng_seed: *seed
     min_zodi_factor: 1.

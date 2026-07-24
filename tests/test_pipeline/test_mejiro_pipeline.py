@@ -105,8 +105,10 @@ def test_pipeline_run(tmp_path, serialization):
     script05_sca01_dir = script05_dir / "sca01"
     assert script05_sca01_dir.exists() and script05_sca01_dir.is_dir(), "sca01 directory does not exist in script 05 output"
 
-    exposure_pickles = list(script05_sca01_dir.glob("Exposure_test_*.pkl"))
-    assert len(exposure_pickles) > 0, f"Expected at least 1 exposure pickle file in {script05_sca01_dir}, found {len(exposure_pickles)}"
+    # step 05 writes '.npz' (imaging.serialization: lightweight) or '.pkl' ('full')
+    exposure_ext = '.npz' if config['imaging']['serialization'] == 'lightweight' else '.pkl'
+    exposure_files = list(script05_sca01_dir.glob(f"Exposure_test_*{exposure_ext}"))
+    assert len(exposure_files) > 0, f"Expected at least 1 exposure {exposure_ext} file in {script05_sca01_dir}, found {len(exposure_files)}"
 
     # check script 06 output
     script06_dir = temp_dir / "test_dev" / "06"

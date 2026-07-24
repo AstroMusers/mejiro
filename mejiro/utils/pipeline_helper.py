@@ -227,14 +227,19 @@ class PipelineHelper:
         assert self.instrument_name == instrument_name, f"This method is only for the {instrument_name} instrument."
 
     @staticmethod
-    def exposure_extension(step_name):
+    def exposure_extension(step_name, serialization=None):
         """File extension of the exposures a step-05 variant produces.
 
-        ``_05_romanisim`` saves bare ``.npy`` cutouts; ``_05_galsim`` pickles whole
-        ``Exposure`` objects. The tail steps (calculate_snrs, _06_h5_export) run off
-        either, so they resolve the extension from whichever step wrote their input.
+        ``_05_romanisim`` saves bare ``.npy`` cutouts (``serialization`` is ignored).
+        ``_05_galsim`` writes a compact ``.npz`` when ``imaging.serialization`` is
+        ``'lightweight'`` and pickles the whole ``Exposure`` object (``.pkl``) when it
+        is ``'full'``. The tail steps (calculate_snrs, _06_h5_export) run off either,
+        so they resolve the extension from whichever step wrote their input plus that
+        step's serialization mode.
         """
-        return '.npy' if step_name.startswith('05_romanisim') else '.pkl'
+        if step_name.startswith('05_romanisim'):
+            return '.npy'
+        return '.npz' if serialization == 'lightweight' else '.pkl'
 
     @staticmethod
     def patch_astropy_for_mejiro_v2_pickles():
