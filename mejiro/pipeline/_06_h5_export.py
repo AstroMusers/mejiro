@@ -1,15 +1,20 @@
 """
-Exports romanisim exposures and synthetic images to HDF5 format.
+Exports step-05 exposures and synthetic images to HDF5 format.
 
-This script reads romanisim exposure cutouts (.npy) and the corresponding SyntheticImage
-files from previous pipeline steps, and writes them to an HDF5 file with relevant
-metadata:
+This script reads the exposure cutouts written by whichever step-05 variant ran, plus the
+corresponding SyntheticImage files from step 04, and writes them to an HDF5 file with
+relevant metadata. The input step is given by --prev-step, and it determines both the file
+format and the pixel units:
 
-    - exposure data: loaded from .npy cutout files (05_romanisim/sca*/)
-    - exposure_time: from config['exposure']['ma_table_number'] via romanisim parameters
+    - exposure data: bare arrays from 05_romanisim/sca*/Exposure_*.npy, or the .data of the
+      Exposure objects pickled to 05_galsim/sca*/Exposure_*.pkl
+    - exposure_time: for romanisim, from config['exposure']['ma_table_number'] via romanisim
+      parameters; for galsim, config['imaging']['exposure_time']
+    - units: galsim writes DN (counts; Roman gain is 1.0 e-/DN). romanisim writes L2 in DN/s
+      and L3 in MJy/sr; since both levels land in the same directory, the level is read from
+      the exposure_level.txt sidecar that _05_romanisim writes.
     - lens and synthetic image metadata: from the SyntheticImage files in step 04
     - SNR: read from name_snr_pairs.pkl produced by calculate_snrs.py (optional)
-    - units: DN/s
 
 If config['dataset']['labeled'] is False, truth attributes (main halo mass, Einstein
 radius, velocity dispersion, substructure) are omitted from the HDF5 file and an
@@ -70,16 +75,28 @@ def main(args):
     dataset_config = pipeline.config['dataset']
     labeled = dataset_config['labeled']
 
-    # compute exposure time from romanisim MA table
-    ma_table_number = pipeline.config['exposure']['ma_table_number']
-    read_pattern = romanisim_params.read_pattern[ma_table_number]
-    exposure_time = romanisim_params.read_time * read_pattern[-1][-1]
+    # exposure time and pixel units both depend on which step-05 variant wrote the input
+    extension = PipelineHelper.exposure_extension(prev_script_name)
+    if extension == '.npy':
+        # romanisim: exposure time comes from the MA table, units from the data level.
+        # Every level writes to the same directory, so the level is read from the sidecar
+        # _05_romanisim leaves behind.
+        ma_table_number = pipeline.config['exposure']['ma_table_number']
+        read_pattern = romanisim_params.read_pattern[ma_table_number]
+        exposure_time = romanisim_params.read_time * read_pattern[-1][-1]
+        with open(os.path.join(pipeline.input_dir, 'exposure_level.txt')) as f:
+            level = f.read().strip()
+        units = 'DN/s' if level == 'l2' else 'MJy/sr'
+    else:
+        # galsim: counts (= DN for Roman, where gain is 1.0 e-/DN), see mejiro.exposure.Exposure
+        exposure_time = pipeline.config['imaging']['exposure_time']
+        units = 'DN'
 
     # discover exposure cutouts and parse UIDs
     logger.info(f'Looking for exposure cutouts in {pipeline.input_dir}')
-    exposure_npy_files = sorted(glob(os.path.join(pipeline.input_dir, 'sca*', f'Exposure_{pipeline.name}_*.npy')))
-    uids = sorted({os.path.basename(f).split('_')[-2] for f in exposure_npy_files})
-    logger.info(f'Found {len(uids)} unique system(s)')
+    exposure_files = sorted(glob(os.path.join(pipeline.input_dir, 'sca*', f'Exposure_{pipeline.name}_*{extension}')))
+    uids = sorted({os.path.basename(f).split('_')[-2] for f in exposure_files})
+    logger.info(f'Found {len(uids)} unique system(s) ({extension}, {units})')
 
     # calculate and implement limit, if specified
     if pipeline.limit is not None:
@@ -164,10 +181,14 @@ def main(args):
                 group_lens.attrs['substructure'] = ('False', 'Is substructure present in this lens?')
 
         for band in bands:
-            # load the .npy cutout
+            # load the cutout: a bare array from romanisim, or an Exposure pickle from galsim
             sca_string = f'sca{str(synthetic_image.instrument_params["detector"]).zfill(2)}'
-            exposure_data = np.load(os.path.join(pipeline.input_dir, sca_string,
-                                                 f'Exposure_{pipeline.name}_{uid}_{band}.npy'))
+            exposure_path = os.path.join(pipeline.input_dir, sca_string,
+                                         f'Exposure_{pipeline.name}_{uid}_{band}{extension}')
+            if extension == '.npy':
+                exposure_data = np.load(exposure_path)
+            else:
+                exposure_data = util.unpickle(exposure_path).data
 
             # load the SyntheticImage for this band
             synthetic_image = util.load_synthetic_image(synth_by_band[band])
@@ -195,7 +216,7 @@ def main(args):
 
             # attributes to set on both
             for dset in dset_list:
-                dset.attrs['units'] = ('DN/s', 'Units of pixel values')
+                dset.attrs['units'] = (units, 'Units of pixel values')
                 dset.attrs['filter'] = (band, 'Filter')
                 dset.attrs['source_magnitude'] = (str(lens.get_source_magnitude(band)), 'Unlensed source galaxy magnitude')
                 dset.attrs['lensed_source_magnitude'] = (

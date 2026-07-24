@@ -227,6 +227,16 @@ class PipelineHelper:
         assert self.instrument_name == instrument_name, f"This method is only for the {instrument_name} instrument."
 
     @staticmethod
+    def exposure_extension(step_name):
+        """File extension of the exposures a step-05 variant produces.
+
+        ``_05_romanisim`` saves bare ``.npy`` cutouts; ``_05_galsim`` pickles whole
+        ``Exposure`` objects. The tail steps (calculate_snrs, _06_h5_export) run off
+        either, so they resolve the extension from whichever step wrote their input.
+        """
+        return '.npy' if step_name.startswith('05_romanisim') else '.pkl'
+
+    @staticmethod
     def patch_astropy_for_mejiro_v2_pickles():
         """
         Make astropy cosmology objects pickled under the ``mejiro-v2`` conda

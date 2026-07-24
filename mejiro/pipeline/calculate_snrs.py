@@ -70,9 +70,12 @@ def main(args):
     # retrieve configuration parameters
     snr_config = pipeline.config['snr']
 
-    # set input and output directories
+    # set input and output directories; the exposure file extension depends on which
+    # step-05 variant produced them (romanisim .npy vs galsim .pkl). Only the filenames
+    # matter here: _rebuild_snr re-derives the SNR from the step-02 and step-04 pickles.
+    extension = PipelineHelper.exposure_extension(prev_script_name)
     if pipeline.instrument_name == 'roman':
-        input_pickles = pipeline.retrieve_roman_pickles(prefix='Exposure', suffix='', extension='.npy')
+        input_pickles = pipeline.retrieve_roman_pickles(prefix='Exposure', suffix='', extension=extension)
     elif pipeline.instrument_name == 'hwo':
         input_pickles = pipeline.retrieve_pickles(prefix='Exposure', suffix='', extension='.pkl')
     else:

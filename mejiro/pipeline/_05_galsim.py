@@ -28,7 +28,7 @@ from mejiro.utils.pipeline_helper import PipelineHelper
 logger = logging.getLogger(__name__)
 
 PREV_SCRIPT_NAME = '04'
-SCRIPT_NAME = '05'
+SCRIPT_NAME = '05_galsim'
 SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
 
 

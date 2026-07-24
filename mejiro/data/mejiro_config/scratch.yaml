@@ -22,7 +22,7 @@ cores:
   script_01b: 1
   script_03: 1
   script_04: 1
-  script_05: 1
+  script_05_galsim: 1
   script_05_romanisim: 1
   script_snr: 1
 jaxtronomy:

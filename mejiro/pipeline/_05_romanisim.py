@@ -415,6 +415,13 @@ def main(args):
             )
             mejiro_util.clear_directory(pipeline.output_dir)
 
+    # Record the level: L2 cutouts are in DN/s, L3 in MJy/sr, and since every level writes to
+    # this same directory nothing else on disk distinguishes them. _06_h5_export reads this to
+    # label the units. Written after the wipe above so a fresh run cannot delete it, and
+    # rewritten under --resume so it always describes what is actually in the directory.
+    with open(os.path.join(pipeline.output_dir, 'exposure_level.txt'), 'w') as f:
+        f.write(args.level)
+
     if args.level == 'l2':
         logger.info(f'Tile size: {tile_size}x{tile_size} ({pixel_scale * tile_size:.2f} arcsec)')
         logger.info(f'Grid: {grid_side}x{grid_side} = {n_tiles} tiles per batch')

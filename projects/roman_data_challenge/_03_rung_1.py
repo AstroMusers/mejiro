@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 PREV_SCRIPT_NAME = '02'
-SCRIPT_NAME = '05'
+SCRIPT_NAME = '05_galsim'
 SUPPORTED_INSTRUMENTS = ['roman']
 REALIZATION_TYPE = 'CDM'  # set to 'CDM' or 'ULDM' to select which systems to process
 

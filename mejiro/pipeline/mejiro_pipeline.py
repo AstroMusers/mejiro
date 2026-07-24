@@ -1,4 +1,5 @@
 import argparse
+import copy
 import logging
 import os
 import time
@@ -108,14 +109,30 @@ class Pipeline:
         * ``galsim``    -> _05_galsim -> _06_h5_export
         * ``romanisim`` -> _05_romanisim -> calculate_snrs -> _06_h5_export
         """
+        tail_args = self._tail_args()
         if self._engine == 'galsim':
             script_05_galsim.main(self.args)
         elif self._engine == 'romanisim':
             script_05_romanisim.main(self.args)
-            script_calculate_snrs.main(self.args)
+            script_calculate_snrs.main(tail_args)
         else:
             raise ValueError(f"Unsupported imaging engine: {self._engine!r}")
-        script_06_h5_export.main(self.args)
+        script_06_h5_export.main(tail_args)
+
+    def _tail_args(self):
+        """Args for the tail steps, with ``prev_step`` pointing at the exposure step.
+
+        ``--prev-step`` is registered for _04 (which reads lens pickles from '02' or '03'),
+        but calculate_snrs and _06_h5_export read the same attribute to find *exposures*.
+        Handing them the _04 value sends them to an empty directory, so override it with
+        whichever step this engine's exposures came from.
+        """
+        tail_args = copy.copy(self.args)
+        if self._engine == 'galsim':
+            tail_args.prev_step = script_05_galsim.SCRIPT_NAME
+        else:
+            tail_args.prev_step = script_05_romanisim.SCRIPT_NAME
+        return tail_args
 
     def run_script(self, script_number):
         """
@@ -162,9 +179,9 @@ class Pipeline:
             else:
                 script_05_galsim.main(self.args)
         elif script_number == 'snr':
-            script_calculate_snrs.main(self.args)
+            script_calculate_snrs.main(self._tail_args())
         elif script_number == 6:
-            script_06_h5_export.main(self.args)
+            script_06_h5_export.main(self._tail_args())
         else:
             raise ValueError(f"Script number {script_number} is not valid. Please choose a number between 0 and 6.")
 
@@ -216,7 +233,7 @@ class Pipeline:
         logger.info(
             f'Total pipeline execution time: {datetime.timedelta(seconds=total_time)}, {total_time} seconds, {total_time / 3600:.2f} hours')
         
-        data_dir = os.path.join(config['data_dir'], config['pipeline_label'], '05')
+        data_dir = os.path.join(config['data_dir'], config['pipeline_label'], script_05_galsim.SCRIPT_NAME)
 
         band = config['synthetic_image']['bands'][0]
         pickles = sorted(glob(os.path.join(data_dir, 'sca*', f'Exposure_*_{band}.pkl')))

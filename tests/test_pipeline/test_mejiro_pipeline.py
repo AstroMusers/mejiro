@@ -1,5 +1,6 @@
 import os
 
+import h5py
 import pytest
 import yaml
 
@@ -98,7 +99,7 @@ def test_pipeline_run(tmp_path, serialization):
     assert len(synthetic_image_pickles) > 0, f"Expected at least 1 synthetic image pickle file in {script04_sca01_dir}, found {len(synthetic_image_pickles)}"
 
     # check script 05 output
-    script05_dir = temp_dir / "test_dev" / "05"
+    script05_dir = temp_dir / "test_dev" / "05_galsim"
     assert script05_dir.exists() and script05_dir.is_dir(), "Script 05 directory does not exist"
 
     script05_sca01_dir = script05_dir / "sca01"
@@ -113,6 +114,20 @@ def test_pipeline_run(tmp_path, serialization):
 
     h5_file = list(script06_dir.glob("test_v_0_1.h5"))
     assert len(h5_file) == 1, f"Expected 1 HDF5 file in {script06_dir}, found {len(h5_file)}"
+
+    # the h5 is written even when no exposures are discovered, so assert on its contents:
+    # test.yaml runs the galsim engine, so every exposure must be present and in DN
+    with h5py.File(h5_file[0], 'r') as f:
+        groups = list(f['images'])
+        assert len(groups) > 0, "HDF5 'images' group is empty; step 06 found no exposures"
+
+        band = config['synthetic_image']['bands'][0]
+        for group_name in groups:
+            uid = group_name.split('_')[-1]
+            dset = f['images'][group_name][f'exposure_{uid}_{band}']
+            assert dset.shape[0] > 0 and dset.shape[1] > 0, f"{group_name} exposure is empty"
+            assert dset.attrs['units'][0] == 'DN', \
+                f"galsim exposures should be in DN, got {dset.attrs['units'][0]}"
 
 def test_no_data_dir():
     try:
