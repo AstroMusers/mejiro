@@ -134,6 +134,59 @@ CAL_STEP = {
     'wfi18_transient':   'N/A',
 }
 
+# Third-party libraries (romancal especially) call log.setLevel(logging.DEBUG) on
+# their own child loggers at import, so raising the level on the parent 'romancal'
+# logger does nothing. Filtering at the handler that actually emits is immune to that
+# and to whichever process/import order created the logger. See _suppress_third_party_logging.
+_THIRD_PARTY_PREFIXES = (
+    'romanisim', 'romancal', 'stcal', 'roman_datamodels',
+    'stpipe', 'tweakwcs', 'py.warnings',
+)
+
+
+class _ThirdPartyFilter(logging.Filter):
+    """Drop sub-ERROR records from the noisy third-party libraries.
+
+    Reproduces the intent of setLevel(logging.ERROR) on each library logger, but at
+    the handler so it survives romancal setting its own child loggers to DEBUG at
+    import (which defeats parent-level suppression).
+    """
+    def filter(self, record):
+        return record.levelno >= logging.ERROR or not record.name.startswith(_THIRD_PARTY_PREFIXES)
+
+
+class _CrdsParsRefFilter(logging.Filter):
+    """Drop CRDS's benign 'no pars reference' lookup errors, keeping genuine ones.
+
+    MosaicPipeline asks CRDS for a 'pars-mosaicpipeline' parameter reference that does
+    not exist for Roman; CRDS logs it at ERROR once per pipeline call and proceeds with
+    defaults, so it is pure noise.
+    """
+    def filter(self, record):
+        msg = record.getMessage()
+        return not ('pars-' in msg and 'Unknown reference type' in msg)
+
+
+def _suppress_third_party_logging():
+    """Quiet noisy third-party logging (romancal/romanisim/CRDS/...).
+
+    Attaches filters to the handlers that actually emit, so this must run after
+    logging.basicConfig(force=True) has installed the root handler. The Pool workers
+    inherit these filters via fork, which is where MosaicPipeline (and its logging) runs.
+    """
+    logging.captureWarnings(True)
+
+    third_party = _ThirdPartyFilter()
+    for handler in logging.getLogger().handlers:
+        handler.addFilter(third_party)
+
+    # CRDS sets propagate=False and installs its own handler, bypassing the root handler
+    # above, so filter its handler directly (the 'CRDS' logger/handler already exist via
+    # the top-level romancal import).
+    crds_pars = _CrdsParsRefFilter()
+    for handler in logging.getLogger('CRDS').handlers:
+        handler.addFilter(crds_pars)
+
 
 def _load_pickle(pickle_path):
     # Despite the name, this also handles lightweight .npz files via the
@@ -323,11 +376,8 @@ def main(args):
         format='%(asctime)s %(levelname)s %(name)s: %(message)s',
         force=True,
     )
-    # suppress logging from romanisim, romancal, etc.
-    logging.captureWarnings(True)
-    for _name in ('romanisim', 'romancal', 'stcal', 'roman_datamodels',
-                  'stpipe', 'tweakwcs', 'py.warnings'):
-        logging.getLogger(_name).setLevel(logging.ERROR)
+    # suppress noisy third-party logging (romancal/romanisim/CRDS/...)
+    _suppress_third_party_logging()
 
     limit = pipeline.limit
 
@@ -394,11 +444,7 @@ def main(args):
 
     if args.level == 'l3':
         # Scratch for the multi-GB L2/asn/coadd artifacts, kept out of output_dir so a leak
-        # can never be mistaken for output. Cleared unconditionally -- including under
-        # --resume, which is safe because the batch_complete_*.txt sentinels live in
-        # output_dir, so scratch holds no resumable state. This bounds scratch at one run's
-        # peak: a batch dir is removed as its batch ends, and anything a SIGKILL strands is
-        # reclaimed here.
+        # can never be mistaken for output
         scratch_dir = os.path.join(pipeline.data_dir, '_scratch',
                                    os.path.basename(pipeline.pipeline_dir), SCRIPT_NAME)
         os.makedirs(scratch_dir, exist_ok=True)
@@ -620,7 +666,7 @@ def process_batch_l2(task):
         plt.imshow(counts, norm=LogNorm(), origin='lower')
         plt.colorbar(label='Electrons')
         plt.title(f'SCA {sca_num:02d}, {band} batch {batch_idx} - Tiled Synthetic Images')
-        plt.savefig(os.path.join(sca_output_dir, f'sca{sca_num:02d}_{band}_batch{batch_idx}_tiled.png'))
+        plt.savefig(os.path.join(sca_output_dir, f'sca{sca_num:02d}_{band}_batch{batch_idx}_tiled.png'), dpi=1200)
         plt.close()
 
         # 2. add Poisson noise
@@ -808,7 +854,7 @@ def process_batch_l3(task):
         plt.imshow(mos_data, norm=LogNorm(), origin='lower')
         plt.colorbar(label='MJy/sr')
         plt.title(f'SCA {sca_num:02d}, {band} batch {batch_idx} - L3 mosaic')
-        plt.savefig(os.path.join(sca_output_dir, f'sca{sca_num:02d}_{band}_batch{batch_idx}_mosaic.png'))
+        plt.savefig(os.path.join(sca_output_dir, f'sca{sca_num:02d}_{band}_batch{batch_idx}_mosaic.png'), dpi=1200)
         plt.close()
 
         # 4. extract each system's cutout from the mosaic via its sky position
