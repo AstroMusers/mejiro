@@ -5,8 +5,8 @@ dev: False
 nice: 19
 show_progress_bar: True
 suppress_warnings: True
-logging_level: WARNING
-limit: null
+logging_level: INFO
+limit: 100
 seed: &seed 420
 cores:
   script_00: 60
@@ -16,7 +16,7 @@ cores:
   script_03: 60
   script_04: 60
   script_05_galsim: 60
-  script_05_romanisim: 12  # for --level l3, each worker holds 4 L2s + a coadd (~1.5 GB)
+  script_05_romanisim: 32
   script_snr: 24
 jaxtronomy: 
   use_jax: True
@@ -88,14 +88,15 @@ synthetic_image:
   pieces: False
   serialization: lightweight
 exposure:
-  ma_table_number: 11
+  ma_table_number: 10
   date: 2027-05-01T00:00:00
   coordinates:
     ra: 150.
     dec: 2.
 imaging:
-  exposure_time: &exposure_time 3908.8
+  exposure_time: &exposure_time 4422
   engine: galsim
+  serialization: lightweight  # Exposure OUTPUT format: lightweight -> compact .npz (data + pieces + metadata); full -> whole-object pickle
   engine_params:
     rng_seed: *seed
     min_zodi_factor: 1.4
