@@ -1044,6 +1044,36 @@ def load_synthetic_image(path):
     return unpickle(path)
 
 
+def load_exposure(path):
+    """Load an Exposure written by step 05, in whichever on-disk format it used.
+
+    Auto-detects the format from the file extension:
+
+    - ``.npz`` → a :class:`mejiro.exposure.LightweightExposure` (galsim lightweight
+      serialization: ``data`` plus optional ``lens_data`` / ``source_data`` pieces
+      and a JSON metadata blob).
+    - ``.npy`` → a data-only :class:`mejiro.exposure.LightweightExposure` (romanisim
+      writes bare cutout arrays with no metadata or pieces).
+    - ``.pkl`` → the full :class:`mejiro.exposure.Exposure` via :func:`unpickle`.
+
+    Parameters
+    ----------
+    path : str
+        Path to the on-disk exposure file.
+
+    Returns
+    -------
+    Exposure or LightweightExposure
+    """
+    if path.endswith('.npz'):
+        from mejiro.exposure import LightweightExposure
+        return LightweightExposure.load(path)
+    if path.endswith('.npy'):
+        from mejiro.exposure import LightweightExposure
+        return LightweightExposure.from_npy(path)
+    return unpickle(path)
+
+
 def unpickle_all(dir_path, prefix="", suffix="", limit=None):
     """
     Load and unpickle all files in a directory.

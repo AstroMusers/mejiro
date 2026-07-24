@@ -1,12 +1,15 @@
+import os
+
 import pytest
 import galsim
 import numpy as np
 
-from mejiro.exposure import Exposure
+from mejiro.exposure import Exposure, LightweightExposure
 from mejiro.synthetic_image import SyntheticImage
 from mejiro.galaxy_galaxy import Sample1, SampleGG
 from mejiro.instruments.roman import Roman
 from mejiro.engines.stpsf_engine import STPSFEngine
+from mejiro.utils import util
 
 
 @pytest.mark.parametrize("strong_lens", [SampleGG(), Sample1()])
@@ -131,6 +134,114 @@ def test_noiseless_exposure_aperture_photometry(sample_gg, test_data_dir):
         checked += 1
 
     assert checked >= 1, "no aperture positions were inside the rendered grid"
+
+
+def _build_small_exposure(pieces):
+    """Small, fast, deterministic Roman/F129 galsim exposure for lightweight tests.
+
+    Uses ``kwargs_psf={}`` (no PSF-cache dependency) and disables sky background
+    and detector effects, so ``exposure.data`` is deterministic. ``SampleGG`` is
+    fine here because ``Exposure.save_lightweight`` only reads ``name``/``z_lens``/
+    ``z_source`` off the lens (not the ``get_*`` accessors the SyntheticImage
+    lightweight serializer needs).
+    """
+    synthetic_image = SyntheticImage(
+        strong_lens=SampleGG(),
+        instrument=Roman(),
+        band='F129',
+        fov_arcsec=2,
+        instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+        kwargs_numerics={},
+        kwargs_psf={},
+        pieces=pieces,
+    )
+    return Exposure(
+        synthetic_image,
+        exposure_time=146,
+        engine='galsim',
+        engine_params={'sky_background': False, 'detector_effects': False},
+    )
+
+
+@pytest.mark.parametrize('pieces', [False, True])
+def test_save_lightweight_roundtrip(tmp_path, pieces):
+    """Exposure.save_lightweight + util.load_exposure preserves the data array,
+    the pieces (iff pieces=True), and the scalar metadata consumers read."""
+    orig = _build_small_exposure(pieces)
+    path = str(tmp_path / 'roundtrip.npz')
+    orig.save_lightweight(path)
+
+    loaded = util.load_exposure(path)
+    assert isinstance(loaded, LightweightExposure)
+
+    np.testing.assert_array_equal(loaded.data, orig.data.astype(np.float32))
+    assert loaded.exposure_time == orig.exposure_time
+    assert loaded.engine == orig.engine
+    assert loaded.band == orig.synthetic_image.band
+    assert loaded.instrument_name == orig.synthetic_image.instrument_name
+    assert loaded.num_pix == orig.synthetic_image.num_pix
+    assert loaded.pixel_scale == pytest.approx(orig.synthetic_image.pixel_scale)
+    assert loaded.name == orig.synthetic_image.strong_lens.name
+    assert loaded.z_lens == pytest.approx(orig.synthetic_image.strong_lens.z_lens)
+    assert loaded.z_source == pytest.approx(orig.synthetic_image.strong_lens.z_source)
+    assert loaded.synthetic_image is None
+
+    if pieces:
+        np.testing.assert_array_equal(loaded.lens_data, orig.lens_data.astype(np.float32))
+        np.testing.assert_array_equal(loaded.source_data, orig.source_data.astype(np.float32))
+    else:
+        assert loaded.lens_data is None
+        assert loaded.source_data is None
+
+
+def test_lightweight_exposure_get_snr(tmp_path):
+    """get_snr works on a loaded lightweight exposure when pieces were saved,
+    and raises the pieces-required ValueError when they were not."""
+    # with pieces: get_snr resolves to a real, positive SNR
+    orig = _build_small_exposure(pieces=True)
+    path = str(tmp_path / 'pieces.npz')
+    orig.save_lightweight(path)
+    loaded = util.load_exposure(path)
+    snr = loaded.get_snr()
+    assert snr is not None and snr > 0
+
+    # without pieces: SNR needs lens/source data -> ValueError (same as full Exposure)
+    orig_np = _build_small_exposure(pieces=False)
+    path_np = str(tmp_path / 'nopieces.npz')
+    orig_np.save_lightweight(path_np)
+    loaded_np = util.load_exposure(path_np)
+    with pytest.raises(ValueError):
+        loaded_np.get_snr()
+
+
+def test_lightweight_file_size(tmp_path):
+    """Guard against regressions that let the heavy galsim Image objects leak
+    back into the .npz: a small exposure (with pieces) fits easily under 200 KB."""
+    orig = _build_small_exposure(pieces=True)
+    path = str(tmp_path / 'size.npz')
+    orig.save_lightweight(path)
+    size_bytes = os.path.getsize(path)
+    assert size_bytes < 200_000, (
+        f"lightweight .npz unexpectedly large ({size_bytes} bytes); "
+        f"likely the galsim Image objects or noise arrays leaked in"
+    )
+
+
+def test_full_pickle_roundtrip_via_load_exposure(tmp_path):
+    """The 'full' serialization branch (imaging.serialization: full) pickles the
+    whole Exposure; util.load_exposure must round-trip it back with .data intact.
+    Covers the .pkl path since every shipped config now defaults to lightweight."""
+    orig = _build_small_exposure(pieces=True)
+    path = str(tmp_path / 'full.pkl')
+    util.pickle(path, orig)
+
+    loaded = util.load_exposure(path)
+    assert isinstance(loaded, Exposure)
+    np.testing.assert_array_equal(loaded.data, orig.data)
+    np.testing.assert_array_equal(loaded.source_data, orig.source_data)
+    assert loaded.exposure_time == orig.exposure_time
+    assert loaded.synthetic_image is None  # dropped by Exposure.__getstate__ on pickle
+
 
 # TODO awaiting fix of lenstronomy engine
 # def test_exposure_with_lenstronomy_engine():

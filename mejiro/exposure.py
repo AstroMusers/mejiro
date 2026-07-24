@@ -1,4 +1,6 @@
+import json
 import logging
+import os
 import numpy as np
 import time
 import warnings
@@ -7,6 +9,8 @@ from mejiro.utils import util
 from mejiro.analysis.snr_calculation import get_snr
 
 logger = logging.getLogger(__name__)
+
+EXPOSURE_LIGHTWEIGHT_SCHEMA_VERSION = 1
 
 
 class Exposure:
@@ -174,6 +178,68 @@ class Exposure:
         state['synthetic_image'] = None
         return state
 
+    def save_lightweight(self, path):
+        """Write the compact ``.npz`` representation of this galsim exposure.
+
+        Stores the final ``data`` array -- and, when the exposure was built with
+        ``pieces=True``, the isolated ``lens_data`` / ``source_data`` arrays -- as
+        ``float32`` plus a small JSON metadata blob carrying the scalars
+        downstream consumers read (``_06_h5_export`` reads ``data``; the
+        ``view_05`` viewer and :func:`mejiro.analysis.snr_calculation.get_snr`
+        read the pieces, exposure time, band, etc.). The heavy galsim ``Image``
+        objects and the summed ``noise`` array are intentionally dropped --
+        nothing reads them back from disk. Loaders should use
+        :func:`mejiro.utils.util.load_exposure`, which returns a
+        :class:`LightweightExposure` for ``.npz`` paths.
+
+        Parameters
+        ----------
+        path : str
+            Destination path. Should end in ``.npz``.
+
+        Notes
+        -----
+        Requires a live ``self.synthetic_image`` (present in ``_05_galsim`` right
+        after construction, before the object would ever be pickled and its
+        ``synthetic_image`` nulled by :meth:`__getstate__`). The band, instrument,
+        and lens scalars are read from it.
+        """
+        si = self.synthetic_image
+        sl = si.strong_lens
+
+        pieces = self.lens_data is not None
+        meta = {
+            'schema_version': EXPOSURE_LIGHTWEIGHT_SCHEMA_VERSION,
+            'band': str(si.band),
+            'instrument_name': str(si.instrument_name),
+            'num_pix': int(si.num_pix),
+            'pixel_scale': float(si.pixel_scale),
+            'exposure_time': float(self.exposure_time),
+            'engine': str(self.engine),
+            'pieces': bool(pieces),
+            'lens': {
+                'name': str(sl.name),
+                'z_lens': float(sl.z_lens),
+                'z_source': float(sl.z_source),
+            },
+        }
+        meta_bytes = json.dumps(meta).encode('utf-8')
+
+        arrays = {
+            'data': np.ascontiguousarray(self.data, dtype=np.float32),
+            'meta': np.frombuffer(meta_bytes, dtype=np.uint8),
+        }
+        if pieces:
+            arrays['lens_data'] = np.ascontiguousarray(self.lens_data, dtype=np.float32)
+            arrays['source_data'] = np.ascontiguousarray(self.source_data, dtype=np.float32)
+
+        # Write atomically: np.savez auto-appends ".npz" when given a path string,
+        # which makes atomic rename awkward, so pass an open file handle instead.
+        tmp_path = path + '.tmp'
+        with open(tmp_path, 'wb') as fh:
+            np.savez(fh, **arrays)
+        os.replace(tmp_path, path)
+
     def get_snr(self, snr_per_pixel_threshold=1):
         return get_snr(self, snr_per_pixel_threshold=snr_per_pixel_threshold)[0]
 
@@ -237,3 +303,79 @@ class Exposure:
         assert num_pix % 2 != 0, 'Image has even number of pixels'
         output_num_pix = num_pix - 2 * pad
         return util.center_crop_image(image, (output_num_pix, output_num_pix))
+
+
+class LightweightExposure:
+    """In-memory shim returned when loading a lightweight galsim exposure ``.npz``.
+
+    Quacks like :class:`Exposure` for the attributes and methods consumed
+    downstream: ``_06_h5_export`` reads ``data``; the ``view_05`` viewer and
+    :func:`mejiro.analysis.snr_calculation.get_snr` read ``data`` / ``lens_data`` /
+    ``source_data`` / ``exposure_time`` / :meth:`get_snr`. Not suitable for
+    re-running detector effects -- the galsim ``Image`` objects and per-effect
+    noise components are not persisted. ``synthetic_image`` is ``None``, matching
+    a full :class:`Exposure` round-tripped through :meth:`Exposure.__getstate__`;
+    consumers reload the SyntheticImage from step 04 when they need it.
+    """
+
+    def __init__(self, data, meta, lens_data=None, source_data=None):
+        self.data = data
+        self.lens_data = lens_data
+        self.source_data = source_data
+        self.synthetic_image = None
+
+        self.band = meta.get('band')
+        self.instrument_name = meta.get('instrument_name')
+        self.num_pix = meta.get('num_pix')
+        self.pixel_scale = meta.get('pixel_scale')
+        self.exposure_time = meta.get('exposure_time')
+        self.engine = meta.get('engine')
+        lens_meta = meta.get('lens') or {}
+        self.name = lens_meta.get('name')
+        self.z_lens = lens_meta.get('z_lens')
+        self.z_source = lens_meta.get('z_source')
+        self._meta = meta  # retained for debugging / introspection
+
+    @classmethod
+    def load(cls, path):
+        with np.load(path) as f:
+            data = np.asarray(f['data'])
+            meta_bytes = f['meta'].tobytes()
+            lens_data = np.asarray(f['lens_data']) if 'lens_data' in f else None
+            source_data = np.asarray(f['source_data']) if 'source_data' in f else None
+        meta = json.loads(meta_bytes.decode('utf-8'))
+        schema_version = meta.get('schema_version')
+        if schema_version != EXPOSURE_LIGHTWEIGHT_SCHEMA_VERSION:
+            raise ValueError(
+                f"Unsupported lightweight schema_version={schema_version!r} "
+                f"(expected {EXPOSURE_LIGHTWEIGHT_SCHEMA_VERSION}) in {path}"
+            )
+        return cls(data=data, meta=meta, lens_data=lens_data, source_data=source_data)
+
+    @classmethod
+    def from_npy(cls, path):
+        """Data-only shim for a bare romanisim ``.npy`` cutout (no metadata/pieces)."""
+        return cls(data=np.asarray(np.load(path)), meta={})
+
+    def get_snr(self, snr_per_pixel_threshold=1):
+        return get_snr(self, snr_per_pixel_threshold=snr_per_pixel_threshold)[0]
+
+    def plot(self, show_snr=False, savepath=None):
+        """Visualize the exposure (log10 counts). Mirrors :meth:`Exposure.plot`,
+        reading band/instrument/exposure-time/lens scalars from stored metadata
+        instead of ``self.synthetic_image``."""
+        import matplotlib.pyplot as plt
+
+        plt.imshow(np.log10(self.data), origin='lower')
+        title = f'{self.name} (' + r'$z_{l}=$' + f'{self.z_lens:.2f}, ' + r'$z_{s}=$' + f'{self.z_source:.2f}' + f')\n{self.instrument_name} {self.band}, {self.exposure_time} s'
+        if show_snr:
+            snr = self.get_snr()
+            title += f'\nSNR: {snr:.2f}'
+        plt.title(title)
+        cbar = plt.colorbar()
+        cbar.set_label(r'log$_{10}$(Counts)')
+        plt.xlabel('x [Pixels]')
+        plt.ylabel('y [Pixels]')
+        if savepath is not None:
+            plt.savefig(savepath)
+        plt.show()
