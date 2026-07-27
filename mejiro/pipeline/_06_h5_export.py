@@ -207,10 +207,12 @@ def main(args):
             dataset_exposure = group_lens.create_dataset(f'exposure_{str(uid).zfill(8)}_{band}', data=exposure_data)
             dset_list = [dataset_exposure]
 
-            # set exposure dataset attributes
+            # set exposure dataset attributes. Exposures are always on the detector pixel
+            # grid; a step-04 image rendered with oversample > 1 is finer than that, so use
+            # native_pixel_scale rather than the SyntheticImage's own pixel_scale.
             dataset_exposure.attrs['exposure_time'] = (str(exposure_time), 'Exposure time [seconds]')
-            dataset_exposure.attrs['pixel_scale'] = (str(synthetic_image.pixel_scale), 'Pixel scale [arcsec/pixel]')
-            dataset_exposure.attrs['fov'] = (str(round(synthetic_image.pixel_scale * exposure_data.shape[0], 2)), 'Field of view [arcsec]')
+            dataset_exposure.attrs['pixel_scale'] = (str(synthetic_image.native_pixel_scale), 'Pixel scale [arcsec/pixel]')
+            dataset_exposure.attrs['fov'] = (str(round(synthetic_image.native_pixel_scale * exposure_data.shape[0], 2)), 'Field of view [arcsec]')
             snr = snr_lookup.get(f'{pipeline.name}_{uid}_{band}')
             if snr is not None:
                 dataset_exposure.attrs['snr'] = (str(snr), 'Signal-to-noise ratio')

@@ -26,11 +26,11 @@ class STPSFEngine(Engine):
         pass
 
     @staticmethod
-    def get_roman_psf_kwargs(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None, require_cached=False):
+    def get_roman_psf_kwargs(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None, require_cached=False, degrade=True):
         kernel = STPSFEngine.get_roman_psf(band, detector, detector_position, oversample, num_pix,
                                             check_cache=check_cache, psf_cache_dir=psf_cache_dir,
                                             require_cached=require_cached)
-        return lenstronomy_util.get_pixel_psf_kwargs(kernel, oversample)
+        return lenstronomy_util.get_pixel_psf_kwargs(kernel, oversample, degrade=degrade)
 
     @staticmethod
     def get_roman_psf(band, detector, detector_position, oversample, num_pix, check_cache=False, psf_cache_dir=None,

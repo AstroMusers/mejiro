@@ -15,10 +15,17 @@ from lenstronomy.Util import util as lenstronomy_util
 
 from mejiro.utils import util
 
-LIGHTWEIGHT_SCHEMA_VERSION = 1
+# Version written by save_lightweight. Version 1 predates the ``oversample`` field but is
+# otherwise identical and describes valid detector-resolution data, so it still loads.
+LIGHTWEIGHT_SCHEMA_VERSION = 2
+SUPPORTED_LIGHTWEIGHT_SCHEMA_VERSIONS = (1, 2)
 
 
 class SyntheticImage:
+
+    # Class-level default so SyntheticImages pickled before ``oversample`` existed still
+    # answer it (and the native_* properties below); __init__ sets it per instance.
+    oversample = 1
 
     DEFAULT_KWARGS_NUMERICS = {
         'supersampling_factor': 5,  # super sampling factor of (partial) high resolution ray-tracing
@@ -43,7 +50,8 @@ class SyntheticImage:
                  kwargs_numerics={},
                  kwargs_psf={},
                  pieces=False,
-                 deflector_only=False
+                 deflector_only=False,
+                 oversample=1
                  ):
         """
         Initialize a SyntheticImage object.
@@ -71,11 +79,28 @@ class SyntheticImage:
             any point sources are not added, and the mass model is unused (it only
             ray-shoots the source). The resulting ``data`` is a plain galaxy image,
             equivalent to the ``lens_surface_brightness`` piece. Default is False.
+        oversample : int, optional
+            Render on a grid ``oversample`` times finer than the instrument's detector
+            pixel scale. Must be odd so the oversampled grid stays centered on the
+            native one (``num_pix`` is odd, so ``num_pix * oversample`` is odd too, and
+            each native pixel maps to a whole ``oversample x oversample`` block).
+            Default 1, i.e. render at the detector pixel scale.
+
+            At ``oversample > 1`` the detector pixel integral has NOT been applied:
+            ``data`` is the PSF-convolved scene sampled at ``pixel_scale``, and the
+            consumer is responsible for binning ``oversample x oversample`` blocks down
+            to detector pixels. ``_05_romanisim`` does exactly that, at each dither's
+            true sub-pixel phase (see ``bin_to_native`` there). This also requires
+            ``kwargs_psf`` to carry a kernel at the *oversampled* resolution with
+            ``point_source_supersampling_factor == 1`` so lenstronomy does not degrade
+            it -- see ``mejiro.utils.lenstronomy_util.get_pixel_psf_kwargs``.
 
         Raises
         ------
         ValueError
-            If the specified band is not valid for the instrument.
+            If the specified band is not valid for the instrument, if ``oversample``
+            is not a positive odd integer, or if ``oversample > 1`` is combined with a
+            PSF kernel lenstronomy would degrade.
 
         Notes
         -----
@@ -92,7 +117,11 @@ class SyntheticImage:
         # check band is valid for instrument
         if band not in instrument.bands:
             raise ValueError(f'Band "{band}" not valid for instrument {instrument.name}')
-        
+
+        if not isinstance(oversample, (int, np.integer)) or oversample < 1 or oversample % 2 == 0:
+            raise ValueError(f'oversample must be a positive odd integer, got {oversample!r}')
+        oversample = int(oversample)
+
         # set up instrument params 
         if not instrument_params:
             instrument_params = instrument.default_params()
@@ -108,12 +137,29 @@ class SyntheticImage:
         self.fov_arcsec = fov_arcsec
         self.pieces = pieces
         self.deflector_only = deflector_only
+        self.oversample = oversample
 
-        # calculate size of scene
-        self.pixel_scale = instrument.get_pixel_scale(self.band).value  # an Astropy Quantity with units arcsec / pix
-        self.num_pix = util.set_odd_num_pix(self.fov_arcsec, self.pixel_scale)  # make sure that final image will have odd number of pixels on a side
-        self.fov_arcsec = self.num_pix * self.pixel_scale  # adjust fov (may differ from user-provided input)
+        # calculate size of scene. The native (detector) grid is sized first and the
+        # oversampled grid derived from it, NOT sized directly at the finer scale:
+        # set_odd_num_pix(10.01, 0.022) is 457, which is not 5 * set_odd_num_pix(10.01, 0.11)
+        # = 455. Downstream binning requires num_pix to be an exact multiple of oversample.
+        native_pixel_scale = instrument.get_pixel_scale(self.band).value  # an Astropy Quantity with units arcsec / pix
+        native_num_pix = util.set_odd_num_pix(self.fov_arcsec, native_pixel_scale)  # make sure that final image will have odd number of pixels on a side
+        self.pixel_scale = native_pixel_scale / oversample
+        self.num_pix = native_num_pix * oversample
+        self.fov_arcsec = native_num_pix * native_pixel_scale  # adjust fov (may differ from user-provided input)
         logger.info(f'Scene size: {self.fov_arcsec} arcsec, {self.num_pix} pixels at pixel scale {self.pixel_scale} arcsec/pix')
+
+        if oversample > 1 and kwargs_psf.get('psf_type') == 'PIXEL' \
+                and kwargs_psf.get('point_source_supersampling_factor', 1) != 1:
+            # lenstronomy would box-average the kernel down to `pixel_scale`, folding a
+            # pixel response into it that the oversampled grid has not applied yet.
+            raise ValueError(
+                f'oversample={oversample} requires a PSF kernel already at the oversampled '
+                f'resolution with point_source_supersampling_factor=1, got '
+                f'{kwargs_psf["point_source_supersampling_factor"]}. Build kwargs_psf with '
+                f'get_pixel_psf_kwargs(..., degrade=False).'
+            )
 
         # set up pixel grid and coordinates
         x, y, self.ra_at_xy_0, self.dec_at_xy_0, x_at_radec_0, y_at_radec_0, self.Mpix2coord, self.Mcoord2pix = (
@@ -185,9 +231,15 @@ class SyntheticImage:
             kwargs_numerics['compute_mode'] = 'regular'
         if kwargs_numerics['compute_mode'] == 'adaptive' and 'supersampled_indexes' not in kwargs_numerics.keys():
             logger.info('Building adaptive grid')
-            self.supersampled_indexes = self.build_adaptive_grid(pad=40)
+            # pad is in pixels of the grid being built, so it has to track oversample --
+            # otherwise a 5x grid would get a 5x narrower annulus in angular terms
+            self.supersampled_indexes = self.build_adaptive_grid(pad=40 * oversample)
             kwargs_numerics['supersampled_indexes'] = self.supersampled_indexes
-        if kwargs_numerics['supersampling_factor'] < 5:
+        # Only meaningful when the grid is at the detector pixel scale. At oversample > 1
+        # supersampling_factor subdivides an already-fine subpixel, so the threshold of 5
+        # does not apply; see docs/step04_oversampled_rendering.md for the convergence
+        # measurement that sets it there (3 for the rung-1 configs).
+        if oversample == 1 and kwargs_numerics['supersampling_factor'] < 5:
             warnings.warn('Supersampling factor less than 5 may not be sufficient for accurate results, especially when convolving with a non-trivial PSF')
         self.kwargs_numerics = kwargs_numerics            
 
@@ -236,6 +288,21 @@ class SyntheticImage:
         end = time.time()
         self.calc_time = end - start
         logger.info(f'Synthetic image calculation time: {util.calculate_execution_time(start, end, unit="s")}')
+
+    @property
+    def native_pixel_scale(self):
+        """Detector pixel scale [arcsec/px], i.e. the scale of the exposures built from this.
+
+        Equals ``pixel_scale`` unless the image was rendered with ``oversample > 1``.
+        A property rather than a stored attribute so SyntheticImages pickled before
+        ``oversample`` existed still answer it via the class-level default.
+        """
+        return self.pixel_scale * self.oversample
+
+    @property
+    def native_num_pix(self):
+        """Side length in detector pixels of the image this bins down to."""
+        return self.num_pix // self.oversample
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -289,6 +356,7 @@ class SyntheticImage:
             'pixel_scale': float(self.pixel_scale),
             'fov_arcsec': float(self.fov_arcsec),
             'num_pix': int(self.num_pix),
+            'oversample': int(self.oversample),
             'instrument_name': str(self.instrument_name),
             'instrument_params': {'detector': det, 'detector_position': det_pos},
             'magnitude_zeropoint': zp,
@@ -574,12 +642,19 @@ class LightweightSyntheticImage:
     or pixel-grid plumbing).
     """
 
+    oversample = 1
+
+    native_pixel_scale = SyntheticImage.native_pixel_scale
+    native_num_pix = SyntheticImage.native_num_pix
+
     def __init__(self, data, meta):
         self.data = data
         self.band = meta['band']
         self.pixel_scale = meta['pixel_scale']
         self.fov_arcsec = meta['fov_arcsec']
         self.num_pix = meta['num_pix']
+        # absent in schema_version 1, which predates oversampled rendering
+        self.oversample = meta.get('oversample', 1)
         self.instrument_name = meta['instrument_name']
         ip = dict(meta.get('instrument_params') or {})
         det_pos = ip.get('detector_position')
@@ -599,10 +674,10 @@ class LightweightSyntheticImage:
             meta_bytes = f['meta'].tobytes()
         meta = json.loads(meta_bytes.decode('utf-8'))
         schema_version = meta.get('schema_version')
-        if schema_version != LIGHTWEIGHT_SCHEMA_VERSION:
+        if schema_version not in SUPPORTED_LIGHTWEIGHT_SCHEMA_VERSIONS:
             raise ValueError(
                 f"Unsupported lightweight schema_version={schema_version!r} "
-                f"(expected {LIGHTWEIGHT_SCHEMA_VERSION}) in {path}"
+                f"(supported: {SUPPORTED_LIGHTWEIGHT_SCHEMA_VERSIONS}) in {path}"
             )
         return cls(data=data, meta=meta)
 

@@ -7,7 +7,7 @@ from mejiro.instruments.roman import Roman
 from mejiro.galaxy_galaxy import Sample1, Sample2, SampleGG, SampleSL2S, SampleBELLS
 from mejiro.synthetic_image import SyntheticImage
 from mejiro.engines.stpsf_engine import STPSFEngine
-from mejiro.utils import util
+from mejiro.utils import lenstronomy_util, util
 
 
 def _circular_aperture_mask(shape, center_xy, radius):
@@ -585,3 +585,112 @@ def test_lightweight_file_size(tmp_path):
         f"lightweight .npz unexpectedly large ({size_bytes} bytes); "
         f"likely indicates the full StrongLens or other heavy state leaked in"
     )
+
+
+# --- oversampled rendering (docs/l3_dither_registration.md) ------------------------------
+
+def test_oversample_scales_the_grid_and_keeps_it_odd():
+    """The oversampled grid must be an exact multiple of the native one, because step 05
+    bins ``oversample x oversample`` blocks back down. Sizing the grid directly at the fine
+    scale would not give that: set_odd_num_pix(5, 0.11/5) is 229, not 5 * 45."""
+    common = dict(strong_lens=Sample1(), instrument=Roman(), band='F129', fov_arcsec=5,
+                  instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                  kwargs_numerics={}, kwargs_psf={}, pieces=False)
+
+    native = SyntheticImage(**common)
+    oversampled = SyntheticImage(**common, oversample=5)
+
+    assert oversampled.num_pix == native.num_pix * 5
+    assert oversampled.num_pix % 2 == 1
+    assert oversampled.pixel_scale == pytest.approx(native.pixel_scale / 5)
+    assert oversampled.fov_arcsec == pytest.approx(native.fov_arcsec)
+    assert oversampled.data.shape == (native.num_pix * 5,) * 2
+
+    # the native_* properties describe the detector grid the image bins down to
+    assert oversampled.native_pixel_scale == pytest.approx(native.pixel_scale)
+    assert oversampled.native_num_pix == native.num_pix
+
+
+def test_oversample_preserves_total_flux():
+    """lenstronomy returns flux per pixel, so the total is scale-invariant. If this drifts,
+    every downstream electron count drifts with it."""
+    common = dict(strong_lens=Sample1(), instrument=Roman(), band='F129', fov_arcsec=5,
+                  instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                  kwargs_numerics={}, kwargs_psf={}, pieces=False)
+
+    native = SyntheticImage(**common)
+    oversampled = SyntheticImage(**common, oversample=3)
+
+    assert oversampled.get_maggies() == pytest.approx(native.get_maggies(), rel=0.02)
+
+
+@pytest.mark.parametrize('bad', [2, 4, 0, -1, 2.5])
+def test_oversample_must_be_a_positive_odd_integer(bad):
+    """Even factors would put the oversampled grid centre on a subpixel boundary rather
+    than at the centre of the central native pixel."""
+    with pytest.raises(ValueError, match='oversample'):
+        SyntheticImage(strong_lens=Sample1(), instrument=Roman(), band='F129', fov_arcsec=5,
+                       instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                       kwargs_numerics={}, kwargs_psf={}, pieces=False, oversample=bad)
+
+
+def test_oversample_rejects_a_kernel_lenstronomy_would_degrade(test_data_dir):
+    """Guards the coupling between the grid and the kernel: lenstronomy box-averages any
+    kernel supplied with point_source_supersampling_factor > 1, folding in a detector pixel
+    response that an oversampled grid has not applied yet."""
+    kernel = np.load(os.path.join(test_data_dir, 'F129_1_2048_2048_5_101.npy'))
+    kwargs_psf = lenstronomy_util.get_pixel_psf_kwargs(kernel, 5, degrade=True)
+
+    with pytest.raises(ValueError, match='point_source_supersampling_factor=1'):
+        SyntheticImage(strong_lens=Sample1(), instrument=Roman(), band='F129', fov_arcsec=5,
+                       instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                       kwargs_numerics={}, kwargs_psf=kwargs_psf, pieces=False, oversample=5)
+
+
+def test_oversample_round_trips_through_lightweight(tmp_path):
+    """_05_romanisim derives the binning factor from the file itself, so oversample has to
+    survive serialization."""
+    si = SyntheticImage(
+        strong_lens=Sample1(), instrument=Roman(), band='F129', fov_arcsec=5,
+        instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+        kwargs_numerics={}, kwargs_psf={}, pieces=False, oversample=3,
+    )
+    path = str(tmp_path / 'oversampled.npz')
+    si.save_lightweight(path)
+
+    loaded = util.load_synthetic_image(path)
+    assert loaded.oversample == 3
+    assert loaded.num_pix == si.num_pix
+    assert loaded.native_num_pix == si.native_num_pix
+    assert loaded.native_pixel_scale == pytest.approx(si.native_pixel_scale)
+
+
+def test_oversampled_render_bins_back_to_the_native_grid(test_data_dir):
+    """The step-04 -> step-05 contract, end to end through real lenstronomy: an oversampled
+    render binned by ``bin_to_native`` must land on exactly the grid the native render
+    produces, carrying the same total flux.
+
+    Uses a cut-down kernel so the convolution stays smaller than the scene and the test
+    stays sub-second.
+    """
+    from mejiro.pipeline._05_romanisim import bin_to_native
+
+    kernel = np.load(os.path.join(test_data_dir, 'F129_1_2048_2048_5_101.npy'))
+    kernel = kernel[165:340, 165:340].copy()  # 175x175 = 35 native px
+    kernel /= kernel.sum()
+
+    common = dict(strong_lens=Sample1(), instrument=Roman(), band='F129', fov_arcsec=5,
+                  instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                  pieces=False)
+    # a fresh kwargs_numerics per call: SyntheticImage caches supersampled_indexes into it
+    def numerics():
+        return {'supersampling_factor': 5, 'compute_mode': 'regular'}
+
+    native = SyntheticImage(**common, kwargs_numerics=numerics(),
+                            kwargs_psf=lenstronomy_util.get_pixel_psf_kwargs(kernel, 5, degrade=True))
+    oversampled = SyntheticImage(**common, kwargs_numerics=numerics(), oversample=5,
+                                 kwargs_psf=lenstronomy_util.get_pixel_psf_kwargs(kernel, 5, degrade=False))
+
+    binned = bin_to_native(oversampled.data, 5)
+    assert binned.shape == native.data.shape
+    assert binned.sum() == pytest.approx(native.data.sum(), rel=0.01)
