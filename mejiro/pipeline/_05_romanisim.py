@@ -79,6 +79,7 @@ os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
 import argparse
+import hashlib
 import json
 import logging
 import math
@@ -473,6 +474,24 @@ def bin_to_native(tile, oversample, frac_x=0.0, frac_y=0.0):
     return tile.reshape(n, oversample, n, oversample).sum(3).sum(1)
 
 
+def subpixel_phase(seed, lens_name):
+    """Deterministic sub-pixel phase in ``[-0.5, 0.5)`` for a system, per axis.
+
+    Used by the L2 path, which has no dither WCS to derive a phase from. Without it every
+    system lands dead-center on a detector pixel: the step-04 grid is centered on the
+    deflector and the L2 tiling places tile centers at integer detector pixels, so 97.5%
+    of real rung-1 systems have their brightest pixel at the exact center index. That is
+    the most favorable sampling phase there is, and nothing like a real survey.
+
+    Keyed on ``seed`` + lens ``name`` (not list order), mirroring
+    ``_04_create_synthetic_images._is_deflector_only``, so the phase is identical in every
+    band and stable across ``--resume`` and any reordering.
+    """
+    h = hashlib.md5(f'{seed}_subpixel_phase_{lens_name}'.encode()).hexdigest()
+    return (int(h[:8], 16) / 0x100000000 - 0.5,
+            int(h[8:16], 16) / 0x100000000 - 0.5)
+
+
 def _detector_y_pa_deg(imwcs):
     """Position angle (deg east of north) of the detector +y axis at the detector center.
 
@@ -818,33 +837,51 @@ def process_batch_l2(task):
         # 1. tile synthetic images into a 4088x4088 extra_counts array
         counts = np.zeros((DETECTOR_SIZE, DETECTOR_SIZE), dtype=np.float64)
 
+        # Loaded in chunks rather than all at once: an oversample=5 tile is 25x the bytes
+        # of a native one, so a full batch would be ~1.6 GB per worker. Each tile is binned
+        # down to detector resolution and written into `counts` immediately, so only the
+        # chunk is ever resident.
         batch_pickles = [item[0] for item in batch_items]
         logger.info(f'  Loading {len(batch_pickles)} pickles with {threads_per_worker} threads...')
         load_start = time.time()
+        chunk = max(threads_per_worker, 16)
         with ThreadPoolExecutor(max_workers=threads_per_worker) as pool:
-            synth_images = list(pool.map(_load_pickle, batch_pickles))
+            for start_idx in range(0, len(batch_items), chunk):
+                chunk_items = batch_items[start_idx:start_idx + chunk]
+                chunk_synths = list(pool.map(_load_pickle, [item[0] for item in chunk_items]))
+
+                for (pickle_path, tile_r, tile_c), synth in zip(chunk_items, chunk_synths):
+
+                    # deal with negative and nan pixels
+                    ov = synth.oversample
+                    smooth_data = np.asarray(mejiro_util.smooth_pixels(synth.data), dtype=np.float64)
+                    assert smooth_data.shape == (tile_size * ov, tile_size * ov), (
+                        f'SyntheticImage shape {smooth_data.shape} does not match tile_size '
+                        f'{tile_size} x oversample {ov} derived from config fov_arcsec'
+                    )
+
+                    # Bin to detector pixels at a per-system sub-pixel phase. There is no
+                    # dither WCS here to derive one from, but binning every system at phase 0
+                    # would put every centroid dead-center on a pixel -- the most favorable
+                    # sampling there is, and not what a real survey delivers. See
+                    # subpixel_phase and docs/subpixel_phase.md.
+                    if ov > 1:
+                        frac_x, frac_y = subpixel_phase(seed, _lens_id_from_pickle(pickle_path, band))
+                        smooth_data = bin_to_native(smooth_data, ov, frac_x, frac_y)
+
+                    # convert the units
+                    synth_sum = np.sum(smooth_data, dtype=np.float64)
+                    maggies = synth.get_maggies()
+                    total_electrons = maggies * abflux * exptime
+                    lens_electrons = (smooth_data / synth_sum) * total_electrons
+
+                    # place inside the PSF-bucket sub-grid assigned to this image
+                    r0 = tile_r * tile_size
+                    c0 = tile_c * tile_size
+                    counts[r0:r0 + tile_size, c0:c0 + tile_size] = lens_electrons
         load_stop = time.time()
-        logger.info(f'  Loaded {len(batch_pickles)} pickles in {mejiro_util.print_execution_time(load_start, load_stop, return_string=True)}')
-
-        for (_, tile_r, tile_c), synth in zip(batch_items, synth_images):
-
-            # deal with negative and nan pixels
-            smooth_data = np.asarray(mejiro_util.smooth_pixels(synth.data), dtype=np.float64)
-            assert smooth_data.shape == (tile_size, tile_size), (
-                f'SyntheticImage shape {smooth_data.shape} does not match tile_size '
-                f'{tile_size} derived from config fov_arcsec'
-            )
-
-            # convert the units
-            synth_sum = np.sum(smooth_data, dtype=np.float64)
-            maggies = synth.get_maggies()
-            total_electrons = maggies * abflux * exptime
-            lens_electrons = (smooth_data / synth_sum) * total_electrons
-
-            # place inside the PSF-bucket sub-grid assigned to this image
-            r0 = tile_r * tile_size
-            c0 = tile_c * tile_size
-            counts[r0:r0 + tile_size, c0:c0 + tile_size] = lens_electrons
+        logger.info(f'  Loaded and tiled {len(batch_pickles)} pickles in '
+                    f'{mejiro_util.print_execution_time(load_start, load_stop, return_string=True)}')
 
         plt.imshow(counts, norm=LogNorm(), origin='lower')
         plt.colorbar(label='Electrons')
