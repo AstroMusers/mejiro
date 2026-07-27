@@ -111,6 +111,14 @@ def main(args):
     # directory containing SyntheticImage files from step 04
     synth_input_dir = pipeline.step_dir('04')
 
+    # index every step-04 SyntheticImage once (one directory scan) so the loop can look
+    # up a uid's files by dict access instead of globbing across all sca*/ dirs per uid.
+    synth_index = {}
+    for p in (glob(os.path.join(synth_input_dir, 'sca*', f'SyntheticImage_{pipeline.name}_*.pkl'))
+              + glob(os.path.join(synth_input_dir, 'sca*', f'SyntheticImage_{pipeline.name}_*.npz'))):
+        stem = os.path.splitext(os.path.basename(p))[0]
+        synth_index.setdefault(stem.split('_')[-2], {})[stem.split('_')[-1]] = p
+
     # load SNR lookup from calculate_snrs.py output, if available
     snr_lookup = {}
     snr_pairs_path = os.path.join(pipeline.pipeline_dir, 'snr', 'name_snr_pairs.pkl')
@@ -148,11 +156,8 @@ def main(args):
         group_lens = group_images.create_group(f'strong_lens_{str(uid).zfill(8)}')
 
         # map band -> SyntheticImage file (full .pkl or lightweight .npz)
-        synth_files = sorted(
-            glob(os.path.join(synth_input_dir, f'sca*/SyntheticImage_{pipeline.name}_{uid}_*.pkl'))
-            + glob(os.path.join(synth_input_dir, f'sca*/SyntheticImage_{pipeline.name}_{uid}_*.npz'))
-        )
-        synth_by_band = {os.path.splitext(os.path.basename(p))[0].split('_')[-1]: p for p in synth_files}
+        synth_by_band = synth_index[uid]
+        synth_files = sorted(synth_by_band.values())
 
         synthetic_image = util.load_synthetic_image(synth_files[0])
         lens = synthetic_image.strong_lens
