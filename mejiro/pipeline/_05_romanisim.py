@@ -83,7 +83,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from astropy import table, time as astro_time, units as u
 from astropy.coordinates import SkyCoord
+from matplotlib.collections import PatchCollection
 from matplotlib.colors import LogNorm
+from matplotlib.patches import Rectangle
 from tqdm import tqdm
 
 import asdf
@@ -247,6 +249,98 @@ def _dither_pointings(coord, pattern_name):
     return pointings
 
 
+def _dither_pixel_offsets(wcses):
+    """Integer pixel offset of each dither relative to dither 0.
+
+    ``(dx, dy)`` is where the dither-0 detector center lands in that dither's pixel frame,
+    so a source at dither-0 pixel ``(x, y)`` sits at ``(x + dx, y + dy)`` in dither ``d``
+    and dither ``d``'s footprint spans ``[-dx, DETECTOR_SIZE - dx]`` in dither-0 coordinates.
+    """
+    center = DETECTOR_SIZE // 2
+    ref_sky = wcses[0].toWorld(galsim.PositionD(center, center))
+    offsets = [w.toImage(ref_sky) for w in wcses]
+    dxs = [int(round(o.x)) - center for o in offsets]
+    dys = [int(round(o.y)) - center for o in offsets]
+    return dxs, dys
+
+
+def _overlap_bounds(dxs, dys, half_tile):
+    """Dither-0 pixel box of tile centers that stay ``half_tile + MARGIN`` inside every dither.
+
+    Returns ``(x0_min, x0_max, y0_min, y0_max)``; the box is empty if either max < min.
+    """
+    lo = half_tile + MARGIN
+    hi = DETECTOR_SIZE - half_tile - MARGIN
+    return (
+        max(lo - dx for dx in dxs), min(hi - dx for dx in dxs),
+        max(lo - dy for dy in dys), min(hi - dy for dy in dys),
+    )
+
+
+def plot_dither_overlap(wcses, source_skies, tile_size, pattern_name, sca_num, band, output_path):
+    """Save a diagnostic figure of the dither footprints and the tile grid they leave room for.
+
+    Everything is drawn in dither-0 pixel coordinates. Each dither's detector footprint is
+    traced through its own WCS and back through dither 0's, so the offsets -- and the small
+    rotation/distortion between pointings that the integer-offset model of
+    :func:`compute_overlap_skygrid` ignores -- are both visible. Overlaid are the region
+    covered by every dither, the inset box of valid tile centers, and the tiles placed there.
+    """
+    n_dithers = len(wcses)
+    half_tile = tile_size // 2
+    dxs, dys = _dither_pixel_offsets(wcses)
+    x0_min, x0_max, y0_min, y0_max = _overlap_bounds(dxs, dys, half_tile)
+
+    fig, ax = plt.subplots(figsize=(7, 7))
+    colors = plt.cm.viridis(np.linspace(0, 0.85, n_dithers))
+
+    # trace each detector edge (sampled, so distortion shows) into dither-0 pixel coordinates
+    t = np.linspace(0, DETECTOR_SIZE, 101)
+    const_lo, const_hi = np.zeros_like(t), np.full_like(t, DETECTOR_SIZE)
+    edge_x = np.concatenate([t, const_hi, t[::-1], const_lo])
+    edge_y = np.concatenate([const_lo, t, const_hi, t[::-1]])
+
+    center = DETECTOR_SIZE // 2
+    for d, w in enumerate(wcses):
+        x, y = wcses[0].radecToxy(*w.xyToradec(edge_x, edge_y, units='deg'), units='deg')
+        cx, cy = wcses[0].radecToxy(*w.xyToradec(center, center, units='deg'), units='deg')
+        ax.plot(np.append(x, x[0]), np.append(y, y[0]), color=colors[d], lw=1.2, zorder=4,
+                label=f'dither {d}: center {cx - center:+.0f}, {cy - center:+.0f} px')
+        ax.plot(cx, cy, marker='+', color=colors[d], ms=10, mew=1.5, zorder=4)
+
+    # region covered by all dithers, under the same integer-translation model as the grid
+    cov_x0, cov_x1 = max(-dx for dx in dxs), min(DETECTOR_SIZE - dx for dx in dxs)
+    cov_y0, cov_y1 = max(-dy for dy in dys), min(DETECTOR_SIZE - dy for dy in dys)
+    if cov_x1 > cov_x0 and cov_y1 > cov_y0:
+        ax.add_patch(Rectangle((cov_x0, cov_y0), cov_x1 - cov_x0, cov_y1 - cov_y0,
+                               fill=False, ec='darkorange', lw=2.0, ls='--', zorder=3,
+                               label=f'{n_dithers}-fold overlap'))
+
+    if x0_max >= x0_min and y0_max >= y0_min:
+        ax.add_patch(Rectangle((x0_min, y0_min), x0_max - x0_min, y0_max - y0_min,
+                               fc='crimson', ec='crimson', alpha=0.15, lw=1.0, zorder=1,
+                               label=f'valid tile centers (inset {half_tile + MARGIN} px)'))
+
+    if source_skies:
+        tx, ty = wcses[0].radecToxy(np.array([s.ra.deg for s in source_skies]),
+                                    np.array([s.dec.deg for s in source_skies]), units='deg')
+        tiles = [Rectangle((x - half_tile, y - half_tile), tile_size, tile_size)
+                 for x, y in zip(tx, ty)]
+        ax.add_collection(PatchCollection(tiles, fc='none', ec='k', lw=0.3, alpha=0.7, zorder=2))
+        ax.plot(tx, ty, ls='none', marker='.', ms=1.0, color='k', zorder=2)
+
+    ax.set_aspect('equal')
+    ax.set_xlabel('dither-0 x [px]')
+    ax.set_ylabel('dither-0 y [px]')
+    ax.set_title(f'SCA {sca_num:02d}, {band} - {pattern_name}: {n_dithers} dithers, '
+                 f'{len(source_skies)} tiles of {tile_size} px (pitch {tile_size + DISTORTION_GUARD} px)')
+    ax.legend(loc='upper left', bbox_to_anchor=(1.02, 1.0), fontsize='small', frameon=False)
+    ax.autoscale_view()
+
+    fig.savefig(output_path, dpi=1200, bbox_inches='tight')
+    plt.close(fig)
+
+
 def compute_overlap_skygrid(pointings, sca, band, ma_table_number, read_pattern, date, tile_size):
     """Build the grid of source sky positions that land on-detector in every dither.
 
@@ -267,19 +361,8 @@ def compute_overlap_skygrid(pointings, sca, band, ma_table_number, read_pattern,
         for pt in pointings
     ]
 
-    center = DETECTOR_SIZE // 2
-    ref_sky = wcses[0].toWorld(galsim.PositionD(center, center))
-    # where the dither-0 center sky position lands in each dither (integer px offsets)
-    offsets = [wcses[i].toImage(ref_sky) for i in range(len(wcses))]
-    dxs = [int(round(o.x)) - center for o in offsets]
-    dys = [int(round(o.y)) - center for o in offsets]
-
-    lo = half_tile + MARGIN
-    hi = DETECTOR_SIZE - half_tile - MARGIN
-    x0_min = max(lo - dx for dx in dxs)
-    x0_max = min(hi - dx for dx in dxs)
-    y0_min = max(lo - dy for dy in dys)
-    y0_max = min(hi - dy for dy in dys)
+    dxs, dys = _dither_pixel_offsets(wcses)
+    x0_min, x0_max, y0_min, y0_max = _overlap_bounds(dxs, dys, half_tile)
 
     source_skies = []
     if x0_max >= x0_min and y0_max >= y0_min:
@@ -566,8 +649,15 @@ def main(args):
                     ))
             else:
                 # capacity = number of overlap-grid slots available for this SCA/band
-                _, source_skies = compute_overlap_skygrid(pointings, sca_num, band, ma_table_number, read_pattern, date, tile_size)
+                wcses, source_skies = compute_overlap_skygrid(pointings, sca_num, band, ma_table_number, read_pattern, date, tile_size)
                 capacity = len(source_skies)
+
+                # drawn before the capacity check so an empty overlap region is diagnosable
+                plot_dither_overlap(
+                    wcses, source_skies, tile_size, args.dither_pattern, sca_num, band,
+                    os.path.join(sca_output_dir, f'sca{sca_num:02d}_{band}_dither_overlap.png'),
+                )
+
                 if capacity == 0:
                     logger.warning(f'SCA {sca_num:02d}, {band}: empty overlap region; skipping')
                     continue
