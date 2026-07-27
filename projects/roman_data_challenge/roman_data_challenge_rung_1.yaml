@@ -16,8 +16,8 @@ cores:
   script_03: 60
   script_04: 60
   script_05_galsim: 60
-  script_05_romanisim: 32
-  script_snr: 24
+  script_05_romanisim: 36
+  script_snr: 36
 jaxtronomy: 
   use_jax: True
   jax_platform: cpu  # cpu or gpu

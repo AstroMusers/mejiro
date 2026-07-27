@@ -7,7 +7,7 @@ show_progress_bar: True
 suppress_warnings: True
 logging_level: WARNING
 limit: null
-seed: &seed 1990
+seed: &seed 4060
 cores:
   script_00: 32
   script_01: 32
@@ -77,7 +77,7 @@ synthetic_image:
   supersampling_factor: &supersampling_factor 1
   pieces: True
   serialization: full
-  deflector_only_fraction: 0.99
+  deflector_only_fraction: 0.6
 exposure:
   ma_table_number: 4
   date: 2027-05-01T00:00:00
