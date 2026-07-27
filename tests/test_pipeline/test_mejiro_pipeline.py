@@ -130,6 +130,11 @@ def test_pipeline_run(tmp_path, serialization):
             assert dset.shape[0] > 0 and dset.shape[1] > 0, f"{group_name} exposure is empty"
             assert dset.attrs['units'][0] == 'DN', \
                 f"galsim exposures should be in DN, got {dset.attrs['units'][0]}"
+            # the galsim branch reads imaging.exposure_time; only romanisim input resolves
+            # the exposure time from the step-05 sidecars
+            assert float(dset.attrs['exposure_time'][0]) == float(config['imaging']['exposure_time']), \
+                (f"galsim exposure_time should be imaging.exposure_time "
+                 f"({config['imaging']['exposure_time']}), got {dset.attrs['exposure_time'][0]}")
 
 def test_no_data_dir():
     try:

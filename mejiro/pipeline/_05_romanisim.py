@@ -17,10 +17,18 @@ complete. Output lands in ``<data_dir>/<pipeline_label>/05_romanisim/sca##/`` in
        BOXGAP4_1 (~205 arcsec offsets) this is the ~one-quadrant 4-fold-overlap region;
        for a sub-pixel pattern like SUB4 it is essentially the entire detector, so each
        batch carries ~4x more systems at ~4x less compute for the same effective depth.
+       Each SCA/band gets a ``sca##_<band>_dither_overlap.png`` diagnostic showing the
+       dither footprints, the overlap region, and the tile grid laid down inside it.
     2. Runs romanisim once per dither pointing to make one L2 exposure each.
-    3. Co-adds the L2s with romancal's MosaicPipeline into one L3 mosaic. Every system is
+    3. Co-adds the L2s with romancal's MosaicPipeline into one L3 mosaic, weighting each
+       exposure uniformly (``weight_type='exptime'``; romancal's ``'ivm'`` default derives a
+       weight romanisim's L2 cannot support and corrupts bright cores, see
+       docs/l3_negative_drizzle_weights.md). Every system is
        covered by all exposures, so the mosaic has uniform weight and an effective
-       exposure time of n_dithers x the single-exposure time.
+       exposure time of n_dithers x the single-exposure time. That depth is read back off
+       the coadd (``meta.coadd_info.max_exposure_time``) and written to
+       ``05_romanisim/exposure_time.txt``, because the coadds live on scratch and are
+       deleted once their cutouts are extracted -- see the sidecar note below.
     4. Extracts each system's cutout from the mosaic (via the mosaic WCS at the system's
        sky position) and saves it in the exact same output format as ``--level l2``,
        except the pixel values are the mosaic's native MJy/sr surface brightness rather
@@ -28,6 +36,10 @@ complete. Output lands in ``<data_dir>/<pipeline_label>/05_romanisim/sca##/`` in
 
 Every invocation writes to ``05_romanisim/`` regardless of ``--level`` or
 ``--dither-pattern``: the step directory names the step, not the flags it was run with.
+Two sidecars in that directory are what let the tail steps tell the variants apart:
+``exposure_level.txt`` (``l2``/``l3``, always written) and, for ``--level l3`` only,
+``exposure_time.txt`` (the co-added depth in seconds). ``calculate_snrs`` and
+``_06_h5_export`` read both via ``PipelineHelper.romanisim_exposure_metadata``.
 Trade-off of sub-pixel patterns (those in WfiImagingSubpixel.txt, e.g. SUB4):
 every exposure puts a system on nearly the same pixels, so fixed-pattern detector effects
 (flat error, hot pixels) stay correlated across the stack instead of averaging down the
@@ -696,9 +708,26 @@ def main(args):
     # process tasks in parallel; maxtasksperchild=1 recycles each worker after one batch,
     # releasing all C-extension caches (romanisim, galsim) that gc.collect() cannot touch
     worker = process_batch_l2 if args.level == 'l2' else process_batch_l3
+    results = []
     with Pool(processes=num_workers, maxtasksperchild=1) as pool:
-        for _ in tqdm(pool.imap_unordered(worker, tasks), total=len(tasks)):
-            pass
+        for result in tqdm(pool.imap_unordered(worker, tasks), total=len(tasks)):
+            results.append(result)
+
+    if args.level == 'l3':
+        # Record the effective exposure time romancal measured on the mosaics rather than
+        # len(pointings) * exptime: _06_h5_export and calculate_snrs both need the real depth
+        # of the cutouts, and once the scratch coadds are gone nothing else on disk carries
+        # it. Every batch co-adds the same pattern at the same MA table, so they agree.
+        # Note a --resume run with no remaining batches returns above without reaching here;
+        # the file is already present from the run that produced those batches.
+        measured = {r for r in results if r is not None}
+        if len(measured) > 1:
+            logger.warning(f'Batches reported differing effective exposure times: {sorted(measured)}')
+        mosaic_exptime = max(measured)
+        logger.info(f'Effective exposure time (romancal): {mosaic_exptime:.4f} s '
+                    f'(expected {len(pointings)} x {exptime:.4f} = {len(pointings) * exptime:.4f} s)')
+        with open(os.path.join(pipeline.output_dir, 'exposure_time.txt'), 'w') as f:
+            f.write(repr(mosaic_exptime))
 
     stop = time.time()
     logger.info(f'Total execution time: {mejiro_util.print_execution_time(start, stop, return_string=True)}')
@@ -925,9 +954,23 @@ def process_batch_l3(task):
                 'source_catalog': {'skip': True},
                 # align the mosaic axes with the detector axes so tiles stay axis-aligned;
                 # pass the scale explicitly because the step would otherwise derive it at
-                # the boresight (see _mosaic_pixel_scale)
+                # the boresight (see _mosaic_pixel_scale).
+                # weight_type: romancal defaults to 'ivm', i.e. weight = 1/var_rnoise. A
+                # romanisim L2 has no var_rnoise array (roman_datamodels' WfiImage schema has
+                # no such field), so romancal reconstructs it as err**2 - var_poisson -- and
+                # both of those are stored as float16. On bright pixels the read-noise term is
+                # a tiny fraction of the total variance, so that subtraction is catastrophic
+                # cancellation: above ~100 DN/s the result is entirely float16 quantization
+                # noise and ~19% of pixels come out negative. stcal discards only non-finite
+                # reciprocals, so a negative variance becomes a negative weight, and drizzle's
+                # sum(w*d)/sum(w) then divides by a denominator that can cross zero -- which
+                # put spikes, zeros and negative surface brightness in the brightest deflector
+                # cores (see docs/l3_negative_drizzle_weights.md). 'exptime' bypasses the
+                # reconstruction entirely, and is the right weighting regardless since every
+                # dither is the same depth from the same MA table.
                 'resample': {'pixel_scale': _mosaic_pixel_scale(l2_files[0]),
-                             'rotation': _detector_y_pa_deg(wcses[0])},
+                             'rotation': _detector_y_pa_deg(wcses[0]),
+                             'weight_type': 'exptime'},
             },
         )
 
@@ -939,6 +982,10 @@ def process_batch_l3(task):
         with rdm.open(coadd_files[0]) as mos:
             mos_wcs = mos.meta.wcs
             mos_data = np.array(mos.data, dtype=np.float32)
+            # Every cutout comes from the region all dithers cover, so the mosaic's max is
+            # the depth of each one. coadd_info.exposure_time is the mean over covered
+            # pixels, diluted by the partially covered edges no cutout ever samples.
+            mosaic_exptime = float(mos.meta.coadd_info.max_exposure_time)
 
         # diagnostic PNG of the mosaic
         plt.imshow(mos_data, norm=LogNorm(), origin='lower')
@@ -960,6 +1007,9 @@ def process_batch_l3(task):
         with open(os.path.join(sca_output_dir,
                                f'batch_complete_sca{sca_num:02d}_{band}_batch{batch_idx}.txt'), 'w') as f:
             f.write(str(n_images))
+
+        # main() records this in exposure_time.txt; the coadd itself is gone by then
+        return mosaic_exptime
     except Exception:
         logger.exception(f'Batch failed for SCA {sca_num:02d}, {band}, batch {batch_idx + 1}/{n_batches}')
     finally:

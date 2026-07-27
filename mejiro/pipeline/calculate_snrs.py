@@ -6,6 +6,12 @@ pipeline steps and saves name-SNR pairs for downstream filtering or analysis.
 It reads a YAML configuration file specifying SNR calculation parameters and
 supports both sequential and parallel processing modes.
 
+The SNR is rebuilt with a galsim Exposure at snr.snr_exposure_time, except when the input
+came from _05_romanisim: there the exposure time is taken from that step's sidecars instead,
+so the SNR describes the depth of the data actually shipped (an L3 co-add is n_dithers
+deeper than one exposure). The config value is left alone because _01b_run_survey_simulation
+uses it for the detectability cut that fixed dataset membership.
+
 Usage:
     python3 calculate_snrs.py --config <config.yaml> [--data_dir <dir>] [--sequential] [--resume] [--prev-step <step_dir>]
 
@@ -80,6 +86,18 @@ def main(args):
         input_pickles = pipeline.retrieve_pickles(prefix='Exposure', suffix='', extension='.pkl')
     else:
         raise ValueError(f'Unknown instrument {pipeline.instrument_name}. Supported instruments are {SUPPORTED_INSTRUMENTS}.')
+
+    if PipelineHelper.is_romanisim_step(prev_script_name):
+        # The SNR has to describe the depth of the data actually shipped, and for an L3
+        # co-add that is n_dithers x the single-exposure time. snr.snr_exposure_time stays
+        # untouched in the config because _01b uses it for the detectability cut that fixed
+        # dataset membership; only the reported SNR follows the real exposure depth. Copied
+        # so pipeline.config -- pickled into every worker below -- stays unmutated.
+        snr_config = dict(snr_config)
+        snr_config['snr_exposure_time'], _ = PipelineHelper.romanisim_exposure_metadata(
+            pipeline.input_dir, pipeline.config['exposure']['ma_table_number'])
+        logger.info(f"SNR exposure time from {prev_script_name}: "
+                    f"{snr_config['snr_exposure_time']:.4f} s")
 
     # limit the number of systems to process, if limit imposed
     count = len(input_pickles)

@@ -227,6 +227,19 @@ class PipelineHelper:
         assert self.instrument_name == instrument_name, f"This method is only for the {instrument_name} instrument."
 
     @staticmethod
+    def is_romanisim_step(step_name):
+        """Whether a step-05 variant name is the romanisim one.
+
+        The step directory is the only reliable signal. ``imaging.engine`` is ``'galsim'``
+        in every real rung config even when ``_05_romanisim`` produced the data -- it
+        selects how ``Exposure`` and ``calculate_snrs`` rebuild SNR exposures, not which
+        detector simulator ran (setting it to ``'romanisim'`` makes ``Exposure`` raise
+        ``NotImplementedError``). And the file extension is a serialization detail that
+        both engines may share.
+        """
+        return step_name.startswith('05_romanisim')
+
+    @staticmethod
     def exposure_extension(step_name, serialization=None):
         """File extension of the exposures a step-05 variant produces.
 
@@ -235,11 +248,32 @@ class PipelineHelper:
         ``'lightweight'`` and pickles the whole ``Exposure`` object (``.pkl``) when it
         is ``'full'``. The tail steps (calculate_snrs, _06_h5_export) run off either,
         so they resolve the extension from whichever step wrote their input plus that
-        step's serialization mode.
+        step's serialization mode. Use :meth:`is_romanisim_step` to dispatch on the
+        engine -- an extension is not a reliable stand-in for one.
         """
-        if step_name.startswith('05_romanisim'):
+        if PipelineHelper.is_romanisim_step(step_name):
             return '.npy'
         return '.npz' if serialization == 'lightweight' else '.pkl'
+
+    @staticmethod
+    def romanisim_exposure_metadata(step_dir, ma_table_number):
+        """Exposure time [s] and pixel units of the cutouts a _05_romanisim run left in ``step_dir``.
+
+        Both ``--level`` variants write to the same directory, so the level comes from the
+        ``exposure_level.txt`` sidecar. L2 cutouts are one exposure deep in DN/s, so the
+        time is the MA table's. L3 cutouts come from the region every dither covers, so
+        their depth is what romancal measured on the coadd and ``_05_romanisim`` recorded
+        in ``exposure_time.txt`` -- it is not recomputed here.
+        """
+        from romanisim import parameters as romanisim_params
+
+        with open(os.path.join(step_dir, 'exposure_level.txt')) as f:
+            level = f.read().strip()
+        if level == 'l2':
+            read_pattern = romanisim_params.read_pattern[ma_table_number]
+            return romanisim_params.read_time * read_pattern[-1][-1], 'DN/s'
+        with open(os.path.join(step_dir, 'exposure_time.txt')) as f:
+            return float(f.read().strip()), 'MJy/sr'
 
     @staticmethod
     def patch_astropy_for_mejiro_v2_pickles():

@@ -8,17 +8,28 @@ format and the pixel units:
 
     - exposure data: read via util.load_exposure -- bare arrays from 05_romanisim/sca*/Exposure_*.npy,
       or the .data of the lightweight .npz / full .pkl Exposure written to 05_galsim/sca*/
-    - exposure_time: for romanisim, from config['exposure']['ma_table_number'] via romanisim
-      parameters; for galsim, config['imaging']['exposure_time']
+    - exposure_time: for galsim, config['imaging']['exposure_time']. For romanisim, L2 is one
+      exposure deep so it comes from config['exposure']['ma_table_number'] via romanisim
+      parameters, while an L3 co-add's depth is what romancal measured on the mosaic and
+      _05_romanisim recorded in exposure_time.txt -- it is n_dithers deep, so deriving it
+      from the MA table alone would under-report it by that factor.
     - units: galsim writes DN (counts; Roman gain is 1.0 e-/DN). romanisim writes L2 in DN/s
       and L3 in MJy/sr; since both levels land in the same directory, the level is read from
       the exposure_level.txt sidecar that _05_romanisim writes.
     - lens and synthetic image metadata: from the SyntheticImage files in step 04
     - SNR: read from name_snr_pairs.pkl produced by calculate_snrs.py (optional)
 
+Both romanisim values come from PipelineHelper.romanisim_exposure_metadata, and the choice
+of branch is keyed on the step that wrote the input (PipelineHelper.is_romanisim_step), not
+on the file extension or config['imaging']['engine'] -- see those methods for why.
+
 If config['dataset']['labeled'] is False, truth attributes (main halo mass, Einstein
 radius, velocity dispersion, substructure) are omitted from the HDF5 file and an
 answer-key CSV is written alongside it.
+
+For romanisim input the written file is then checked by mejiro.utils.qa.check_exposures,
+which raises on non-physical pixels -- see docs/l3_negative_drizzle_weights.md for the defect
+that motivated it.
 
 Usage:
     python3 _06_h5_export.py --config <config.yaml> [--data_dir <dir>] [--prev-step <step_dir>]
@@ -47,10 +58,8 @@ from tqdm import tqdm
 
 import logging
 
-from romanisim import parameters as romanisim_params
-
 import mejiro
-from mejiro.utils import util
+from mejiro.utils import qa, util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
 logger = logging.getLogger(__name__)
@@ -78,16 +87,11 @@ def main(args):
 
     # exposure time and pixel units both depend on which step-05 variant wrote the input
     extension = PipelineHelper.exposure_extension(prev_script_name, pipeline.config['imaging']['serialization'])
-    if extension == '.npy':
-        # romanisim: exposure time comes from the MA table, units from the data level.
-        # Every level writes to the same directory, so the level is read from the sidecar
-        # _05_romanisim leaves behind.
-        ma_table_number = pipeline.config['exposure']['ma_table_number']
-        read_pattern = romanisim_params.read_pattern[ma_table_number]
-        exposure_time = romanisim_params.read_time * read_pattern[-1][-1]
-        with open(os.path.join(pipeline.input_dir, 'exposure_level.txt')) as f:
-            level = f.read().strip()
-        units = 'DN/s' if level == 'l2' else 'MJy/sr'
+    if PipelineHelper.is_romanisim_step(prev_script_name):
+        # romanisim: both come from the sidecars _05_romanisim leaves behind, since every
+        # level writes to the same directory
+        exposure_time, units = PipelineHelper.romanisim_exposure_metadata(
+            pipeline.input_dir, pipeline.config['exposure']['ma_table_number'])
     else:
         # galsim: counts (= DN for Roman, where gain is 1.0 e-/DN), see mejiro.exposure.Exposure
         exposure_time = pipeline.config['imaging']['exposure_time']
@@ -224,6 +228,13 @@ def main(args):
                 dset.attrs['lens_magnitude'] = (str(lens.get_lens_magnitude(band)), 'Lens galaxy magnitude')
 
     f.close()
+
+    if PipelineHelper.is_romanisim_step(prev_script_name):
+        # Guard against the co-add defect in docs/l3_negative_drizzle_weights.md, which put
+        # spikes and negative surface brightness into 246 exposures of rung_1 v3.0 without
+        # disturbing any aggregate statistic. Romanisim input only: the thresholds assume the
+        # smooth background of a drizzled co-add, and a single galsim frame would trip them.
+        qa.check_exposures(filepath)
 
     if not labeled:
         answer_key.to_csv(answer_key_filepath, index=False)
