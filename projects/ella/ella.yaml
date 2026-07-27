@@ -23,7 +23,7 @@ jaxtronomy:
   jax_platform: cpu  # cpu or gpu
 instrument: roman
 survey:
-  runs: 36
+  runs: 360
   num_galaxy_tables: 36  # number of independent galaxy tables for _01a; higher = more intrinsic diversity
   speed_factor: 1  # set >1 for faster but less complete population draws in _01b
   area: 0.5
