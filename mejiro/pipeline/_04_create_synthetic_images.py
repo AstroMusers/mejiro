@@ -61,7 +61,6 @@ import argparse
 import hashlib
 import json
 import multiprocessing
-import random
 import subprocess
 import sys
 import time
@@ -103,6 +102,33 @@ def _is_deflector_only(name, seed, fraction):
         return True
     h = hashlib.md5(f'{seed}_deflector_only_{name}'.encode()).hexdigest()
     return int(h[:8], 16) / 0x100000000 < fraction
+
+
+def _detector_position(name, seed, possible_positions):
+    """Deterministically pick the detector position, and hence the PSF, for a system.
+
+    Keyed on ``seed`` + lens ``name`` like ``_is_deflector_only``, so a system gets the
+    same STPSF kernel in every band, on ``--resume``, and on any later re-run.
+
+    This was previously an unseeded ``random.choice``, which left the PSF a system was
+    convolved with unreproducible: re-running step 04 with the same ``seed`` assigned
+    different kernels, and a resumed run gave newly-rendered systems different kernels
+    than the pass that produced their neighbours. The choice was recorded in the
+    ``.psfpos.json`` sidecar, so finished datasets were self-documenting, but nothing
+    could reproduce them -- and comparing two step-04 runs silently compared two
+    different PSFs (see docs/step04_oversampled_rendering.md).
+
+    ``name`` is the ``StrongLens.name``, which is what names the outputs and what
+    ``_05_romanisim`` and ``_06_h5_export`` parse uids from. Note ``_is_deflector_only``
+    keys on the input *filename* instead; both are stable, so the two simply draw from
+    independent streams.
+
+    The modulo makes the distribution over ``possible_positions`` uniform to within the
+    hash's own uniformity, which matters because ``_05_romanisim``'s L2 path buckets
+    systems by detector position and round-robins batches across those buckets.
+    """
+    h = hashlib.md5(f'{seed}_detector_position_{name}'.encode()).hexdigest()
+    return possible_positions[int(h[:8], 16) % len(possible_positions)]
 
 
 def main(args):
@@ -422,7 +448,8 @@ def create_synthetic_image(input):
     if pipeline.instrument_name == 'roman':
         divide_up_detector = psf_config['divide_up_detector']
         possible_detector_positions = roman_util.divide_up_sca(divide_up_detector)
-        detector_position = random.choice(possible_detector_positions)
+        detector_position = _detector_position(lens.name, pipeline.config['seed'],
+                                               possible_detector_positions)
         instrument_params['detector'] = pipeline.parse_sca_from_filename(input_pickle)
         instrument_params['detector_position'] = detector_position
         get_psf_args |= instrument_params

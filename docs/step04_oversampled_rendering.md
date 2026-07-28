@@ -124,27 +124,41 @@ ray-shooting at 0.022" over the annulus. The cost here is bought deliberately, b
   `SyntheticImage`, so it is unaffected.
 - Step-04 output grows 25x at `oversample: 5` (13 GB -> ~270 GB for rung-1).
 
-## Adjacent, not fixed
+## `detector_position` was drawn with an unseeded `random.choice` (fixed)
 
-**`detector_position` is drawn with an unseeded `random.choice`.** In
-`_04_create_synthetic_images.create_synthetic_image`:
+`_04_create_synthetic_images.create_synthetic_image` used to do:
 
 ```python
 detector_position = random.choice(possible_detector_positions)
 ```
 
-Nothing seeds the global `random` module, so the detector position — and therefore which
-STPSF kernel a system is convolved with — is different every time step 04 runs. It is stable
-across bands (chosen once per lens, before the band loop) and it is recorded in the
-`.psfpos.json` sidecar, so a finished dataset is self-documenting. But it is not
-reproducible: re-running step 04 with the same `seed`, or filling in systems with
-`--resume`, assigns different PSFs than the original run did. Contrast
-`_is_deflector_only`, in the same file, which is deliberately hashed on `seed` + lens name
-so the choice is "stable across `--resume` and the size-sort/limit reordering step 04 does."
+Nothing seeded the global `random` module, so the detector position — and therefore which
+STPSF kernel a system was convolved with — differed every time step 04 ran. It was stable
+across bands (chosen once per lens, before the band loop) and recorded in the `.psfpos.json`
+sidecar, so a finished dataset was self-documenting. But it was not reproducible: re-running
+step 04 with the same `seed`, or filling in systems with `--resume`, assigned different PSFs
+than the original run did.
 
-This surfaced while measuring the effect of this change: the first pass compared step-04
-renders across runs and was actually comparing different PSFs. The numbers above come from
-runs with the position pinned.
+This surfaced while measuring the effect of this change — the first pass compared step-04
+renders across runs and was actually comparing different PSFs. Every number in this document
+comes from runs with the position pinned.
+
+Replaced by `_detector_position(name, seed, possible_positions)`, hashed on `seed` + lens
+name exactly as `_is_deflector_only` beside it already was, and indexing the position list by
+`int(h[:8], 16) % len(possible_positions)`. Verified end to end: two renders of the same three
+lenses now assign identical positions, where before they differed on every run. The modulo is
+uniform to within the hash's own uniformity, which matters because `_05_romanisim`'s L2 path
+buckets systems by detector position and round-robins batches across those buckets;
+`tests/test_pipeline/test_detector_position.py` asserts that over 16000 names.
+
+Note `_is_deflector_only` keys on the input *filename* while this keys on `StrongLens.name`
+(what names the outputs, and what the tail steps parse uids from). Both are stable; they
+simply draw from independent streams.
+
+**This changes which PSF every Roman system gets, so it changes every pixel**, and needs the
+same rebuild as the rest of this work.
+
+## Adjacent, not fixed
 
 **`SyntheticImage.__init__` mutates the caller's `kwargs_numerics` dict**, caching
 `supersampled_indexes` into it. Reusing one dict across constructions of different sizes
