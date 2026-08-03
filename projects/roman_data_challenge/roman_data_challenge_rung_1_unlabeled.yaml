@@ -94,7 +94,7 @@ exposure:
     ra: 150.
     dec: 2.
 imaging:
-  exposure_time: &exposure_time 4422
+  exposure_time: &exposure_time 4421.16
   engine: galsim
   serialization: lightweight  # Exposure OUTPUT format: lightweight -> compact .npz (data + pieces + metadata); full -> whole-object pickle
   engine_params:
@@ -123,7 +123,7 @@ psf:
   detectors: *detectors
   divide_up_detector: 4  # this sets the detector positions, e.g., 5 means 25 positions on each detector
 dataset:
-  version: 3.0  # used in the filename of the .h5 file
+  version: 2.0  # used in the filename of the .h5 file
   labeled: False
   include_psfs: False
   include_synthetic_images: False
