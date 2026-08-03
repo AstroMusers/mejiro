@@ -76,6 +76,18 @@ def main(args):
             "path (_05_romanisim.py) which is compatible with lightweight."
         )
 
+    # An oversampled step-04 image has no detector pixel integral applied and is on a
+    # finer grid than the detector; the galsim engine assumes detector-resolution input
+    # and would silently produce an exposure at the wrong scale. Only _05_romanisim knows
+    # how to bin these down (see bin_to_native there).
+    oversample = pipeline.config['synthetic_image'].get('oversample', 1)
+    if oversample > 1:
+        raise ValueError(
+            f"_05_galsim requires detector-resolution input but "
+            f"synthetic_image.oversample is {oversample}. Either re-run step 04 with "
+            f"oversample: 1, or use the romanisim path (_05_romanisim.py)."
+        )
+
     # set input and output directories
     if pipeline.instrument_name == 'roman':
         input_pickles = pipeline.retrieve_roman_pickles(prefix='SyntheticImage', suffix='', extension='.pkl')

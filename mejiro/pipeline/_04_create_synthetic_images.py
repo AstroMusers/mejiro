@@ -61,7 +61,6 @@ import argparse
 import hashlib
 import json
 import multiprocessing
-import random
 import subprocess
 import sys
 import time
@@ -103,6 +102,33 @@ def _is_deflector_only(name, seed, fraction):
         return True
     h = hashlib.md5(f'{seed}_deflector_only_{name}'.encode()).hexdigest()
     return int(h[:8], 16) / 0x100000000 < fraction
+
+
+def _detector_position(name, seed, possible_positions):
+    """Deterministically pick the detector position, and hence the PSF, for a system.
+
+    Keyed on ``seed`` + lens ``name`` like ``_is_deflector_only``, so a system gets the
+    same STPSF kernel in every band, on ``--resume``, and on any later re-run.
+
+    This was previously an unseeded ``random.choice``, which left the PSF a system was
+    convolved with unreproducible: re-running step 04 with the same ``seed`` assigned
+    different kernels, and a resumed run gave newly-rendered systems different kernels
+    than the pass that produced their neighbours. The choice was recorded in the
+    ``.psfpos.json`` sidecar, so finished datasets were self-documenting, but nothing
+    could reproduce them -- and comparing two step-04 runs silently compared two
+    different PSFs (see docs/step04_oversampled_rendering.md).
+
+    ``name`` is the ``StrongLens.name``, which is what names the outputs and what
+    ``_05_romanisim`` and ``_06_h5_export`` parse uids from. Note ``_is_deflector_only``
+    keys on the input *filename* instead; both are stable, so the two simply draw from
+    independent streams.
+
+    The modulo makes the distribution over ``possible_positions`` uniform to within the
+    hash's own uniformity, which matters because ``_05_romanisim``'s L2 path buckets
+    systems by detector position and round-robins batches across those buckets.
+    """
+    h = hashlib.md5(f'{seed}_detector_position_{name}'.encode()).hexdigest()
+    return possible_positions[int(h[:8], 16) % len(possible_positions)]
 
 
 def main(args):
@@ -190,6 +216,15 @@ def main(args):
             input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
         count = pipeline.limit
     logger.info(f'Processing {count} lens(es)' + (f' with jax_platform={jax_platform!r}' if use_jax else ''))
+
+    oversample = synthetic_image_config.get('oversample', 1)
+    if oversample > 1:
+        logger.info(
+            f'Rendering at oversample={oversample}: outputs are at 1/{oversample} of the '
+            f'detector pixel scale with no pixel integral applied. _05_romanisim bins them '
+            f'to detector pixels at each dither\'s true sub-pixel phase; _05_galsim cannot '
+            f'consume them.'
+        )
 
     if count == 0:
         logger.info('Nothing to do; exiting.')
@@ -391,12 +426,17 @@ def create_synthetic_image(input):
     supersampling_compute_mode = synthetic_image_config['supersampling_compute_mode']
     supersampling_factor = synthetic_image_config['supersampling_factor']
     pieces = synthetic_image_config['pieces']
+    oversample = synthetic_image_config.get('oversample', 1)
     num_pix = psf_config['num_pixes'][0]
 
     lens = util.unpickle(input_pickle)
     if _JAXXED_MODELS_SET is not None:
         _enable_jax_on_lens(lens)
 
+    # At oversample > 1 the grid is already at pixel_scale / oversample, so
+    # supersampling_factor now supersamples the surface brightness *within* a subpixel
+    # rather than within a detector pixel, and needs choosing on its own terms -- see the
+    # convergence table in docs/step04_oversampled_rendering.md.
     kwargs_numerics = {
         "supersampling_factor": supersampling_factor,
         "compute_mode": supersampling_compute_mode,
@@ -408,7 +448,8 @@ def create_synthetic_image(input):
     if pipeline.instrument_name == 'roman':
         divide_up_detector = psf_config['divide_up_detector']
         possible_detector_positions = roman_util.divide_up_sca(divide_up_detector)
-        detector_position = random.choice(possible_detector_positions)
+        detector_position = _detector_position(lens.name, pipeline.config['seed'],
+                                               possible_detector_positions)
         instrument_params['detector'] = pipeline.parse_sca_from_filename(input_pickle)
         instrument_params['detector_position'] = detector_position
         get_psf_args |= instrument_params
@@ -426,13 +467,20 @@ def create_synthetic_image(input):
         if os.path.exists(failed_path):
             os.remove(failed_path)
 
+        # The kernel has to be sampled at the resolution of the grid it convolves. At
+        # oversample=1 that means handing lenstronomy the oversampled kernel and letting
+        # it degrade to the detector scale; at oversample>1 the grid is already at the
+        # kernel's scale, so it must be used as-is (degrade=False) or the detector pixel
+        # response gets folded in twice. Requires a cached kernel at this oversample --
+        # add it to psf.oversamples in the config if require_cached raises.
         get_psf_args |= {
             'band': band,
-            'oversample': supersampling_factor,
+            'oversample': supersampling_factor if oversample == 1 else oversample,
             'num_pix': num_pix,
             'check_cache': True,
             'psf_cache_dir': pipeline.psf_cache_dir,
             'require_cached': True,
+            'degrade': oversample == 1,
         }
         kwargs_psf = pipeline.instrument.get_psf_kwargs(**get_psf_args)
 
@@ -445,7 +493,8 @@ def create_synthetic_image(input):
                                              kwargs_numerics=kwargs_numerics,
                                              kwargs_psf=kwargs_psf,
                                              pieces=pieces,
-                                             deflector_only=deflector_only)
+                                             deflector_only=deflector_only,
+                                             oversample=oversample)
             if serialization == 'lightweight':
                 synthetic_image.save_lightweight(output_path)
             else:
