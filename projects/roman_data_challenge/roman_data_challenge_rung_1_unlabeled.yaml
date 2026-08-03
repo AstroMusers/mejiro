@@ -84,7 +84,18 @@ synthetic_image:
   bands: [ F106, F129, F158 ]
   fov_arcsec: &fov_arcsec 10.01
   supersampling_compute_mode: adaptive
-  supersampling_factor: &supersampling_factor 5
+  # Render at 1/oversample of the detector pixel scale with no pixel integral applied;
+  # _05_romanisim bins to detector pixels at each dither's true sub-pixel phase
+  # (docs/l3_dither_registration.md). Must be odd. Requires a cached PSF kernel at this
+  # oversample -- see psf.oversamples below.
+  oversample: &oversample 5
+  # supersamples the surface brightness *within* a subpixel now, not within a detector
+  # pixel. Converged against factor 5 on three real substructured rung-1 lenses (detector
+  # position pinned): factor 1 is good to 0.11% median / 0.70% max-of-peak, factor 3 to
+  # 0.002% / 0.14%. Factor 3, because 0.7% is not comfortably below the substructure
+  # signal this dataset exists to measure. Costs 29.9 s/lens-band vs 5.7 s for the old
+  # oversample=1 config (non-JAX), i.e. ~5x on a step that takes ~20 min under JAX.
+  supersampling_factor: &supersampling_factor 3
   pieces: False
   serialization: lightweight
 exposure:
@@ -118,7 +129,7 @@ snr:
   snr_per_pixel_threshold: 1
 psf:
   bands: [ F106, F129, F158 ]
-  oversamples: [*snr_supersampling_factor, *supersampling_factor]
+  oversamples: [*snr_supersampling_factor, *oversample]
   num_pixes: [73]  # the first element of this list is used for the pipeline
   detectors: *detectors
   divide_up_detector: 4  # this sets the detector positions, e.g., 5 means 25 positions on each detector

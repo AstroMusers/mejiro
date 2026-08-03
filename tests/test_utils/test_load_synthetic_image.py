@@ -116,3 +116,35 @@ def test_load_synthetic_image_rejects_missing_schema(tmp_path):
 
     with pytest.raises(ValueError, match='schema_version'):
         util.load_synthetic_image(str(path))
+
+
+def test_load_synthetic_image_round_trips_oversample(tmp_path):
+    """``oversample`` reaches the loader, because _05_romanisim derives the binning factor
+    from it rather than from a sidecar file that could drift out of sync."""
+    meta = _valid_meta()
+    meta['oversample'] = 5
+    meta['pixel_scale'] = 0.022
+    meta['num_pix'] = 365
+    path = tmp_path / 'oversampled.npz'
+    _write_lightweight_npz(str(path), np.zeros((365, 365)), meta)
+
+    loaded = util.load_synthetic_image(str(path))
+    assert loaded.oversample == 5
+    # what the exposures built from this image will actually be on
+    assert loaded.native_pixel_scale == pytest.approx(0.11)
+    assert loaded.native_num_pix == 73
+
+
+def test_load_synthetic_image_accepts_schema_v1_as_unoversampled(tmp_path):
+    """Version 1 predates the ``oversample`` field but describes valid detector-resolution
+    data, so it must still load rather than forcing a step-04 rebuild to read old datasets."""
+    meta = _valid_meta()
+    meta['schema_version'] = 1
+    meta.pop('oversample', None)
+    path = tmp_path / 'v1.npz'
+    _write_lightweight_npz(str(path), np.zeros((73, 73)), meta)
+
+    loaded = util.load_synthetic_image(str(path))
+    assert loaded.oversample == 1
+    assert loaded.native_pixel_scale == pytest.approx(meta['pixel_scale'])
+    assert loaded.native_num_pix == meta['num_pix']
