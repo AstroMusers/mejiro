@@ -138,7 +138,9 @@ def main(args):
             futures = [executor.submit(get_image, task) for task in tuple_list]
 
             for future in tqdm(as_completed(futures), total=len(futures)):
-                execution_times.append(future.result())
+                execution_time = future.result()
+                if execution_time is not None:
+                    execution_times.append(execution_time)
     except KeyboardInterrupt:
         logger.info('Interrupted, shutting down workers...')
         executor.shutdown(wait=False, cancel_futures=True)
@@ -164,7 +166,11 @@ def get_image(input):
     output_ext = '.npz' if output_serialization == 'lightweight' else '.pkl'
 
     # load synthetic image
-    synthetic_image = util.unpickle(input_pickle)
+    try:
+        synthetic_image = util.unpickle(input_pickle)
+    except EOFError:
+        logger.warning(f'Skipping corrupted SyntheticImage file: {input_pickle}')
+        return None
 
     if pipeline.instrument_name == 'roman':
         sca_string = roman_util.get_sca_string(synthetic_image.instrument_params['detector']).lower()
