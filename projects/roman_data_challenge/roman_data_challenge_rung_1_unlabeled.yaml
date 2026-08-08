@@ -95,7 +95,7 @@ synthetic_image:
   # 0.002% / 0.14%. Factor 3, because 0.7% is not comfortably below the substructure
   # signal this dataset exists to measure. Costs 29.9 s/lens-band vs 5.7 s for the old
   # oversample=1 config (non-JAX), i.e. ~5x on a step that takes ~20 min under JAX.
-  supersampling_factor: &supersampling_factor 3
+  supersampling_factor: &supersampling_factor 1
   pieces: False
   serialization: lightweight
 exposure:
