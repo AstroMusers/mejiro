@@ -106,7 +106,7 @@ def main(args):
     # calculate and implement limit, if specified
     if pipeline.limit is not None:
         uids = uids[:pipeline.limit]
-        logger.warn(f'Limiting to {len(uids)} systems')
+        logger.warning(f'Limiting to {len(uids)} systems')
 
     # directory containing SyntheticImage files from step 04
     synth_input_dir = pipeline.step_dir('04')
