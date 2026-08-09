@@ -90,7 +90,11 @@ def get_snr_array(exposure):
         If the exposure was not created with `pieces=True`.
     """
     _validate_exposure_for_snr_calculation(exposure)
-    return np.nan_to_num(exposure.source_data / np.sqrt(exposure.data), nan=0, posinf=0, neginf=0)
+    # empty pixels divide by zero (x/0) or produce a nan (0/0); nan_to_num below folds both
+    # to 0, which is the documented behaviour, so numpy's warnings about them are pure noise
+    with np.errstate(divide='ignore', invalid='ignore'):
+        snr = exposure.source_data / np.sqrt(exposure.data)
+    return np.nan_to_num(snr, nan=0, posinf=0, neginf=0)
 
 
 def _validate_exposure_for_snr_calculation(exposure):
