@@ -65,10 +65,10 @@ class LSST(Instrument):
         return dark_current + read_noise
 
     def get_dark_current(self, band):
-        return Quantity(0.0, 'ct / pix / s')
+        return Quantity(0.0, 'ct / (pix s)')
 
     def get_read_noise(self, band):
-        return Quantity(10.0, 'ct / pix / s')
+        return Quantity(10.0, 'ct / (pix s)')
     
     # implement abstract methods
     def get_pixel_scale(self, band):
@@ -83,7 +83,7 @@ class LSST(Instrument):
         return lenstronomy_util.get_gaussian_psf_kwargs(psf_fwhm)
     
     def get_thermal_background(self, band):
-        return Quantity(0.0, 'ct / pix / s')
+        return Quantity(0.0, 'ct / (pix s)')
     
     def get_zeropoint_magnitude(self, band):
         return self.lenstronomy_band_obs[band].obs['magnitude_zero_point']

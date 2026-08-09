@@ -41,14 +41,14 @@ def test_get_psf_fwhm_per_band():
 def test_get_thermal_background_is_zero():
     lsst = LSST()
     for band in lsst.bands:
-        assert lsst.get_thermal_background(band) == Quantity(0.0, 'ct / pix / s')
+        assert lsst.get_thermal_background(band) == Quantity(0.0, 'ct / (pix s)')
 
 
 def test_get_dark_current_and_read_noise_are_band_independent():
     lsst = LSST()
     for band in lsst.bands:
-        assert lsst.get_dark_current(band) == Quantity(0.0, 'ct / pix / s')
-        assert lsst.get_read_noise(band) == Quantity(10.0, 'ct / pix / s')
+        assert lsst.get_dark_current(band) == Quantity(0.0, 'ct / (pix s)')
+        assert lsst.get_read_noise(band) == Quantity(10.0, 'ct / (pix s)')
 
 
 def test_get_gain_returns_camera_value():

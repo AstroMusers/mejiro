@@ -53,8 +53,8 @@ def test_get_sky_level():
 
 def test_get_dark_current_and_read_noise():
     hst = HST()
-    assert hst.get_dark_current('F438W') == Quantity(0.00319, 'ct / pix / s')
-    assert hst.get_read_noise('F438W') == Quantity(3.0, 'ct / pix / s')
+    assert hst.get_dark_current('F438W') == Quantity(0.00319, 'ct / (pix s)')
+    assert hst.get_read_noise('F438W') == Quantity(3.0, 'ct / (pix s)')
 
 
 def test_get_gain_is_band_independent():

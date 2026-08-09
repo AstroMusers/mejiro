@@ -43,8 +43,8 @@ class HST(Instrument):
         # set attributes
         self.gain = 2.5
         self.stray_light_fraction = 0.1
-        self.dark_current = {band: Quantity(0.00319, 'ct / pix / s') for band in filtnames}  # https://etc.stsci.edu/etcstatic/users_guide/1_ref_9_background.html
-        self.read_noise = {band: Quantity(3.0, 'ct / pix / s') for band in filtnames}  # https://ntrs.nasa.gov/api/citations/20060047835/downloads/20060047835.pdf
+        self.dark_current = {band: Quantity(0.00319, 'ct / (pix s)') for band in filtnames}  # https://etc.stsci.edu/etcstatic/users_guide/1_ref_9_background.html
+        self.read_noise = {band: Quantity(3.0, 'ct / (pix s)') for band in filtnames}  # https://ntrs.nasa.gov/api/citations/20060047835/downloads/20060047835.pdf
         self.psf_fwhm = {
             'F438W': Quantity(0.070, 'arcsec'),
             'F475W': Quantity(0.067, 'arcsec'),
