@@ -39,7 +39,6 @@ dependencies = [
 dev = [
     "pytest",
     "pytest-cov",
-    "pytest-forked",
     "jupyter",
     "sphinx",
     "sphinx-rtd-theme",
