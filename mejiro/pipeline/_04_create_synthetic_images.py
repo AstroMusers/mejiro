@@ -34,11 +34,10 @@ Worker threading (JAX CPU path):
        to one logical CPU device per worker.
     3. ``os.sched_setaffinity`` in ``_jax_worker_init`` pins each worker to a
        single core (ids handed out via a ``multiprocessing.Queue`` built in
-       ``_run_jax_cpu``). This is the actual hard cap: JAX's CPU PJRT
-       client still allocates dispatch and JIT-compile threads sized to
-       ``hardware_concurrency()`` that ``XLA_FLAGS`` does not bound, but
-       affinity restricts them to one core so the system run queue stays
-       near ``workers`` rather than ``workers * ~3``.
+       ``_run_jax_cpu``). This is the actual hard cap: jaxlib sizes its CPU
+       thread pools from the affinity mask, so pinning *before* ``import jax``
+       keeps a worker to a handful of threads rather than one per core.
+       Measured on jaxlib 0.9.0.1: 7 threads pinned vs 357 unpinned.
 
 Input comes from step 02 or 03 (``--prev-step``, default 03); outputs land in
 ``<pipeline_dir>/04/`` for consumption by the 05 scripts.
@@ -290,17 +289,39 @@ def _verify_jax_platform(jax_platform):
     logger.info(f"JAX platform {jax_platform!r} ready ({proc.stdout.strip()} device(s))")
 
 
+def _drive_pool(executor, tuple_list):
+    """Submit every task and drain it, tearing the pool down hard on interrupt.
+
+    Deliberately not a ``with`` block. ``Executor.__exit__`` calls
+    ``shutdown(wait=True)`` *before* any ``except`` clause out here would run, and
+    ``wait=True`` without ``cancel_futures`` drains every queued work item -- so with the
+    whole task list already submitted, Ctrl+C blocked until the entire run finished and
+    the handler's ``cancel_futures=True`` was dead code.
+
+    Killing the children is also required, not belt-and-braces: they survive SIGINT
+    because ``concurrent.futures.process._process_worker`` catches ``BaseException`` per
+    task and reports it as a task failure, so each one just picks up the next item.
+    """
+    try:
+        futures = {executor.submit(create_synthetic_image, task): task for task in tuple_list}
+        for future in tqdm(as_completed(futures), total=len(futures)):
+            future.result()
+    except BaseException:
+        logger.warning('Interrupted, shutting down workers...')
+        executor.shutdown(wait=False, cancel_futures=True)
+        for process in list(getattr(executor, '_processes', {}).values()):
+            process.kill()
+        raise
+    else:
+        executor.shutdown(wait=True)
+
+
 def _run_no_jax(pipeline, tuple_list):
     """Non-JAX path: lenstronomy ray-shooting in a fork-context process pool."""
-    try:
-        with ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(len(tuple_list))) as executor:
-            futures = {executor.submit(create_synthetic_image, task): task for task in tuple_list}
-            for future in tqdm(as_completed(futures), total=len(futures)):
-                future.result()
-    except KeyboardInterrupt:
-        logger.info('Interrupted, shutting down workers...')
-        executor.shutdown(wait=False, cancel_futures=True)
-        raise
+    _drive_pool(
+        ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(len(tuple_list))),
+        tuple_list,
+    )
 
 
 def _run_jax_cpu(pipeline, tuple_list, compilation_cache_dir):
@@ -309,27 +330,21 @@ def _run_jax_cpu(pipeline, tuple_list, compilation_cache_dir):
     logger.info(f'Spawning {workers} JAX-CPU worker(s)')
 
     ctx = multiprocessing.get_context('spawn')
-    # Each worker pops one CPU id and pins itself with sched_setaffinity. JAX's
-    # CPU runtime allocates thread pools sized to hardware_concurrency() that
-    # XLA_FLAGS does not cap; affinity is what actually keeps the run queue
-    # near `workers` instead of `workers * ~3`.
+    # Each worker pops one CPU id and pins itself with sched_setaffinity before
+    # importing jax, which is what bounds jaxlib's thread pools -- they are sized
+    # from the affinity mask.
     cpu_queue = ctx.Queue()
     for cpu in range(workers):
         cpu_queue.put(cpu)
-    try:
-        with ProcessPoolExecutor(
+    _drive_pool(
+        ProcessPoolExecutor(
             max_workers=workers,
             mp_context=ctx,
             initializer=_jax_worker_init,
             initargs=('cpu', compilation_cache_dir, cpu_queue),
-        ) as executor:
-            futures = {executor.submit(create_synthetic_image, task): task for task in tuple_list}
-            for future in tqdm(as_completed(futures), total=len(futures)):
-                future.result()
-    except KeyboardInterrupt:
-        logger.info('Interrupted, shutting down workers...')
-        executor.shutdown(wait=False, cancel_futures=True)
-        raise
+        ),
+        tuple_list,
+    )
 
 
 def _run_jax_gpu(tuple_list, compilation_cache_dir):
@@ -371,11 +386,10 @@ def _jax_worker_init(jax_platform, compilation_cache_dir, cpu_queue):
     # unpickled.
     PipelineHelper.patch_astropy_for_mejiro_v2_pickles()  # remove after re-pickling inputs under mejiro-v3
 
-    # Pin this worker to a single core. JAX's CPU runtime sizes its
-    # Eigen/dispatch pools from hardware_concurrency(), which XLA_FLAGS cannot
-    # cap; sched_setaffinity is what actually bounds load to ~workers instead
-    # of ~workers*3. Blocking get: exactly `workers` ids are enqueued before
-    # the pool is created, so this cannot deadlock or starve a later worker.
+    # Pin this worker to a single core before jax is imported below: jaxlib sizes
+    # its CPU thread pools from the affinity mask, so this is what bounds load to
+    # ~workers. Blocking get: exactly `workers` ids are enqueued before the pool
+    # is created, so this cannot deadlock or starve a later worker.
     if cpu_queue is not None:
         os.sched_setaffinity(0, {cpu_queue.get()})
 
