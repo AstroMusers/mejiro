@@ -22,8 +22,7 @@ complete. Output lands in ``<data_dir>/<pipeline_label>/05_romanisim/sca##/`` in
     2. Runs romanisim once per dither pointing to make one L2 exposure each.
     3. Co-adds the L2s with romancal's MosaicPipeline into one L3 mosaic, weighting each
        exposure uniformly (``weight_type='exptime'``; romancal's ``'ivm'`` default derives a
-       weight romanisim's L2 cannot support and corrupts bright cores, see
-       docs/l3_negative_drizzle_weights.md). Every system is
+       weight romanisim's L2 cannot support and corrupts bright cores). Every system is
        covered by all exposures, so the mosaic has uniform weight and an effective
        exposure time of n_dithers x the single-exposure time. That depth is read back off
        the coadd (``meta.coadd_info.max_exposure_time``) and written to
@@ -1092,9 +1091,9 @@ def process_batch_l3(task):
                 # reciprocals, so a negative variance becomes a negative weight, and drizzle's
                 # sum(w*d)/sum(w) then divides by a denominator that can cross zero -- which
                 # put spikes, zeros and negative surface brightness in the brightest deflector
-                # cores (see docs/l3_negative_drizzle_weights.md). 'exptime' bypasses the
-                # reconstruction entirely, and is the right weighting regardless since every
-                # dither is the same depth from the same MA table.
+                # cores. 'exptime' bypasses the reconstruction entirely, and is the right
+                # weighting regardless since every dither is the same depth from the same
+                # MA table.
                 'resample': {'pixel_scale': _mosaic_pixel_scale(l2_files[0]),
                              'rotation': _detector_y_pa_deg(wcses[0]),
                              'weight_type': 'exptime'},

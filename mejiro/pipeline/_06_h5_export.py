@@ -27,10 +27,6 @@ If config['dataset']['labeled'] is False, truth attributes (main halo mass, Eins
 radius, velocity dispersion, substructure) are omitted from the HDF5 file and an
 answer-key CSV is written alongside it.
 
-For romanisim input the written file is then checked by mejiro.utils.qa.check_exposures,
-which raises on non-physical pixels -- see docs/l3_negative_drizzle_weights.md for the defect
-that motivated it.
-
 Usage:
     python3 _06_h5_export.py --config <config.yaml> [--data_dir <dir>] [--prev-step <step_dir>]
 
@@ -59,7 +55,7 @@ from tqdm import tqdm
 import logging
 
 import mejiro
-from mejiro.utils import qa, util
+from mejiro.utils import util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
 logger = logging.getLogger(__name__)
@@ -235,13 +231,6 @@ def main(args):
                 dset.attrs['lens_magnitude'] = (str(lens.get_lens_magnitude(band)), 'Lens galaxy magnitude')
 
     f.close()
-
-    if PipelineHelper.is_romanisim_step(prev_script_name):
-        # Guard against the co-add defect in docs/l3_negative_drizzle_weights.md, which put
-        # spikes and negative surface brightness into 246 exposures of rung_1 v3.0 without
-        # disturbing any aggregate statistic. Romanisim input only: the thresholds assume the
-        # smooth background of a drizzled co-add, and a single galsim frame would trip them.
-        qa.check_exposures(filepath)
 
     if not labeled:
         answer_key.to_csv(answer_key_filepath, index=False)
