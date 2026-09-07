@@ -1,4 +1,4 @@
-data_dir: &data_dir /nfsdata1/bwedig/mejiro  # where output data should be written
+data_dir: &data_dir /data2/bwedig/mejiro  # where output data should be written
 pipeline_label: roman_data_challenge_rung_0
 psf_cache_dir: cached_psfs
 dev: False
@@ -72,7 +72,7 @@ subhalos:
     sigma_sub: 0.055  # see Section 6.3 of Gilman et al. 2020 https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract
 synthetic_image:
   bands: [ F106, F129, F158 ]
-  fov_arcsec: &fov_arcsec 10.01
+  fov_arcsec: &fov_arcsec 11.99
   supersampling_compute_mode: adaptive
   supersampling_factor: &supersampling_factor 5
   pieces: True
@@ -114,7 +114,7 @@ psf:
   detectors: *detectors
   divide_up_detector: 4  # this sets the detector positions, e.g., 5 means 25 positions on each detector
 dataset:
-  version: 2.1  # used in the filename of the .h5 file
+  version: 2.2  # used in the filename of the .h5 file
   labeled: True
   include_psfs: False
   include_synthetic_images: False
