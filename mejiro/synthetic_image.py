@@ -237,8 +237,7 @@ class SyntheticImage:
             kwargs_numerics['supersampled_indexes'] = self.supersampled_indexes
         # Only meaningful when the grid is at the detector pixel scale. At oversample > 1
         # supersampling_factor subdivides an already-fine subpixel, so the threshold of 5
-        # does not apply; see docs/step04_oversampled_rendering.md for the convergence
-        # measurement that sets it there (3 for the rung-1 configs).
+        # does not apply.
         if oversample == 1 and kwargs_numerics['supersampling_factor'] < 5:
             warnings.warn('Supersampling factor less than 5 may not be sufficient for accurate results, especially when convolving with a non-trivial PSF')
         self.kwargs_numerics = kwargs_numerics            
@@ -339,8 +338,7 @@ class SyntheticImage:
         ip = self.instrument_params or {}
         det = ip.get('detector')
         if det is not None:
-            # Roman detectors may flow through as int (pipeline path) or as
-            # an 'SCA01'-style string (some downstream/test paths); normalize.
+            # Roman detectors may flow through as int or as an 'SCA01'-style string; normalize.
             from mejiro.utils import roman_util
             try:
                 det = roman_util.get_sca_int(det)

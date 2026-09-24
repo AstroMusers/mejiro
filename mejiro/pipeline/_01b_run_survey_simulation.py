@@ -51,8 +51,7 @@ Usage:
 import os
 
 # Single-thread BLAS/OMP in every worker; must happen before numpy imports.
-# JAX/XLA threading and per-worker CPU affinity are handled later in
-# ``_worker_init`` -- see module docstring "Worker threading".
+# JAX/XLA threading and per-worker CPU affinity are handled later, per worker.
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
