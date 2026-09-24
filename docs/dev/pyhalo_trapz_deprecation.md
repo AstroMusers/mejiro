@@ -134,7 +134,7 @@ Nothing. mejiro stays on `pyhalo==1.4.3` and accepts the 4,838 warnings.
 Bumping to 1.4.9 is a separate, science-affecting change that needs its own before/after validation:
 it crosses six releases, and `NFW_core_trunc.profile_args` also changes the mass-conservation
 integration grid from `np.logspace(-4, log10(r_match/rs), 1000)` to the same range with **250**
-points. That is a real numerical difference in the `alpha_Rs` normalisation, not just a rename.
+points. That is a real numerical difference in the `alpha_Rs` normalization, not just a rename.
 
 Note also that bumping would **not** lift the `numpy<2.4.0` pin, because of the two calls above.
 The pin can only be lifted once this upstream fix lands.

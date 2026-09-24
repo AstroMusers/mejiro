@@ -42,7 +42,7 @@ NumPy 2.0 deprecated the `s`-without-`axes` combination because the pairing betw
 transformed axis is about to change.
 
 Since `shape = s1 + s2 - 1` is elementwise over the input dimensions, `len(fshape) == in1.ndim`
-always holds here. The current behaviour is therefore exactly "transform axes `0..ndim-1`", which is
+always holds here. The current behavior is therefore exactly "transform axes `0..ndim-1`", which is
 what NumPy tells you to make explicit.
 
 ## Minimal reproducer
@@ -156,7 +156,7 @@ Reproducer (no external data):
 Please fix by passing `axes` explicitly. `fshape` is built as
 `[fftpack.next_fast_len(int(d)) for d in shape]` where `shape = s1 + s2 - 1`, so
 it always has exactly one entry per input dimension, and `tuple(range(ndim))`
-reproduces the current behaviour exactly:
+reproduces the current behavior exactly:
 
     axes = tuple(range(in1.ndim))
     sp1 = np.fft.rfftn(in1, fshape, axes=axes)

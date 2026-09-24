@@ -626,8 +626,8 @@ def test_oversample_preserves_total_flux():
 
 @pytest.mark.parametrize('bad', [2, 4, 0, -1, 2.5])
 def test_oversample_must_be_a_positive_odd_integer(bad):
-    """Even factors would put the oversampled grid centre on a subpixel boundary rather
-    than at the centre of the central native pixel."""
+    """Even factors would put the oversampled grid center on a subpixel boundary rather
+    than at the center of the central native pixel."""
     with pytest.raises(ValueError, match='oversample'):
         SyntheticImage(strong_lens=Sample1(), instrument=Roman(), band='F129', fov_arcsec=5,
                        instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},

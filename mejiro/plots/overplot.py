@@ -34,7 +34,7 @@ def source_position(ax, lens, coords, alpha=1, color='y', size=100):
         Axis on which to plot the marker.
     lens : StrongLens
         Lens object whose ``get_source_pixel_coords`` method returns the pixel
-        coordinates of the source centre.
+        coordinates of the source center.
     coords : lenstronomy.ImSim.Numerics.grid.RegularGrid or similar
         Coordinate mapping object passed to ``get_source_pixel_coords``.
     alpha : float, optional
@@ -62,7 +62,7 @@ def lens_position(ax, lens, coords, alpha=1, color='r', size=100):
         Axis on which to plot the marker.
     lens : StrongLens
         Lens object whose ``get_lens_pixel_coords`` method returns the pixel
-        coordinates of the lens centre.
+        coordinates of the lens center.
     coords : lenstronomy.ImSim.Numerics.grid.RegularGrid or similar
         Coordinate mapping object passed to ``get_lens_pixel_coords``.
     alpha : float, optional
