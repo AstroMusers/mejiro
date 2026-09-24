@@ -123,7 +123,7 @@ SUPPORTED_INSTRUMENTS = ['roman']
 DETECTOR_SIZE = 4088    # Roman WFI SCA pixel dimension
 DEFAULT_PATTERN = 'BOXGAP4_1'
 PA_APER = 0.0           # deg; PA of the *observatory* Y axis (galsim PA_is_FPA=False), so the
-                        # detector grid sits ~+/-60 deg from north (see docs/l3_cutout_orientation.md)
+                        # detector grid sits ~+/-60 deg from north
 POSITION_ANGLE = 0.0    # WFI position angle passed to PointWFI
 DISTORTION_GUARD = 7    # px added to tile_size for the tile-center pitch (pitch = tile_size + this)
 MARGIN = 50             # extra px kept clear of each detector edge
@@ -1080,7 +1080,7 @@ def process_batch_l3(task):
                 'source_catalog': {'skip': True},
                 # align the mosaic axes with the detector axes so tiles stay axis-aligned;
                 # pass the scale explicitly because the step would otherwise derive it at
-                # the boresight (see _mosaic_pixel_scale).
+                # the boresight.
                 # weight_type: romancal defaults to 'ivm', i.e. weight = 1/var_rnoise. A
                 # romanisim L2 has no var_rnoise array (roman_datamodels' WfiImage schema has
                 # no such field), so romancal reconstructs it as err**2 - var_poisson -- and

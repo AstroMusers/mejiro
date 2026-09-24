@@ -48,8 +48,7 @@ Usage:
 import os
 
 # Single-thread BLAS/OMP in every worker; must happen before numpy imports.
-# JAX/XLA threading and per-worker CPU affinity are handled later in
-# ``_jax_worker_init`` -- see module docstring "Worker threading".
+# JAX/XLA threading and per-worker CPU affinity are handled later, per worker.
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
@@ -449,8 +448,7 @@ def create_synthetic_image(input):
 
     # At oversample > 1 the grid is already at pixel_scale / oversample, so
     # supersampling_factor now supersamples the surface brightness *within* a subpixel
-    # rather than within a detector pixel, and needs choosing on its own terms -- see the
-    # convergence table in docs/step04_oversampled_rendering.md.
+    # rather than within a detector pixel, and needs choosing on its own terms.
     kwargs_numerics = {
         "supersampling_factor": supersampling_factor,
         "compute_mode": supersampling_compute_mode,

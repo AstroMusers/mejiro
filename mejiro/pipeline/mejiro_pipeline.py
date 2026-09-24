@@ -46,8 +46,8 @@ class Pipeline:
         parser.add_argument('--resume', action='store_true', default=False)
         parser.add_argument('--sequential', action='store_true', default=False)
         parser.add_argument('--data_dir', default=None)
-        # _05_romanisim flags (see its argparse for semantics); registered here so the
-        # dispatched Namespace is complete for every script
+        # _05_romanisim flags, registered here so the dispatched Namespace is
+        # complete for every script
         parser.add_argument('--level', choices=['l2', 'l3'], default='l2')
         parser.add_argument('--dither-pattern', dest='dither_pattern',
                             default=script_05_romanisim.DEFAULT_PATTERN)

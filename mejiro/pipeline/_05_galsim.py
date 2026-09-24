@@ -78,8 +78,7 @@ def main(args):
 
     # An oversampled step-04 image has no detector pixel integral applied and is on a
     # finer grid than the detector; the galsim engine assumes detector-resolution input
-    # and would silently produce an exposure at the wrong scale. Only _05_romanisim knows
-    # how to bin these down (see bin_to_native there).
+    # and would silently produce an exposure at the wrong scale.
     oversample = pipeline.config['synthetic_image'].get('oversample', 1)
     if oversample > 1:
         raise ValueError(

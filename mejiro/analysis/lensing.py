@@ -4,10 +4,7 @@ import numpy as np
 
 from mejiro.utils import util
 
-# Sentinel written to StrongLens.realization when the ~59 MB pyHalo realization
-# object is stripped for the lightweight serialization (see strip_realization).
-# Value must match the literal LightweightStrongLens attaches on load
-# (mejiro/synthetic_image.py); a unit test enforces the agreement.
+# Value must match the literal LightweightStrongLens attaches on load.
 LIGHTWEIGHT_REALIZATION = '<lightweight>'
 
 
