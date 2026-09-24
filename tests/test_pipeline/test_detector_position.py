@@ -2,7 +2,7 @@
 
 This was an unseeded ``random.choice``, so the PSF a system was convolved with changed on
 every step-04 run and ``--resume`` gave newly-rendered systems different kernels than the
-pass that produced their neighbours. Datasets recorded the choice in ``.psfpos.json`` but
+pass that produced their neighbors. Datasets recorded the choice in ``.psfpos.json`` but
 nothing could reproduce it. See docs/step04_oversampled_rendering.md.
 """
 import numpy as np

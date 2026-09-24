@@ -30,7 +30,7 @@ def test_degrade_false_tells_lenstronomy_to_use_the_kernel_as_is():
 
 
 def test_degrade_false_leaves_the_kernel_untouched_in_lenstronomy():
-    """The behavioural difference the flag exists for: with degrade=True lenstronomy hands
+    """The behavioral difference the flag exists for: with degrade=True lenstronomy hands
     back a box-averaged kernel one fifth the size; with degrade=False it hands back what it
     was given."""
     kernel = _kernel()

@@ -112,7 +112,7 @@ def _detector_position(name, seed, possible_positions):
     This was previously an unseeded ``random.choice``, which left the PSF a system was
     convolved with unreproducible: re-running step 04 with the same ``seed`` assigned
     different kernels, and a resumed run gave newly-rendered systems different kernels
-    than the pass that produced their neighbours. The choice was recorded in the
+    than the pass that produced their neighbors. The choice was recorded in the
     ``.psfpos.json`` sidecar, so finished datasets were self-documenting, but nothing
     could reproduce them -- and comparing two step-04 runs silently compared two
     different PSFs (see docs/step04_oversampled_rendering.md).
