@@ -72,7 +72,7 @@ def test_validate_instrument_params():
         'detector': 5,
         'detector_position': [2044, 2044]
     }
-    with pytest.raises(ValueError, match='The detector_position parameter must be an \(x,y\) coordinate tuple.'):
+    with pytest.raises(ValueError, match=r'The detector_position parameter must be an \(x,y\) coordinate tuple.'):
         roman.validate_instrument_params(invalid_position_type_params)
 
     # Test invalid detector position length
@@ -80,7 +80,7 @@ def test_validate_instrument_params():
         'detector': 5,
         'detector_position': (2044,)
     }
-    with pytest.raises(ValueError, match='The detector_position parameter must be an \(x,y\) coordinate tuple.'):
+    with pytest.raises(ValueError, match=r'The detector_position parameter must be an \(x,y\) coordinate tuple.'):
         roman.validate_instrument_params(invalid_position_length_params)
 
     # Test invalid detector position values

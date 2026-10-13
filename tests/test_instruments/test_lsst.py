@@ -10,8 +10,8 @@ def test_init():
     # inherited attributes
     assert lsst.name == 'LSST'
     assert lsst.bands == ['u', 'g', 'r', 'i', 'z', 'y']
-    assert isinstance(lsst.engines, list) and 'lenstronomy' in lsst.engines
-    assert 'lenstronomy' in lsst.versions
+    assert isinstance(lsst.engines, list) and 'galsim' in lsst.engines
+    assert 'chalcedon' in lsst.versions
 
     # direct attributes
     assert lsst.stray_light_fraction == 0.0

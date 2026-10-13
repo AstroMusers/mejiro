@@ -98,7 +98,7 @@ from astropy.coordinates import SkyCoord
 from matplotlib.collections import PatchCollection
 from matplotlib.colors import LogNorm
 from matplotlib.patches import Rectangle
-from tqdm import tqdm
+from tdpy.verbosity import VerbosityStreamHandler, tqdm
 
 import asdf
 import roman_datamodels as rdm
@@ -409,6 +409,30 @@ def _place_tile(counts, electrons, cx, cy, tile_size):
         counts[src_y0:src_y1, src_x0:src_x1] = electrons[tile_y0:tile_y1, tile_x0:tile_x1]
 
 
+def _poisson_counts(expected_counts, rng, *, label):
+    """Draw detector counts only from an unchanged finite, nonnegative model."""
+    expected_counts = mejiro_util.validate_rendered_image(expected_counts, label=label)
+    return rng.poisson(expected_counts).astype(np.int32)
+
+
+def _normalize_photometry_metadata(photometry):
+    """Convert Romanisim's signed WCS area and reciprocal conversion to magnitudes."""
+    try:
+        conversion = float(photometry['conversion_megajanskys'])
+        pixel_area = float(photometry['pixel_area'])
+    except (TypeError, ValueError, OverflowError) as error:
+        raise ValueError('Romanisim photometry metadata must contain numeric conversion and pixel area') from error
+
+    if (not np.isfinite(conversion) or not np.isfinite(pixel_area)
+            or conversion == 0.0 or pixel_area == 0.0):
+        raise ValueError('Romanisim photometry conversion and pixel area must be finite and nonzero')
+    if np.signbit(conversion) != np.signbit(pixel_area):
+        raise ValueError('Romanisim photometry conversion and pixel area have inconsistent WCS orientation signs')
+
+    photometry['conversion_megajanskys'] = abs(conversion)
+    photometry['pixel_area'] = abs(pixel_area)
+
+
 def bin_to_native(tile, oversample, frac_x=0.0, frac_y=0.0):
     """Bin an oversampled step-04 tile down to detector pixels at a given sub-pixel phase.
 
@@ -551,6 +575,7 @@ def main(args):
     logging.basicConfig(
         level=getattr(logging, config['logging_level'].upper(), logging.INFO),
         format='%(asctime)s %(levelname)s %(name)s: %(message)s',
+        handlers=[VerbosityStreamHandler()],
         force=True,
     )
     # suppress noisy third-party logging (romancal/romanisim/CRDS/...)
@@ -851,13 +876,16 @@ def process_batch_l2(task):
 
                 for (pickle_path, tile_r, tile_c), synth in zip(chunk_items, chunk_synths):
 
-                    # deal with negative and nan pixels
+                    # Reject invalid model pixels before converting the scene to counts.
                     ov = synth.oversample
-                    smooth_data = np.asarray(mejiro_util.smooth_pixels(synth.data), dtype=np.float64)
-                    assert smooth_data.shape == (tile_size * ov, tile_size * ov), (
-                        f'SyntheticImage shape {smooth_data.shape} does not match tile_size '
-                        f'{tile_size} x oversample {ov} derived from config fov_arcsec'
+                    rendered_data = mejiro_util.validate_rendered_image(
+                        synth.data, label=f'Rendered image {pickle_path}'
                     )
+                    if rendered_data.shape != (tile_size * ov, tile_size * ov):
+                        raise ValueError(
+                            f'SyntheticImage shape {rendered_data.shape} does not match tile_size '
+                            f'{tile_size} x oversample {ov} derived from config fov_arcsec'
+                        )
 
                     # Bin to detector pixels at a per-system sub-pixel phase. There is no
                     # dither WCS here to derive one from, but binning every system at phase 0
@@ -866,13 +894,18 @@ def process_batch_l2(task):
                     # subpixel_phase and docs/subpixel_phase.md.
                     if ov > 1:
                         frac_x, frac_y = subpixel_phase(seed, _lens_id_from_pickle(pickle_path, band))
-                        smooth_data = bin_to_native(smooth_data, ov, frac_x, frac_y)
+                        rendered_data = bin_to_native(rendered_data, ov, frac_x, frac_y)
+                    rendered_data = mejiro_util.validate_rendered_image(
+                        rendered_data, label=f'Detector-binned image {pickle_path}'
+                    )
 
                     # convert the units
-                    synth_sum = np.sum(smooth_data, dtype=np.float64)
+                    synth_sum = np.sum(rendered_data, dtype=np.float64)
+                    if not np.isfinite(synth_sum) or synth_sum <= 0.0:
+                        raise ValueError(f'Rendered image {pickle_path} has nonpositive total flux {synth_sum}')
                     maggies = synth.get_maggies()
                     total_electrons = maggies * abflux * exptime
-                    lens_electrons = (smooth_data / synth_sum) * total_electrons
+                    lens_electrons = (rendered_data / synth_sum) * total_electrons
 
                     # place inside the PSF-bucket sub-grid assigned to this image
                     r0 = tile_r * tile_size
@@ -889,7 +922,9 @@ def process_batch_l2(task):
         plt.close()
 
         # 2. add Poisson noise
-        realized = rng_np.poisson(counts).astype(np.int32)
+        realized = _poisson_counts(
+            counts, rng_np, label=f'SCA {sca_num:02d} {band} batch {batch_idx} expected counts'
+        )
         extra_counts = galsim.ImageI(realized)
 
         # 3. set up romanisim metadata with the correct SCA
@@ -991,11 +1026,14 @@ def process_batch_l3(task):
                 for offset, synth in enumerate(chunk_synths):
                     sky = source_skies[start_idx + offset]
                     ov = synth.oversample
-                    smooth = np.asarray(mejiro_util.smooth_pixels(synth.data), dtype=np.float64)
-                    assert smooth.shape == (tile_size * ov, tile_size * ov), (
-                        f'SyntheticImage shape {smooth.shape} does not match tile_size '
-                        f'{tile_size} x oversample {ov} derived from config fov_arcsec'
+                    rendered_data = mejiro_util.validate_rendered_image(
+                        synth.data, label=f'Rendered image {batch_pickles[start_idx + offset]}'
                     )
+                    if rendered_data.shape != (tile_size * ov, tile_size * ov):
+                        raise ValueError(
+                            f'SyntheticImage shape {rendered_data.shape} does not match tile_size '
+                            f'{tile_size} x oversample {ov} derived from config fov_arcsec'
+                        )
                     total_electrons = synth.get_maggies() * abflux * exptime
 
                     for d in range(n_dithers):
@@ -1007,11 +1045,17 @@ def process_batch_l3(task):
                         # sub-pixel pattern away (docs/l3_dither_registration.md); carry the
                         # residual into the binning phase instead, which is what the
                         # detector actually sees.
-                        native = bin_to_native(smooth, ov, src_pix.x - ix, src_pix.y - iy)
+                        native = bin_to_native(rendered_data, ov, src_pix.x - ix, src_pix.y - iy)
+                        native = mejiro_util.validate_rendered_image(
+                            native, label=f'Dither {d} detector-binned image {batch_pickles[start_idx + offset]}'
+                        )
                         # Fourier shift preserves the sum exactly and binning is a block sum,
                         # so every dither ends up with the same total before normalization.
                         tile_sum = np.sum(native, dtype=np.float64)
-                        assert tile_sum > 0, f'non-positive tile sum {tile_sum} for dither {d}'
+                        if not np.isfinite(tile_sum) or tile_sum <= 0.0:
+                            raise ValueError(
+                                f'Nonpositive detector-binned tile sum {tile_sum} for dither {d}'
+                            )
                         placements[d].append(((native / tile_sum) * total_electrons, ix, iy))
 
         os.makedirs(batch_dir, exist_ok=True)
@@ -1023,7 +1067,10 @@ def process_batch_l3(task):
             for e, cx, cy in placements[d]:
                 _place_tile(counts, e, cx, cy, tile_size)
 
-            realized = rng_np.poisson(np.clip(counts, 0, None)).astype(np.int32)
+            realized = _poisson_counts(
+                counts, rng_np,
+                label=f'SCA {sca_num:02d} {band} batch {batch_idx} dither {d} expected counts',
+            )
             extra_counts = galsim.ImageI(realized)
 
             meta = deepcopy(parameters.default_parameters_dictionary)
@@ -1047,11 +1094,9 @@ def process_batch_l3(task):
                 rng=galsim.UniformDeviate(batch_seed + d), crparam=dict(), extra_counts=extra_counts,
             )
 
-            # FluxStep prerequisites: inject cal_step and make photometry conversions positive
+            # Romanisim derives a signed area from WCS orientation and its reciprocal conversion.
             im['meta']['cal_step'] = deepcopy(CAL_STEP)
-            phot = im['meta']['photometry']
-            phot['conversion_megajanskys'] = abs(float(phot['conversion_megajanskys']))
-            phot['pixel_area'] = abs(float(phot['pixel_area']))
+            _normalize_photometry_metadata(im['meta']['photometry'])
 
             l2_path = os.path.join(batch_dir, f'dither{d:04d}_wfi{sca_num:02d}_{band.lower()}_cal.asdf')
             af = asdf.AsdfFile()

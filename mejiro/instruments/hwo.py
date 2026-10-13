@@ -2,7 +2,7 @@ import importlib.metadata
 import os
 import numpy as np
 import syotools
-from lenstronomy.Util import data_util
+from chalcedon.imaging import data_util
 from astropy import units as u
 from astropy.units import Quantity
 from fractions import Fraction
@@ -64,8 +64,8 @@ class HWO(Instrument):
             raise importlib.metadata.PackageNotFoundError("syotools package not found. Please install syotools.")
 
         # set attributes
-        self.gain = {band: 1. for band in self.bands}
-        self.stray_light_fraction = 0.01  # placeholder value
+        self.gain = {band: None for band in self.bands}
+        self.stray_light_fraction = None
         aperture = self.telescope.recover('aperture')
         self.aperture = Quantity(aperture[0], aperture[1]) if isinstance(aperture, list) else aperture
         self.effective_aperture = self.telescope.effective_aperture
@@ -73,18 +73,7 @@ class HWO(Instrument):
         self.dark_current = self.get_attribute_from_syotools(self.camera, 'dark_current', u.electron / (u.pix * u.second))
         self.read_noise = self.get_attribute_from_syotools(self.camera, 'detector_rn', u.electron ** Fraction(1, 2) / u.pix ** Fraction(1, 2))
         self.psf_fwhm = self.get_attribute_from_syotools(self.camera, 'fwhm_psf', u.arcsec, check_unit=False)  # TODO temporary override of unit check
-        self.thermal_background = {
-            'B': Quantity(0.0, 'ct / pix'),
-            'FUV': Quantity(0.0, 'ct / pix'),
-            'H': Quantity(0.0, 'ct / pix'),
-            'I': Quantity(0.0, 'ct / pix'),
-            'J': Quantity(0.0, 'ct / pix'),
-            'K': Quantity(0.0, 'ct / pix'),
-            'NUV': Quantity(0.0, 'ct / pix'),
-            'R': Quantity(0.0, 'ct / pix'),
-            'U': Quantity(0.0, 'ct / pix'),
-            'V': Quantity(0.0, 'ct / pix'),
-        }   # TODO these aren't real values, just placeholders
+        self.thermal_background = None
 
         # calculate zeropoints: https://jt-astro.science/luvoir_simtools/hdi_etc/SNR_equation.pdf
         aperture_cm = self.aperture.to(u.cm).value  # get telescope aperture diameter in cm
@@ -116,7 +105,10 @@ class HWO(Instrument):
         return {band: value for band, value in zip(self.bands, values)}
     
     def get_gain(self, band):
-        return self.gain[band]
+        gain = self.gain[band]
+        if gain is None:
+            raise NotImplementedError(f'HWO detector gain is not configured for band {band}')
+        return gain
     
     def get_sky_level(self, band):
         return self.sky_level[band]
@@ -149,6 +141,10 @@ class HWO(Instrument):
         return lenstronomy_util.get_gaussian_psf_kwargs(psf_fwhm)
     
     def get_thermal_background(self, band):
+        if self.thermal_background is None:
+            raise NotImplementedError(
+                'HWO thermal-background values are not configured; no sky-subtracted exposure can be simulated.'
+            )
         return self.thermal_background[band]
     
     def get_zeropoint_magnitude(self, band):

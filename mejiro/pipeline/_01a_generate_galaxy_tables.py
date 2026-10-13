@@ -35,7 +35,7 @@ from astropy.cosmology import default_cosmology
 from astropy.units import Quantity
 import slsim.Pipelines as pipelines
 from slsim.Pipelines.sl_hammocks_pipeline import SLHammocksPipeline
-from tqdm import tqdm
+from tdpy.verbosity import tqdm
 
 import mejiro
 from mejiro.utils import roman_util, util

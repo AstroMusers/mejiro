@@ -2,8 +2,8 @@ import numpy as np
 from scipy.optimize import minimize
 from scipy.signal import fftconvolve
 from scipy.special import gammaincinv
-from lenstronomy.LightModel.light_model import LightModel
-from lenstronomy.Util import util as lenstronomy_util
+from chalcedon.imaging import LightModel
+from chalcedon.imaging import util as lensing_util
 
 
 def _sersic_b_n(n_sersic):
@@ -71,7 +71,7 @@ def fit_sersic(image, pixel_scale, initial_kwargs=None, psf_kernel=None,
     num_pix = image.shape[0]
     fov = num_pix * pixel_scale
 
-    x, y, *_ = lenstronomy_util.make_grid_with_coordtransform(
+    x, y, *_ = lensing_util.make_grid_with_coordtransform(
         numPix=num_pix, deltapix=pixel_scale, subgrid_res=1,
         left_lower=False, inverse=False)
 

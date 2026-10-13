@@ -5,13 +5,7 @@ from pyHalo.preset_models import preset_model_from_name
 from mejiro.galaxy_galaxy import SampleBELLS, SampleSL2S, SampleGG
 from mejiro.instruments.roman import Roman
 from mejiro.synthetic_image import SyntheticImage
-
-
-def _circular_aperture_mask(shape, center_xy, radius):
-    ny, nx = shape
-    yy, xx = np.ogrid[:ny, :nx]
-    cx, cy = center_xy
-    return (xx - cx) ** 2 + (yy - cy) ** 2 <= radius ** 2
+from mejiro.utils.util import circular_aperture_mask as _circular_aperture_mask
 
 
 def _assert_realization_attached(strong_lens, realization):

@@ -303,7 +303,7 @@ def process_cps(args):
                 warnings.simplefilter('ignore')
                 snr = exposure.get_snr()
 
-            if snr >= snr_threshold:
+            if snr is not None and snr >= snr_threshold:
                 num_detectable += 1
 
             exposures_and_snrs.append((exposure, snr))
@@ -313,7 +313,8 @@ def process_cps(args):
             fig, axes = plt.subplots(7, 7, figsize=(20, 20))
             for ax, (exposure, snr) in zip(axes.flatten(), exposures_and_snrs):
                 ax.imshow(exposure.data, norm=LogNorm(), cmap='cubehelix')
-                ax.set_title(f'SNR: {snr:.2f}')
+                snr_label = f'{snr:.2f}' if snr is not None else 'no qualifying region'
+                ax.set_title(f'SNR: {snr_label}')
                 ax.axis('off')
             plt.suptitle(f'healpix pixel {idx}, background level {cps:.2f} counts/sec/pixel, detectable lenses: {num_detectable} of {num_lenses} ({(num_detectable/num_lenses*100) if num_lenses > 0 else 0:.2f}%)', fontsize=16)
             plt.savefig(f'figures/spot_check_{idx:04d}.png', dpi=300)

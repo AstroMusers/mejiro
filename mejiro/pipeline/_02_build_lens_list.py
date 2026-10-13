@@ -14,7 +14,7 @@ import argparse
 import os
 import time
 from glob import glob
-from tqdm import tqdm
+from tdpy.verbosity import tqdm
 
 from mejiro.galaxy_galaxy import GalaxyGalaxy
 from mejiro.utils import util

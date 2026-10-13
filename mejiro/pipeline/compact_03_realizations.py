@@ -27,7 +27,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from glob import glob
 
 import yaml
-from tqdm import tqdm
+from tdpy.verbosity import VerbosityStreamHandler, tqdm
 
 from mejiro.analysis import lensing
 from mejiro.utils import util
@@ -83,7 +83,7 @@ def main(args):
 
     # standalone script (does not go through PipelineHelper), so configure
     # logging here to surface the progress/summary messages below.
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, handlers=[VerbosityStreamHandler()])
 
     config_path = _resolve_config_path(args.config)
     with open(config_path, 'r') as f:

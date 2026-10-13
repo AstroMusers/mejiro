@@ -67,11 +67,7 @@ def test_exposure_with_galsim_engine(strong_lens, test_data_dir):
     np.testing.assert_array_equal(exposure.data, exposure.image.array)
 
 
-def _circular_aperture_mask(shape, center_xy, radius):
-    ny, nx = shape
-    yy, xx = np.ogrid[:ny, :nx]
-    cx, cy = center_xy
-    return (xx - cx) ** 2 + (yy - cy) ** 2 <= radius ** 2
+_circular_aperture_mask = util.circular_aperture_mask
 
 
 def test_noiseless_exposure_aperture_photometry(sample_gg, test_data_dir):

@@ -251,7 +251,8 @@ class Exposure:
         title = f'{self.synthetic_image.strong_lens.name} (' + r'$z_{l}=$' + f'{self.synthetic_image.strong_lens.z_lens:.2f}, ' + r'$z_{s}=$' + f'{self.synthetic_image.strong_lens.z_source:.2f}' + f')\n{self.synthetic_image.instrument_name} {self.synthetic_image.band}, {self.exposure_time} s'
         if show_snr:
             snr = self.get_snr()
-            title += f'\nSNR: {snr:.2f}'
+            snr_label = f'{snr:.2f}' if snr is not None else 'no qualifying region'
+            title += f'\nSNR: {snr_label}'
         plt.title(title)
         cbar = plt.colorbar()
         cbar.set_label(r'log$_{10}$(Counts)')
@@ -370,7 +371,8 @@ class LightweightExposure:
         title = f'{self.name} (' + r'$z_{l}=$' + f'{self.z_lens:.2f}, ' + r'$z_{s}=$' + f'{self.z_source:.2f}' + f')\n{self.instrument_name} {self.band}, {self.exposure_time} s'
         if show_snr:
             snr = self.get_snr()
-            title += f'\nSNR: {snr:.2f}'
+            snr_label = f'{snr:.2f}' if snr is not None else 'no qualifying region'
+            title += f'\nSNR: {snr_label}'
         plt.title(title)
         cbar = plt.colorbar()
         cbar.set_label(r'log$_{10}$(Counts)')

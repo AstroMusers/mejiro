@@ -212,16 +212,27 @@ class GalSimEngine(Engine):
 
     @staticmethod
     def get_sky_background(instrument, band, exposure_time, num_pix, pixel_scale):
+        stray_light_fraction = instrument.get_stray_light_fraction()
+        if (stray_light_fraction is None
+                or not np.isfinite(stray_light_fraction)
+                or stray_light_fraction < 0):
+            raise ValueError(
+                f'{instrument.name} requires a finite, nonnegative stray-light fraction '
+                'to simulate the sky background'
+            )
+
         # build Image
         sky_image = GalSimEngine.get_empty_image(num_pix, pixel_scale)
 
         # get minimum zodiacal light in this band in counts/pixel/sec
         sky_level = instrument.get_sky_level(band)
+        if sky_level is None:
+            raise ValueError(f'{instrument.name} sky level is not configured for band {band}')
         if sky_level.unit != 'ct / pix':
             raise ValueError(f"Minimum zodiacal light is not in units of counts/pixel: {sky_level.unit}")
 
         # add stray light contribution
-        sky_level *= (1. + instrument.stray_light_fraction)
+        sky_level *= (1. + stray_light_fraction)
 
         # get thermal background in this band in counts/pixel/sec
         thermal_bkg = instrument.get_thermal_background(band)

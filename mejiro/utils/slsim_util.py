@@ -1,6 +1,6 @@
 import logging
 import pandas as pd
-from tqdm import tqdm
+from tdpy.verbosity import tqdm
 
 logger = logging.getLogger(__name__)
 

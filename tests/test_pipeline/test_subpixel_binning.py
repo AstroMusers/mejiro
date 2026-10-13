@@ -14,7 +14,11 @@ import numpy as np
 import pytest
 from scipy.ndimage import fourier_shift, shift as ndshift
 
-from mejiro.pipeline._05_romanisim import bin_to_native
+from mejiro.pipeline._05_romanisim import (
+    _normalize_photometry_metadata,
+    _poisson_counts,
+    bin_to_native,
+)
 
 OV = 5
 N = 91
@@ -155,6 +159,50 @@ def test_matches_exact_reference_where_a_native_shift_does_not(stpsf_kernel):
 def test_oversample_one_is_an_identity():
     tile = np.arange(9.0).reshape(3, 3)
     np.testing.assert_array_equal(bin_to_native(tile, 1), tile)
+
+
+def test_poisson_counts_preserves_valid_model_and_rejects_negative_pixels():
+    class Recorder:
+        def __init__(self):
+            self.received = None
+
+        def poisson(self, expected_counts):
+            self.received = np.array(expected_counts, copy=True)
+            return np.zeros(expected_counts.shape, dtype=np.int32)
+
+    expected_counts = np.array([[0.0, 2.5], [1.0, 0.0]])
+    generator = Recorder()
+    realized = _poisson_counts(expected_counts, generator, label="test image")
+
+    np.testing.assert_array_equal(generator.received, expected_counts)
+    assert realized.shape == expected_counts.shape
+    with pytest.raises(ValueError, match="no pixels were replaced"):
+        _poisson_counts(np.array([[0.0, -0.01]]), generator, label="invalid test image")
+
+
+def test_photometry_metadata_converts_consistent_wcs_signs_to_magnitudes():
+    photometry = {
+        'conversion_megajanskys': -2.5,
+        'pixel_area': -4e-12,
+    }
+
+    _normalize_photometry_metadata(photometry)
+
+    assert photometry['conversion_megajanskys'] == 2.5
+    assert photometry['pixel_area'] == 4e-12
+
+
+@pytest.mark.parametrize(
+    'photometry',
+    [
+        {'conversion_megajanskys': -2.5, 'pixel_area': 4e-12},
+        {'conversion_megajanskys': 0.0, 'pixel_area': 4e-12},
+        {'conversion_megajanskys': 2.5, 'pixel_area': np.inf},
+    ],
+)
+def test_photometry_metadata_rejects_invalid_or_inconsistent_values(photometry):
+    with pytest.raises(ValueError):
+        _normalize_photometry_metadata(photometry)
 
 
 def test_oversample_one_rejects_a_sub_pixel_phase():

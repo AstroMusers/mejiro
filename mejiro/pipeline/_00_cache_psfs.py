@@ -25,7 +25,7 @@ import multiprocessing
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import numpy as np
-from tqdm import tqdm
+from tdpy.verbosity import tqdm
 
 from mejiro.engines.stpsf_engine import STPSFEngine
 from mejiro.utils import roman_util, util

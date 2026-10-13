@@ -3,7 +3,7 @@ import time
 import yaml
 from glob import glob
 from pprint import pprint
-from tqdm import tqdm
+from tdpy.verbosity import print, tqdm
 
 import matplotlib.pyplot as plt
 import numpy as np

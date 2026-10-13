@@ -53,7 +53,7 @@ class Instrument(ABC):
         float
             Source flux in counts per second (ct/s).
         """
-        from lenstronomy.Util.data_util import magnitude2cps
+        from chalcedon.imaging import magnitude2cps
         zeropoint = self.get_zeropoint_magnitude(band)
         return magnitude2cps(magnitude, zeropoint)
 
@@ -72,7 +72,7 @@ class Instrument(ABC):
         float
             Source brightness in AB magnitudes.
         """
-        from lenstronomy.Util.data_util import cps2magnitude
+        from chalcedon.imaging import cps2magnitude
         zeropoint = self.get_zeropoint_magnitude(band)
         return cps2magnitude(cps, zeropoint)
 

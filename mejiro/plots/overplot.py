@@ -1,4 +1,4 @@
-from lenstronomy.LensModel.lens_model_extensions import LensModelExtensions
+from chalcedon import LensModelExtensions
 
 
 # TODO all of these should be moved to the plotting module and be options for plotting any lens
@@ -192,7 +192,7 @@ def _get_caustics_critical_curves(lens, num_pix, delta_pix):
     dec_caustic_list : list of numpy.ndarray
         Dec coordinates of caustic points.
     """
-    model_extension = LensModelExtensions(lens.lens_model_class)
+    model_extension = LensModelExtensions(lens.lens_model)
 
     frame_size = delta_pix * num_pix
     return model_extension.critical_curve_caustics(lens.kwargs_lens,

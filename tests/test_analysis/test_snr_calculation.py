@@ -53,15 +53,15 @@ def test_get_snr_array_per_pixel_values():
     np.testing.assert_allclose(snr_arr, np.array([[1.0, 1.0, 1.0]]))
 
 
-def test_get_snr_array_replaces_nan_and_inf_with_zero():
-    # data=0 -> 0/sqrt(0) = nan; source>0 with data=0 -> +inf; both should become 0
+def test_get_snr_array_preserves_undefined_ratios():
     source = np.array([[0.0, 5.0, 4.0]])
     data = np.array([[0.0, 0.0, 16.0]])
     exp = _StubExposure(source_data=source, lens_data=np.zeros((1, 3)), data=data)
 
     snr_arr = snr_calculation.get_snr_array(exp)
-    np.testing.assert_allclose(snr_arr, np.array([[0.0, 0.0, 1.0]]))
-    assert np.all(np.isfinite(snr_arr))
+    assert np.isnan(snr_arr[0, 0])
+    assert np.isposinf(snr_arr[0, 1])
+    assert snr_arr[0, 2] == 1.0
 
 
 def test_get_snr_array_raises_without_pieces():
@@ -70,14 +70,14 @@ def test_get_snr_array_raises_without_pieces():
         snr_calculation.get_snr_array(exp)
 
 
-def test_get_snr_returns_one_when_all_below_threshold():
+def test_get_snr_returns_none_when_all_pixels_are_below_threshold():
     # SNR per pixel = 1 / sqrt(100) = 0.1, well below default threshold of 1
     source = np.ones((4, 4))
     data = np.full((4, 4), 100.0)
     exp = _StubExposure(source_data=source, lens_data=np.zeros((4, 4)), data=data)
 
     max_snr, masked = snr_calculation.get_snr(exp)
-    assert max_snr == 1
+    assert max_snr is None
     assert masked.mask.all()
 
 
@@ -91,7 +91,7 @@ def test_get_snr_threshold_boundary_is_inclusive():
     exp = _StubExposure(source_data=source, lens_data=np.zeros((3, 3)), data=data)
     max_snr, masked = snr_calculation.get_snr(exp, snr_per_pixel_threshold=1)
 
-    assert max_snr == 1
+    assert max_snr is None
     assert masked.mask.all()
 
 

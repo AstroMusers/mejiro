@@ -5,7 +5,6 @@ from astropy.cosmology import default_cosmology
 from lenstronomy.Cosmo.lens_cosmo import LensCosmo
 from lenstronomy.LensModel.lens_model import LensModel
 from lenstronomy.LightModel.light_model import LightModel
-from pyHalo.preset_models import preset_model_from_name
 
 from mejiro.galaxy_galaxy import GalaxyGalaxy, SampleGG, SampleSL2S, SampleBELLS
 
@@ -71,6 +70,7 @@ def test_get_realization_kappa(strong_lens):
     with pytest.raises(ValueError):
         realization_kappa = strong_lens.get_realization_kappa()
 
+    preset_model_from_name = pytest.importorskip('pyHalo.preset_models').preset_model_from_name
     CDM = preset_model_from_name('CDM')
     realization = CDM(round(strong_lens.z_lens, 2), round(strong_lens.z_source, 2), cone_opening_angle_arcsec=5, log_m_host=np.log10(strong_lens.get_main_halo_mass()))
 
@@ -255,7 +255,7 @@ def test_lens_model_list_setter_writes_through_to_kwargs_model(sample_gg):
     assert sample_gg.kwargs_model['lens_model_list'] == ['SIS']
 
 
-def test_lens_model_property_returns_lenstronomy_objects(sample_gg):
+def test_lens_model_property_returns_default_lenstronomy_objects(sample_gg):
     assert isinstance(sample_gg.lens_model, LensModel)
     assert isinstance(sample_gg.lens_light_model, LightModel)
     assert isinstance(sample_gg.source_light_model, LightModel)

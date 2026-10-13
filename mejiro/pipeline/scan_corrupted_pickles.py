@@ -20,7 +20,7 @@ import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from glob import glob
 
-from tqdm import tqdm
+from tdpy.verbosity import print, tqdm
 
 from mejiro.utils import util
 

@@ -10,137 +10,43 @@ import warnings
 import yaml
 from collections import ChainMap
 from glob import glob
-from scipy.ndimage import generic_filter
 
 import logging
 logger = logging.getLogger(__name__)
 
 
 def smooth_negative_pixels(image, kernel_size=3):
-    """
-    Replace negative pixels in an image with local median values.
-
-    This function identifies negative pixels in an image and replaces them with
-    the median value computed from a local neighborhood around each negative pixel.
-    Positive pixels remain unchanged.
-
-    Parameters
-    ----------
-    image : ndarray
-        Input image array that may contain negative pixels.
-    kernel_size : int, optional
-        Size of the square kernel used to compute local median values.
-        Default is 3, meaning a 3x3 neighborhood.
-
-    Returns
-    -------
-    ndarray
-        Image array with negative pixels replaced by local median values.
-        The original array is modified in-place.
-
-    Notes
-    -----
-    - The function uses `scipy.ndimage.generic_filter` with `np.nanmedian` to compute
-      the local median, treating NaN values as missing data.
-    - Pixels with values >= 0 are not modified.
-    - The kernel_size determines the neighborhood size for median computation.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> image = np.array([[-1, 2, 3], [4, -2, 6], [7, 8, 9]], dtype=float)
-    >>> smoothed = smooth_negative_pixels(image, kernel_size=3)
-    """
-    n_neg = np.sum(image < 0)
-
-    if n_neg > 0:
-        # Track pixels that started negative — smoothing may turn some into NaN
-        # when the entire local window is negative. We need to keep iterating
-        # until all originally-negative pixels have valid non-negative values.
-        bad_mask = image < 0
-        iteration = 0
-        while np.any(bad_mask):
-            iteration += 1
-            n_bad = np.sum(bad_mask)
-            logger.debug(f"Iteration {iteration}: replacing {n_bad} bad pixels with local {kernel_size}x{kernel_size} median")
-            filled = generic_filter(
-                np.where(bad_mask, np.nan, image), np.nanmedian, size=kernel_size
-            )
-            image[bad_mask] = filled[bad_mask]
-            bad_mask = (image < 0) | np.isnan(image)
-        logger.debug(f"All negative pixels replaced after {iteration} iteration(s)")
-    else:
-        logger.debug("No negative pixels in image")
-
-    return image
+    """Legacy compatibility entry point that rejects rather than fills pixels."""
+    return validate_rendered_image(image)
 
 
 def smooth_nan_pixels(image, kernel_size=3):
-    """
-    Replace NaN pixels in an image with local median values.
-
-    This function identifies NaN pixels in an image and replaces them with
-    the median value computed from a local neighborhood around each NaN pixel.
-    Non-NaN pixels remain unchanged.
-
-    Parameters
-    ----------
-    image : ndarray
-        Input image array that may contain NaN pixels.
-    kernel_size : int, optional
-        Size of the square kernel used to compute local median values.
-        Default is 3, meaning a 3x3 neighborhood.
-
-    Returns
-    -------
-    ndarray
-        Image array with NaN pixels replaced by local median values.
-        The original array is modified in-place.
-    """
-    n_nan = np.count_nonzero(np.isnan(image))
-
-    if n_nan > 0:
-        iteration = 0
-        while n_nan > 0:
-            iteration += 1
-            logger.debug(f"Iteration {iteration}: replacing {n_nan} NaN pixels with local {kernel_size}x{kernel_size} median")
-            nan_mask = np.isnan(image)
-            filled = generic_filter(
-                image, np.nanmedian, size=kernel_size
-            )
-            image[nan_mask] = filled[nan_mask]
-            n_nan = np.count_nonzero(np.isnan(image))
-        logger.debug(f"All NaN pixels replaced after {iteration} iteration(s)")
-    else:
-        logger.debug("No NaN pixels in image")
-
-    return image
+    """Legacy compatibility entry point that rejects rather than fills pixels."""
+    return validate_rendered_image(image)
 
 
 def smooth_pixels(image, kernel_size=3):
+    """Legacy entry point that validates rendered pixels without changing them.
+
+    ``kernel_size`` remains accepted for compatibility but is ignored. Invalid
+    images raise instead of being median-filled.
     """
-    Replace NaN and negative pixels in an image with local median values.
+    return validate_rendered_image(image)
 
-    This function first replaces NaN pixels, then replaces negative pixels,
-    each using the median value computed from a local neighborhood.
 
-    Parameters
-    ----------
-    image : ndarray
-        Input image array that may contain NaN and/or negative pixels.
-    kernel_size : int, optional
-        Size of the square kernel used to compute local median values.
-        Default is 3, meaning a 3x3 neighborhood.
-
-    Returns
-    -------
-    ndarray
-        Image array with NaN and negative pixels replaced by local median values.
-        The original array is modified in-place.
-    """
-    image = smooth_nan_pixels(image, kernel_size=kernel_size)
-    image = smooth_negative_pixels(image, kernel_size=kernel_size)
-    return image
+def validate_rendered_image(image, *, label="rendered image"):
+    """Return a 2D finite, nonnegative image unchanged or reject it explicitly."""
+    values = np.asarray(image)
+    if values.ndim != 2:
+        raise ValueError(f"{label} must be a two-dimensional image, got shape {values.shape}")
+    nonfinite_count = int(np.count_nonzero(~np.isfinite(values)))
+    negative_count = int(np.count_nonzero(np.isfinite(values) & (values < 0.0)))
+    if nonfinite_count or negative_count:
+        raise ValueError(
+            f"{label} contains {nonfinite_count} non-finite and {negative_count} negative pixels; "
+            "no pixels were replaced"
+        )
+    return values
 
 
 def get_gaussian_kernel(fwhm, size):
@@ -1317,3 +1223,27 @@ def return_yaml(path):
     with open(filepath, 'r', encoding='utf-8') as file:
         data = yaml.safe_load(file)
     return data
+
+
+def circular_aperture_mask(shape, center_xy, radius):
+    """
+    Boolean mask for a circular aperture of `radius` pixels at `center_xy`.
+
+    Parameters
+    ----------
+    shape : tuple of int
+        Shape of the image (ny, nx).
+    center_xy : tuple of float
+        (x, y) center coordinates in pixels.
+    radius : float
+        Radius of the circular aperture in pixels.
+
+    Returns
+    -------
+    numpy.ndarray
+        Boolean 2D mask array of shape `shape`.
+    """
+    ny, nx = shape
+    yy, xx = np.ogrid[:ny, :nx]
+    cx, cy = center_xy
+    return (xx - cx) ** 2 + (yy - cy) ** 2 <= radius ** 2

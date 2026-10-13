@@ -168,14 +168,15 @@ def compute_substructure_snr(task):
                                 engine_params=reuse_params)
 
         snr_arr = snr_calculation.get_snr_array(exp_no_sub)
-        if not np.isfinite(snr_arr).any():
+        finite_pixels = np.isfinite(snr_arr)
+        if not finite_pixels.any():
             return {'uid': uid, 'band': band, 'snr': None,
                     'error': 'snr array all non-finite'}
-        threshold = np.quantile(snr_arr, snr_quantile)
+        threshold = np.quantile(snr_arr[finite_pixels], snr_quantile)
         if not np.isfinite(threshold):
             return {'uid': uid, 'band': band, 'snr': None,
                     'error': 'snr threshold non-finite'}
-        masked = np.ma.masked_where(snr_arr <= threshold, snr_arr)
+        masked = np.ma.masked_where(~finite_pixels | (snr_arr <= threshold), snr_arr)
         if masked.count() < 4:
             return {'uid': uid, 'band': band, 'snr': None,
                     'error': f'mask too small ({masked.count()} pixels)'}

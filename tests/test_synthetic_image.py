@@ -9,17 +9,7 @@ from mejiro.synthetic_image import SyntheticImage
 from mejiro.engines.stpsf_engine import STPSFEngine
 from mejiro.utils import lenstronomy_util, util
 
-
-def _circular_aperture_mask(shape, center_xy, radius):
-    """Boolean mask for a circular aperture of `radius` pixels at `center_xy`.
-
-    `center_xy` is (x, y) in pixel coordinates (matching the convention
-    returned by SyntheticImage.get_image_positions(pixel=True)).
-    """
-    ny, nx = shape
-    yy, xx = np.ogrid[:ny, :nx]
-    cx, cy = center_xy
-    return (xx - cx) ** 2 + (yy - cy) ** 2 <= radius ** 2
+_circular_aperture_mask = util.circular_aperture_mask
 
 
 def test_band_specific_source_image():

@@ -1,9 +1,7 @@
 import numpy as np
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from lenstronomy.Cosmo.lens_cosmo import LensCosmo
-from lenstronomy.LensModel.lens_model import LensModel
-from lenstronomy.LightModel.light_model import LightModel
+from mejiro.lensing import get_backend, validate_backend
 
 from mejiro.analysis import regions
 from mejiro.cosmo import cosmo
@@ -33,6 +31,9 @@ class StrongLens(ABC):
             - 'magnitudes': a dictionary of magnitudes for the lens and source galaxies, with keys 'lens' and 'source', respectively. Each value should be a dictionary with keys corresponding to the filter names (e.g., 'F062', 'F087', etc.) and values as the magnitudes in those filters.
     use_jax : bool, or list of bool
         Whether to use JAXtronomy for calculations. Default is None, then set to False in the constructor for all lens model element(s). See the `lenstronomy documentation <https://lenstronomy.readthedocs.io/en/latest/lenstronomy.LensModel.html#module-lenstronomy.LensModel.lens_model>`__ for details.
+    backend : str
+        Forward-model engine, either 'lenstronomy' (default) or 'chalcedon'.
+        JAX execution is available through the Lenstronomy path only.
 
     Notes
     -----
@@ -84,6 +85,8 @@ class StrongLens(ABC):
         }
 
     """
+    backend = 'lenstronomy'
+
     def __init__(
             self,
             name,
@@ -91,7 +94,8 @@ class StrongLens(ABC):
             kwargs_model,
             kwargs_params,
             physical_params,
-            use_jax
+            use_jax,
+            backend='lenstronomy',
     ):
         self.name = name
         self.coords = coords
@@ -99,6 +103,7 @@ class StrongLens(ABC):
         self.kwargs_params = kwargs_params
         self.physical_params = physical_params
         self.use_jax = use_jax
+        self.backend = validate_backend(backend)
 
         # set cosmology
         if 'cosmo' in kwargs_model:
@@ -139,7 +144,7 @@ class StrongLens(ABC):
 
         halo_lens_model_list, _, _, _ = self.realization.lensing_quantities(add_mass_sheet_correction=False)
         macrolens_lens_model_list = self.lens_model_list[:-len(halo_lens_model_list)]
-        lens_model_macro = LensModel(lens_model_list=macrolens_lens_model_list,
+        lens_model_macro = get_backend(self.backend).LensModel(lens_model_list=macrolens_lens_model_list,
                                         z_lens=self.z_lens,
                                         z_source=self.z_source,
                                         lens_redshift_list=self.z_lens * len(macrolens_lens_model_list),
@@ -230,7 +235,7 @@ class StrongLens(ABC):
         halo_lens_model_list, halo_redshift_array, kwargs_halos, _ = self.realization.lensing_quantities(add_mass_sheet_correction=add_mass_sheet_correction)
         halo_redshift_list = list(halo_redshift_array)
 
-        lens_model_realization = LensModel(lens_model_list=halo_lens_model_list,
+        lens_model_realization = get_backend(self.backend).LensModel(lens_model_list=halo_lens_model_list,
                                           z_lens=self.z_lens,
                                           z_source=self.z_source,
                                           lens_redshift_list=halo_redshift_list,
@@ -502,15 +507,15 @@ class StrongLens(ABC):
     
     def get_lens_cosmo(self):
         """
-        Get or create the LensCosmo instance, a lenstronomy class that supports physical unit calculations.
+        Get or create the selected backend's cosmological lens-conversion object.
 
         Returns
         -------
         LensCosmo
-            The lenstronomy.Cosmo.lens_cosmo.LensCosmo instance for the system.
+            The selected backend's LensCosmo instance for the system.
         """
         if self.lens_cosmo is None:
-            self.lens_cosmo = LensCosmo(self.z_lens, self.z_source, cosmo=self.cosmo)
+            self.lens_cosmo = get_backend(self.backend).LensCosmo(self.z_lens, self.z_source, cosmo=self.cosmo)
         return self.lens_cosmo
     
     def validate_light_models(self):
@@ -629,15 +634,18 @@ class StrongLens(ABC):
 
     @property
     def lens_model(self):
-        return LensModel(self.lens_model_list, use_jax=self.use_jax)
+        return get_backend(self.backend).LensModel(self.lens_model_list, use_jax=self.use_jax,
+                         z_lens=self.z_lens, z_source=self.z_source,
+                         lens_redshift_list=self.lens_redshift_list, cosmo=self.cosmo,
+                         multi_plane=len(set(self.lens_redshift_list)) > 1)
     
     @property
     def lens_light_model(self):
-        return LightModel(self.lens_light_model_list)
+        return get_backend(self.backend).LightModel(self.lens_light_model_list)
     
     @property
     def source_light_model(self):
-        return LightModel(self.source_light_model_list)
+        return get_backend(self.backend).LightModel(self.source_light_model_list)
 
     # @property
     # def lens_model_macromodel(self):

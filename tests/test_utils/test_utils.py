@@ -84,41 +84,62 @@ def test_replace_negatives():
     assert np.array_equal(result, expected), f"Expected {expected}, but got {result}"
 
 
-def test_smooth_negative_pixels():
-    # no negative pixels: image is unchanged
-    image = np.array([[1., 2., 3.],
-                      [4., 5., 6.],
-                      [7., 8., 9.]])
+@pytest.mark.parametrize(
+    "legacy_helper",
+    [util.smooth_negative_pixels, util.smooth_nan_pixels, util.smooth_pixels],
+)
+def test_legacy_smoothing_helpers_preserve_valid_pixels(legacy_helper):
+    image = np.array([[0.0, 1.0], [2.0, 3.0]])
     original = image.copy()
-    util.smooth_negative_pixels(image)
+
+    result = legacy_helper(image)
+
+    assert result is image
     np.testing.assert_array_equal(image, original)
 
-    # negative pixel is replaced with a non-negative value
-    image = np.array([[1., 2., 3.],
-                      [4., -5., 6.],
-                      [7., 8., 9.]], dtype=float)
-    util.smooth_negative_pixels(image)
-    assert image[1, 1] >= 0
 
-    # all non-negative pixels are preserved
-    image = np.array([[1., 2., 3.],
-                      [4., -5., 6.],
-                      [7., 8., 9.]], dtype=float)
-    util.smooth_negative_pixels(image)
-    non_neg_mask = np.array([[True, True, True],
-                             [True, False, True],
-                             [True, True, True]])
-    np.testing.assert_array_equal(image[non_neg_mask],
-                                  np.array([1., 2., 3., 4., 6., 7., 8., 9.]))
-    image = np.array([[1., -2.], [3., 4.]], dtype=float)
-    util.smooth_negative_pixels(image)  # should not raise
-    image = np.array([[1., 2.], [3., 4.]], dtype=float)
-    util.smooth_negative_pixels(image)  # should not raise
+@pytest.mark.parametrize(
+    "legacy_helper",
+    [util.smooth_negative_pixels, util.smooth_nan_pixels, util.smooth_pixels],
+)
+@pytest.mark.parametrize("bad_value", [-1.0, np.nan, np.inf])
+def test_legacy_smoothing_helpers_reject_invalid_pixels_without_modifying(
+    legacy_helper, bad_value
+):
+    image = np.array([[0.0, bad_value], [2.0, 3.0]])
+    original = image.copy()
 
-    # in-place: returns the same array object
-    image = np.array([[1., -2.], [3., 4.]], dtype=float)
-    result = util.smooth_negative_pixels(image)
+    with pytest.raises(ValueError, match="no pixels were replaced"):
+        legacy_helper(image)
+
+    np.testing.assert_array_equal(image, original)
+
+
+def test_validate_rendered_image_preserves_valid_pixels():
+    image = np.array([[0.0, 1.0], [2.0, 3.0]], dtype=np.float64)
+    original = image.copy()
+
+    result = util.validate_rendered_image(image, label="test scene")
+
     assert result is image
+    np.testing.assert_array_equal(image, original)
+
+
+def test_validate_rendered_image_preserves_input_dtype():
+    image = np.array([[0.0, 1.0], [2.0, 3.0]], dtype=np.float32)
+
+    result = util.validate_rendered_image(image)
+
+    assert result is image
+    assert result.dtype == image.dtype
+
+
+@pytest.mark.parametrize("bad_value", [-1.0, np.nan, np.inf])
+def test_validate_rendered_image_rejects_invalid_pixels(bad_value):
+    image = np.array([[0.0, bad_value], [2.0, 3.0]])
+
+    with pytest.raises(ValueError, match="no pixels were replaced"):
+        util.validate_rendered_image(image, label="test scene")
 
 
 def test_create_centered_box():

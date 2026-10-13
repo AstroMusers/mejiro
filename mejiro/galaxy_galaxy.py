@@ -15,14 +15,16 @@ class GalaxyGalaxy(StrongLens):
             kwargs_model,
             kwargs_params,
             physical_params={},
-            use_jax=None
+            use_jax=None,
+            backend='lenstronomy',
     ):
         super().__init__(name=name,
                          coords=coords, 
                          kwargs_model=kwargs_model,
                          kwargs_params=kwargs_params,
                          physical_params=physical_params,
-                         use_jax=use_jax)
+                         use_jax=use_jax,
+                         backend=backend)
         
         # get redshifts
         self.z_source = kwargs_model['z_source']
@@ -52,34 +54,34 @@ class GalaxyGalaxy(StrongLens):
         Notes
         -----
         - The source position is taken from the first element of ``kwargs_source``.
-        - Uses lenstronomy's LensEquationSolver to solve the lens equation.
-        - The solver is chosen automatically: "analytical" if supported by the lens model, otherwise "lenstronomy".
+        - Uses the lens-equation solver supplied by the selected backend.
         - The search window and minimum distance are set based on the Einstein radius.
         - If a lens model realization exists and `ignore_substructure` is True, only the macromodel is used for the calculation.
         """
-        from lenstronomy.LensModel.Solver.lens_equation_solver import LensEquationSolver, analytical_lens_model_support
+        from mejiro.lensing import get_backend
+
+        backend_models = get_backend(self.backend)
 
         source_x = self.kwargs_source[0]['center_x']
         source_y = self.kwargs_source[0]['center_y']
 
         if self.realization and ignore_substructure:
-            lens_eqn_solver = LensEquationSolver(self.lens_model_macromodel)
-            solver = "analytical" if analytical_lens_model_support(self.lens_model_list_macromodel) else "lenstronomy"
+            lens_eqn_solver = backend_models.LensEquationSolver(self.lens_model_macromodel)
+            lens_parameters = self.kwargs_lens_macromodel
         else:
-            lens_eqn_solver = LensEquationSolver(self.lens_model)
-            solver = "analytical" if analytical_lens_model_support(self.lens_model_list) else "lenstronomy"
+            lens_eqn_solver = backend_models.LensEquationSolver(self.lens_model)
+            lens_parameters = self.kwargs_lens
         
         return lens_eqn_solver.image_position_from_source(
             source_x,
             source_y,
-            self.kwargs_lens,
-            solver=solver,
+            lens_parameters,
             search_window=self.get_einstein_radius() * 6,
             min_distance=self.get_einstein_radius() * 6 / 200,
         )
 
     @staticmethod   
-    def from_slsim(slsim_gglens, name=None, coords=None, bands=None, use_jax=None):
+    def from_slsim(slsim_gglens, name=None, coords=None, bands=None, use_jax=None, backend='lenstronomy'):
         # check that the input is reasonable
         if slsim_gglens.source_number != 1:
             raise ValueError("Only one source is supported for galaxy-galaxy lenses.")
@@ -147,14 +149,15 @@ class GalaxyGalaxy(StrongLens):
                             kwargs_model=kwargs_model,
                             kwargs_params=kwargs_params,
                             physical_params=physical_params,
-                            use_jax=use_jax)
+                            use_jax=use_jax,
+                            backend=backend)
 
 
 class Sample1(GalaxyGalaxy):
     """
     This is a simulated strong lens from `SLSim <https://github.com/LSST-strong-lensing/slsim>`__ with a real source galaxy from the `COSMOS real galaxy dataset <https://doi.org/10.5281/zenodo.3242143>`__ (galaxy ID: 52643).
     """
-    def __init__(self):
+    def __init__(self, backend='lenstronomy'):
         name = 'Sample1'
         coords = None
         kwargs_model = {
@@ -247,14 +250,14 @@ class Sample1(GalaxyGalaxy):
                          kwargs_model=kwargs_model, 
                          kwargs_params=kwargs_params,
                          physical_params=physical_params,
-                         use_jax=[False, False, False, False])
+                         use_jax=[False, False, False, False], backend=backend)
         
 
 class Sample2(GalaxyGalaxy):
     """
     This is a simulated strong lens from `SLSim <https://github.com/LSST-strong-lensing/slsim>`__ with a real source galaxy from the `COSMOS real galaxy dataset <https://doi.org/10.5281/zenodo.3242143>`__ (galaxy ID: 125125).
     """
-    def __init__(self):
+    def __init__(self, backend='lenstronomy'):
         name = 'Sample2'
         coords = None
         kwargs_model = {
@@ -341,14 +344,14 @@ class Sample2(GalaxyGalaxy):
                          kwargs_model=kwargs_model, 
                          kwargs_params=kwargs_params,
                          physical_params=physical_params,
-                         use_jax=[False, False, False, False])
+                         use_jax=[False, False, False, False], backend=backend)
 
 
 class SampleGG(GalaxyGalaxy):
     """
     This is a simulated strong lens from `SLSim <https://github.com/LSST-strong-lensing/slsim>`__.
     """
-    def __init__(self):
+    def __init__(self, backend='lenstronomy'):
         name = 'SampleGG'
         coords = None
         kwargs_model = {
@@ -469,14 +472,14 @@ class SampleGG(GalaxyGalaxy):
                          kwargs_model=kwargs_model, 
                          kwargs_params=kwargs_params,
                          physical_params=physical_params,
-                         use_jax=[False, False, False])
+                         use_jax=[False, False, False], backend=backend)
 
 
 class SampleBELLS(GalaxyGalaxy):
     """
     This system, SDSSJ1159-0007, from the BELLS sample (`Brownstein et al. 2012 <https://doi.org/10.1088/0004-637X/744/1/41>`__, `Shu et al. 2016 <https://doi.org/10.3847/1538-4357/833/2/264>`__) was modeled by `Tan et al. (2024) <https://doi.org/10.1093/mnras/stae884>`__.
     """
-    def __init__(self):
+    def __init__(self, backend='lenstronomy'):
         name = 'SDSSJ1159-0007'
         coords = None
         kwargs_model = {
@@ -561,14 +564,14 @@ class SampleBELLS(GalaxyGalaxy):
                          kwargs_model=kwargs_model, 
                          kwargs_params=kwargs_params,
                          physical_params=physical_params,
-                         use_jax=[False, False])
+                         use_jax=[False, False], backend=backend)
 
 
 class SampleSL2S(GalaxyGalaxy):
     """
     This system, SL2SJ1411+5651, from the SL2S sample (`Gavazzi et al. 2012 <https://doi.org/10.1088/0004-637X/761/2/170>`__) was modeled by `Tan et al. (2024) <https://doi.org/10.1093/mnras/stae884>`__.
     """
-    def __init__(self):
+    def __init__(self, backend='lenstronomy'):
         name = 'SL2SJ1411+5651'
         coords = None
         kwargs_model = {
@@ -712,5 +715,5 @@ class SampleSL2S(GalaxyGalaxy):
                          kwargs_model=kwargs_model, 
                          kwargs_params=kwargs_params,
                          physical_params=physical_params,
-                         use_jax=[False, False])
+                         use_jax=[False, False], backend=backend)
         

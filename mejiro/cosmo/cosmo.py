@@ -58,14 +58,14 @@ def einstein_radius_to_mass(einstein_radius, d_l, d_s, d_ls):
 
 
 def einstein_radius_to_velocity_dispersion(einstein_radius, z_lens, z_source, cosmo):
-    from lenstronomy.Cosmo.lens_cosmo import LensCosmo
+    from chalcedon import LensCosmo
 
     lens_cosmo = LensCosmo(z_lens=z_lens, z_source=z_source, cosmo=cosmo)
     return lens_cosmo.sis_theta_E2sigma_v(einstein_radius)
 
 
 def velocity_dispersion_to_einstein_radius(velocity_dispersion, z_lens, z_source, cosmo):
-    from lenstronomy.Cosmo.lens_cosmo import LensCosmo
+    from chalcedon import LensCosmo
 
     lens_cosmo = LensCosmo(z_lens=z_lens, z_source=z_source, cosmo=cosmo)
     return lens_cosmo.sis_sigma_v2theta_E(velocity_dispersion)

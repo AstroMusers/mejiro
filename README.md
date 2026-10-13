@@ -5,14 +5,12 @@
 [![ApJ](https://img.shields.io/badge/ApJ-10.3847/1538--4357/adc24f-3c5492)](https://doi.org/10.3847/1538-4357/adc24f)
 [![arXiv](https://img.shields.io/badge/arXiv-2506.03390-b31b1b.svg)](https://arxiv.org/abs/2506.03390)
 
-`mejiro`[^1] is a pipeline to simulate space telescope images of
-galaxy-galaxy strong gravitational lenses built
-on [SLSim](https://github.com/LSST-strong-lensing/slsim), [lenstronomy](https://github.com/lenstronomy/lenstronomy), [pyHalo](https://github.com/dangilman/pyHalo), [GalSim](https://github.com/GalSim-developers/GalSim), and [romanisim](https://github.com/spacetelescope/romanisim). It can produce detailed simulated images and can scale to large datasets suitable for neural networks. The primary science case is characterizing dark matter substructure via galaxy-scale strong gravitational lensing.
+What would a galaxy-galaxy strong lens look like through a space telescope, and which details of its arcs would survive the instrument? We use `mejiro`[^1] to simulate those images and study their sensitivity to dark matter substructure. We support two lens forward-modeling backends, Lenstronomy and Chalcedon, with GalSim and romanisim providing detector-level integrations. SLSim survey generation and pyHalo realization generation are optional workflows.
 
 ![Simulated Roman images of strong lenses](images/mosaic.png)
 
 > [!NOTE]  
-> `mejiro` is used to generate large datasets of simulated Roman images for the [**Roman Strong Lens Data Challenge**](https://roman-data-challenge.readthedocs.io/en/latest/).
+> We use `mejiro` to generate large datasets of simulated Roman images for the [**Roman Strong Lens Data Challenge**](https://roman-data-challenge.readthedocs.io/en/latest/).
 
 # Installation
 
@@ -20,10 +18,50 @@ Install `mejiro` by following [these instructions in the documentation](https://
 
 # Usage
 
+## Strong-lens backend selection
+
+Lenstronomy remains the default for existing calls. Set `backend="chalcedon"` on a lens constructor to use the additional native engine. `StrongLens.lens_model`, light models, cached cosmological conversions, image-position solving, and `SyntheticImage` rendering follow the selected backend. The established model/parameter dictionary layout is retained.
+
+```python
+from mejiro.galaxy_galaxy import SampleGG
+from mejiro.instruments.roman import Roman
+from mejiro.synthetic_image import SyntheticImage
+
+legacy_lens = SampleGG()  # Lenstronomy remains the default
+native_lens = SampleGG(backend="chalcedon")
+legacy_image = SyntheticImage(legacy_lens, Roman(), "F129")
+native_image = SyntheticImage(native_lens, Roman(), "F129")
+comparison_image = SyntheticImage(legacy_lens, Roman(), "F129", backend="chalcedon")
+```
+
+An image-level override copies the lens when changing engines, so `comparison_image` does not change `legacy_lens` or its cached cosmology. `image.backend` records the selected engine. Lightweight files include that value; older files lacking backend metadata load with `backend="unknown"`. Detector-effects engines are selected separately from the lens forward-model backend.
+
+The Chalcedon path does not load Lenstronomy and its native implementation is preserved. Angular coordinates and profile radii use arcseconds, and scene values are count rates per rendered pixel. Its optical convolution is applied on the supersampled scene before detector-pixel binning. Lens and source pieces use the same calculation as the total image.
+
+Install Chalcedon and Mejiro in editable mode from the workspace root:
+
+```bash
+python -m pip install -e tansudaylan/chalcedon -e astromusers/mejiro
+```
+
+Run the self-contained example from the Mejiro repository:
+
+```bash
+python examples/native_strong_lens.py --typefileplot png
+```
+
+![Native strong-lens scene and its light components](examples/native_strong_lens.png)
+
+The example assumes an SIE lens with Einstein radius 1.1 arcsec, external shear, a source at redshift 1.5 behind a lens at redshift 0.5, explicit Sersic profiles, and a Gaussian PSF of FWHM 0.12 arcsec. Its illustrative detector has 0.05-arcsec pixels and a magnitude zeropoint of 25. These are configured model predictions, not observations or a validated mission calibration.
+
+The native backend supports SIS, SIE, EPL, point-mass, external-shear, convergence, NFW, truncated NFW, and elliptical NFW/Hernquist mass profiles. Sersic, Gaussian, Hernquist, interpolated images, and Cartesian shapelets are supported for light. Native multi-plane propagation uses Astropy distances. Elliptical halo labels inherited from CSE use direct projected-density quadrature rather than that expansion. Unsupported mass/light profiles, extinction/special options, and JAX flags raise explicitly rather than falling back to Lenstronomy. Adaptive requests currently use uniform supersampling, preserving integration rather than selective acceleration.
+
+The base install includes both Chalcedon and Lenstronomy. `mejiro[survey]` and `mejiro[substructure]` supply optional external population generators. Telescope extras and `mejiro[filters]` supply independent mission and filter data. Published v1.0 results still refer to their original tagged implementation; selecting a different backend does not claim bit-for-bit reproduction of those results.
+
 > [!IMPORTANT]
 > ["The Roman View of Strong Gravitational Lenses" (Wedig et al. 2025)](https://doi.org/10.3847/1538-4357/adc24f) was produced with `mejiro` v1.0.0. To review that version of the code, [click here](https://github.com/AstroMusers/mejiro/tree/v1.0.0).
 
-To see how `mejiro` works, see the pipeline walkthrough notebook: `examples/pipeline_walkthrough.ipynb`.
+The pipeline walkthrough in `examples/pipeline_walkthrough.ipynb` follows a lens scene through image formation so you can inspect the calculation at each step.
 
 ![mejiro flow diagram](images/mejiro_flow_diagram.png)
 

@@ -38,7 +38,8 @@ Arguments:
 import argparse
 import getpass
 import h5py
-import lenstronomy
+import chalcedon
+from importlib.metadata import version, PackageNotFoundError
 import numpy as np
 import os
 import pandas as pd
@@ -50,7 +51,7 @@ import stpsf
 import time
 from datetime import datetime
 from glob import glob
-from tqdm import tqdm
+from tdpy.verbosity import tqdm
 
 import logging
 
@@ -140,7 +141,12 @@ def main(args):
     f.attrs['created'] = (datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p"))
     f.attrs['dataset_version'] = (dataset_version)
     f.attrs['mejiro_version'] = (mejiro.__version__, 'mejiro version')
-    f.attrs['lenstronomy_version'] = (lenstronomy.__version__, 'lenstronomy version')
+    f.attrs['chalcedon_version'] = (chalcedon.__version__, 'native lensing backend version')
+    try:
+        lenstronomy_version = version('lenstronomy')
+    except PackageNotFoundError:
+        lenstronomy_version = 'not installed'
+    f.attrs['lenstronomy_version'] = (lenstronomy_version, 'Lenstronomy backend version')
     f.attrs['slsim_version'] = (slsim.__version__, 'SLSim version')
     f.attrs['romanisim_version'] = (romanisim.__version__, 'romanisim version')
     f.attrs['stpsf_version'] = (stpsf.__version__, 'STPSF version')
@@ -163,6 +169,8 @@ def main(args):
 
         # set group-level attributes
         group_lens.attrs['uid'] = (uid, 'Unique identifier for system assigned by mejiro')
+        group_lens.attrs['lensing_backend'] = (getattr(synthetic_image, 'backend', 'unknown'),
+                              'Lens forward-model backend')
         group_lens.attrs['z_source'] = (str(lens.z_source), 'Source galaxy redshift')
         group_lens.attrs['z_lens'] = (str(lens.z_lens), 'Lens galaxy redshift')
         group_lens.attrs['mu'] = (str(lens.get_magnification()), 'Flux-weighted magnification of source')

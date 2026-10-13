@@ -61,8 +61,6 @@ os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
 import argparse
 import logging
 import multiprocessing
-import subprocess
-import sys
 import time
 import warnings
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -74,13 +72,13 @@ from astropy.units import Quantity
 from slsim.Lenses.lens_pop import LensPop
 import slsim.Sources as sources
 import slsim.Deflectors as deflectors
-from tqdm import tqdm
+from tdpy.verbosity import tqdm
 
 from mejiro.analysis import snr_calculation
 from mejiro.exposure import Exposure
 from mejiro.galaxy_galaxy import GalaxyGalaxy
 from mejiro.synthetic_image import SyntheticImage
-from mejiro.utils import roman_util, slsim_util, util
+from mejiro.utils import pipeline_util, roman_util, slsim_util, util
 from mejiro.utils.pipeline_helper import PipelineHelper
 
 logger = logging.getLogger(__name__)
@@ -121,7 +119,7 @@ def main(args):
         # Verify JAX is importable and has devices for the requested platform.
         # Run in a subprocess so the main process's JAX platform stays
         # unlocked; we never import jax in this module.
-        _verify_jax_platform(jax_platform)
+        pipeline_util.verify_jax_platform(jax_platform, logger)
 
         # Co-locate the persistent JIT cache with the outputs so it survives
         # across runs and is shared between all spawn workers.
@@ -197,37 +195,6 @@ def main(args):
     stop = time.time()
     execution_time = util.print_execution_time(start, stop, return_string=True)
     util.write_execution_time(execution_time, SCRIPT_NAME, os.path.join(pipeline.pipeline_dir, 'execution_times.json'))
-
-
-def _verify_jax_platform(jax_platform):
-    """Spawn a one-shot subprocess to check ``jax.devices(jax_platform)`` works.
-
-    Imports jax in *this* process would lock its platform for the rest of the
-    run; we never want that in main, which only orchestrates workers.
-    """
-    code = (
-        "import logging;"
-        "logging.getLogger('jax._src.xla_bridge').setLevel(logging.CRITICAL);"
-        "import os, sys;"
-        f"os.environ['JAX_PLATFORM_NAME']={jax_platform!r};"
-        f"os.environ['JAX_PLATFORMS']={jax_platform!r};"
-        "import jax;"
-        f"devs=jax.devices({jax_platform!r});"
-        "print(len(devs))"
-    )
-    try:
-        proc = subprocess.run(
-            [sys.executable, '-c', code],
-            capture_output=True, text=True, check=False, timeout=120,
-        )
-    except subprocess.TimeoutExpired as e:
-        raise RuntimeError(f'Timed out probing jax platform {jax_platform!r}.') from e
-    if proc.returncode != 0:
-        last = proc.stderr.strip().splitlines()[-1] if proc.stderr.strip() else '(no stderr)'
-        raise RuntimeError(
-            f'JAX platform {jax_platform!r} unavailable on this host: {last}'
-        )
-    logger.info(f"JAX platform {jax_platform!r} ready ({proc.stdout.strip()} device(s))")
 
 
 def _run_spawn_pool(pipeline, tuple_list, compilation_cache_dir, jax_platform, use_jax):

@@ -9,7 +9,6 @@ from copy import deepcopy
 from matplotlib.colors import CenteredNorm
 from pyHalo.Halos.lens_cosmo import LensCosmo
 from pyHalo.concentration_models import preset_concentration_models
-from pyHalo.single_realization import SingleHalo
 from scipy.stats import chi2
 from tqdm import tqdm
 
@@ -23,16 +22,16 @@ from mejiro.instruments.lsst import LSST
 from mejiro.instruments.jwst import JWST
 from mejiro.instruments.roman import Roman
 from matplotlib.patches import Circle
+from mejiro.utils.pyhalo_util import make_single_nfw_subhalo
 
 plt.style.use('/grad/bwedig/mejiro/mejiro/mejiro.mplstyle')
 
 
 def process_lens(params):
-    np.random.seed()
-
     (run, lens, instrument, script_config, imaging_params, subhalo_params, save_dir, image_save_dir,
      idx_to_save) = params
     rng_seed = script_config['rng_seed']
+    rng = np.random.default_rng(np.random.SeedSequence([int(rng_seed), int(run)]))
     plot = script_config['plot']
     band = imaging_params['band']
     oversample = imaging_params['oversample']
@@ -80,9 +79,9 @@ def process_lens(params):
     image_x, image_y = synth_no_subhalo.get_image_positions(pixel=False)
     image_distance = np.sqrt(image_x ** 2 + image_y ** 2)
     # more_distant_image_index = np.argmax(image_distance)
-    image_index = np.random.randint(0, len(image_distance))
-    halo_x = image_x[image_index] #+ np.random.uniform(-0.1, 0.1)
-    halo_y = image_y[image_index] #+ np.random.uniform(-0.1, 0.1)
+    image_index = rng.integers(0, len(image_distance))
+    halo_x = image_x[image_index]
+    halo_y = image_y[image_index]
 
     try:
         engine_params = {
@@ -144,14 +143,9 @@ def process_lens(params):
         center_x = halo_x
         center_y = halo_y
         
-        single_halo = SingleHalo(halo_mass=m200,
-                                    x=center_x, y=center_y,
-                                    mdef='NFW',
-                                    z=lens.z_lens, zlens=lens.z_lens, zsource=lens.z_source,
-                                    subhalo_flag=True,
-                                    kwargs_halo_model=kwargs_halo_model,
-                                    astropy_instance=lens.cosmo,
-                                    lens_cosmo=pyhalo_lens_cosmo)
+        single_halo = make_single_nfw_subhalo(
+            lens, m200, center_x, center_y, pyhalo_lens_cosmo, kwargs_halo_model
+        )
         c = single_halo.halos[0].c
 
         lens_with_subhalo = deepcopy(lens)
@@ -297,7 +291,9 @@ def main():
 
     # num_permutations = len(subhalo_params['masses']) * len(lens_list)
     num_to_save = np.min([len(sorted_lenses), 10])
-    idx_to_save = np.random.choice(len(sorted_lenses), size=num_to_save, replace=False).tolist()
+    idx_to_save = np.random.default_rng(script_config['rng_seed']).choice(
+        len(sorted_lenses), size=num_to_save, replace=False
+    ).tolist()
 
     hwo1 = HWO(eac='EAC1')
     hwo2 = HWO(eac='EAC2')

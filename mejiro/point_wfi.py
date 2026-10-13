@@ -9,6 +9,7 @@ import numpy as np
 import pysiaf
 
 import mejiro
+from tdpy.verbosity import print
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,7 @@
 import importlib.metadata
 import os
 import numpy as np
-import lenstronomy.Util.data_util as data_util
+from chalcedon.imaging import data_util
 import stsynphot as stsyn
 from astropy import units as u
 from astropy.units import Quantity
@@ -16,7 +16,7 @@ class HST(Instrument):
         name = 'HST'
         bands = ['F438W', 'F475W', 'F606W', 'F814W']
         num_detectors = 1
-        engines = ['lenstronomy', 'galsim']
+        engines = ['galsim']
 
         super().__init__(
             name,
@@ -25,12 +25,6 @@ class HST(Instrument):
             engines
         )
 
-        # record versions of dependencies
-        try:
-            self.versions['lenstronomy'] = importlib.metadata.version('lenstronomy')
-        except importlib.metadata.PackageNotFoundError:
-            raise importlib.metadata.PackageNotFoundError("lenstronomy package not found. Please install lenstronomy.")
-        
         detectors = ['uvis1']  # , 'uvis2'
         filtnames = ['F438W', 'F475W', 'F555W', 'F606W', 'F625W', 'F775W', 'F814W']
         mjd = '60035'  # April 1st, 2023
@@ -42,7 +36,7 @@ class HST(Instrument):
 
         # set attributes
         self.gain = 2.5
-        self.stray_light_fraction = 0.1
+        self.stray_light_fraction = None
         self.dark_current = {band: Quantity(0.00319, 'ct / (pix s)') for band in filtnames}  # https://etc.stsci.edu/etcstatic/users_guide/1_ref_9_background.html
         self.read_noise = {band: Quantity(3.0, 'ct / (pix s)') for band in filtnames}  # https://ntrs.nasa.gov/api/citations/20060047835/downloads/20060047835.pdf
         self.psf_fwhm = {
@@ -63,15 +57,7 @@ class HST(Instrument):
             'F775W': Quantity(0.0, 'ct / pix'),
             'F814W': Quantity(0.0, 'ct / pix')
         }  # "The thermal background is negligible below about 8000 Angstrom" (https://etc.stsci.edu/etcstatic/users_guide/1_ref_9_background.html)
-        self.sky_level = {
-            'F438W': Quantity(0.25, 'ct / pix'),
-            'F475W': Quantity(0.25, 'ct / pix'),
-            'F555W': Quantity(0.25, 'ct / pix'),
-            'F606W': Quantity(0.25, 'ct / pix'),
-            'F625W': Quantity(0.25, 'ct / pix'),
-            'F775W': Quantity(0.25, 'ct / pix'),
-            'F814W': Quantity(0.25, 'ct / pix')
-        }  # placeholders; rough estimates based on Roman
+        self.sky_level = {band: None for band in filtnames}
 
     @staticmethod
     def build_obsmode(detector, filt, mjd, aper):
@@ -91,7 +77,10 @@ class HST(Instrument):
         return stmag - 5 * np.log10(photplam.value) + 18.6921
     
     def get_sky_level(self, band):
-        return self.sky_level[band]
+        sky_level = self.sky_level[band]
+        if sky_level is None:
+            raise NotImplementedError(f'HST sky level is not configured for band {band}')
+        return sky_level
 
     def get_gain(self, band):
         return self.gain

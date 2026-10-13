@@ -19,7 +19,7 @@ from glob import glob
 
 import numpy as np
 from pyHalo.preset_models import preset_model_from_name
-from tqdm import tqdm
+from tdpy.verbosity import tqdm
 
 from mejiro.analysis import lensing
 from mejiro.utils import util

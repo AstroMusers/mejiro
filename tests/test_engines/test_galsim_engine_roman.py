@@ -1,11 +1,44 @@
 import galsim
 import numpy as np
+import pytest
 
 from mejiro.engines import galsim_engine
 from mejiro.exposure import Exposure
 from mejiro.instruments.roman import Roman
 from mejiro.galaxy_galaxy import SampleGG, SampleSL2S, SampleBELLS
 from mejiro.synthetic_image import SyntheticImage
+
+
+def test_sky_background_rejects_unspecified_stray_light_fraction():
+    class InstrumentWithoutStrayLight:
+        name = 'HWO'
+
+        @staticmethod
+        def get_stray_light_fraction():
+            return None
+
+    with pytest.raises(ValueError, match='stray-light fraction'):
+        galsim_engine.GalSimEngine.get_sky_background(
+            InstrumentWithoutStrayLight(), 'J', 1.0, 3, 0.1
+        )
+
+
+def test_sky_background_rejects_missing_sky_level():
+    class InstrumentWithoutSky:
+        name = 'HST'
+
+        @staticmethod
+        def get_stray_light_fraction():
+            return 0.0
+
+        @staticmethod
+        def get_sky_level(band):
+            return None
+
+    with pytest.raises(ValueError, match='sky level is not configured'):
+        galsim_engine.GalSimEngine.get_sky_background(
+            InstrumentWithoutSky(), 'F606W', 1.0, 3, 0.1
+        )
 
 
 def test_roman_default_engine_params():

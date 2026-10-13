@@ -21,21 +21,27 @@ license-files = ["LICEN[CS]E*"]
 dependencies = [
     "astropy==7.2.0",
     "galsim==2.7.2",
-    "numpy<2.4.0",  # including this for now because pyhalo==1.4.3 uses np.trapz which is removed in 2.4.0
+    "numpy>=1.26",
     "pandas==2.3.3",
     "tqdm==4.67.1",
+    "tdpy",
+    "chalcedon",
     "lenstronomy==1.13.3",
-    "pyhalo==1.4.3",
-    "mcfit==0.0.22",  # required for pyhalo
-    "slsim==0.1.1",
-    "sncosmo==2.12.1",  # required for slsim
-    "speclite @ git+https://github.com/bryce-wedig/speclite.git@mejiro-v2.0.0",  # required for slsim
-    "skypy @ git+https://github.com/bryce-wedig/skypy.git@mejiro-v2.0.0",  # required for slsim
-    "colossus==1.3.10",  # required for slsim
+    "scipy",
     "corner==2.2.3",
 ]
 
 [project.optional-dependencies]
+filters = ["speclite>=0.20"]
+survey = [
+    "slsim==0.1.1",
+    "sncosmo==2.12.1",
+    "speclite @ git+https://github.com/bryce-wedig/speclite.git@mejiro-v2.0.0",
+    "skypy @ git+https://github.com/bryce-wedig/skypy.git@mejiro-v2.0.0",
+    "colossus==1.3.10",
+]
+substructure = ["pyhalo==1.4.3", "mcfit==0.0.22", "numpy<2.4.0"]
+legacy = ["lenstronomy==1.13.3"]
 dev = [
     "pytest",
     "pytest-cov",
@@ -62,7 +68,7 @@ hwo = [
     "syotools==1.3.0"
 ]
 all = [
-    "mejiro[dev,jax-gpu,roman,hwo]"
+    "mejiro[dev,jax-gpu,roman,hwo,survey,substructure]"
 ]
 
 [tool.setuptools.packages.find]

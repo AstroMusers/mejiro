@@ -4,8 +4,7 @@ from astropy import units as u
 from astropy.units import Quantity
 from fractions import Fraction
 from glob import glob
-from lenstronomy.SimulationAPI.ObservationConfig import JWST as LenstronomyJWST
-from lenstronomy.Util import data_util
+from chalcedon.imaging import data_util
 
 from mejiro.instruments.instrument import Instrument
 
@@ -26,8 +25,19 @@ class JWST(Instrument):
 
         # set kwargs_single_band
         self.kwargs_single_band_dict = {}
+        configurations = {
+            'F115W': (15.77, 0.031, 2.05, 30.96, 28.02),
+            'F150W': (15.77, 0.031, 2.05, 29.96, 28.02),
+            'F200W': (15.77, 0.031, 2.05, 29.52, 28.00),
+            'F277W': (13.25, 0.063, 1.82, 28.96, 26.49),
+            'F356W': (13.25, 0.063, 1.82, 28.39, 26.47),
+            'F444W': (13.25, 0.063, 1.82, 28.15, 26.49),
+        }
         for band in bands:
-            self.kwargs_single_band_dict[band] = LenstronomyJWST.JWST(band=band).kwargs_single_band()
+            values = configurations[band]
+            self.kwargs_single_band_dict[band] = dict(zip(
+                ('read_noise', 'pixel_scale', 'ccd_gain', 'sky_brightness', 'magnitude_zero_point'), values,
+            ))
 
         # set zeropoints
         self.zeropoints = {band: self.kwargs_single_band_dict[band]['magnitude_zero_point'] for band in bands}

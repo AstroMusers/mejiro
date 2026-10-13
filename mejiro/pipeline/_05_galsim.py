@@ -17,7 +17,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from glob import glob
 
 import numpy as np
-from tqdm import tqdm
+from tdpy.verbosity import tqdm
 
 import logging
 

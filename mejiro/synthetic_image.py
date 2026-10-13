@@ -4,21 +4,17 @@ import os
 import numpy as np
 import time
 import warnings
-from lenstronomy.Data.coord_transforms import Coordinates
+from copy import deepcopy
+from mejiro.lensing import get_backend, validate_backend
 
 logger = logging.getLogger(__name__)
-from lenstronomy.Data.pixel_grid import PixelGrid
-from lenstronomy.Data.psf import PSF
-from lenstronomy.ImSim.image_model import ImageModel
-from lenstronomy.Util import data_util
-from lenstronomy.Util import util as lenstronomy_util
 
 from mejiro.utils import util
 
-# Version written by save_lightweight. Version 1 predates the ``oversample`` field but is
-# otherwise identical and describes valid detector-resolution data, so it still loads.
-LIGHTWEIGHT_SCHEMA_VERSION = 2
-SUPPORTED_LIGHTWEIGHT_SCHEMA_VERSIONS = (1, 2)
+# Version 3 records the backend; versions 1 and 2 remain readable. Version 1
+# predates the oversample field and describes detector-resolution data.
+LIGHTWEIGHT_SCHEMA_VERSION = 3
+SUPPORTED_LIGHTWEIGHT_SCHEMA_VERSIONS = (1, 2, 3)
 
 
 class SyntheticImage:
@@ -26,6 +22,7 @@ class SyntheticImage:
     # Class-level default so SyntheticImages pickled before ``oversample`` existed still
     # answer it (and the native_* properties below); __init__ sets it per instance.
     oversample = 1
+    backend = 'lenstronomy'
 
     DEFAULT_KWARGS_NUMERICS = {
         'supersampling_factor': 5,  # super sampling factor of (partial) high resolution ray-tracing
@@ -51,7 +48,8 @@ class SyntheticImage:
                  kwargs_psf={},
                  pieces=False,
                  deflector_only=False,
-                 oversample=1
+                 oversample=1,
+                 backend=None,
                  ):
         """
         Initialize a SyntheticImage object.
@@ -94,6 +92,9 @@ class SyntheticImage:
             ``kwargs_psf`` to carry a kernel at the *oversampled* resolution with
             ``point_source_supersampling_factor == 1`` so lenstronomy does not degrade
             it -- see ``mejiro.utils.lenstronomy_util.get_pixel_psf_kwargs``.
+        backend : str or None, optional
+            'lenstronomy' or 'chalcedon'. None follows strong_lens.backend.
+            A different selection copies the lens rather than mutating it.
 
         Raises
         ------
@@ -104,15 +105,32 @@ class SyntheticImage:
 
         Notes
         -----
-        - The image is simulated using lenstronomy's ray-shooting and convolution routines.
-        - Magnitudes are converted to lenstronomy amplitudes if not already provided.
+        - The selected Lenstronomy or Chalcedon backend supplies ray shooting and convolution.
+        - Magnitudes are converted to the selected light-profile amplitudes if not already provided.
         - The pixel grid is set up to ensure an odd number of pixels per side.
         - Adaptive supersampling grid is built if requested.
-        - ``self.data`` is in **counts/sec** (surface brightness units from lenstronomy's
-          ``ImageModel.image()``). Multiply by exposure time to get counts before passing
+                - ``self.data`` is in **counts/sec per rendered pixel** from the selected
+                    ``ImageModel.image()``. Multiply by exposure time to get counts before passing
           to a detector-effects engine.
         """
         start = time.time()
+        selected_backend = validate_backend(strong_lens.backend if backend is None else backend)
+        if selected_backend != strong_lens.backend:
+            strong_lens = deepcopy(strong_lens)
+            strong_lens.backend = selected_backend
+            strong_lens.lens_cosmo = None
+            if strong_lens.lens_model_macromodel is not None:
+                strong_lens.lens_model_macromodel = get_backend(selected_backend).LensModel(
+                    strong_lens.lens_model_list_macromodel, z_lens=strong_lens.z_lens,
+                    z_source=strong_lens.z_source, lens_redshift_list=strong_lens.lens_redshift_list_macromodel,
+                    cosmo=strong_lens.cosmo,
+                    multi_plane=len(set(strong_lens.lens_redshift_list_macromodel)) > 1,
+                )
+        backend_models = get_backend(selected_backend)
+        Coordinates, PixelGrid = backend_models.Coordinates, backend_models.PixelGrid
+        PSF, ImageModel = backend_models.PSF, backend_models.ImageModel
+        data_util, lensing_util = backend_models.data_util, backend_models.util
+        self.backend = selected_backend
 
         # check band is valid for instrument
         if band not in instrument.bands:
@@ -163,7 +181,7 @@ class SyntheticImage:
 
         # set up pixel grid and coordinates
         x, y, self.ra_at_xy_0, self.dec_at_xy_0, x_at_radec_0, y_at_radec_0, self.Mpix2coord, self.Mcoord2pix = (
-            lenstronomy_util.make_grid_with_coordtransform(
+            lensing_util.make_grid_with_coordtransform(
                 numPix=self.num_pix,
                 deltapix=self.pixel_scale,
                 subgrid_res=1,
@@ -250,8 +268,7 @@ class SyntheticImage:
         # build point source class if needed
         ps_model_list = self.strong_lens.kwargs_model.get('point_source_model_list', [])
         if ps_model_list:
-            from lenstronomy.PointSource.point_source import PointSource
-            point_source_class = PointSource(
+            point_source_class = backend_models.PointSource(
                 point_source_type_list=ps_model_list,
                 lens_model=self.strong_lens.lens_model,
                 fixed_magnification_list=[False] * len(ps_model_list)
@@ -350,6 +367,7 @@ class SyntheticImage:
 
         meta = {
             'schema_version': LIGHTWEIGHT_SCHEMA_VERSION,
+            'backend': self.backend,
             'band': band,
             'pixel_scale': float(self.pixel_scale),
             'fov_arcsec': float(self.fov_arcsec),
@@ -653,6 +671,7 @@ class LightweightSyntheticImage:
         self.num_pix = meta['num_pix']
         # absent in schema_version 1, which predates oversampled rendering
         self.oversample = meta.get('oversample', 1)
+        self.backend = meta.get('backend', 'unknown')
         self.instrument_name = meta['instrument_name']
         ip = dict(meta.get('instrument_params') or {})
         det_pos = ip.get('detector_position')

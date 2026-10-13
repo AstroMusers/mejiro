@@ -1,7 +1,13 @@
 Engines
 =======
 
-``mejiro`` wraps various image simulation packages to provide a consistent interface for simulating images. Each wrapped package is referred to as an "engine." The following engines are currently supported:
+Lensing builds the scene; the exposure engine takes it from there. In Mejiro,
+these are separate choices. Select ``backend="lenstronomy"`` (the default) or
+``backend="chalcedon"`` when constructing a lens. ``Exposure.engine`` selects
+the detector workflow. GalSim renders Roman and HWO exposures; STPSF supplies
+PSFs for Roman.
+
+The following detector engines are currently supported:
 
 - GalSim: *Roman*, *HWO*
 - STPSF (PSFs only): *Roman*

@@ -3,6 +3,7 @@ import os
 import yaml
 from glob import glob
 import logging
+from tdpy.verbosity import VerbosityStreamHandler
 
 import mejiro
 from mejiro.utils import util
@@ -61,7 +62,8 @@ class PipelineHelper:
 
         # configure logging level
         logging_level = config['logging_level']
-        logging.basicConfig(level=getattr(logging, logging_level.upper(), logging.INFO))
+        logging.basicConfig(level=getattr(logging, logging_level.upper(), logging.INFO),
+                    handlers=[VerbosityStreamHandler()])
 
         # set data directory
         self.data_dir = config['data_dir']
