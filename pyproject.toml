@@ -25,7 +25,7 @@ dependencies = [
     "pandas==2.3.3",
     "tqdm==4.67.1",
     "tdpy",
-    "chalcedon",
+    "chalcedon @ git+https://github.com/tansudaylan/chalcedon.git@3daf58725f4daeeeb7085eb0548745e95677aa41",
     "lenstronomy==1.13.3",
     "scipy",
     "corner==2.2.3",
