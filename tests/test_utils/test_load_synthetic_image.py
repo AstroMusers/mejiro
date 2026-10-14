@@ -11,6 +11,7 @@ import pytest
 from mejiro.synthetic_image import (
     LIGHTWEIGHT_SCHEMA_VERSION,
     LightweightSyntheticImage,
+    SyntheticImage,
 )
 from mejiro.utils import util
 
@@ -49,6 +50,38 @@ def _valid_meta(band='F129'):
             'lensed_source_magnitude': 23.7,
         },
     }
+
+
+@pytest.mark.parametrize('save', [False, True])
+def test_lightweight_image_reuses_full_image_plot(tmp_path, monkeypatch, save):
+    import matplotlib.pyplot as plt
+    from unittest.mock import Mock
+
+    data = np.arange(1.0, 10.0).reshape(3, 3)
+    image = LightweightSyntheticImage(data, _valid_meta())
+    assert LightweightSyntheticImage.plot is SyntheticImage.plot
+    show = Mock()
+    savefig = Mock()
+    monkeypatch.setattr(plt, 'show', show)
+    monkeypatch.setattr(plt, 'savefig', savefig)
+    figure, axes = plt.subplots()
+    savepath = tmp_path / 'image.png' if save else None
+    try:
+        assert image.plot(savepath=savepath) is None
+        np.testing.assert_array_equal(axes.images[0].get_array(), np.log10(data))
+        assert axes.images[0].origin == 'lower'
+        assert axes.get_xlabel() == 'x [Pixels]'
+        assert axes.get_ylabel() == 'y [Pixels]'
+        assert 'test_lens' in axes.get_title()
+        assert 'Roman F129' in axes.get_title()
+        assert figure.axes[1].get_ylabel() == r'log$_{10}$(Counts/sec)'
+        show.assert_called_once_with()
+        if save:
+            savefig.assert_called_once_with(savepath)
+        else:
+            savefig.assert_not_called()
+    finally:
+        plt.close(figure)
 
 
 def test_load_synthetic_image_dispatch_pkl(tmp_path):
