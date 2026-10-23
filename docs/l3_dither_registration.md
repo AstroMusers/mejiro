@@ -1,37 +1,35 @@
-# L3 dither registration: integer tile placement misregisters the dithers
+# L3 dither registration and integer tile placement
 
-**Status:** diagnosed 2026-07-26; **fixed 2026-07-26** in `process_batch_l3` via
-`bin_to_native`, which requires `synthetic_image.oversample > 1` from step 04 (see
-[step04_oversampled_rendering.md](step04_oversampled_rendering.md)). Every L3 dataset
-produced before the fix is affected, including `roman_data_challenge_rung_1` v3.0, and
-needs a step-04 + step-05 rebuild. Found while investigating a separate defect (corrupted
-bright-core pixels from the resample `ivm` weighting); deliberately kept out of that fix so
-the two changes stay separately attributable.
+On 2026-07-26, we fixed L3 dither misregistration in `process_batch_l3` by calling
+`bin_to_native`. The fix applies per-SCA resample rotation and a lossless parity flip during
+cutout extraction. It requires `synthetic_image.oversample > 1` from step 04 (see
+[step04_oversampled_rendering.md](step04_oversampled_rendering.md)). Rebuild every L3
+dataset produced before the fix, including `roman_data_challenge_rung_1` v3.0, by rerunning
+steps 04 and 05.
 
-**Resolution:** the fix is in the "Fix" section below, which supersedes the original
-"Proposed fix". The measurements that drove the choice are there too: the option originally
-preferred (shifting the native-resolution tile) turned out to be ~10% wrong on the PSF core,
-because a 0.11"/px tile is undersampled and cannot be interpolated correctly.
+Shifting the native-resolution tile produced about 10% error on the PSF core. The
+0.11-arcsec-per-pixel tile is undersampled, so interpolation cannot recover the core
+accurately. The implemented `bin_to_native` approach avoids that loss.
 
-## TL;DR
+## Why the dithers misregister
 
 `process_batch_l3` renders each system's tile at an **integer** detector pixel in every
 dither, but the L3 co-add combines the dithers using their **true** WCS. Dither 0 is exact by
-construction; dithers 1..N-1 each carry an independent rounding residual of up to ±0.5 px in
+construction. Dithers 1..N-1 each carry an independent rounding residual of up to ±0.5 px in
 each axis. The dithers are therefore mutually misregistered by up to ~0.85 px, so the co-add
 is an average of N sub-pixel-shifted copies of the same system rather than N registered ones.
 
 This is worst for exactly the patterns it matters most for. `roman_data_challenge_rung_1`
 v3.0 was produced with **SUB6**, whose commanded offsets are 0.019-0.090 arcsec — that is
-**0.17 to 0.82 detector pixels**. A sub-pixel pattern exists to sample the PSF at controlled
-sub-pixel phases; `int(round(...))` snaps every one of those phases onto a whole pixel, so
-the commanded pattern is quantized away and replaced by an uncontrolled rounding residual.
-The dithering is not merely degraded, it is doing something other than what was asked for.
+**0.17 to 0.82 detector pixels**. A sub-pixel pattern samples the PSF at chosen phases.
+`int(round(...))` snaps each phase to a whole pixel, replacing the commanded pattern with
+an uncontrolled rounding residual. The co-add therefore no longer follows the requested
+dither positions.
 
 Measured on the rung-1 SUB6 configuration: mutual misregistration averages 0.70 px (max
 0.85 px), **~2.8% of the core peak is lost** (worst case 5.6%), and the effective co-added
-PSF is broadened by a per-system-random amount. This is a systematic, deterministic bias —
-not noise.
+PSF is broadened by a per-system-random amount. These residuals create a systematic,
+deterministic bias in the co-added PSF.
 
 ## Symptom
 
@@ -87,8 +85,8 @@ WCS says it belongs — which is offset from where the flux actually was rendere
 renderings land at N different mosaic positions and are averaged there.
 
 `_extract_cutout` then slices around the *true* sky position via `mos_wcs.world_to_pixel`, so
-the cutout is correctly centered on average; the damage is the intra-stack spread, not a net
-centroid shift.
+the cutout is correctly centered on average. The error appears as intra-stack spread rather
+than a net centroid shift.
 
 ## Evidence
 
@@ -169,10 +167,9 @@ Two things fall out of that table:
 
 - Fourier shifting the native tile is *worse* than cubic, because it rings on the aliased
   power rather than smoothing over it.
-- Oversampling without a shift is not enough either. At 5x the residual phase error is up to
-  0.1 px, still ~4% on the co-add of a point source; reaching 0.1% by quantization alone
-  would need oversample ~50. The oversampled render and the sub-pixel shift are both
-  required.
+- Without a shift, 5x oversampling leaves a residual phase error of up to 0.1 px, causing
+  ~4% error in a point-source co-add. Quantization alone would require ~50x oversampling.
+  The chosen method combines an oversampled render with a sub-pixel shift.
 
 On a resolved feature (Sersic n=1, Re=0.20") the native shift does fine — 0.04% on the
 co-add — which is why this is easy to get wrong: it only fails on the unresolved core.
@@ -198,20 +195,20 @@ across the whole ~7 h rung-1 L3 run at 36 workers.
 
 Covered by unit tests:
 
-- `tests/test_pipeline/test_subpixel_binning.py` — zero phase is a plain block sum
-  bit-for-bit; flux conserved to 1e-12 at arbitrary phases; a `k/oversample` shift reproduces
-  an exact `np.roll`; direction and axis order match `_place_tile` (guarding the sign-flip
-  class of bug behind [l3_cutout_orientation.md](l3_cutout_orientation.md)); and the accuracy
-  comparison above, asserted against the real F129 kernel checked in at
-  `tests/test_data/F129_1_2048_2048_5_101.npy`.
+- `tests/test_pipeline/test_subpixel_binning.py` verifies a bit-for-bit plain block sum at
+  zero phase and flux conservation to 1e-12 at arbitrary phases. It confirms that a
+  `k/oversample` shift reproduces an exact `np.roll` and checks direction and axis order
+  against `_place_tile`, guarding the sign-flip issue described in
+  [l3_cutout_orientation.md](l3_cutout_orientation.md). The test also compares accuracy
+  against the real F129 kernel at `tests/test_data/F129_1_2048_2048_5_101.npy`.
 - `tests/test_pipeline/test_dither_subpixel_phases.py` — using the real SUB6 dither WCSes:
   dither 0 is exact, the other dithers carry residuals spanning >0.5 px with no tile slot
   escaping, and binning at those phases yields six *distinct* detector samplings rather than
   six copies.
-- `tests/test_pipeline/test_mejiro_pipeline.py` still passes (`test.yaml`, `data_dir: null`,
-  ~96 s). Note it runs the **galsim** engine, so it does not exercise this path; the romanisim
-  path is covered by the tests above. Do not validate by running a real project config —
-  `_05_romanisim.py` deletes all output in `output_dir` without `--resume`.
+- `tests/test_pipeline/test_mejiro_pipeline.py` passes with `test.yaml` and `data_dir: null`
+  in about 96 seconds. It uses the **galsim** engine, so it does not exercise this path. The
+  romanisim path is covered above. A real project config clears `output_dir` unless
+  `--resume` is supplied, so use a disposable output directory for that test.
 
 Still to do on the rebuilt data:
 
@@ -235,16 +232,17 @@ one rebuild covers all three. If the `weight_type` fix for the corrupted bright-
 is scheduled alongside, same rule.
 
 Affected datasets are the L3 ones — `roman_data_challenge_rung_1` and
-`roman_data_challenge_rung_1_unlabeled`; both configs now set `synthetic_image.oversample: 5`.
+`roman_data_challenge_rung_1_unlabeled`. Both configs now set
+`synthetic_image.oversample: 5`.
 `ella` is built with `05_galsim` (units DN), never goes through `process_batch_l3`, and
 `_05_galsim.py` now rejects oversampled input outright, so it is unaffected. The rung-0
 configs were left at `oversample: 1` and are unchanged until they are scheduled for a rebuild.
 
-Note the rung-1 run used `--dither-pattern SUB6`, which is not the module default
-(`BOXGAP4_1`) — the step directory records neither the level nor the pattern, so confirm the
-pattern from the batch capacity (`compute_overlap_skygrid` slot count must equal the batch
-size in `05_romanisim/sca*/batch_complete_*.txt`; SUB6 gives 1600 for `tile_size = 91`,
-BOXGAP6_1 gives 441).
+The rung-1 run used `--dither-pattern SUB6` instead of the module default `BOXGAP4_1`. The
+step directory records neither the level nor the pattern. Confirm the pattern from batch
+capacity. The `compute_overlap_skygrid` slot count must match each batch size in
+`05_romanisim/sca*/batch_complete_*.txt`. For `tile_size = 91`, SUB6 gives 1600 slots and
+BOXGAP6_1 gives 441.
 
 ## Related
 
@@ -252,5 +250,5 @@ BOXGAP6_1 gives 441).
   this fix, and a defect in its own right (the detector pixel response was applied twice).
 - [subpixel_phase.md](subpixel_phase.md) — the L2 counterpart: every system sat at sub-pixel
   phase (0, 0) in every dataset.
-- [l3_cutout_orientation.md](l3_cutout_orientation.md) — the earlier orientation/parity defect
-  in the same code path; same diagnosis-and-regenerate pattern.
+- [l3_cutout_orientation.md](l3_cutout_orientation.md) — the earlier orientation and parity
+  defect in the same code path. Rebuild datasets affected by either fix.

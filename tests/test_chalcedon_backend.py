@@ -88,6 +88,9 @@ def test_roman_sample_renders_without_lenstronomy_and_preserves_reference_images
 
     assert np.isfinite(image.data).all()
     assert image.data.sum() > 0
+    zeropoint = getattr(image.magnitude_zeropoint, 'value', image.magnitude_zeropoint)  # [mag]
+    expected_maggies = float(image.data.sum()) * 10.0**(-0.4 * zeropoint)
+    assert image.get_maggies() == pytest.approx(expected_maggies, rel=1e-13)
     np.testing.assert_allclose(image.data, image.lens_surface_brightness + image.source_surface_brightness)
     np.testing.assert_allclose(positions[0], [1.12731457, -0.56841653], atol=1e-6)
     np.testing.assert_allclose(positions[1], [-1.50967129, 0.57814324], atol=1e-6)

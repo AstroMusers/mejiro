@@ -113,15 +113,6 @@ class HWO(Instrument):
     def get_sky_level(self, band):
         return self.sky_level[band]
 
-    def get_noise(self, band):
-        """
-        Estimate noise per pixel per second in given band. For now, sum of dark current and read noise.
-        """
-        dark_current = self.get_dark_current(band)
-        read_noise = self.get_read_noise(band)  # TODO the units aren't right for this sum to work
-
-        return dark_current + read_noise
-
     def get_dark_current(self, band):
         return self.dark_current[band]
 
@@ -135,11 +126,6 @@ class HWO(Instrument):
     def get_psf_fwhm(self, band):
         return self.psf_fwhm[band]
 
-    def get_psf_kwargs(self, band, **kwargs):
-        from mejiro.utils import lenstronomy_util
-        psf_fwhm = self.get_psf_fwhm(band)
-        return lenstronomy_util.get_gaussian_psf_kwargs(psf_fwhm)
-    
     def get_thermal_background(self, band):
         if self.thermal_background is None:
             raise NotImplementedError(

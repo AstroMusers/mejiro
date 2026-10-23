@@ -418,7 +418,9 @@ class StrongLens(ABC):
             If the specified band is not present for the given kind.
         """
         magnitude = self.get_magnitude(kind, band)
-        return 10 ** (-0.4 * magnitude)
+        from tdpy.exoplanet import relative_flux_from_delta_magnitude
+
+        return relative_flux_from_delta_magnitude(magnitude)
 
     def get_einstein_radius(self):
         """

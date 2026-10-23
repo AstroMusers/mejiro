@@ -20,6 +20,14 @@ Install `mejiro` by following [these instructions in the documentation](https://
 
 Set `MEJIRO_PATH` to the checkout directory when using Mejiro from another location. If it is unset, the package uses its checkout root. Local inputs and generated figures belong in the ignored `data/` and `visuals/` directories.
 
+## Plot backgrounds
+
+The image, grid, strip, and corner plotting functions in `mejiro.plots`
+accept `typeplotback='dark'` for dark backgrounds with white axes. Their
+default is white with black axes, or the theme selected by an enclosing TDpy
+`plot_style()` block. Existing image stretches and population values are
+preserved. The native strong-lens example also accepts `--typeplotback dark`.
+
 ## Strong-lens backend selection
 
 Lenstronomy remains the default for existing calls. Set `backend="chalcedon"` on a lens constructor to use the additional native engine. `StrongLens.lens_model`, light models, cached cosmological conversions, image-position solving, and `SyntheticImage` rendering follow the selected backend. The established model/parameter dictionary layout is retained.
@@ -36,15 +44,17 @@ native_image = SyntheticImage(native_lens, Roman(), "F129")
 comparison_image = SyntheticImage(legacy_lens, Roman(), "F129", backend="chalcedon")
 ```
 
-An image-level override copies the lens when changing engines, so `comparison_image` does not change `legacy_lens` or its cached cosmology. `image.backend` records the selected engine. Lightweight files include that value; older files lacking backend metadata load with `backend="unknown"`. Detector-effects engines are selected separately from the lens forward-model backend.
+An image-level override copies the lens when changing engines, so `comparison_image` does not change `legacy_lens` or its cached cosmology. `image.backend` records the selected engine. Lightweight files include that value. Older files lacking backend metadata load with `backend="unknown"`. Detector-effects engines are selected separately from the lens forward-model backend.
 
 The Chalcedon path does not load Lenstronomy and its native implementation is preserved. Angular coordinates and profile radii use arcseconds, and scene values are count rates per rendered pixel. Its optical convolution is applied on the supersampled scene before detector-pixel binning. Lens and source pieces use the same calculation as the total image.
 
-Install Chalcedon and Mejiro in editable mode from the workspace root:
+Install Chalcedon and Mejiro from local checkouts:
 
 ```bash
-python -m pip install -e tansudaylan/chalcedon -e astromusers/mejiro
+python -m pip install -e /path/to/chalcedon -e /path/to/mejiro
 ```
+
+Replace each `/path/to/...` value with the location of that repository.
 
 Run the self-contained example from the Mejiro repository:
 
@@ -58,7 +68,7 @@ The example assumes an SIE lens with Einstein radius 1.1 arcsec, external shear,
 
 The native backend supports SIS, SIE, EPL, point-mass, external-shear, convergence, NFW, truncated NFW, and elliptical NFW/Hernquist mass profiles. Sersic, Gaussian, Hernquist, interpolated images, and Cartesian shapelets are supported for light. Native multi-plane propagation uses Astropy distances. Elliptical halo labels inherited from CSE use direct projected-density quadrature rather than that expansion. Unsupported mass/light profiles, extinction/special options, and JAX flags raise explicitly rather than falling back to Lenstronomy. Adaptive requests currently use uniform supersampling, preserving integration rather than selective acceleration.
 
-The base install includes both Chalcedon and Lenstronomy. `mejiro[survey]` and `mejiro[substructure]` supply optional external population generators. Telescope extras and `mejiro[filters]` supply independent mission and filter data. Published v1.0 results still refer to their original tagged implementation; selecting a different backend does not claim bit-for-bit reproduction of those results.
+The base install includes both Chalcedon and Lenstronomy. `mejiro[survey]` and `mejiro[substructure]` supply optional external population generators. Telescope extras and `mejiro[filters]` supply independent mission and filter data. Published v1.0 results refer to their original tagged implementation. Selecting another backend does not reproduce those results bit for bit.
 
 > [!IMPORTANT]
 > ["The Roman View of Strong Gravitational Lenses" (Wedig et al. 2025)](https://doi.org/10.3847/1538-4357/adc24f) was produced with `mejiro` v1.0.0. To review that version of the code, [click here](https://github.com/AstroMusers/mejiro/tree/v1.0.0).

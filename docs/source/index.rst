@@ -1,6 +1,12 @@
 mejiro documentation
 ====================
 
+What would a galaxy-galaxy lens look like after Roman's optics and detector
+modeling, and which dark-matter signatures would survive? We built Mejiro to
+simulate those images and study that question. It supports Lenstronomy and
+Chalcedon for lens modeling, with GalSim and romanisim for detector-level
+integrations. SLSim survey generation and pyHalo realizations are optional.
+
 .. toctree::
    :maxdepth: 1
    :caption: Usage

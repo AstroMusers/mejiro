@@ -4,6 +4,45 @@ import pytest
 from mejiro.utils import util
 
 
+@pytest.mark.parametrize('typeplotback', ['white', 'dark', 'black', 'norm'])
+def test_aas_style_renders_requested_theme(typeplotback, tmp_path):
+    import matplotlib.pyplot as plt
+    from matplotlib.backends.backend_agg import FigureCanvasAgg
+    from matplotlib.colors import to_rgba
+    from mejiro.style import set_aas_style
+    from PIL import Image
+    from tdpy.plotting import plot_background_colors, plot_style, save_figure
+
+    with plot_style('white'):
+        set_aas_style(typeplotback)
+        figure, axis = plt.subplots()
+        line, = axis.plot([0, 1], [1, 0], color='red', label='data')
+        legend = axis.legend()
+        FigureCanvasAgg(figure).draw()
+        background, foreground = plot_background_colors(typeplotback)
+        assert figure.get_facecolor() == to_rgba(background)
+        assert axis.get_facecolor() == to_rgba(background)
+        assert all(to_rgba(tick.get_color()) == to_rgba(foreground) for tick in axis.get_xticklabels())
+        assert to_rgba(legend.get_texts()[0].get_color()) == to_rgba(foreground)
+        assert plt.rcParams['font.size'] == 10
+        assert line.get_color() == 'red'
+        path = save_figure(figure, tmp_path / 'theme')
+        with Image.open(path) as image:
+            assert image.convert('RGB').getpixel((0, 0)) == tuple(int(channel * 255) for channel in to_rgba(background)[:3])
+        plt.close(figure)
+
+
+@pytest.mark.parametrize("fwhm", [2.0, 6.0, 10.0])
+def test_gaussian_kernel_preserves_original_width_and_boundary_mode(fwhm):
+    from scipy.ndimage import gaussian_filter
+
+    impulse = np.zeros((31, 31))
+    impulse[15, 15] = 1.0
+    sigma = fwhm / (2.0 * np.sqrt(2.0 * np.log(2.0)))  # [pixel]
+    expected = gaussian_filter(impulse, sigma=sigma)
+    np.testing.assert_allclose(util.get_gaussian_kernel(fwhm, size=31), expected, rtol=1e-14)
+
+
 def test_smallest_non_negative_element():
     # Test with an array containing both negative and non-negative elements
     array = np.array([-1, 0, 2, -3, 5])
@@ -292,6 +331,39 @@ def test_polar_to_cartesian():
     x, y = util.polar_to_cartesian(r, theta)
     np.testing.assert_allclose(x, [1.0, 0.0], atol=1e-12)
     np.testing.assert_allclose(y, [0.0, 2.0], atol=1e-12)
+
+
+@pytest.mark.parametrize(("radius", "angle"), [
+    (2.0, -np.pi / 3.0),
+    ([1.0, 2.0], np.array([0.0, np.pi / 2.0])),
+    (np.array([-2.0, 0.0, 3.0], dtype=np.float32), np.float32(0.25)),
+    (np.array([[1.0], [-2.0]]), np.array([0.0, np.pi / 3.0, np.pi])),
+    (np.empty((0, 1)), np.array([0.0, np.pi])),
+])
+def test_polar_to_cartesian_preserves_formula_and_broadcasting(radius, angle):
+    expected = (radius * np.cos(angle), radius * np.sin(angle))
+
+    actual = util.polar_to_cartesian(r=radius, theta=angle)
+
+    for coordinate, reference in zip(actual, expected):
+        np.testing.assert_array_equal(coordinate, reference)
+        assert np.shape(coordinate) == np.shape(reference)
+
+
+def test_polar_to_cartesian_delegates_to_tdpy(monkeypatch):
+    import tdpy
+
+    calls = []
+    expected = (object(), object())
+
+    def convert(radius, angle):
+        calls.append((radius, angle))
+        return expected
+
+    monkeypatch.setattr(tdpy, 'retr_xposypos', convert)
+
+    assert util.polar_to_cartesian(r=2.0, theta=0.25) is expected
+    assert calls == [(2.0, 0.25)]
 
 
 def test_percent_change():

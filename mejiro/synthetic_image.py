@@ -424,11 +424,17 @@ class SyntheticImage:
         float
             The total flux of the synthetic image in maggies.
         """
-        total_flux_cps = self.get_flux()
-        magnitude = data_util.cps2magnitude(total_flux_cps, self.magnitude_zeropoint)
+        from tdpy.exoplanet import relative_flux_from_delta_magnitude
 
-        # using `item()` below because it gives me numpy.ndarray with one element and I want a float
-        return (10 ** (-0.4 * magnitude.value)).item()  
+        if self.magnitude_zeropoint is None:
+            raise ValueError(
+                "Cannot compute maggies: this image has no "
+                "magnitude_zeropoint (lenstronomy amplitudes were provided "
+                "at construction time)."
+            )
+        zeropoint = np.asarray(getattr(self.magnitude_zeropoint, 'value', self.magnitude_zeropoint)).item()  # [mag]
+        magnitude = -2.5 * np.log10(self.get_flux()) + zeropoint  # [mag]
+        return float(relative_flux_from_delta_magnitude(magnitude))
 
     def build_adaptive_grid(self, pad):
         """
@@ -702,19 +708,5 @@ class LightweightSyntheticImage:
         """Total flux in counts/sec (sum over all pixels)."""
         return float(np.sum(self.data))
 
-    def get_maggies(self):
-        """Total flux in maggies. Replicates ``SyntheticImage.get_maggies``.
-
-        Implemented in plain floats so it does not require the stored
-        ``magnitude_zeropoint`` to be an astropy ``Quantity``.
-        """
-        if self.magnitude_zeropoint is None:
-            raise ValueError(
-                "Cannot compute maggies: this lightweight file has no "
-                "magnitude_zeropoint (lenstronomy amplitudes were provided "
-                "at construction time)."
-            )
-        magnitude = -2.5 * np.log10(self.get_flux()) + self.magnitude_zeropoint
-        return float(10 ** (-0.4 * magnitude))
-
+    get_maggies = SyntheticImage.get_maggies
     plot = SyntheticImage.plot

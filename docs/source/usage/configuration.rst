@@ -1,7 +1,10 @@
 Configuration File Reference
 ============================
 
-The mejiro pipeline is driven entirely by a YAML configuration file. Example configurations live in ``mejiro/data/mejiro_config/`` (e.g., ``simple.yaml``, ``roman_test.yaml``, ``roman_data_challenge_rung_1.yaml``); the recommended starting point is to copy one and edit it.
+The mejiro pipeline is driven by a YAML configuration file. Example
+configurations live in ``mejiro/data/mejiro_config/`` (for example,
+``simple.yaml``, ``roman_test.yaml``, and
+``roman_data_challenge_rung_1.yaml``). Copy one and edit it to get started.
 
 This page documents every top-level section and attribute. Units are given only where they are documented in the YAML comments or in the code. Pipeline scripts referenced below all live in ``mejiro/pipeline/``.
 
@@ -43,7 +46,9 @@ These keys sit at the top level of the YAML file.
 ``suppress_warnings``
    Boolean. When ``True``, ``warnings.filterwarnings("ignore")`` is installed in each worker process.
 
-   Used in ``_01a_generate_galaxy_tables.py`` and ``_01b_run_survey_simulation.py`` inside the worker functions; also set globally in ``PipelineHelper`` to suppress ``UserWarning``.
+   Used in ``_01a_generate_galaxy_tables.py`` and
+   ``_01b_run_survey_simulation.py`` inside worker functions. ``PipelineHelper``
+   also sets the global filter to suppress ``UserWarning``.
 
 ``logging_level``
    String passed to ``logging.basicConfig`` (e.g., ``INFO``, ``WARNING``, ``DEBUG``). Defaults to ``INFO`` if absent.
@@ -63,7 +68,9 @@ These keys sit at the top level of the YAML file.
 ``cores``
 -----------
 
-Per-script worker counts for ``ProcessPoolExecutor``. Each key maps the script name to its worker count; ``PipelineHelper.calculate_process_count`` reads ``cores.script_<script_name>``.
+Per-script worker counts for ``ProcessPoolExecutor``. Each key maps a script
+name to its worker count. ``PipelineHelper.calculate_process_count`` reads
+``cores.script_<script_name>``.
 
 ``script_00``
    Workers for ``_00_cache_psfs.py``.
@@ -75,7 +82,8 @@ Per-script worker counts for ``ProcessPoolExecutor``. Each key maps the script n
    Workers for ``_01b_run_survey_simulation.py``.
 
 ``script_02``
-   Workers for ``_02_build_lens_list.py`` (single-process in current scripts; included for completeness).
+   Workers for ``_02_build_lens_list.py``. Current scripts use one process. The
+   setting remains for completeness.
 
 ``script_03``
    Workers for ``_03_generate_subhalos.py``.
@@ -87,7 +95,9 @@ Per-script worker counts for ``ProcessPoolExecutor``. Each key maps the script n
    Workers for ``_05_galsim.py``.
 
 ``script_05_romanisim``
-   Workers for ``_05_romanisim.py``. Read directly as ``config['cores']['script_05_romanisim']``; the per-worker thread count is derived as ``max(2, 64 // num_workers)``.
+   Workers for ``_05_romanisim.py``. The value is read as
+   ``config['cores']['script_05_romanisim']``. The per-worker thread count is
+   ``max(2, 64 // num_workers)``.
 
 ``script_snr``
    Workers for ``calculate_snrs.py``.
@@ -108,10 +118,15 @@ Controls JAX-based acceleration for ray-shooting and image rendering.
    Used in ``_01b_run_survey_simulation.py``, ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, and ``_04_jax_create_synthetic_images.py``.
 
 ``parallel_systems``
-   (Optional; only consumed by ``_04_jax_create_synthetic_images.py``.) Boolean. When ``True``, systems are bucketed by ``lens_model_list`` signature so that the first system in a bucket pays the JIT-warmup cost and the rest reuse the cached compilation. Defaults to ``False``.
+   Optional. Only ``_04_jax_create_synthetic_images.py`` consumes this Boolean.
+   When ``True``, systems are bucketed by ``lens_model_list`` signature. The
+   first system in a bucket pays the JIT warm-up cost, and the rest reuse the
+   cached compilation. Defaults to ``False``.
 
 ``batch_size``
-   (Optional; only consumed by ``_04_jax_create_synthetic_images.py``.) Integer cap on bucket size when ``parallel_systems`` is enabled — useful as a memory ceiling on GPU. Defaults to ``8``.
+   Optional integer cap on bucket size when ``parallel_systems`` is enabled.
+   Only ``_04_jax_create_synthetic_images.py`` consumes this setting. It can
+   limit GPU memory use. Defaults to ``8``.
 
 ``instrument``
 --------------
@@ -126,7 +141,9 @@ Parameters for the survey simulation (population draw, deflector/source cuts, so
 ``runs``
    Number of independent simulation runs. Each run gets a unique random seed and processes one galaxy table.
 
-   Stored as ``pipeline.runs`` by ``PipelineHelper``; used in ``_01b_run_survey_simulation.py`` to build the per-run task list (round-robining detectors and pre-computed galaxy tables).
+   Stored as ``pipeline.runs`` by ``PipelineHelper``. Used in
+   ``_01b_run_survey_simulation.py`` to build the per-run task list, which
+   round-robins detectors and pre-computed galaxy tables.
 
 ``num_galaxy_tables``
    Number of independent galaxy-population tables generated by ``_01a_generate_galaxy_tables.py``. Higher values give more intrinsic diversity but cost more compute. Defaults to ``pipeline.runs`` when absent.
@@ -179,7 +196,10 @@ Parameters for the survey simulation (population draw, deflector/source cuts, so
    Used in ``_01b_run_survey_simulation.py`` for SNR-candidate construction and CSV export, and in ``_02_build_lens_list.py`` when calling ``GalaxyGalaxy.from_slsim(..., bands=bands)``.
 
 ``remap_bands``
-   (Optional; only present in the rung-1 challenge configs.) Dict of ``{destination_band: source_band}`` pairs that override which catalog cutout backs each band in ``source_images``. Self-mappings are no-ops; omit a band to leave its default in place.
+   Optional attribute used only in Rung 1 challenge configs. It maps
+   ``{destination_band: source_band}`` pairs that select the catalog cutout for
+   each band in ``source_images``. Self-mappings have no effect. Omitted bands
+   retain their defaults.
 
    Used in ``_02_build_lens_list.py``: when present, ``slsim_util.remap_source_images`` is called on each constructed lens. Defaults to ``None`` (no remapping).
 
@@ -260,9 +280,20 @@ Parameters for rendering idealized (PSF-convolved, noise-free) images. Each valu
    String selecting the on-disk format for each ``SyntheticImage`` written by step 04. One of:
 
    - ``full`` (default): pickle the entire ``SyntheticImage`` (including the embedded ``StrongLens`` and any pyhalo realization). Required by the galsim path (``_05_galsim.py``) and by analysis scripts that need the full lens model (e.g., ``projects/roman_data_challenge/substructure_snr_histogram.py``).
-   - ``lightweight``: write a compact ``.npz`` per (system, band) containing the image as ``float32`` plus a JSON metadata blob with only what the romanisim path consumes downstream (redshifts, Einstein radius, per-band magnitudes, detector position, ``magnitude_zeropoint``, etc.). Roughly 20× smaller per (system, band) than ``full``; incompatible with the galsim path. Loaded transparently by ``mejiro.utils.util.load_synthetic_image``, which auto-detects the extension and returns a :class:`mejiro.synthetic_image.LightweightSyntheticImage` shim.
+   - ``lightweight``: write a compact ``.npz`` per (system, band) containing
+     the image as ``float32`` and a JSON metadata blob with the redshifts,
+     Einstein radius, per-band magnitudes, detector position,
+     ``magnitude_zeropoint``, and other fields used by the romanisim path. The
+     file is roughly 20× smaller than ``full``. The galsim path requires the
+     full format. ``mejiro.utils.util.load_synthetic_image`` detects the
+     extension and returns a :class:`mejiro.synthetic_image.LightweightSyntheticImage`.
 
-   Used in ``_04_create_synthetic_images.py`` and ``_04_jax_create_synthetic_images.py`` (writers); in ``_05_romanisim.py``, ``_06_h5_export_romanisim.py``, ``projects/roman_data_challenge/rung_1.py``, and ``calculate_snrs.py`` (readers, via the unified loader). ``_05_galsim.py`` raises at startup when ``serialization == 'lightweight'`` because the galsim engine requires the full ``SyntheticImage``.
+   ``_04_create_synthetic_images.py`` and
+   ``_04_jax_create_synthetic_images.py`` write these files. The unified loader
+   reads them in ``_05_romanisim.py``, ``_06_h5_export_romanisim.py``,
+   ``projects/roman_data_challenge/rung_1.py``, and ``calculate_snrs.py``.
+   ``_05_galsim.py`` raises at startup if ``serialization == 'lightweight'``
+   because the galsim engine requires the full ``SyntheticImage``.
 
 ``exposure``
 ------------
@@ -270,7 +301,11 @@ Parameters for rendering idealized (PSF-convolved, noise-free) images. Each valu
 (Roman only.) Romanisim observation metadata. Consumed by ``_05_romanisim.py``.
 
 ``ma_table_number``
-   Integer Multi-Accumulation (MA) table number. Indexes ``romanisim.parameters.read_pattern`` to determine the read pattern (and hence the total exposure time, ``parameters.read_time * read_pattern[-1][-1]``); also written to ``meta['exposure']['ma_table_number']`` for the simulated observation.
+   Integer Multi-Accumulation (MA) table number. It indexes
+   ``romanisim.parameters.read_pattern`` to determine the read pattern and total
+   exposure time (``parameters.read_time * read_pattern[-1][-1]``). It is also
+   written to ``meta['exposure']['ma_table_number']`` for the simulated
+   observation.
 
 ``date``
    Observation date as an ISO-8601 string (e.g., ``2027-04-15T00:00:00``). Converted to ``astropy.time.Time`` and assigned to ``meta['exposure']['start_time']``.
@@ -367,7 +402,10 @@ PSF cache and generation parameters. Consumed primarily by ``_00_cache_psfs.py``
    Used in ``_00_cache_psfs.py`` and ``_06_h5_export.py``.
 
 ``divide_up_detector``
-   Integer ``N`` controlling how each detector is divided into an ``N x N`` grid of PSF-evaluation positions (e.g., ``5`` -> 25 positions per detector). Roman-specific; ``psf_config.get('divide_up_detector')`` is ``None`` for HWO.
+   Integer ``N`` controlling how each detector is divided into an ``N x N``
+   grid of PSF-evaluation positions (for example, ``5`` gives 25 positions per
+   detector). Roman-specific. ``psf_config.get('divide_up_detector')`` is
+   ``None`` for HWO.
 
    Used in ``_00_cache_psfs.py`` (via ``roman_util.divide_up_sca``), in ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, and ``_04_jax_create_synthetic_images.py`` to pick a random detector position per image, in ``_06_h5_export.py`` to enumerate positions for the PSF HDF5 dataset, and in ``_05_romanisim.py`` to define the PSF buckets that group tiles within each 4088x4088 detector image (asserted to divide both ``GRID_SIDE`` and ``4088``).
 
@@ -380,7 +418,10 @@ Output-dataset options. Consumed by ``_06_h5_export.py``.
    Dataset version string. Embedded in the HDF5 filename as ``<pipeline_label>_v_<version>.h5`` (with ``.`` replaced by ``_``) and written to the file-level attribute ``dataset_version``.
 
 ``labeled``
-   (Challenge-only attribute, present in the ``roman_data_challenge_*`` configs.) Boolean indicating whether the exported dataset includes ground-truth labels. Read by downstream consumers of the Roman Data Challenge dataset; not consumed by the pipeline scripts in ``mejiro/pipeline/`` themselves.
+   Challenge-only Boolean, present in ``roman_data_challenge_*`` configs. It
+   indicates whether the exported dataset includes ground-truth labels.
+   Downstream Roman Data Challenge consumers read this field. The pipeline
+   scripts in ``mejiro/pipeline/`` do not use it.
 
 ``include_psfs``
    Boolean. When ``True``, ``_06_h5_export.py`` adds a ``psfs`` group to the HDF5 file containing cached PSFs for every (detector, position, band) combination.

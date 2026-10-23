@@ -1,6 +1,7 @@
 import pytest
-from astropy.units import Quantity
+from astropy.units import Quantity, UnitConversionError
 
+from mejiro.instruments.instrument import Instrument
 from mejiro.instruments.lsst import LSST
 
 
@@ -38,6 +39,28 @@ def test_get_psf_fwhm_per_band():
         assert fwhm.value > 0
 
 
+def test_get_psf_kwargs_reuses_shared_gaussian_adapter():
+    lsst = LSST()
+    assert LSST.get_psf_kwargs is Instrument.get_psf_kwargs
+    for band in lsst.bands:
+        assert lsst.get_psf_kwargs(band, unused_option=True) == {
+            'psf_type': 'GAUSSIAN', 'fwhm': lsst.get_psf_fwhm(band).value,
+        }
+
+
+def test_gaussian_psf_adapter_uses_band_getter_and_propagates_errors(monkeypatch):
+    from unittest.mock import Mock
+
+    lsst = LSST()
+    getter = Mock(return_value=Quantity(0.12, 'arcsec'))
+    monkeypatch.setattr(lsst, 'get_psf_fwhm', getter)
+    assert lsst.get_psf_kwargs('fixture') == {'psf_type': 'GAUSSIAN', 'fwhm': 0.12}
+    getter.assert_called_once_with('fixture')
+    getter.side_effect = KeyError('missing band')
+    with pytest.raises(KeyError, match='missing band'):
+        lsst.get_psf_kwargs('missing')
+
+
 def test_get_thermal_background_is_zero():
     lsst = LSST()
     for band in lsst.bands:
@@ -49,6 +72,40 @@ def test_get_dark_current_and_read_noise_are_band_independent():
     for band in lsst.bands:
         assert lsst.get_dark_current(band) == Quantity(0.0, 'ct / (pix s)')
         assert lsst.get_read_noise(band) == Quantity(10.0, 'ct / (pix s)')
+
+
+def test_get_noise_reuses_instrument_method():
+    lsst = LSST()
+    assert LSST.get_noise is Instrument.get_noise
+    for band in lsst.bands:
+        assert lsst.get_noise(band) == Quantity(10.0, 'ct / (pix s)')
+
+
+def test_get_noise_preserves_band_dispatch_units_and_errors(monkeypatch):
+    lsst = LSST()
+    dark_current = {'r': Quantity(3.0, 'ct / (pix s)'), 'u': Quantity(5.0, 'ct / (pix s)')}
+    read_noise = {'r': Quantity(0.004, 'ct / (pix ms)'), 'u': Quantity(0.006, 'ct / (pix ms)')}
+    calls = []
+
+    def get_dark_current(band):
+        calls.append(('dark', band))
+        return dark_current[band]
+
+    def get_read_noise(band):
+        calls.append(('read', band))
+        return read_noise[band]
+
+    monkeypatch.setattr(lsst, 'get_dark_current', get_dark_current)
+    monkeypatch.setattr(lsst, 'get_read_noise', get_read_noise)
+    assert lsst.get_noise('r') == Quantity(7.0, 'ct / (pix s)')
+    assert lsst.get_noise('u') == Quantity(11.0, 'ct / (pix s)')
+    assert calls == [('dark', 'r'), ('read', 'r'), ('dark', 'u'), ('read', 'u')]
+    with pytest.raises(KeyError, match='missing'):
+        lsst.get_noise('missing')
+    assert calls[-1] == ('dark', 'missing')
+    read_noise['r'] = Quantity(1.0, 'arcsec')
+    with pytest.raises(UnitConversionError):
+        lsst.get_noise('r')
 
 
 def test_get_gain_returns_camera_value():

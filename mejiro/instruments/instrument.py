@@ -87,6 +87,14 @@ class Instrument(ABC):
         """
         return self.stray_light_fraction
 
+    def get_noise(self, band):
+        """Return the historical sum of dark current and read noise for a band.
+
+        This preserves the instrument getters' units and arithmetic. It is not
+        an exposure-noise variance and requires compatible input units.
+        """
+        return self.get_dark_current(band) + self.get_read_noise(band)
+
     @abstractmethod
     def get_pixel_scale(self, band):
         """
@@ -175,10 +183,11 @@ class Instrument(ABC):
         """
         pass
 
-    @abstractmethod
     def get_psf_kwargs(self, band, **kwargs):
         """
-        Get the keyword arguments for generating the Point Spread Function (PSF) for a given band.
+        Get Gaussian PSF keywords from the band's FWHM by default.
+
+        Instruments with a specialized PSF override this method.
 
         Parameters
         ----------
@@ -190,7 +199,9 @@ class Instrument(ABC):
         dict
             Keyword arguments for generating the PSF.
         """
-        pass
+        from mejiro.utils.lenstronomy_util import get_gaussian_psf_kwargs
+
+        return get_gaussian_psf_kwargs(self.get_psf_fwhm(band))
 
     @abstractmethod
     def get_psf_fwhm(self, band):

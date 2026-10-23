@@ -1,4 +1,4 @@
-# L3 cutout orientation: corner triangles, rotation, and mirroring
+# L3 cutout orientation with corner triangles, rotation, and mirroring
 
 **Status:** diagnosed 2026-07-14; fix implemented in
 `mejiro/pipeline/_05_romanisim.py` (per-SCA resample rotation + lossless parity
@@ -72,7 +72,7 @@ should really be"* and *"galsim.roman does something smarter with choosing the r
 So the `wcsinfo` block in the saved L2 files is **inconsistent with the galsim WCS
 actually used** to place pixels on the sky.
 
-### 3. romancal resample with `rotation: None` trusts that metadata
+### 3. romancal trusts its metadata when rotation is unset
 
 `MosaicPipeline`'s resample step (called at `_05_romanisim.py`,
 `process_batch`) builds the output mosaic WCS through

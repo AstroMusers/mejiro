@@ -9,56 +9,56 @@ Pipeline
     :undoc-members:
     :show-inheritance:
 
-Step 0: Cache PSFs
+Step 0. Cache PSFs
 ******************
 
 .. automodule:: mejiro.pipeline._00_cache_psfs
     :members:
     :show-inheritance:
 
-Step 1a: Generate Galaxy Tables
+Step 1a. Generate Galaxy Tables
 ********************************
 
 .. automodule:: mejiro.pipeline._01a_generate_galaxy_tables
     :members:
     :show-inheritance:
 
-Step 1b: Run Survey Simulation
+Step 1b. Run Survey Simulation
 ******************************
 
 .. automodule:: mejiro.pipeline._01b_run_survey_simulation
     :members:
     :show-inheritance:
 
-Step 2: Build Lens List
+Step 2. Build Lens List
 ***********************
 
 .. automodule:: mejiro.pipeline._02_build_lens_list
     :members:
     :show-inheritance:
 
-Step 3: Generate Subhalo Realizations
+Step 3. Generate Subhalo Realizations
 *************************************
 
 .. automodule:: mejiro.pipeline._03_generate_subhalos
     :members:
     :show-inheritance:
 
-Step 4: Create Synthetic Images (Ray-Shooting)
+Step 4. Create Synthetic Images (Ray-Shooting)
 **********************************************
 
 .. automodule:: mejiro.pipeline._04_create_synthetic_images
     :members:
     :show-inheritance:
 
-Step 5: Create Exposures (galsim)
+Step 5. Create Exposures (galsim)
 *********************************
 
 .. automodule:: mejiro.pipeline._05_galsim
     :members:
     :show-inheritance:
 
-Step 5 (Alternative): Create Exposures (romanisim)
+Step 5 (Alternative). Create Exposures (romanisim)
 ***************************************************
 
 .. automodule:: mejiro.pipeline._05_romanisim
@@ -72,7 +72,7 @@ Calculate SNRs
     :members:
     :show-inheritance:
 
-Step 6: Export Dataset
+Step 6. Export Dataset
 **********************
 
 .. automodule:: mejiro.pipeline._06_h5_export

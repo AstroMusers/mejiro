@@ -1,6 +1,41 @@
+import ast
+from pathlib import Path
+from types import SimpleNamespace
+
+import numpy as np
 import pytest
 
 from mejiro.utils import roman_util
+
+
+@pytest.mark.parametrize('verbose', [False, True])
+def test_nancy_bandpass_integration_without_numpy_trapz(monkeypatch, verbose):
+    path = Path(__file__).resolve().parents[2] / 'projects' / 'nancy' / 'nancy.py'
+    print(f'Reading from {path}...')
+    tree = ast.parse(path.read_text())
+    nodes = [node for node in tree.body if (
+        isinstance(node, ast.ImportFrom) and node.module == 'scipy.integrate'
+    ) or (isinstance(node, ast.FunctionDef) and node.name == 'convert_to_cps')]
+    wavelengths = np.geomspace(0.4, 2.0, 20)  # [micron]
+    brightness = np.linspace(1.0, 3.0, wavelengths.size)  # [MJy/sr]
+    response = SimpleNamespace(
+        wavelength=np.array([3000.0, 4000.0, 5500.0, 8500.0, 11000.0, 15000.0, 18000.0, 22000.0]),  # [Angstrom]
+        response=np.array([0.0, 0.2, 0.4, 0.8, 1.0, 0.7, 0.3, 0.0]),
+    )
+    roman = SimpleNamespace(load_speclite_filters=lambda: [None] * 4 + [response])
+    namespace = {'np': np, 'Roman': roman}
+    exec(compile(ast.Module(body=nodes, type_ignores=[]), str(path), 'exec'), namespace)
+    wavelength_angstrom = wavelengths * 1e4  # [Angstrom]
+    flux_nu = brightness * (0.11 / 206265.0)**2 * 1e-17  # [erg/s/cm^2/Hz/pixel]
+    flux_lambda = flux_nu * 2.99792458e18 / wavelength_angstrom**2  # [erg/s/cm^2/Angstrom/pixel]
+    photon_flux = flux_lambda * wavelength_angstrom / (6.62607015e-27 * 2.99792458e18)  # [photon/s/cm^2/Angstrom/pixel]
+    integrand = np.interp(response.wavelength, wavelength_angstrom, photon_flux, left=0, right=0) * response.response
+    expected = np.sum(np.diff(response.wavelength) * (integrand[1:] + integrand[:-1]) / 2.0) * 3.60767e4
+    monkeypatch.delattr(np, 'trapz', raising=False)
+
+    actual = namespace['convert_to_cps'](wavelengths, brightness, verbose=verbose)
+
+    assert actual == pytest.approx(expected, rel=1e-14)
 
 
 def test_divide_up_sca():

@@ -15,10 +15,10 @@ The following optional dependencies can be installed for additional features:
 
 - ``dev``: run unit tests and build documentation
 - ``jax-cpu``: ``jaxtronomy`` plus CPU-only ``jax`` for faster survey simulation and ray-shooting on machines without a GPU
-- ``jax-gpu``: ``jaxtronomy`` plus ``jax[cuda12]`` for GPU-accelerated survey simulation and ray-shooting. Requires a CUDA-12-compatible NVIDIA driver on the host (``nvidia-smi`` should run); ``jax-gpu`` will install on a CPU-only machine but JAX will fall back to CPU at runtime with a warning.
+- ``jax-gpu``: ``jaxtronomy`` plus ``jax[cuda12]`` for GPU-accelerated survey simulation and ray-shooting. Requires a CUDA-12-compatible NVIDIA driver (check with ``nvidia-smi``). You can install this extra on CPU-only machines too. JAX then falls back to CPU at runtime with a warning.
 - ``roman``: simulate Roman PSFs with ``STPSF`` and Roman L2 and L3 data products with ``romanisim`` and ``romancal``
 - ``hwo``: simulate HWO exposures with ``syotools``
-- ``all``: install all optional dependencies (assumes a GPU host; uses ``jax-gpu``)
+- ``all``: install all optional dependencies, including ``jax-gpu``. Without a compatible GPU, JAX falls back to CPU at runtime.
 
 .. code-block:: bash
 

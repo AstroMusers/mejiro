@@ -10,6 +10,7 @@ import warnings
 import yaml
 from collections import ChainMap
 from glob import glob
+from tdpy.numerics import gaussian_sigma_from_fwhm
 
 import logging
 logger = logging.getLogger(__name__)
@@ -67,8 +68,7 @@ def get_gaussian_kernel(fwhm, size):
     """
     from scipy.ndimage import gaussian_filter
 
-    # Convert FWHM to standard deviation
-    sigma = fwhm / (2 * np.sqrt(2 * np.log(2)))
+    sigma = gaussian_sigma_from_fwhm(fwhm)
 
     # Create an array with a single impulse in the center
     impulse = np.zeros((size, size))
@@ -515,9 +515,9 @@ def polar_to_cartesian(r, theta):
     y : float
         The y-coordinate in Cartesian coordinates.
     """
-    x = r * np.cos(theta)
-    y = r * np.sin(theta)
-    return x, y
+    from tdpy import retr_xposypos
+
+    return retr_xposypos(r, theta)
 
 
 def percent_change(old, new):

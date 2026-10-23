@@ -7,6 +7,7 @@ import json
 
 import numpy as np
 import pytest
+from astropy import units as u
 
 from mejiro.synthetic_image import (
     LIGHTWEIGHT_SCHEMA_VERSION,
@@ -50,6 +51,38 @@ def _valid_meta(band='F129'):
             'lensed_source_magnitude': 23.7,
         },
     }
+
+
+@pytest.mark.parametrize('zeropoint', [26.5, 26.5 * u.mag, np.array([26.5])])
+@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+def test_full_and_lightweight_images_share_maggies_conversion(zeropoint, dtype):
+    data = np.arange(1.0, 10.0, dtype=dtype).reshape(3, 3)  # [count/s]
+    full = SyntheticImage.__new__(SyntheticImage)
+    full.data = data
+    full.magnitude_zeropoint = zeropoint
+    lightweight = LightweightSyntheticImage(data, _valid_meta())
+    expected = float(np.sum(data)) * 10.0**(-0.4 * 26.5)
+    assert LightweightSyntheticImage.get_maggies is SyntheticImage.get_maggies
+    assert isinstance(full.get_maggies(), float)
+    assert full.get_maggies() == pytest.approx(expected, rel=1e-14)
+    assert lightweight.get_maggies() == pytest.approx(expected, rel=1e-14)
+
+
+@pytest.mark.parametrize('image_class', [SyntheticImage, LightweightSyntheticImage])
+def test_shared_maggies_conversion_rejects_missing_zeropoint(image_class):
+    image = image_class.__new__(image_class)
+    image.magnitude_zeropoint = None
+    with pytest.raises(ValueError, match='no magnitude_zeropoint'):
+        image.get_maggies()
+
+
+@pytest.mark.parametrize('image_class', [SyntheticImage, LightweightSyntheticImage])
+def test_shared_maggies_conversion_retains_zero_flux_limit(image_class):
+    image = image_class.__new__(image_class)
+    image.data = np.zeros((2, 2))  # [count/s]
+    image.magnitude_zeropoint = 26.5  # [mag]
+    with np.errstate(divide='ignore'):
+        assert image.get_maggies() == 0.0
 
 
 @pytest.mark.parametrize('save', [False, True])

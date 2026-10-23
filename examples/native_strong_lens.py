@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Render an explicitly specified strong lens using Mejiro and Chalcedon only."""
 
+import argparse
 from pathlib import Path
 
 import astropy.units as u
@@ -11,7 +12,8 @@ import numpy as np
 
 from mejiro.galaxy_galaxy import GalaxyGalaxy
 from mejiro.synthetic_image import SyntheticImage
-from tdpy.cli import parse_plot_arguments
+from tdpy.cli import add_plot_arguments
+from tdpy.plotting import save_plot, themed_plot
 from tdpy.verbosity import print
 
 
@@ -29,6 +31,7 @@ class ExampleDetector:
         return 25.0
 
 
+@themed_plot
 def run_example(output_path):
     lens = GalaxyGalaxy(
         'native-example', None,
@@ -61,14 +64,16 @@ def run_example(output_path):
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     print(f'Writing to {output_path}...')
-    figure.savefig(output_path, dpi=300, bbox_inches='tight')
+    save_plot(figure, output_path, dpi=300, bbox_inches='tight')
     plt.close(figure)
     return image
 
 
 def main():
-    arguments = parse_plot_arguments(description=__doc__)
-    run_example(Path(__file__).with_name(f'native_strong_lens.{arguments.typefileplot}'))
+    parser = add_plot_arguments(argparse.ArgumentParser(description=__doc__))
+    parser.add_argument('--typeplotback', choices=('white', 'dark'), default='white')
+    arguments = parser.parse_args()
+    run_example(Path(__file__).with_name(f'native_strong_lens.{arguments.typefileplot}'), typeplotback=arguments.typeplotback)
 
 
 if __name__ == '__main__':

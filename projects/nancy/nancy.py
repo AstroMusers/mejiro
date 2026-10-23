@@ -23,6 +23,7 @@ from astropy.coordinates import SkyCoord
 import astropy.units as u
 from speclite import filters
 import pickle
+from scipy.integrate import trapezoid
 from scipy.stats import poisson
 
 from mejiro.style import set_aas_style
@@ -190,8 +191,7 @@ def convert_to_cps(wavelength_microns, flux_mjy_per_sr, verbose=False):
   # Step 7: Integrate photon flux over filter bandpass
   # counts/s/cm² = ∫ photon_flux(λ) × T(λ) dλ
   # Integration over wavelength in Angstroms gives photons/s/cm²
-  counts_per_sec_per_cm2 = np.trapz(photon_flux_interp * filter_transmission, 
-                                      filter_wavelength)
+  counts_per_sec_per_cm2 = trapezoid(photon_flux_interp * filter_transmission, filter_wavelength)
 
   # Step 8: Multiply by collecting area
   total_counts_per_sec = counts_per_sec_per_cm2 * collecting_area_cm2
@@ -347,7 +347,7 @@ with Pool(num_cores, initializer=init_worker) as pool:
     ))
 
 hp.mollview(np.array(detectable_counts), 
-            title=f"Detectable Strong Lenses per sq. deg. (SNR $\geq$ {snr_threshold})", 
+            title=f"Detectable Strong Lenses per sq. deg. (SNR $\\geq$ {snr_threshold})",
             cmap='viridis', coord='G', unit=r'Detectable Lenses per deg$^2$')
 hp.graticule()
 plt.savefig('figures/nancy_detectable_sky_map.png', dpi=300)

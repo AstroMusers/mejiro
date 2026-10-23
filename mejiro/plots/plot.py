@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import colors
 from mpl_toolkits.axes_grid1 import ImageGrid
+from tdpy.plotting import apply_plot_theme, save_plot, themed_plot
 
 
 # TODO use **kwargs for params like colorbar label, title, filepath, colorbar boolean, etc.
@@ -78,6 +79,12 @@ def get_min_max(array_list):
     return np.min(min_list), np.max(max_list)
 
 
+def _show_plot():
+    apply_plot_theme(plt.gcf())
+    plt.show()
+
+
+@themed_plot
 def percentile(array, title='', cmap='binary', percentile=98, colorbar=False):
     """Display an image normalized to a given percentile.
 
@@ -106,9 +113,10 @@ def percentile(array, title='', cmap='binary', percentile=98, colorbar=False):
     if colorbar:
         plt.colorbar()
 
-    plt.show()
+    _show_plot()
 
 
+@themed_plot
 def log10(array, title='', cmap='viridis', colorbar=False):
     """Display an image with log10 scaling normalized to its maximum.
 
@@ -135,9 +143,10 @@ def log10(array, title='', cmap='viridis', colorbar=False):
     if colorbar:
         plt.colorbar()
 
-    plt.show()
+    _show_plot()
 
 
+@themed_plot
 def arcsinh(array, title='', cmap='viridis', colorbar=False):
     """Display an image with arcsinh stretching rescaled to ``[0, 1]``.
 
@@ -161,9 +170,10 @@ def arcsinh(array, title='', cmap='viridis', colorbar=False):
     if colorbar:
         plt.colorbar()
 
-    plt.show()
+    _show_plot()
 
 
+@themed_plot
 def plot(array, title='', cmap='viridis', colorbar=False, colorbar_label=None):
     """Display an image with no additional scaling.
 
@@ -192,9 +202,10 @@ def plot(array, title='', cmap='viridis', colorbar=False, colorbar_label=None):
         if colorbar_label:
             cbar.set_label(colorbar_label)
 
-    plt.show()
+    _show_plot()
 
 
+@themed_plot
 def rgb_plot_grid(array_list, side, titles=None, save=None):
     """Display a square grid of RGB images.
 
@@ -235,11 +246,12 @@ def rgb_plot_grid(array_list, side, titles=None, save=None):
             i += 1
 
     if save is not None:
-        plt.savefig(save)
+        save_plot(plt.gcf(), save)
 
-    plt.show()
+    _show_plot()
 
 
+@themed_plot
 def plot_grid(array_list, side, cmap='viridis', log10=True, title='', save=None, colorbar=False, colorbar_label=None):
     """Display a square grid of single-channel images using ``ImageGrid``.
 
@@ -311,11 +323,12 @@ def plot_grid(array_list, side, cmap='viridis', log10=True, title='', save=None,
     plt.suptitle(title)
 
     if save is not None:
-        plt.savefig(save)
+        save_plot(plt.gcf(), save)
 
-    plt.show()
+    _show_plot()
 
 
+@themed_plot
 def plot_list(array_list, cmap='viridis', title_list=None, colorbar=False):
     """Display a list of images as a single-row strip.
 
@@ -358,9 +371,10 @@ def plot_list(array_list, cmap='viridis', title_list=None, colorbar=False):
     # if colorbar:
     #     plt.colorbar()
 
-    plt.show()
+    _show_plot()
 
 
+@themed_plot
 def log10_list(array_list, cmap='viridis'):
     """Display a list of images as a single-row strip with log10 scaling.
 
@@ -384,4 +398,4 @@ def log10_list(array_list, cmap='viridis'):
         ax[i].get_xaxis().set_visible(False)
         ax[i].get_yaxis().set_visible(False)
 
-    plt.show()
+    _show_plot()

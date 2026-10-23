@@ -1,6 +1,7 @@
 import numpy as np
 
 import corner
+from tdpy.plotting import plot_background_colors, themed_plot
 
 
 # def source_galaxies(lens_list, band, quantiles=[0.16, 0.5, 0.84]):
@@ -90,6 +91,7 @@ def lens_list_to_corner_data(lens_list, band):
     return np.array(data)
 
 
+@themed_plot
 def overview(lens_list, band, fig=None, quantiles=[0.16, 0.5, 0.84]):
     """Produce a corner plot overview of a lens population.
 
@@ -133,11 +135,13 @@ def overview(lens_list, band, fig=None, quantiles=[0.16, 0.5, 0.84]):
         quantiles=quantiles,
         show_titles=True,
         density=True,
+        color=plot_background_colors()[1],
         weights=weights(data),
         fig=fig
     )
 
 
+@themed_plot
 def overplot_points(corner_fig, lens_list):
     """Overplot individual lens positions on an existing corner figure.
 
