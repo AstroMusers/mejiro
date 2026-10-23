@@ -30,21 +30,21 @@ preserved. The native strong-lens example also accepts `--typeplotback dark`.
 
 ## Strong-lens backend selection
 
-Lenstronomy remains the default for existing calls. Set `backend="chalcedon"` on a lens constructor to use the additional native engine. `StrongLens.lens_model`, light models, cached cosmological conversions, image-position solving, and `SyntheticImage` rendering follow the selected backend. The established model/parameter dictionary layout is retained.
+New lens constructors default to Chalcedon. Select `backend="lenstronomy"` explicitly for comparisons. `StrongLens.lens_model`, light models, cached cosmological conversions, image-position solving, and `SyntheticImage` rendering follow the selected backend. The established model/parameter dictionary layout is retained.
 
 ```python
 from mejiro.galaxy_galaxy import SampleGG
 from mejiro.instruments.roman import Roman
 from mejiro.synthetic_image import SyntheticImage
 
-legacy_lens = SampleGG()  # Lenstronomy remains the default
-native_lens = SampleGG(backend="chalcedon")
-legacy_image = SyntheticImage(legacy_lens, Roman(), "F129")
+native_lens = SampleGG()
+comparison_lens = SampleGG(backend="lenstronomy")
 native_image = SyntheticImage(native_lens, Roman(), "F129")
-comparison_image = SyntheticImage(legacy_lens, Roman(), "F129", backend="chalcedon")
+comparison_image = SyntheticImage(comparison_lens, Roman(), "F129")
+override_image = SyntheticImage(comparison_lens, Roman(), "F129", backend="chalcedon")
 ```
 
-An image-level override copies the lens when changing engines, so `comparison_image` does not change `legacy_lens` or its cached cosmology. `image.backend` records the selected engine. Lightweight files include that value. Older files lacking backend metadata load with `backend="unknown"`. Detector-effects engines are selected separately from the lens forward-model backend.
+An image-level override copies the lens when changing engines, so `override_image` does not change `comparison_lens` or its cached cosmology. `image.backend` records the selected engine. Lightweight files include that value. Older files lacking backend metadata load with `backend="unknown"`. Older pickled objects without a backend attribute retain their historical Lenstronomy fallback. Detector-effects engines are selected separately from the lens forward-model backend.
 
 The Chalcedon path does not load Lenstronomy and its native implementation is preserved. Angular coordinates and profile radii use arcseconds, and scene values are count rates per rendered pixel. Its optical convolution is applied on the supersampled scene before detector-pixel binning. Lens and source pieces use the same calculation as the total image.
 

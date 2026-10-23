@@ -40,7 +40,6 @@ def test_strong_lens_simulation_does_not_import_lenstronomy(monkeypatch):
          'kwargs_source': [{'amp': 1.0, 'R_sersic': 0.05, 'n_sersic': 1.0,
                             'center_x': 0.1, 'center_y': 0.0, 'e1': 0.0, 'e2': 0.0}],
          'kwargs_ps': []},
-        backend='chalcedon',
     )
     image = SyntheticImage(lens, Detector(), 'test', fov_arcsec=4.0, pieces=True)
 
@@ -64,7 +63,7 @@ def test_builtin_analytic_sample_uses_native_model(monkeypatch):
     monkeypatch.setattr(builtins, '__import__', block_import)
     from mejiro.galaxy_galaxy import SampleGG
 
-    lens = SampleGG(backend='chalcedon')
+    lens = SampleGG()
     source_x, source_y = lens.lens_model.ray_shooting([1.0], [0.2], lens.kwargs_lens)
     assert np.isfinite(source_x).all() and np.isfinite(source_y).all()
 
@@ -82,7 +81,7 @@ def test_roman_sample_renders_without_lenstronomy_and_preserves_reference_images
     from mejiro.instruments.roman import Roman
     from mejiro.synthetic_image import SyntheticImage
 
-    lens = SampleGG(backend='chalcedon')
+    lens = SampleGG()
     image = SyntheticImage(lens, Roman(), 'F129', fov_arcsec=4.0, pieces=True)
     positions = lens.get_image_positions()
 
@@ -172,7 +171,7 @@ def test_builtin_halo_and_shapelet_samples_render_with_native_backend(monkeypatc
     from mejiro.instruments.roman import Roman
     from mejiro.synthetic_image import SyntheticImage
 
-    lens = getattr(galaxy_galaxy, sample_name)(backend='chalcedon')
+    lens = getattr(galaxy_galaxy, sample_name)()
     image = SyntheticImage(lens, Roman(), 'F129', fov_arcsec=3.0, pieces=True)
 
     assert np.isfinite(image.data).all()

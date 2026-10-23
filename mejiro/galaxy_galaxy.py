@@ -16,7 +16,7 @@ class GalaxyGalaxy(StrongLens):
             kwargs_params,
             physical_params={},
             use_jax=None,
-            backend='lenstronomy',
+            backend='chalcedon',
     ):
         super().__init__(name=name,
                          coords=coords, 
@@ -81,7 +81,7 @@ class GalaxyGalaxy(StrongLens):
         )
 
     @staticmethod   
-    def from_slsim(slsim_gglens, name=None, coords=None, bands=None, use_jax=None, backend='lenstronomy'):
+    def from_slsim(slsim_gglens, name=None, coords=None, bands=None, use_jax=None, backend='chalcedon'):
         # check that the input is reasonable
         if slsim_gglens.source_number != 1:
             raise ValueError("Only one source is supported for galaxy-galaxy lenses.")
@@ -157,7 +157,7 @@ class Sample1(GalaxyGalaxy):
     """
     This is a simulated strong lens from `SLSim <https://github.com/LSST-strong-lensing/slsim>`__ with a real source galaxy from the `COSMOS real galaxy dataset <https://doi.org/10.5281/zenodo.3242143>`__ (galaxy ID: 52643).
     """
-    def __init__(self, backend='lenstronomy'):
+    def __init__(self, backend='chalcedon'):
         name = 'Sample1'
         coords = None
         kwargs_model = {
@@ -257,7 +257,7 @@ class Sample2(GalaxyGalaxy):
     """
     This is a simulated strong lens from `SLSim <https://github.com/LSST-strong-lensing/slsim>`__ with a real source galaxy from the `COSMOS real galaxy dataset <https://doi.org/10.5281/zenodo.3242143>`__ (galaxy ID: 125125).
     """
-    def __init__(self, backend='lenstronomy'):
+    def __init__(self, backend='chalcedon'):
         name = 'Sample2'
         coords = None
         kwargs_model = {
@@ -351,7 +351,7 @@ class SampleGG(GalaxyGalaxy):
     """
     This is a simulated strong lens from `SLSim <https://github.com/LSST-strong-lensing/slsim>`__.
     """
-    def __init__(self, backend='lenstronomy'):
+    def __init__(self, backend='chalcedon'):
         name = 'SampleGG'
         coords = None
         kwargs_model = {
@@ -479,7 +479,7 @@ class SampleBELLS(GalaxyGalaxy):
     """
     This system, SDSSJ1159-0007, from the BELLS sample (`Brownstein et al. 2012 <https://doi.org/10.1088/0004-637X/744/1/41>`__, `Shu et al. 2016 <https://doi.org/10.3847/1538-4357/833/2/264>`__) was modeled by `Tan et al. (2024) <https://doi.org/10.1093/mnras/stae884>`__.
     """
-    def __init__(self, backend='lenstronomy'):
+    def __init__(self, backend='chalcedon'):
         name = 'SDSSJ1159-0007'
         coords = None
         kwargs_model = {
@@ -571,7 +571,7 @@ class SampleSL2S(GalaxyGalaxy):
     """
     This system, SL2SJ1411+5651, from the SL2S sample (`Gavazzi et al. 2012 <https://doi.org/10.1088/0004-637X/761/2/170>`__) was modeled by `Tan et al. (2024) <https://doi.org/10.1093/mnras/stae884>`__.
     """
-    def __init__(self, backend='lenstronomy'):
+    def __init__(self, backend='chalcedon'):
         name = 'SL2SJ1411+5651'
         coords = None
         kwargs_model = {

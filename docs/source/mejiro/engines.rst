@@ -2,8 +2,8 @@ Engines
 =======
 
 Lensing builds the scene. The exposure engine renders it. In Mejiro, these are
-separate choices. Select ``backend="lenstronomy"`` (the default) or
-``backend="chalcedon"`` when constructing a lens. ``Exposure.engine`` selects
+separate choices. Lens constructors default to ``backend="chalcedon"``.
+Select ``backend="lenstronomy"`` for a comparison. ``Exposure.engine`` selects
 the detector workflow. GalSim renders Roman and HWO exposures. STPSF supplies
 PSFs for Roman.
 

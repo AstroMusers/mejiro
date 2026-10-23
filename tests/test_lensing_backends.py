@@ -30,7 +30,7 @@ def test_same_lens_renders_with_each_selected_backend_without_mutating_original(
     from mejiro.instruments.roman import Roman
     from mejiro.synthetic_image import SyntheticImage
 
-    lens = SampleGG()
+    lens = SampleGG(backend='lenstronomy')
     cached_cosmology = lens.get_lens_cosmo()
     image = SyntheticImage(lens, Roman(), 'F129', fov_arcsec=3.0, backend=backend, pieces=True)
 
@@ -44,7 +44,7 @@ def test_same_lens_renders_with_each_selected_backend_without_mutating_original(
     assert isinstance(image.strong_lens.lens_model, expected_type)
 
 
-def test_default_rendering_preserves_lenstronomy_backend():
+def test_default_rendering_uses_chalcedon_backend():
     from mejiro.galaxy_galaxy import SampleGG
     from mejiro.instruments.roman import Roman
     from mejiro.synthetic_image import SyntheticImage
@@ -52,7 +52,7 @@ def test_default_rendering_preserves_lenstronomy_backend():
     lens = SampleGG()
     image = SyntheticImage(lens, Roman(), 'F129', fov_arcsec=2.0)
 
-    assert lens.backend == image.backend == 'lenstronomy'
+    assert lens.backend == image.backend == 'chalcedon'
     assert image.strong_lens is lens
 
 

@@ -32,7 +32,7 @@ class StrongLens(ABC):
     use_jax : bool, or list of bool
         Whether to use JAXtronomy for calculations. Default is None, then set to False in the constructor for all lens model element(s). See the `lenstronomy documentation <https://lenstronomy.readthedocs.io/en/latest/lenstronomy.LensModel.html#module-lenstronomy.LensModel.lens_model>`__ for details.
     backend : str
-        Forward-model engine, either 'lenstronomy' (default) or 'chalcedon'.
+        Forward-model engine, either 'chalcedon' (default) or 'lenstronomy'.
         JAX execution is available through the Lenstronomy path only.
 
     Notes
@@ -95,7 +95,7 @@ class StrongLens(ABC):
             kwargs_params,
             physical_params,
             use_jax,
-            backend='lenstronomy',
+                backend='chalcedon',
     ):
         self.name = name
         self.coords = coords

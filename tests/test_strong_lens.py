@@ -2,9 +2,7 @@ import numpy as np
 import pytest
 
 from astropy.cosmology import default_cosmology
-from lenstronomy.Cosmo.lens_cosmo import LensCosmo
-from lenstronomy.LensModel.lens_model import LensModel
-from lenstronomy.LightModel.light_model import LightModel
+from chalcedon import LensCosmo, LensModel, LightModel
 
 from mejiro.galaxy_galaxy import GalaxyGalaxy, SampleGG, SampleSL2S, SampleBELLS
 
