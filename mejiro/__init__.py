@@ -9,3 +9,5 @@ _logging.getLogger("jax._src.xla_bridge").setLevel(_logging.CRITICAL)
 
 __author__ = "Bryce Wedig"
 __version__ = "3.0.0"
+
+from .paths import get_data_path, get_repository_path, get_visuals_path

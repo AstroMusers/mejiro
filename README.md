@@ -18,6 +18,8 @@ Install `mejiro` by following [these instructions in the documentation](https://
 
 # Usage
 
+Set `MEJIRO_PATH` to the checkout directory when using Mejiro from another location. If it is unset, the package uses its checkout root. Local inputs and generated figures belong in the ignored `data/` and `visuals/` directories.
+
 ## Strong-lens backend selection
 
 Lenstronomy remains the default for existing calls. Set `backend="chalcedon"` on a lens constructor to use the additional native engine. `StrongLens.lens_model`, light models, cached cosmological conversions, image-position solving, and `SyntheticImage` rendering follow the selected backend. The established model/parameter dictionary layout is retained.
