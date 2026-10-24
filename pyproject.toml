@@ -24,7 +24,7 @@ dependencies = [
     "numpy>=1.26",
     "pandas==2.3.3",
     "tqdm==4.67.1",
-    "tdpy",
+    "tdpy @ git+https://github.com/tansudaylan/tdpy.git@35df1703c6b63d6a62f7d44b12cf5928b5d355ed",
     "chalcedon @ git+https://github.com/tansudaylan/chalcedon.git@7f904b64b854fe3bee63af515317723ed49c9b06",
     "lenstronomy==1.13.3",
     "scipy",

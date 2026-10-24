@@ -11,6 +11,7 @@ import yaml
 
 @pytest.fixture
 def orchestrator(monkeypatch):
+    pipeline_package = importlib.import_module('mejiro.pipeline')
     script_names = (
         '_00_cache_psfs', '_01a_generate_galaxy_tables', '_01b_run_survey_simulation',
         '_02_build_lens_list', '_03_generate_subhalos', '_04_create_synthetic_images',
@@ -25,6 +26,7 @@ def orchestrator(monkeypatch):
         script.DEFAULT_PATTERN = 'test-pattern'
         scripts[name] = script
         monkeypatch.setitem(sys.modules, qualified_name, script)
+        monkeypatch.setattr(pipeline_package, name, script, raising=False)
     path = Path(__file__).parents[2] / 'mejiro' / 'pipeline' / 'mejiro_pipeline.py'
     spec = importlib.util.spec_from_file_location('_mejiro_dispatch_under_test', path)
     module = importlib.util.module_from_spec(spec)
