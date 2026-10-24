@@ -1,7 +1,5 @@
 import argparse
-import importlib.util
-from pathlib import Path
-import sys
+import importlib
 from types import ModuleType
 from unittest.mock import Mock
 
@@ -11,26 +9,27 @@ import yaml
 
 @pytest.fixture
 def orchestrator(monkeypatch):
-    pipeline_package = importlib.import_module('mejiro.pipeline')
-    script_names = (
-        '_00_cache_psfs', '_01a_generate_galaxy_tables', '_01b_run_survey_simulation',
-        '_02_build_lens_list', '_03_generate_subhalos', '_04_create_synthetic_images',
-        '_05_galsim', '_06_h5_export', '_05_romanisim', 'calculate_snrs',
-    )
+    module = importlib.import_module('mejiro.pipeline.mejiro_pipeline')
+    script_attributes = {
+        '_00_cache_psfs': 'script_00_cache_psfs',
+        '_01a_generate_galaxy_tables': 'script_01a_generate_galaxy_tables',
+        '_01b_run_survey_simulation': 'script_01b_run_survey_simulation',
+        '_02_build_lens_list': 'script_02_build_lens_list',
+        '_03_generate_subhalos': 'script_03_generate_subhalos',
+        '_04_create_synthetic_images': 'script_04_create_synthetic_images',
+        '_05_galsim': 'script_05_galsim',
+        '_06_h5_export': 'script_06_h5_export',
+        '_05_romanisim': 'script_05_romanisim',
+        'calculate_snrs': 'script_calculate_snrs',
+    }
     scripts = {}
-    for name in script_names:
-        qualified_name = 'mejiro.pipeline.' + name
-        script = ModuleType(qualified_name)
+    for name, attribute in script_attributes.items():
+        script = ModuleType(f'mejiro.pipeline.{name}')
         script.main = Mock()
         script.SCRIPT_NAME = name.removeprefix('_')
         script.DEFAULT_PATTERN = 'test-pattern'
         scripts[name] = script
-        monkeypatch.setitem(sys.modules, qualified_name, script)
-        monkeypatch.setattr(pipeline_package, name, script, raising=False)
-    path = Path(__file__).parents[2] / 'mejiro' / 'pipeline' / 'mejiro_pipeline.py'
-    spec = importlib.util.spec_from_file_location('_mejiro_dispatch_under_test', path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+        monkeypatch.setattr(module, attribute, script)
     monkeypatch.setattr(module.util, 'print_execution_time', Mock())
     return module, scripts
 
