@@ -48,6 +48,23 @@ An image-level override copies the lens when changing engines, so `override_imag
 
 The Chalcedon path does not load Lenstronomy and its native implementation is preserved. Angular coordinates and profile radii use arcseconds, and scene values are count rates per rendered pixel. Its optical convolution is applied on the supersampled scene before detector-pixel binning. Lens and source pieces use the same calculation as the total image.
 
+For a native scene with extended light at different redshifts, provide one
+`source_redshift_list` entry per source-light profile and a reference `z_source`
+behind every lens plane. Mejiro passes those redshifts to Chalcedon and keeps
+the lens mass parameters normalized at the reference source. A foreground
+source is unaffected by lenses behind it. Source components all at the
+reference redshift retain their previous calculation. `get_image_positions()`
+uses the first source component's redshift. Native point-source rendering
+through `kwargs_ps` still uses the reference plane.
+
+These extended-source scenes need a Chalcedon checkout with
+`ImageModel(source_redshift_list=...)` and source-redshift-aware ray shooting
+and image solving. Install the matching local checkouts together. Mejiro raises
+an explicit error for a distinct-source-plane Lenstronomy comparison because
+that path has no corresponding source-plane mapping. Ordinary single-source
+Lenstronomy comparisons remain available. Detector simulation is a separate
+step and requires the corresponding telescope and detector dependencies.
+
 Install Chalcedon and Mejiro from local checkouts:
 
 ```bash

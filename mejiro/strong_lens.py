@@ -635,11 +635,17 @@ class StrongLens(ABC):
         self.kwargs_model['source_redshift_list'] = value
 
     @property
+    def has_distinct_source_planes(self):
+        redshifts = self.source_redshift_list
+        return redshifts is not None and any(redshift != self.z_source for redshift in redshifts)
+
+    @property
     def lens_model(self):
         return get_backend(self.backend).LensModel(self.lens_model_list, use_jax=self.use_jax,
                          z_lens=self.z_lens, z_source=self.z_source,
                          lens_redshift_list=self.lens_redshift_list, cosmo=self.cosmo,
-                         multi_plane=len(set(self.lens_redshift_list)) > 1)
+                         multi_plane=(len(set(self.lens_redshift_list)) > 1
+                                      or self.backend == 'chalcedon' and self.has_distinct_source_planes))
     
     @property
     def lens_light_model(self):

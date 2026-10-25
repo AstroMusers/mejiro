@@ -52,6 +52,66 @@ def test_strong_lens_simulation_does_not_import_lenstronomy(monkeypatch):
     assert lens.get_lens_cosmo().sis_theta_E2sigma_v(1.0) > 0
 
 
+def test_native_image_uses_each_extended_source_redshift(monkeypatch):
+    from chalcedon import ImageModel, LightModel, LensModel
+    from mejiro.galaxy_galaxy import GalaxyGalaxy
+    from mejiro.synthetic_image import SyntheticImage
+
+    original_import = builtins.__import__
+
+    def block_import(name, *args, **kwargs):
+        if name == 'lenstronomy' or name.startswith('lenstronomy.'):
+            raise AssertionError('Native source-plane rendering must not import Lenstronomy')
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, '__import__', block_import)
+
+    class Detector:
+        name = 'Native multi-source test detector'
+        bands = ['test']
+
+        def default_params(self):
+            return {}
+
+        def get_pixel_scale(self, band):
+            return 0.05 * u.arcsec / u.pixel
+
+        def get_zeropoint_magnitude(self, band):
+            return 25.0
+
+    mass = [{'theta_E': 0.2}]
+    sources = [{'amp': 1.0, 'sigma': 0.1, 'center_x': 0.05, 'center_y': 0.0},
+               {'amp': 0.5, 'sigma': 0.16, 'center_x': 0.0, 'center_y': -0.08}]
+    redshifts = [0.2, 1.2]
+    lens = GalaxyGalaxy(
+        'multi-source', None,
+        {'lens_model_list': ['SIS'], 'lens_light_model_list': [],
+         'source_light_model_list': ['GAUSSIAN', 'GAUSSIAN'], 'lens_redshift_list': [0.3],
+         'source_redshift_list': redshifts, 'z_source': 2.0, 'cosmo': Planck18},
+        {'kwargs_lens': mass, 'kwargs_source': sources, 'kwargs_lens_light': [], 'kwargs_ps': []},
+        physical_params={'einstein_radius': 0.2},
+    )
+    image = SyntheticImage(lens, Detector(), 'test', fov_arcsec=1.0, pieces=True)
+    native = ImageModel(
+        image.pixel_grid, image.psf_class,
+        LensModel(['SIS'], multi_plane=True, lens_redshift_list=[0.3], z_source=2.0, cosmo=Planck18),
+        LightModel(['GAUSSIAN', 'GAUSSIAN']), LightModel([]),
+        kwargs_numerics=image.kwargs_numerics, source_redshift_list=redshifts,
+    )
+    expected = native.image(mass, sources, [])
+    np.testing.assert_allclose(image.data, expected, rtol=1e-13, atol=1e-15)
+    np.testing.assert_allclose(image.source_surface_brightness, expected, rtol=1e-13, atol=1e-15)
+    wrong_reference = ImageModel(image.pixel_grid, image.psf_class, lens.lens_model,
+                                LightModel(['GAUSSIAN', 'GAUSSIAN']), LightModel([]),
+                                kwargs_numerics=image.kwargs_numerics).image(mass, sources, [])
+    assert not np.allclose(image.data, wrong_reference)
+    positions = lens.get_image_positions()
+    np.testing.assert_allclose(positions[0], [0.05], atol=1e-7)
+    np.testing.assert_allclose(positions[1], [0.0], atol=1e-7)
+    with pytest.raises(NotImplementedError, match='Distinct source planes'):
+        SyntheticImage(lens, Detector(), 'test', backend='lenstronomy')
+
+
 def test_builtin_analytic_sample_uses_native_model(monkeypatch):
     original_import = builtins.__import__
 

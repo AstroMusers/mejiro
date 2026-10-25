@@ -1,4 +1,4 @@
-# Future work: INTERPOL deflection-map optimization for step 04
+# Future work on INTERPOL deflection-map optimization for step 04
 
 The pipeline previously had a third step-04 variant,
 `_04_create_synthetic_images_interpol.py`, deleted when the step-04 scripts
@@ -49,11 +49,10 @@ lens.kwargs_lens = original_kwargs_lens
 lens.use_jax = original_use_jax
 ```
 
-Note the interaction with the JAX path: the consolidated script's
-`_enable_jax_on_lens()` sets `use_jax` per profile; `INTERPOL` is evaluated
-with plain lenstronomy (`use_jax = [False]`), so `interpol: True` and
-`use_jax: True` are effectively mutually exclusive per system unless
-jaxtronomy grows an INTERPOL profile.
+`_enable_jax_on_lens()` sets `use_jax` per profile. `INTERPOL` uses plain
+lenstronomy with `use_jax = [False]`. Until jaxtronomy supports an INTERPOL
+profile, `interpol: True` and `use_jax: True` are effectively mutually
+exclusive for a system.
 
 ## Key functions from the deleted script
 
@@ -156,8 +155,8 @@ The pre-computed mask is passed per band via
 
 ## What a reimplementation must add
 
-The deleted script predated several features of the consolidated step 04; a
-reimplementation must support all of them:
+The consolidated step 04 includes features that any reimplementation must
+support.
 
 - `--resume` / `_is_complete` skip logic and the delete-unless-resume block
 - `serialization: full | lightweight` (`.pkl` vs `.npz` via `save_lightweight`)

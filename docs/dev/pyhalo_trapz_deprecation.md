@@ -1,4 +1,4 @@
-# pyHalo: unfinished `np.trapz` → `np.trapezoid` migration
+# pyHalo unfinished `np.trapz` → `np.trapezoid` migration
 
 ## Symptom
 
@@ -127,67 +127,18 @@ def test_no_deprecated_trapz():
     assert not offenders, f'np.trapz removed in numpy 2.4: {offenders}'
 ```
 
-## What mejiro does in the meantime
+## Current Mejiro behavior
 
-Nothing. mejiro stays on `pyhalo==1.4.3` and accepts the 4,838 warnings.
+Mejiro remains on `pyhalo==1.4.3` and currently encounters 4,838 `np.trapz`
+deprecation warnings.
 
-Bumping to 1.4.9 is a separate, science-affecting change that needs its own before/after validation:
-it crosses six releases, and `NFW_core_trunc.profile_args` also changes the mass-conservation
-integration grid from `np.logspace(-4, log10(r_match/rs), 1000)` to the same range with **250**
-points. That is a real numerical difference in the `alpha_Rs` normalization, not just a rename.
+Moving to 1.4.9 changes scientific results and needs separate before-and-after
+validation. It crosses six releases. `NFW_core_trunc.profile_args` also changes
+the mass-conservation integration grid from
+`np.logspace(-4, log10(r_match/rs), 1000)` to the same range with 250 points. This
+changes the `alpha_Rs` normalization.
 
-Note also that bumping would **not** lift the `numpy<2.4.0` pin, because of the two calls above.
-The pin can only be lifted once this upstream fix lands.
-
-One thing the bump does *not* change: `pyHalo.utilities.generate_lens_plane_redshifts` is identical
-in 1.4.3 and 1.4.9, so the duplicate-lens-plane workaround described in
-[pyhalo_lens_plane_bug.md](pyhalo_lens_plane_bug.md) stays necessary either way.
-
-## Claude Code prompt for opening an upstream PR
-
-Paste the block below into Claude Code from a clone of `https://github.com/dangilman/pyHalo`.
-
-````
-pyHalo's migration from the deprecated `np.trapz` to `np.trapezoid` is incomplete,
-which leaves the package unable to run on NumPy 2.4+ (where `np.trapz` was removed)
-while simultaneously requiring NumPy 2.0+ (where `np.trapezoid` was introduced).
-
-Already migrated:
-    pyHalo/Halos/HaloModels/NFW_core_trunc.py:174   np.trapezoid(...)
-
-Still using the removed function:
-    pyHalo/Halos/HaloModels/TNFW.py:96
-        return np.trapz(kappa * 2 * np.pi * x, x) * sigma_crit_arcsec
-    pyHalo/Halos/HaloModels/powerlaw.py:177
-        m = np.trapz(4 * np.pi * r**2 * density, r)
-
-(Ignore the commented-out occurrences at NFW_core_trunc.py:503,505 and
-Rendering/MassFunctions/mass_function_base.py:256,257 — dead code.)
-
-Consequence: on NumPy >= 2.4 these two call sites raise
-`AttributeError: module 'numpy' has no attribute 'trapz'`. Downstream packages are
-currently pinning `numpy<2.4.0` to work around it.
-
-Please:
-
-1. Replace both calls with `np.trapezoid`. This is a pure rename — identical
-   signature and result, no numerical change.
-
-2. Declare the NumPy floor that `np.trapezoid` already imposes. pyHalo's install
-   requirements are currently just `Click>=6.0` and specify no numpy bound at all,
-   so `pip install pyhalo` succeeds on numpy 1.x and then fails at runtime inside
-   `NFW_core_trunc.profile_args`. Add `numpy>=2.0`.
-
-   Alternatively, if pyHalo wants to keep numpy 1.x support, add a small compat
-   shim instead and use it at all live call sites:
-
-       trapezoid = getattr(np, 'trapezoid', None) or np.trapz
-
-   That is the only approach that works on numpy 1.x, 2.0-2.3, and 2.4+.
-
-3. Add a regression test that greps the package for `np.trapz` outside comments, so
-   the remaining call sites cannot reappear.
-
-Verify with `pytest` and, if you can, by installing numpy>=2.4 in a scratch env and
-constructing a TNFW and a powerlaw halo profile.
-````
+The upgrade would leave the `numpy<2.4.0` pin in place until both `np.trapz` calls
+are replaced upstream. It also leaves `pyHalo.utilities.generate_lens_plane_redshifts`
+unchanged between versions 1.4.3 and 1.4.9, so the duplicate-lens-plane workaround
+in [pyhalo_lens_plane_bug.md](pyhalo_lens_plane_bug.md) remains necessary.

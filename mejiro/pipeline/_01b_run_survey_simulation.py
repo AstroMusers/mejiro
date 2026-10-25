@@ -474,7 +474,7 @@ def run_slsim(tuple):
             if use_jax:
                 _enable_jax_on_lens(strong_lens)
 
-            # TODO temporary fix to make sure that there are two images formed
+            # Require at least two macro-model images for the strong-lens sample.
             image_positions = strong_lens.get_image_positions()
             if len(image_positions[0]) < 2:
                 continue

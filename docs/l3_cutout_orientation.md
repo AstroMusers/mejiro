@@ -1,9 +1,10 @@
-# L3 cutout orientation with corner triangles, rotation, and mirroring
+# Understanding L3 Cutout Orientation
 
-**Status:** diagnosed 2026-07-14; fix implemented in
-`mejiro/pipeline/_05_romanisim.py` (per-SCA resample rotation + lossless parity
-flip at cutout extraction). Cutouts generated *before* that fix are rotated ~30°
-(mod 90°) and mirror-flipped relative to their input SyntheticImages.
+Roman images are resampled into a north-up mosaic before cutouts are extracted. Each
+detector has its own rotation and parity, so an extracted tile can appear rotated and
+mirrored relative to its input `SyntheticImage`. The pipeline applies a per-SCA rotation
+and restores the input parity during cutout extraction. Existing `.npy` cutouts retain
+their previous orientation and must be regenerated.
 
 ## Symptom
 
@@ -12,7 +13,7 @@ In `notebooks/view_05_romanisim_l3.ipynb`, some L3 cutouts produced by
 cutouts are **not oriented the same way** as the input SyntheticImages. Only a minority
 of cutouts visibly show the triangles.
 
-## TL;DR
+## Summary
 
 The L3 mosaic comes out **north-up (east-left)**, but the L2 detector grid — where each
 SyntheticImage is placed as an axis-aligned square tile — is rotated **~±60°/120° from
@@ -51,8 +52,8 @@ detector center) is:
 | 05  | +119.32    | 11  | +120.17    | 17  | +120.89    |
 | 06  | −60.73     | 12  | −59.75     | 18  | −58.93     |
 
-SCAs 3/6/9/12/15/18 are the 180°-flipped detectors; the ~±1° scatter across SCAs is
-field-dependent distortion. In addition, the detector pixel grid's **parity** is
+SCAs 3/6/9/12/15/18 are flipped by 180°. The remaining ~1° variation among SCAs comes
+from field-dependent distortion. The detector pixel grid's **parity** is
 opposite to the FITS east-left convention (the (east, north) Jacobian of the galsim WCS
 has positive determinant), i.e. the detector grid is *mirrored* relative to a standard
 north-up/east-left image.
@@ -92,59 +93,48 @@ intent.)
 
 ### 4. Net effect on cutouts
 
-The tiles are squares in *detector* pixels; the mosaic is north-up. Relative to the
-mosaic axes each tile is rotated by the SCA's +y PA (~+120° or ~−60°; a square's
-appearance is modulo 90°, so it *looks* like ~30°) **and** mirror-flipped (parity
-mismatch). `_extract_cutout` slices an axis-aligned square in mosaic pixels around the
+The tiles are squares in *detector* pixels. The mosaic is north-up. Each tile follows
+its SCA's +y position angle, about +120° or −60°. Because a square looks the same after
+a 90° rotation, the misalignment appears to be about 30°. Its parity is also reversed.
+`_extract_cutout` slices an axis-aligned square in mosaic pixels around the
 correct sky position (`world_to_pixel` — centering is unaffected), so:
 
-- **Corner triangles**: the cutout corners fall outside the rotated tile footprint and
-  show the sky-only inter-tile gaps (`DISTORTION_GUARD = 7` px pitch margin),
-  occasionally plus the bright corner of a *neighboring* tile.
-- **Orientation mismatch**: the tile content is rotated ~30° (mod 90°) and reflected
-  relative to the input SyntheticImage array.
+- **Corner triangles.** Cutout corners can fall outside the rotated tile footprint and
+   show sky in the inter-tile gaps (`DISTORTION_GUARD = 7` px), sometimes with a bright
+   corner from a neighboring tile.
+- **Orientation mismatch.** Tile content is rotated by roughly 30° modulo 90° and
+   reflected relative to the input `SyntheticImage` array.
 
 ### 5. Why only a minority of cutouts show triangles
 
-The rotation affects **every** cutout identically. Visibility is brightness-selected:
-the tile boundary only shows when the system's flux at the tile edge stands above the
-sky background in the gaps. Verified empirically on
-`05_romanisim/sca01` — the brightest/most extended systems all show a crisp
-~30°-rotated square boundary with dark corner triangles; median and faint systems are at
-sky level at their edges and look seamless. (Per-cutout `LogNorm` percentile stretches
-in the viewing notebook amplify this selection.)
+The rotation affects **every** cutout identically. The boundary appears only when the
+system's flux at the tile edge rises above the sky background in the gaps. In
+`05_romanisim/sca01`, the brightest and most extended systems show a crisp, ~30°-rotated
+square boundary with dark corner triangles. Median and faint systems have edge flux near
+the sky level, so their boundaries blend into the background. Per-cutout `LogNorm`
+percentile stretches in the viewing notebook make this brightness selection more visible.
 
 ## Evidence
 
-- Diagnostic mosaic PNGs saved by the pipeline, e.g.
-  `<data_dir>/<label>/05_romanisim/sca01/sca01_F106_batch0_mosaic.png`: the detector
-  footprint (and the tiled overlap region at its center) is a ~30°-rotated square in
-  the north-up mosaic frame.
-- Ranking sca01 cutouts by peak brightness: the top handful all show boundary +
-  triangles; median/faint ones show none.
+- The mosaic at `<data_dir>/<label>/05_romanisim/sca01/sca01_F106_batch0_mosaic.png` shows the detector footprint and central tiled-overlap region as a roughly 30°-rotated square in the north-up frame.
+- Ranking sca01 cutouts by peak brightness shows the boundary and corner triangles in the brightest few. Median and faint cutouts show neither.
 
-## Fix
+## Detector-Aligned Cutouts
 
-Implemented in `mejiro/pipeline/_05_romanisim.py`:
+1. **Per-SCA resampling rotation.** In `process_batch`, measure the position angle of
+   the dither-0 detector +y axis from `wcses[0]` at the detector center. Pass that angle
+   as `rotation` to the resampling step. This aligns mosaic +y with detector +y. The
+   angle varies by about 1° and flips by 180° for SCAs 3/6/9/12/15/18, so compute it
+   separately for each SCA.
+2. **Lossless parity flip.** Rotation preserves the mosaic's east-left parity. After
+   aligning the +y axes, mosaic +x points opposite detector +x. Apply `np.fliplr` to each
+   extracted cutout to restore the input `SyntheticImage` orientation. This axis reversal
+   does not resample pixels. The validator preserves finite, nonnegative pixels and
+   rejects invalid model output without filling it.
+3. **Distortion margin.** Keep `DISTORTION_GUARD` at 7 px. After detector alignment, the
+   remaining tile mismatch comes from per-dither distortion differences. A source falls
+   in a different detector quadrant in each BOXGAP4_1 dither, with roughly 0.5° of local
+   rotation. The 7-px pitch margin absorbs this difference.
 
-1. **Per-batch resample rotation.** In `process_batch`, the position angle of the
-   dither-0 detector +y axis is measured from `wcses[0]` at the detector center and
-   passed to the resample step as `rotation` (romancal `ResampleStep` spec:
-   `rotation = float(default=None)  # Position angle of +y axis in degrees`). This
-   makes the mosaic +y axis parallel to the detector +y axis. It must be computed per
-   SCA (the angle varies by ~±1° and flips 180° for SCAs 3/6/9/12/15/18).
-2. **Lossless parity flip.** `rotation` cannot change the mosaic's parity (it stays
-   east-left, mirrored vs. the detector grid): with the axes made parallel, the mosaic
-   +x axis is *antiparallel* to the detector +x axis. Each extracted cutout is therefore
-   `np.fliplr`-ed — a lossless axis reversal, no resampling — to restore the input
-   SyntheticImage orientation. The exact flip was confirmed empirically by comparing a
-    bright cutout against `validate_rendered_image(synth.data)` of its input pickle. The validator
-    preserves every finite nonnegative pixel and rejects invalid model output without filling it.
-3. **Comment fix.** The `PA_APER = 0.0` comment no longer claims north alignment.
-4. **`DISTORTION_GUARD` stays at 7 px.** With the mosaic detector-aligned, the residual
-   tile-to-tile misalignment is only the per-dither distortion difference (a source
-   lands in a different detector quadrant in each of the four BOXGAP4_1 dithers,
-   ~±0.5° local rotation), which the 7-px pitch margin absorbs.
-
-Note the fix changes future pipeline runs only; existing `.npy` cutouts must be
-regenerated to get detector-aligned orientation.
+Existing `.npy` cutouts keep their original orientation. Regenerate them to apply the
+detector-aligned orientation.

@@ -1,127 +1,98 @@
-# Review: romanisim → romancal `MosaicPipeline` usage in `romanisim_l3_pipeline.py`
+# romanisim L2 products in romancal mosaics
 
-*Review of `mejiro/pipeline/romanisim_l3_pipeline.py` (2026-07-14), verified against the
-installed sources in the `mejiro-v3` conda env: **romancal 0.22.0**, **romanisim 0.13.0**.*
+*Behavior of `mejiro/pipeline/romanisim_l3_pipeline.py`, checked 2026-07-14 against
+**romancal 0.22.0** and **romanisim 0.13.0**.*
 
-## Verdict
+## L2-to-L3 handoff
 
-The romanisim → `MosaicPipeline` hand-off is **correct and idiomatic** for romancal
-0.22.0. The metadata patching that makes romanisim L2s digestible by romancal is
-exactly what is needed, and every step override is well-motivated. One deliberate
-trade-off worth being aware of: cosmic rays are simulated (`crparam=dict()`) while
-`outlier_detection` is skipped (details below).
-
-## Is the romanisim → romancal interface correct?
-
-Yes, on all four counts:
+Metadata updates let romancal read romanisim L2 products. The step overrides match
+this simulated-data workflow. Cosmic rays are simulated with `crparam=dict()`, and
+`outlier_detection` is skipped. Residual hits can therefore remain in the mosaic.
 
 1. **L2 products.** `image.simulate(..., level=2, extra_counts=...)` returns a genuine
    L2 `ImageModel` — DN/s slopes, `err`, `var_rnoise`/`var_poisson`, DQ, and a gwcs —
-   and writing `{'roman': im}` to `*_cal.asdf` is the standard romanisim output format
-   that romancal opens natively.
+  Writing `{'roman': im}` to `*_cal.asdf` produces the standard romanisim output
+  format, which romancal opens natively.
 
-2. **The `CAL_STEP` injection is required, not cosmetic.** romanisim never populates
-   `cal_step` for L2 output (only its L3 module, `romanisim/l3.py`, does), and
-   `FluxStep.apply_flux_correction` reads `model.meta.cal_step["flux"]` to decide
-   whether to apply the DN/s → MJy/sr conversion. Setting `flux: 'N/A'` (rather than
-   `COMPLETE`) correctly makes the conversion run; the `COMPLETE`/`N/A` values for the
-   other steps satisfy the L2 schema.
+2. **The `CAL_STEP` metadata controls flux conversion.** romanisim populates
+  `cal_step` for L3 output in `romanisim/l3.py`, but leaves it empty for L2 output.
+  `FluxStep.apply_flux_correction` reads `model.meta.cal_step["flux"]` before
+  converting DN/s to MJy/sr. Setting `flux: 'N/A'` lets the conversion run. The
+  `COMPLETE` and `N/A` values assigned to other steps satisfy the L2 schema.
 
-3. **The `abs()` fixups are required.** romanisim's `update_photom_keywords` computes
-   pixel area as a signed cross product (`sin(angle)` flips sign with WCS handedness),
-   which can make `pixel_area` and hence `conversion_megajanskys` negative. Since
-   `FluxStep` multiplies the data by `conversion_megajanskys`, a negative value would
-   flip the sign of the whole image. The photometry is also self-consistent end to
-   end: the script scales electrons using `get_abflux(band, sca)`, and romanisim's
-   conversion factor is `gain·3631/abflux/10⁶/pixel_area` using the same abflux, so
-   the DN/s → MJy/sr round trip closes.
+3. **The `abs()` fixups preserve the image sign.** romanisim's
+  `update_photom_keywords` computes pixel area as a signed cross product. The sign
+  of `sin(angle)` changes with WCS handedness, which can make `pixel_area` and
+  `conversion_megajanskys` negative. `FluxStep` multiplies the data by that
+  conversion factor, so a negative value would reverse the image sign. The script
+  scales electrons with `get_abflux(band, sca)`. romanisim uses the same `abflux` in
+  `gain·3631/abflux/10⁶/pixel_area`, so the DN/s-to-MJy/sr round trip closes.
 
 4. **Association + invocation.** `asn_from_list([...], with_exptype=True)` with each
-   member typed `'science'`, dumped to JSON, is the standard way to feed multiple L2s
-   to the pipeline, and `MosaicPipeline.call(asn_path, ...)` is the correct entry
-   point. Note this romancal version's `MosaicPipeline` runs
-   `flux → skymatch → outlier_detection → resample → source_catalog`; there is no
-   tweakreg (astrometric alignment), which is fine here because the WCSes are
-   simulator-exact.
+  member typed `'science'` and dumped to JSON feeds multiple L2 products to the
+  pipeline. `MosaicPipeline.call(asn_path, ...)` is its entry point. In romancal
+  0.22.0, the steps run in this order: `flux → skymatch → outlier_detection →
+  resample → source_catalog`. The pipeline has no `tweakreg` astrometric-alignment
+  step. The simulated WCS solutions are exact, so alignment is unnecessary here.
 
-## The parameters, one by one
+## Pipeline settings
 
-### Pipeline-level (spec: `save_results`, `on_disk`, `resample_on_skycell`)
+### Pipeline-level settings for `save_results`, `on_disk`, and `resample_on_skycell`
 
-- **`save_results=True`** — makes the pipeline write `{product_name}_coadd.asdf`;
-  necessary because the script reads the mosaic back from disk via the
-  `*_coadd.asdf` glob.
+- **`save_results=True`** — writes `{product_name}_coadd.asdf`. The script reads
+  the mosaic back from disk using the `*_coadd.asdf` glob.
 - **`output_dir=batch_dir`** — routes the multi-GB coadd into the per-batch working
-  directory that gets `rmtree`'d after cutout extraction. Appropriate.
+  directory. The script removes that directory after cutout extraction.
 - **`resample_on_skycell=False`** — with the default `True`, resample and outlier
-  detection would try to build the output WCS from the Roman skycell tessellation
-  encoded in the association. This association has no skycell (`target=''`), so
-  `False` correctly forces the output grid to be computed from the union of the four
-  dither footprints at native pixel scale. (With `True` it would fall back with a
-  warning; `False` is the explicit, correct choice.)
+  detection build the output WCS from the Roman skycell tessellation in the
+  association. This association has no skycell (`target=''`). Setting this option
+  to `False` builds the output grid from the four dither footprints at native pixel
+  scale. The `True` setting falls back with a warning.
 - **`on_disk`** left at its default `False` — models stay in memory, consistent with
-  the script's memory strategy (few workers, `maxtasksperchild=1`).
+  the script's use of few workers and `maxtasksperchild=1`.
 
 ### Step overrides
 
-- **`skymatch: skip=True`** — SkyMatch measures and reconciles sky-level offsets
-  between overlapping exposures. All four dithers are simulated with identical
-  zodiacal background, so there is nothing to match; skipping saves time. Because
-  romanisim L2s carry no `meta.background`, resample then treats the background as
-  level 0 / already-subtracted and subtracts nothing — so the sky stays in the
-  mosaic, matching the L2 sibling pipeline's cutouts. Suitable.
+- **`skymatch: skip=True`** — SkyMatch measures sky-level offsets between overlapping
+  exposures. The four dithers use the same simulated zodiacal background, so
+  skipping this step saves time. romanisim L2 products have no `meta.background`,
+  so resample treats the background as zero and subtracts nothing. The mosaic keeps
+  the sky, as do the L2 sibling-pipeline cutouts.
 - **`outlier_detection: skip=True`** — this is the drizzle-median CR/outlier
   rejection across exposures. Skipping is defensible because romanisim flags
-  simulated CR hits as `jump_det` per resultant and its ramp fitter
-  (`fit_ramps_casertano`) excludes those resultants
-  (`dq_do_not_use = saturated | jump_det`), so the L2 slopes are already largely
-  CR-cleaned. **Caveat:** `crparam=dict()` in the `image.simulate` call means CRs
-  *are* simulated, ramp-level rejection is not perfect, and with outlier detection
-  off any residual CR artifacts propagate straight into the mosaic and cutouts. If
-  pristine cutouts matter more than realism, pass `crparam=None` (no CRs) or unskip
-  the step; as-is it is a reasonable speed/realism trade.
+  simulated CR hits as `jump_det` per resultant. Its ramp fitter,
+  `fit_ramps_casertano`, excludes those resultants with
+  `dq_do_not_use = saturated | jump_det`, so the L2 slopes are largely CR-cleaned.
+  The simulation still includes CRs through `crparam=dict()`, and ramp-level
+  rejection is imperfect. With outlier detection off, residual artifacts can reach
+  the mosaic and cutouts. Set `crparam=None` to omit CRs or enable outlier detection
+  to reject residual hits across exposures.
 - **`source_catalog: skip=True`** — builds a source catalog and segmentation map from
-  the mosaic, including PSF fitting. Irrelevant here since cutouts are extracted at
-  known sky positions via the mosaic WCS; skipping avoids substantial runtime. The
-  coadd is saved by the resample step regardless, so skipping the final step costs
-  nothing.
-- **`resample: pixel_scale_ratio=1.0`** — ratio of output to input pixel scale; 1.0
-  keeps native 0.11″ Roman pixels so the L3 cutouts sample the sky identically to
-  the L2 pipeline's cutouts (same `tile_size`, same format). This is the spec
-  default, so passing it is explicit documentation rather than a behavior change.
-- **`resample: rotation=None`** — position angle of the output +y axis; `None` means
-  "inherit the mean orientation of the inputs" (vs `0.0`, which would force exact
-  north-up). Since `PA_APER=0` already puts the detector rows ~north-aligned, `None`
-  keeps output pixels aligned with input pixels and avoids drizzle rotation blur.
-  Also the spec default — an explicit no-op.
+  the mosaic, including PSF fitting. Cutouts use known sky positions and the mosaic
+  WCS, so the catalog is unnecessary. Skipping this step avoids substantial
+  runtime. The resample step still saves the coadd.
+- **`resample: pixel_scale_ratio=1.0`** — sets the output scale equal to the input
+  scale. This keeps the native 0.11″ Roman pixel scale, so L3 cutouts match the L2
+  pipeline's `tile_size` and sampling. This is the specification default.
+- **`resample: rotation=None`** — uses the mean input orientation for the output
+  +y axis. A value of `0.0` forces exact north-up. Since `PA_APER=0` already aligns
+  detector rows roughly north, `None` keeps output and input pixels aligned and
+  avoids drizzle rotation blur. This is also the specification default.
 
-### Resample defaults left untouched (all appropriate)
+### Resample defaults
 
-- `pixfrac=1.0` + `kernel='square'` — plain shift-and-add drizzle; shrinking pixfrac
-  only pays off with a finer output grid, which is not used here.
-- `weight_type='ivm'` — inverse read-noise-variance weighting; correct error
-  propagation, and romanisim populates `var_rnoise`.
+- `pixfrac=1.0` + `kernel='square'` — shift-and-add drizzle. A smaller pixfrac is
+  useful with a finer output grid, which this workflow does not use.
+- `weight_type='ivm'` — inverse read-noise-variance weighting. romanisim populates
+  `var_rnoise`, which supports error propagation.
 - `fillval='NAN'` — matches the script's NaN-padded cutout extraction.
-- `good_bits='~DO_NOT_USE+NON_SCIENCE'` — `JUMP_DET` pixels remain usable, which is
-  right since the ramp fit already handled them.
+- `good_bits='~DO_NOT_USE+NON_SCIENCE'` — keeps `JUMP_DET` pixels usable because the
+  ramp fit has already rejected those resultants.
 
-## Optional follow-ups (no changes required)
+## Alternative choices
 
-- Decide the CR question explicitly: `crparam=None` for clean cutouts, or unskip
-  `outlier_detection` — the 4-fold coverage is exactly the regime it is designed for.
-- A `pixel_scale_ratio < 1` (e.g. 0.5) would exploit the 4-point dither for
-  resolution recovery, at the cost of breaking output-format parity with the L2
-  pipeline — only worth it if the downstream consumer can handle a different pixel
-  scale.
-
-## Sources checked
-
-All claims verified directly against the installed packages in
-`/data/bwedig/.conda/envs/mejiro-v3`:
-
-- romancal: `pipeline/mosaic_pipeline.py`, `flux/flux_step.py`,
-  `resample/resample_step.py`, `resample/resample.py`, `skymatch`,
-  `outlier_detection`, `source_catalog` step specs, `associations/asn_from_list.py`
-- romanisim: `image.py` (`simulate`, `make_l2`), `l1.py` (CR injection, DQ),
-  `util.py` (`update_photom_keywords`), `parameters.py` (`dq_do_not_use`)
-- stpipe: `step.py` (skip semantics)
+- Setting `crparam=None` omits simulated cosmic rays. Enabling
+  `outlier_detection` can reject residual hits across the four exposures.
+- A `pixel_scale_ratio < 1`, such as 0.5, can recover resolution from the four-point
+  dither. It changes the output scale relative to the L2 pipeline, so downstream
+  consumers must support the higher-resolution cutouts.

@@ -115,6 +115,8 @@ class SyntheticImage:
         """
         start = time.time()
         selected_backend = validate_backend(strong_lens.backend if backend is None else backend)
+        if selected_backend != 'chalcedon' and strong_lens.has_distinct_source_planes and not deflector_only:
+            raise NotImplementedError('Distinct source planes require the Chalcedon backend')
         if selected_backend != strong_lens.backend:
             strong_lens = deepcopy(strong_lens)
             strong_lens.backend = selected_backend
@@ -124,7 +126,8 @@ class SyntheticImage:
                     strong_lens.lens_model_list_macromodel, z_lens=strong_lens.z_lens,
                     z_source=strong_lens.z_source, lens_redshift_list=strong_lens.lens_redshift_list_macromodel,
                     cosmo=strong_lens.cosmo,
-                    multi_plane=len(set(strong_lens.lens_redshift_list_macromodel)) > 1,
+                    multi_plane=(len(set(strong_lens.lens_redshift_list_macromodel)) > 1
+                                 or selected_backend == 'chalcedon' and strong_lens.has_distinct_source_planes),
                 )
         backend_models = get_backend(selected_backend)
         Coordinates, PixelGrid = backend_models.Coordinates, backend_models.PixelGrid
@@ -277,13 +280,17 @@ class SyntheticImage:
             point_source_class = None
 
         # ray-shoot
+        source_geometry = {}
+        if selected_backend == 'chalcedon' and self.strong_lens.has_distinct_source_planes:
+            source_geometry['source_redshift_list'] = self.strong_lens.source_redshift_list
         image_model = ImageModel(data_class=self.pixel_grid,
                                  psf_class=self.psf_class,
                                  lens_model_class=self.strong_lens.lens_model,
                                  source_model_class=self.strong_lens.source_light_model,
                                  lens_light_model_class=self.strong_lens.lens_light_model,
                                  point_source_class=point_source_class,
-                                 kwargs_numerics=kwargs_numerics)
+                                 kwargs_numerics=kwargs_numerics,
+                                 **source_geometry)
         self.data = image_model.image(kwargs_lens=self.strong_lens.kwargs_lens,
                                        kwargs_source=self.strong_lens.kwargs_source,
                                        kwargs_lens_light=self.strong_lens.kwargs_lens_light,

@@ -12,8 +12,8 @@ def test_fit_sersic_roundtrip():
     """
     Test that fit_sersic recovers known Sersic parameters from a synthetic image.
     """
-    from lenstronomy.LightModel.light_model import LightModel
-    from lenstronomy.Util import util as lenstronomy_util
+    from chalcedon.imaging import LightModel
+    from chalcedon.imaging import util as chalcedon_util
 
     # generate a known Sersic image
     num_pix = 51
@@ -28,7 +28,7 @@ def test_fit_sersic_roundtrip():
         'e2': 0.04,
     }
 
-    x, y, _, _, _, _, _, _ = lenstronomy_util.make_grid_with_coordtransform(
+    x, y, _, _, _, _, _, _ = chalcedon_util.make_grid_with_coordtransform(
         numPix=num_pix, deltapix=pixel_scale, subgrid_res=1,
         left_lower=False, inverse=False)
     light_model = LightModel(['SERSIC_ELLIPSE'])

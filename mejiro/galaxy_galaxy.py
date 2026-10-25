@@ -61,6 +61,11 @@ class GalaxyGalaxy(StrongLens):
         from mejiro.lensing import get_backend
 
         backend_models = get_backend(self.backend)
+        source_options = {}
+        if self.has_distinct_source_planes:
+            if self.backend != 'chalcedon':
+                raise NotImplementedError('Distinct source planes require the Chalcedon backend')
+            source_options['z_source'] = self.source_redshift_list[0]
 
         source_x = self.kwargs_source[0]['center_x']
         source_y = self.kwargs_source[0]['center_y']
@@ -78,6 +83,7 @@ class GalaxyGalaxy(StrongLens):
             lens_parameters,
             search_window=self.get_einstein_radius() * 6,
             min_distance=self.get_einstein_radius() * 6 / 200,
+            **source_options,
         )
 
     @staticmethod   
