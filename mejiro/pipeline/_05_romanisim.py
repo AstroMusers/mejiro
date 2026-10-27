@@ -344,7 +344,7 @@ def plot_dither_overlap(wcses, source_skies, tile_size, pattern_name, sca_num, b
     ax.set_aspect('equal')
     ax.set_xlabel('dither-0 x [px]')
     ax.set_ylabel('dither-0 y [px]')
-    ax.set_title(f'SCA {sca_num:02d}, {band} - {pattern_name}: {n_dithers} dithers, '
+    ax.set_title(f'SCA {sca_num:02d}, {band} - {pattern_name}, {n_dithers} dithers, '
                  f'{len(source_skies)} tiles of {tile_size} px (pitch {tile_size + DISTORTION_GUARD} px)')
     ax.legend(loc='upper left', bbox_to_anchor=(1.02, 1.0), fontsize='small', frameon=False)
     ax.autoscale_view()

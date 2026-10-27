@@ -1,5 +1,7 @@
 import numpy as np
 
+_EINSTEIN_MASS_NORMALIZATION = 10 ** 11.09
+
 
 def stellar_to_main_halo_mass(stellar_mass, z, sample=True):
     """
@@ -50,11 +52,11 @@ def stellar_to_main_halo_mass(stellar_mass, z, sample=True):
     
 
 def mass_to_einstein_radius(m, d_l, d_s, d_ls):
-    return np.sqrt(m / np.power(10, 11.09)) * np.sqrt(d_ls / (d_l * d_s)) 
+    return np.sqrt(m / _EINSTEIN_MASS_NORMALIZATION) * np.sqrt(d_ls / (d_l * d_s))
 
 
 def einstein_radius_to_mass(einstein_radius, d_l, d_s, d_ls):
-    return ((d_l * d_s) / d_ls) * np.power(einstein_radius, 2) * np.power(10, 11.09)
+    return ((d_l * d_s) / d_ls) * np.power(einstein_radius, 2) * _EINSTEIN_MASS_NORMALIZATION
 
 
 def einstein_radius_to_velocity_dispersion(einstein_radius, z_lens, z_source, cosmo):

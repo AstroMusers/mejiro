@@ -50,7 +50,7 @@ So `MultiPlane` **never** receives `cosmo=None` through the public API, the firs
 unreachable from `LensModel`, and the warning is unconditional: it fires on every single multi-plane
 model, with no way for a caller to avoid it.
 
-Note that `lens_model.py:102-106` already implements the intended logic correctly one layer up — it
+Note that `lens_model.py:102-106` already implements the intended logic correctly one layer up – it
 warns only when `cosmology_sampling is True`. `MultiPlane`'s copy is the unguarded one.
 
 ## Minimal reproducer
@@ -80,7 +80,7 @@ is provided."
 
 ## Suggested fix
 
-Warn only when the caller supplies **both** a `cosmo` and a non-default `cosmology_model` — the one
+Warn only when the caller supplies **both** a `cosmo` and a non-default `cosmology_model` – the one
 situation where the two can actually disagree:
 
 ```python

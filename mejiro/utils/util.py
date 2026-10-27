@@ -1247,3 +1247,13 @@ def circular_aperture_mask(shape, center_xy, radius):
     yy, xx = np.ogrid[:ny, :nx]
     cx, cy = center_xy
     return (xx - cx) ** 2 + (yy - cy) ** 2 <= radius ** 2
+
+
+def mask_central_circle(image, radius_arcsec, pixel_scale, center=None, fill_value=np.nan):
+    """Fill a circular image region, with radius in arcseconds and center in row-column pixels."""
+    ny, nx = image.shape
+    center_y, center_x = (ny // 2, nx // 2) if center is None else center
+    mask = circular_aperture_mask(
+        image.shape, (center_x, center_y), radius_arcsec / pixel_scale.value
+    )
+    return np.where(mask, fill_value, image)

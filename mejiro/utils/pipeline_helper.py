@@ -307,7 +307,7 @@ class PipelineHelper:
            parameters under private ``__dict__`` keys (``_H0``, …) that astropy
            7.x's ``Parameter`` descriptors don't read, and 7.x derives
            ``Onu0``/``Ok0`` from an internal ``_nu_info`` object the old pickle
-           lacks — so the loaded cosmology's distance methods would raise. The
+           lacks – so the loaded cosmology's distance methods would raise. The
            ``__setstate__`` rebuilds such legacy cosmologies from their init
            parameters; native astropy-7 pickles are unaffected. See
            :func:`_mejiro_v2_cosmology_setstate`.
@@ -317,7 +317,7 @@ class PipelineHelper:
         spawned processes do not inherit these mutations), whenever that script
         consumes pickles produced by ``mejiro-v2``. After re-pickling those
         artifacts under ``mejiro-v3``, the call can be removed without further
-        changes — it is a pure in-process shim with no other side effects.
+        changes – it is a pure in-process shim with no other side effects.
         """
         import sys
         import importlib

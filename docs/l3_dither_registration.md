@@ -20,7 +20,7 @@ each axis. The dithers are therefore mutually misregistered by up to ~0.85 px, s
 is an average of N sub-pixel-shifted copies of the same system rather than N registered ones.
 
 This is worst for exactly the patterns it matters most for. `roman_data_challenge_rung_1`
-v3.0 was produced with **SUB6**, whose commanded offsets are 0.019-0.090 arcsec — that is
+v3.0 was produced with **SUB6**, whose commanded offsets are 0.019-0.090 arcsec – that is
 **0.17 to 0.82 detector pixels**. A sub-pixel pattern samples the PSF at chosen phases.
 `int(round(...))` snaps each phase to a whole pixel, replacing the commanded pattern with
 an uncontrolled rounding residual. The co-add therefore no longer follows the requested
@@ -38,7 +38,7 @@ There is no dramatic visual artifact. The consequences are quantitative:
 - Core peak surface brightness is systematically low by a few percent.
 - **The effective PSF of the co-add is broader than the one the images were built with.** The
   step-04 `SyntheticImage`s are convolved with the STPSF PSF for the system's detector
-  position, and step 05 then co-adds N copies of that displaced by the rounding residuals —
+  position, and step 05 then co-adds N copies of that displaced by the rounding residuals –
   an extra convolution nobody asked for. Any lens modeling that assumes the STPSF PSF (the
   natural choice, and what `psf.oversamples` / the `cached_psfs` directory provide) is using
   a PSF that is too narrow. Note the current `_06_h5_export.py` does not write a `psfs` group
@@ -73,7 +73,7 @@ for e, sky in zip(electrons, source_skies):
 ```
 
 `_place_tile` ([_05_romanisim.py:309](../mejiro/pipeline/_05_romanisim.py#L309)) does an
-array slice assignment — it can only place a tile on whole pixels. The `int(round(...))`
+array slice assignment – it can only place a tile on whole pixels. The `int(round(...))`
 therefore displaces the rendered system from its true sky position by the rounding residual,
 independently in each dither.
 
@@ -81,7 +81,7 @@ independently in each dither.
 
 `MosaicPipeline`'s resample step drizzles each L2 through its own WCS onto the mosaic grid.
 It has no knowledge of the rounding, so it places dither *d*'s rendering at the position the
-WCS says it belongs — which is offset from where the flux actually was rendered. The N
+WCS says it belongs – which is offset from where the flux actually was rendered. The N
 renderings land at N different mosaic positions and are averaged there.
 
 `_extract_cutout` then slices around the *true* sky position via `mos_wcs.world_to_pixel`, so
@@ -103,7 +103,7 @@ counts) and a gap-filling pattern for comparison:
 | BOXGAP6_1 | 09 | 0.232 px | 0.490 px | 0.802 px | 0.910 px |
 
 "Mutual misregistration" is `max - min` of the per-dither residual across the 6 dithers, per
-axis — i.e. how far apart the extreme dithers place the same system. **No tile slot had all
+axis – i.e. how far apart the extreme dithers place the same system. **No tile slot had all
 six dithers round to the same pixel** (0 of 62 sampled, both SCAs), so no system escapes it.
 
 Per-dither SUB6 residuals for one representative tile slot (dy, dx in detector px):
@@ -140,13 +140,13 @@ native = bin_to_native(smooth, ov, src_pix.x - ix, src_pix.y - iy)
 _place_tile(counts, native, ix, iy, tile_size)
 ```
 
-`DISTORTION_GUARD = 7` and the overlap-grid logic are unaffected — this changes only where
+`DISTORTION_GUARD = 7` and the overlap-grid logic are unaffected – this changes only where
 within its cell a tile is rendered, not the cell layout.
 
 ### Why the shift has to be on the oversampled grid
 
-The option originally preferred here — shifting the 91x91 tile in place with
-`scipy.ndimage.shift` — is wrong at the percent level, and for a reason that is easy to miss.
+The option originally preferred here – shifting the 91x91 tile in place with
+`scipy.ndimage.shift` – is wrong at the percent level, and for a reason that is easy to miss.
 Roman WFI at 0.11"/px is undersampled (lambda/D ~ 0.129" at 1.5 um needs ~0.064"/px for
 Nyquist), so the shift theorem does not apply to the tile: the interpolation is
 aliasing-limited exactly at the PSF core, where the substructure signal is measured.
@@ -171,8 +171,8 @@ Two things fall out of that table:
   ~4% error in a point-source co-add. Quantization alone would require ~50x oversampling.
   The chosen method combines an oversampled render with a sub-pixel shift.
 
-On a resolved feature (Sersic n=1, Re=0.20") the native shift does fine — 0.04% on the
-co-add — which is why this is easy to get wrong: it only fails on the unresolved core.
+On a resolved feature (Sersic n=1, Re=0.20") the native shift does fine – 0.04% on the
+co-add – which is why this is easy to get wrong: it only fails on the unresolved core.
 
 ### Implementation notes
 
@@ -201,7 +201,7 @@ Covered by unit tests:
   against `_place_tile`, guarding the sign-flip issue described in
   [l3_cutout_orientation.md](l3_cutout_orientation.md). The test also compares accuracy
   against the real F129 kernel at `tests/test_data/F129_1_2048_2048_5_101.npy`.
-- `tests/test_pipeline/test_dither_subpixel_phases.py` — using the real SUB6 dither WCSes:
+- `tests/test_pipeline/test_dither_subpixel_phases.py` – using the real SUB6 dither WCSes:
   dither 0 is exact, the other dithers carry residuals spanning >0.5 px with no tile slot
   escaping, and binning at those phases yields six *distinct* detector samplings rather than
   six copies.
@@ -216,7 +216,7 @@ Still to do on the rebuilt data:
   six renderings should land at the six commanded phases.
 - Compare a bright system's co-added cutout against `validate_rendered_image(synth.data)` of its step-04
   input, as was done for the parity flip in
-  [l3_cutout_orientation.md](l3_cutout_orientation.md) — the core should sharpen.
+  [l3_cutout_orientation.md](l3_cutout_orientation.md) – the core should sharpen.
 - Size the residual error against the substructure signal: for one lens with and without a
   pyHalo realization, compare the substructure-induced pixel differences to the residual
   error of the new path.
@@ -226,12 +226,12 @@ Still to do on the rebuilt data:
 This changes every pixel of every L3 cutout. Because the fix depends on oversampled step-04
 input, it requires a **step-04 re-run as well as step-05** (~7 h for the rung-1 config, 219
 batches), followed by `calculate_snrs.py` and `_06_h5_export.py`. Landed as three separate
-commits — [step04_oversampled_rendering.md](step04_oversampled_rendering.md), this, and
-[subpixel_phase.md](subpixel_phase.md) — so the effect of each stays attributable even though
+commits – [step04_oversampled_rendering.md](step04_oversampled_rendering.md), this, and
+[subpixel_phase.md](subpixel_phase.md) – so the effect of each stays attributable even though
 one rebuild covers all three. If the `weight_type` fix for the corrupted bright-core pixels
 is scheduled alongside, same rule.
 
-Affected datasets are the L3 ones — `roman_data_challenge_rung_1` and
+Affected datasets are the L3 ones – `roman_data_challenge_rung_1` and
 `roman_data_challenge_rung_1_unlabeled`. Both configs now set
 `synthetic_image.oversample: 5`.
 `ella` is built with `05_galsim` (units DN), never goes through `process_batch_l3`, and
@@ -246,9 +246,9 @@ BOXGAP6_1 gives 441.
 
 ## Related
 
-- [step04_oversampled_rendering.md](step04_oversampled_rendering.md) — the prerequisite for
+- [step04_oversampled_rendering.md](step04_oversampled_rendering.md) – the prerequisite for
   this fix, and a defect in its own right (the detector pixel response was applied twice).
-- [subpixel_phase.md](subpixel_phase.md) — the L2 counterpart: every system sat at sub-pixel
+- [subpixel_phase.md](subpixel_phase.md) – the L2 counterpart: every system sat at sub-pixel
   phase (0, 0) in every dataset.
-- [l3_cutout_orientation.md](l3_cutout_orientation.md) — the earlier orientation and parity
+- [l3_cutout_orientation.md](l3_cutout_orientation.md) – the earlier orientation and parity
   defect in the same code path. Rebuild datasets affected by either fix.

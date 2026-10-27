@@ -193,7 +193,7 @@ def process_lens(params):
 
             ax[1, 0].set_title('Synthetic Residual')
             ax[1, 1].set_title('Full Exposure With Subhalo')
-            ax[1, 2].set_title(f'SNR Array: {pixels_unmasked} pixels, {dof} dof')
+            ax[1, 2].set_title(f'SNR Array, {pixels_unmasked} pixels, {dof} dof')
 
             plt.colorbar(ax00, ax=ax[0, 0])
             plt.colorbar(ax01, ax=ax[0, 1])
@@ -203,7 +203,7 @@ def process_lens(params):
             plt.colorbar(ax12, ax=ax[1, 2])
 
             plt.suptitle(
-                f'StrongLens {lens.name}, Image Shape: {exposure.data.shape}')
+                f'StrongLens {lens.name}, image shape {exposure.data.shape}')
             plt.savefig(os.path.join(image_save_dir, f'{lens.name}_{run}_mass{mass_idx}.png'))
             plt.close()
 

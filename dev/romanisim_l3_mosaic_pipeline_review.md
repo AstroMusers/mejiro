@@ -10,7 +10,7 @@ this simulated-data workflow. Cosmic rays are simulated with `crparam=dict()`, a
 `outlier_detection` is skipped. Residual hits can therefore remain in the mosaic.
 
 1. **L2 products.** `image.simulate(..., level=2, extra_counts=...)` returns a genuine
-   L2 `ImageModel` — DN/s slopes, `err`, `var_rnoise`/`var_poisson`, DQ, and a gwcs —
+   L2 `ImageModel` – DN/s slopes, `err`, `var_rnoise`/`var_poisson`, DQ, and a gwcs –
   Writing `{'roman': im}` to `*_cal.asdf` produces the standard romanisim output
   format, which romancal opens natively.
 
@@ -39,26 +39,26 @@ this simulated-data workflow. Cosmic rays are simulated with `crparam=dict()`, a
 
 ### Pipeline-level settings for `save_results`, `on_disk`, and `resample_on_skycell`
 
-- **`save_results=True`** — writes `{product_name}_coadd.asdf`. The script reads
+- **`save_results=True`** – writes `{product_name}_coadd.asdf`. The script reads
   the mosaic back from disk using the `*_coadd.asdf` glob.
-- **`output_dir=batch_dir`** — routes the multi-GB coadd into the per-batch working
+- **`output_dir=batch_dir`** – routes the multi-GB coadd into the per-batch working
   directory. The script removes that directory after cutout extraction.
-- **`resample_on_skycell=False`** — with the default `True`, resample and outlier
+- **`resample_on_skycell=False`** – with the default `True`, resample and outlier
   detection build the output WCS from the Roman skycell tessellation in the
   association. This association has no skycell (`target=''`). Setting this option
   to `False` builds the output grid from the four dither footprints at native pixel
   scale. The `True` setting falls back with a warning.
-- **`on_disk`** left at its default `False` — models stay in memory, consistent with
+- **`on_disk`** left at its default `False` – models stay in memory, consistent with
   the script's use of few workers and `maxtasksperchild=1`.
 
 ### Step overrides
 
-- **`skymatch: skip=True`** — SkyMatch measures sky-level offsets between overlapping
+- **`skymatch: skip=True`** – SkyMatch measures sky-level offsets between overlapping
   exposures. The four dithers use the same simulated zodiacal background, so
   skipping this step saves time. romanisim L2 products have no `meta.background`,
   so resample treats the background as zero and subtracts nothing. The mosaic keeps
   the sky, as do the L2 sibling-pipeline cutouts.
-- **`outlier_detection: skip=True`** — this is the drizzle-median CR/outlier
+- **`outlier_detection: skip=True`** – this is the drizzle-median CR/outlier
   rejection across exposures. Skipping is defensible because romanisim flags
   simulated CR hits as `jump_det` per resultant. Its ramp fitter,
   `fit_ramps_casertano`, excludes those resultants with
@@ -67,26 +67,26 @@ this simulated-data workflow. Cosmic rays are simulated with `crparam=dict()`, a
   rejection is imperfect. With outlier detection off, residual artifacts can reach
   the mosaic and cutouts. Set `crparam=None` to omit CRs or enable outlier detection
   to reject residual hits across exposures.
-- **`source_catalog: skip=True`** — builds a source catalog and segmentation map from
+- **`source_catalog: skip=True`** – builds a source catalog and segmentation map from
   the mosaic, including PSF fitting. Cutouts use known sky positions and the mosaic
   WCS, so the catalog is unnecessary. Skipping this step avoids substantial
   runtime. The resample step still saves the coadd.
-- **`resample: pixel_scale_ratio=1.0`** — sets the output scale equal to the input
+- **`resample: pixel_scale_ratio=1.0`** – sets the output scale equal to the input
   scale. This keeps the native 0.11″ Roman pixel scale, so L3 cutouts match the L2
   pipeline's `tile_size` and sampling. This is the specification default.
-- **`resample: rotation=None`** — uses the mean input orientation for the output
+- **`resample: rotation=None`** – uses the mean input orientation for the output
   +y axis. A value of `0.0` forces exact north-up. Since `PA_APER=0` already aligns
   detector rows roughly north, `None` keeps output and input pixels aligned and
   avoids drizzle rotation blur. This is also the specification default.
 
 ### Resample defaults
 
-- `pixfrac=1.0` + `kernel='square'` — shift-and-add drizzle. A smaller pixfrac is
+- `pixfrac=1.0` + `kernel='square'` – shift-and-add drizzle. A smaller pixfrac is
   useful with a finer output grid, which this workflow does not use.
-- `weight_type='ivm'` — inverse read-noise-variance weighting. romanisim populates
+- `weight_type='ivm'` – inverse read-noise-variance weighting. romanisim populates
   `var_rnoise`, which supports error propagation.
-- `fillval='NAN'` — matches the script's NaN-padded cutout extraction.
-- `good_bits='~DO_NOT_USE+NON_SCIENCE'` — keeps `JUMP_DET` pixels usable because the
+- `fillval='NAN'` – matches the script's NaN-padded cutout extraction.
+- `good_bits='~DO_NOT_USE+NON_SCIENCE'` – keeps `JUMP_DET` pixels usable because the
   ramp fit has already rejected those resultants.
 
 ## Alternative choices

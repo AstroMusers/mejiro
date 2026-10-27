@@ -68,7 +68,7 @@ def remap_source_images(strong_lens, mapping):
     cutouts (e.g. SLSim's COSMOS-Web). Whichever per-band image is sitting
     under a key at construction time defines the morphology that
     ``SyntheticImage`` will ray-shoot for that band. This helper lets the
-    caller swap which cutout backs which band — useful for experimenting
+    caller swap which cutout backs which band – useful for experimenting
     with alternative catalog→instrument band mappings without modifying
     the underlying catalog code.
 

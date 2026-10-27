@@ -394,7 +394,7 @@ def plot_source_placement(pixel_positions, dither_offsets, tile_size,
         ax.plot(cx, cy, 'k+', ms=10, mew=2)
 
         ax.set_aspect('equal')
-        ax.set_title(f'Dither {i}: ({x_off:+.1f}", {y_off:+.1f}")\n'
+        ax.set_title(f'Dither {i}, ({x_off:+.1f}", {y_off:+.1f}")\n'
                      f'pixel ({cx}, {cy})', fontsize=10)
         ax.set_xlabel('x (px)')
         ax.set_ylabel('y (px)')

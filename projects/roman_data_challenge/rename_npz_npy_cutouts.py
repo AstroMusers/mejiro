@@ -39,4 +39,4 @@ for src in tqdm(files):
 action = 'Would rename' if DRY_RUN else 'Renamed'
 print(f'{action} {renamed} files; skipped {skipped} (target already existed).')
 if DRY_RUN:
-    print('DRY_RUN is True — no files were changed. Set DRY_RUN = False to apply.')
+    print('DRY_RUN is True – no files were changed. Set DRY_RUN = False to apply.')

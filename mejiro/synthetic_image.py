@@ -352,7 +352,7 @@ class SyntheticImage:
         -----
         Not compatible with the galsim path (``_05_galsim.py``); that
         step requires the full SyntheticImage and will raise if it sees
-        lightweight outputs. ``self.pieces`` is ignored — per-piece arrays are
+        lightweight outputs. ``self.pieces`` is ignored – per-piece arrays are
         not serialized.
         """
         sl = self.strong_lens
@@ -606,7 +606,7 @@ class LightweightStrongLens:
     """Minimal ``StrongLens`` stand-in loaded from a lightweight ``.npz``.
 
     Exposes only the attributes and accessor methods the romanisim-path
-    pipeline reads from ``synthetic_image.strong_lens`` — redshifts,
+    pipeline reads from ``synthetic_image.strong_lens`` – redshifts,
     substructure flag, and the scalar ``get_*`` accessors. Each lightweight
     file is per-band, so the per-band magnitude accessors assert the
     requested band matches the stored band.

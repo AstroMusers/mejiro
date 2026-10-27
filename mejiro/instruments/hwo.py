@@ -31,7 +31,7 @@ class HWO(Instrument):
         -----
         ``super().__init__`` is called after instantiating ``self.telescope``
         and ``self.camera`` because ``bands`` is derived from
-        ``self.camera.bandnames`` — i.e., the supported filter set is
+        ``self.camera.bandnames`` – i.e., the supported filter set is
         determined by syotools rather than declared statically. The
         per-band detector and optical attributes are then reformatted from
         the syotools objects into mejiro's band-keyed dict format via

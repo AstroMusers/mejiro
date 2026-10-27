@@ -272,6 +272,27 @@ def test_build_meshgrid():
     np.testing.assert_allclose(Y[3, :], np.full(5, Y[3, 0]))
 
 
+@pytest.mark.parametrize("center, center_xy", [(None, (3, 2)), ((1, 2), (2, 1))])
+def test_mask_central_circle_preserves_notebook_center_and_radius_conventions(center, center_xy):
+    from astropy import units
+
+    image = np.arange(35, dtype=float).reshape(5, 7)
+    radius_arcsec = 0.5  # [arcsec]
+    pixel_scale = 0.5 * units.arcsec / units.pixel  # [arcsec / pixel]
+    expected_mask = np.zeros(image.shape, dtype=bool)
+    cx, cy = center_xy
+    expected_mask[cy, cx] = True
+    expected_mask[cy - 1, cx] = True
+    expected_mask[cy + 1, cx] = True
+    expected_mask[cy, cx - 1] = True
+    expected_mask[cy, cx + 1] = True
+
+    result = util.mask_central_circle(image, radius_arcsec, pixel_scale, center=center)
+
+    np.testing.assert_array_equal(np.isnan(result), expected_mask)
+    np.testing.assert_array_equal(result[~expected_mask], image[~expected_mask])
+
+
 def test_rotate_array():
     # use uint8 so PIL accepts the array on every platform/version
     arr = np.array([[10, 20, 30],

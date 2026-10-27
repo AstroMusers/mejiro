@@ -5,7 +5,7 @@
 [![ApJ](https://img.shields.io/badge/ApJ-10.3847/1538--4357/adc24f-3c5492)](https://doi.org/10.3847/1538-4357/adc24f)
 [![arXiv](https://img.shields.io/badge/arXiv-2506.03390-b31b1b.svg)](https://arxiv.org/abs/2506.03390)
 
-What would a galaxy-galaxy strong lens look like through a space telescope, and which details of its arcs would survive the instrument? We use `mejiro`[^1] to simulate those images and study their sensitivity to dark matter substructure. We support two lens forward-modeling backends, Lenstronomy and Chalcedon, with GalSim and romanisim providing detector-level integrations. SLSim survey generation and pyHalo realization generation are optional workflows.
+`mejiro`[^1] simulates galaxy-galaxy strong lenses through telescope and detector models. We use the simulated Roman images to study sensitivity to dark-matter substructure. We support two lens forward-modeling backends, Lenstronomy and Chalcedon, with GalSim and romanisim providing detector-level integrations. SLSim survey generation and pyHalo realization generation are optional workflows.
 
 ![Simulated Roman images of strong lenses](images/mosaic.png)
 
@@ -81,7 +81,7 @@ python examples/native_strong_lens.py --typefileplot png
 
 ![Native strong-lens scene and its light components](examples/native_strong_lens.png)
 
-The example assumes an SIE lens with Einstein radius 1.1 arcsec, external shear, a source at redshift 1.5 behind a lens at redshift 0.5, explicit Sersic profiles, and a Gaussian PSF of FWHM 0.12 arcsec. Its illustrative detector has 0.05-arcsec pixels and a magnitude zeropoint of 25. These are configured model predictions, not observations or a validated mission calibration.
+The example simulates an SIE lens with Einstein radius 1.1 arcsec, external shear, a source at redshift 1.5 behind a lens at redshift 0.5, explicit Sersic profiles, and a Gaussian PSF of FWHM 0.12 arcsec. Its detector model uses 0.05-arcsec pixels and a magnitude zeropoint of 25 as illustrative settings.
 
 The native backend supports SIS, SIE, EPL, point-mass, external-shear, convergence, NFW, truncated NFW, and elliptical NFW/Hernquist mass profiles. Sersic, Gaussian, Hernquist, interpolated images, and Cartesian shapelets are supported for light. Native multi-plane propagation uses Astropy distances. Elliptical halo labels inherited from CSE use direct projected-density quadrature rather than that expansion. Unsupported mass/light profiles, extinction/special options, and JAX flags raise explicitly rather than falling back to Lenstronomy. Adaptive requests currently use uniform supersampling, preserving integration rather than selective acceleration.
 
@@ -90,7 +90,7 @@ The base install includes both Chalcedon and Lenstronomy. `mejiro[survey]` and `
 > [!IMPORTANT]
 > ["The Roman View of Strong Gravitational Lenses" (Wedig et al. 2025)](https://doi.org/10.3847/1538-4357/adc24f) was produced with `mejiro` v1.0.0. To review that version of the code, [click here](https://github.com/AstroMusers/mejiro/tree/v1.0.0).
 
-The pipeline walkthrough in `examples/pipeline_walkthrough.ipynb` follows a lens scene through image formation so you can inspect the calculation at each step.
+The pipeline walkthrough in `examples/pipeline_walkthrough.ipynb` follows a lens scene through image formation, including PSF convolution and detector simulation.
 
 ![mejiro flow diagram](images/mejiro_flow_diagram.png)
 

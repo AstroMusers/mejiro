@@ -258,7 +258,7 @@ def make_figure(results, factors, top_factor, output_base):
     axes[0].legend(fontsize=6, frameon=False, loc='best')
     fig.suptitle(
         f"step-04 supersampling convergence at oversample={results['oversample']}, "
-        f"{results['band']}, {len(uids)} systems (reference: factor {top_factor})",
+        f"{results['band']}, {len(uids)} systems (reference factor {top_factor})",
         fontsize=8, y=1.04,
     )
     fig.tight_layout()

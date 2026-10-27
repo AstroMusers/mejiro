@@ -28,7 +28,7 @@ NumPy says this call pattern will become an error in a future release.
 ## Root cause
 
 `PixelKernelConvolution._static_fft` and `_static_pre_compute` (the `convolution_type="fft_static"`
-path, which is lenstronomy's **default** — see `PixelKernelConvolution.__init__`) pass `fshape`
+path, which is lenstronomy's **default** – see `PixelKernelConvolution.__init__`) pass `fshape`
 positionally, which binds it to `s`:
 
 ```python
@@ -73,7 +73,7 @@ for x in hits:
 
 ## Suggested fix
 
-### Option 1 — pass `axes` explicitly (low risk, recommended)
+### Option 1 – pass `axes` explicitly (low risk, recommended)
 
 ```python
 # convolution.py, _static_fft, lines 121-122
@@ -98,7 +98,7 @@ assert np.array_equal(old, new)     # passes
 # same for irfftn with axes=(0, 1)
 ```
 
-### Option 2 — replace the vendored implementation
+### Option 2 – replace the vendored implementation
 
 `_static_fft` is a vendored copy of an old `scipy.signal.fftconvolve`, including this:
 

@@ -216,7 +216,7 @@ def plot_histogram(vals, out_png, band, pipeline_label):
     ax.set_yscale('log')
     ax.set_xlabel(r'SNR of substructure ($\sqrt{\chi^2}$)')
     ax.set_ylabel('Count')
-    ax.set_title(f'{pipeline_label} — {band} (N={len(vals)})')
+    ax.set_title(f'{pipeline_label} – {band} (N={len(vals)})')
     fig.tight_layout()
     fig.savefig(out_png, dpi=150)
     plt.close(fig)

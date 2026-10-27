@@ -29,7 +29,7 @@ declared for.
 - `mejiro/pipeline/_04_create_synthetic_images.py:111` consumes it as intended
   (`PipelineHelper(args, args.prev_step, ...)`).
 - `mejiro/pipeline/_06_h5_export.py:65` does
-  `prev_script_name = getattr(args, 'prev_step', None) or PREV_SCRIPT_NAME` — so when
+  `prev_script_name = getattr(args, 'prev_step', None) or PREV_SCRIPT_NAME` – so when
   driven through the orchestrator it sees `'03'` and never falls back to its own
   `PREV_SCRIPT_NAME`.
 - `mejiro/pipeline/calculate_snrs.py:52` has the identical line and the identical
@@ -37,7 +37,7 @@ declared for.
 
 Net effect: running the pipeline through `mejiro_pipeline.py` (`run()`, or
 `run_script(6)` / `run_script('snr')`) makes the export and SNR steps look for exposures
-in `<pipeline_dir>/03/` — the subhalo directory — instead of the exposure step's output
+in `<pipeline_dir>/03/` – the subhalo directory – instead of the exposure step's output
 directory. Running the scripts standalone from the CLI is unaffected, because there
 `--prev-step` is unset and the `or PREV_SCRIPT_NAME` fallback fires. All production runs
 to date have used the standalone shell scripts (`rung_0.sh` etc.), which is why this has
@@ -65,5 +65,5 @@ Changing the copied namespace does not change the original lens-input namespace.
 
 `mejiro_pipeline.py:54-56` builds `arg_list` from only `--config` and `--data_dir`, so
 `--level`, `--dither-pattern` and `--max-systems` registered at lines 48-51 always take
-their defaults — the orchestrator can never run `--level l3`. That may be intentional,
+their defaults – the orchestrator can never run `--level l3`. That may be intentional,
 but it means the L3 path is only reachable via the standalone script.

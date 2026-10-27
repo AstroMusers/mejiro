@@ -11,9 +11,9 @@ in `scipy.integrate`.
     mass_3d = np.trapz(4 * np.pi * r ** 2 * rho, r)
 ```
 
-That is 95% of every warning the suite emits. `np.trapz` was deprecated in NumPy 2.0 and **removed
-in NumPy 2.4**, so this is not cosmetic — it is why
-[pyproject.toml](../../pyproject.toml) pins `numpy<2.4.0`:
+That accounts for 95% of the warnings in the suite. NumPy 2.4 removes `np.trapz`,
+which pyHalo 1.4.3 still calls. Mejiro therefore pins `numpy<2.4.0` in
+[pyproject.toml](../../pyproject.toml):
 
 ```toml
 "numpy<2.4.0",  # including this for now because pyhalo==1.4.3 uses np.trapz which is removed in 2.4.0
@@ -32,7 +32,7 @@ But the migration is **half-finished**. Two live `np.trapz` calls remain in 1.4.
 | `pyHalo/Halos/HaloModels/powerlaw.py` | 177 | `m = np.trapz(4 * np.pi * r**2 * density, r)` |
 
 (There are also commented-out `np.trapz` occurrences at `NFW_core_trunc.py:503,505` and
-`Rendering/MassFunctions/mass_function_base.py:256,257` — those are dead code, not part of the fix.
+`Rendering/MassFunctions/mass_function_base.py:256,257` – those are dead code, not part of the fix.
 Be careful grepping: a naive `grep np.trapz` makes 1.4.9 look unfixed.)
 
 This leaves pyHalo 1.4.9 in a contradictory state:
@@ -41,7 +41,7 @@ This leaves pyHalo 1.4.9 in a contradictory state:
 - `np.trapz` **requires numpy < 2.4** (removed in 2.4)
 
 So pyHalo 1.4.9 silently only works on `2.0 <= numpy < 2.4`, and it declares neither bound. Its
-`requires_dist` is just `['Click>=6.0']` — no numpy dependency at all.
+`requires_dist` is just `['Click>=6.0']` – no numpy dependency at all.
 
 ## Minimal reproducer
 
@@ -67,7 +67,7 @@ And the removal, which is the part that actually breaks:
 
 ```python
 import numpy as np
-assert not hasattr(np, 'trapz'), 'numpy < 2.4 — upgrade to see the real failure'
+assert not hasattr(np, 'trapz'), 'numpy < 2.4 – upgrade to see the real failure'
 # On numpy >= 2.4 the calls above raise AttributeError instead of warning.
 ```
 
@@ -86,7 +86,7 @@ Mechanical, three parts:
    m = np.trapezoid(4 * np.pi * r**2 * density, r)
    ```
 
-   `np.trapezoid` is a pure rename — same signature, same algorithm, same result. No numerical
+   `np.trapezoid` is a pure rename – same signature, same algorithm, same result. No numerical
    change.
 
 2. Declare the numpy floor that `np.trapezoid` already imposes. In `setup.py` / `pyproject.toml`:

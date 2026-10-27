@@ -15,12 +15,12 @@ of cutouts visibly show the triangles.
 
 ## Summary
 
-The L3 mosaic comes out **north-up (east-left)**, but the L2 detector grid — where each
-SyntheticImage is placed as an axis-aligned square tile — is rotated **~±60°/120° from
+The L3 mosaic comes out **north-up (east-left)**, but the L2 detector grid – where each
+SyntheticImage is placed as an axis-aligned square tile – is rotated **~±60°/120° from
 north** and has **opposite parity**. Every cutout (an axis-aligned square in *mosaic*
 pixels) therefore contains its tile rotated by ~30° (mod 90°) and mirror-flipped. The
 corner triangles are the sky-only 7-px gaps between tiles, visible only when the tile's
-edge flux stands above the sky level — which is why only bright/extended systems show
+edge flux stands above the sky level – which is why only bright/extended systems show
 them.
 
 ## Root-cause chain
@@ -67,7 +67,7 @@ roll_ref = pa_aper - V3IdlYAngle   # = 0 - (-60) = +60
 ```
 
 and the defaults in `romanisim.parameters.default_parameters_dictionary` supply
-`v3yangle = -60.0`, `vparity = -1` — global focal-plane placeholders, not per-SCA
+`v3yangle = -60.0`, `vparity = -1` – global focal-plane placeholders, not per-SCA
 values. The romanisim source itself comments *"I don't know what vparity and v3yangle
 should really be"* and *"galsim.roman does something smarter with choosing the roll"*.
 So the `wcsinfo` block in the saved L2 files is **inconsistent with the galsim WCS
@@ -97,7 +97,7 @@ The tiles are squares in *detector* pixels. The mosaic is north-up. Each tile fo
 its SCA's +y position angle, about +120° or −60°. Because a square looks the same after
 a 90° rotation, the misalignment appears to be about 30°. Its parity is also reversed.
 `_extract_cutout` slices an axis-aligned square in mosaic pixels around the
-correct sky position (`world_to_pixel` — centering is unaffected), so:
+correct sky position (`world_to_pixel` – centering is unaffected), so:
 
 - **Corner triangles.** Cutout corners can fall outside the rotated tile footprint and
    show sky in the inter-tile gaps (`DISTORTION_GUARD = 7` px), sometimes with a bright
