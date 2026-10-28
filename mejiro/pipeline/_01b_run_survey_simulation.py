@@ -71,7 +71,7 @@ from glob import glob
 import numpy as np
 from astropy.cosmology import default_cosmology
 from astropy.units import Quantity
-from slsim.Lenses.lens_pop import LensPop
+from slsim.Lenses.LensPopulation.lens_pop import LensPop
 import slsim.Sources as sources
 import slsim.Deflectors as deflectors
 from tqdm import tqdm
