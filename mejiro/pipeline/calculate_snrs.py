@@ -22,11 +22,20 @@ Arguments:
     --resume: Preserve existing output and skip already-completed items. Default is to delete and rebuild from scratch.
     --prev-step: Pipeline step directory holding the input exposures (default: '05_romanisim').
 """
+import os
+
+# Single-thread BLAS/OMP in every worker; must happen before numpy imports.
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
 
 import argparse
-import os
+import multiprocessing
+import subprocess
+import sys
 import time
-import yaml
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from glob import glob
 
@@ -76,6 +85,13 @@ def main(args):
     # retrieve configuration parameters
     snr_config = pipeline.config['snr']
 
+    # the step-02 lens pickles carry use_jax, so jaxtronomy gets imported in the workers
+    # whether or not we ask for it; pin the platform so JAX doesn't default to the GPU
+    use_jax = pipeline.config['jaxtronomy']['use_jax']
+    if use_jax:
+        jax_platform = pipeline.config['jaxtronomy']['jax_platform']
+        _verify_jax_platform(jax_platform)
+
     # set input and output directories; the exposure file extension depends on which
     # step-05 variant produced them (romanisim .npy vs galsim .pkl/.npz). Only the filenames
     # matter here: _rebuild_snr re-derives the SNR from the step-02 and step-04 pickles.
@@ -108,23 +124,17 @@ def main(args):
         else:
             input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
         count = pipeline.limit
-    logger.info(f'Processing {count} exposure(s)')
+    logger.info(f'Processing {count} exposure(s)' + (f' with jax_platform={jax_platform!r}' if use_jax else ''))
 
     # tuple the parameters
     tuple_list = [(pipeline, snr_config, input_pickle) for input_pickle in input_pickles]
 
-    # process the tasks with ProcessPoolExecutor
-    name_snr_pairs = []
-    try:
-        with ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(count)) as executor:
-            futures = [executor.submit(calculate_snr, task) for task in tuple_list]
-
-            for future in tqdm(as_completed(futures), total=len(futures)):
-                name_snr_pairs.append(future.result())
-    except KeyboardInterrupt:
-        logger.info('Interrupted, shutting down workers...')
-        executor.shutdown(wait=False, cancel_futures=True)
-        raise
+    if not use_jax:
+        name_snr_pairs = _run_no_jax(pipeline, tuple_list)
+    elif jax_platform == 'gpu':
+        name_snr_pairs = _run_jax_gpu(pipeline, tuple_list)
+    else:
+        name_snr_pairs = _run_jax_cpu(pipeline, tuple_list)
 
     util.pickle(output_path, name_snr_pairs)
 
@@ -132,6 +142,129 @@ def main(args):
     execution_time = util.print_execution_time(start, stop, return_string=True)
     util.write_execution_time(execution_time, SCRIPT_NAME,
                               os.path.join(pipeline.pipeline_dir, 'execution_times.json'))
+
+
+def _verify_jax_platform(jax_platform):
+    """Spawn a one-shot subprocess to check ``jax.devices(jax_platform)`` works.
+
+    Importing jax in *this* process would lock its platform for the rest of the
+    run; we never want that in main, which only orchestrates workers.
+    """
+    code = (
+        "import logging;"
+        "logging.getLogger('jax._src.xla_bridge').setLevel(logging.CRITICAL);"
+        "import os, sys;"
+        f"os.environ['JAX_PLATFORM_NAME']={jax_platform!r};"
+        f"os.environ['JAX_PLATFORMS']={jax_platform!r};"
+        "import jax;"
+        f"devs=jax.devices({jax_platform!r});"
+        "print(len(devs))"
+    )
+    try:
+        proc = subprocess.run(
+            [sys.executable, '-c', code],
+            capture_output=True, text=True, check=False, timeout=120,
+        )
+    except subprocess.TimeoutExpired as e:
+        raise RuntimeError(f'Timed out probing jax platform {jax_platform!r}.') from e
+    if proc.returncode != 0:
+        last = proc.stderr.strip().splitlines()[-1] if proc.stderr.strip() else '(no stderr)'
+        raise RuntimeError(
+            f'JAX platform {jax_platform!r} unavailable on this host: {last}'
+        )
+    logger.info(f"JAX platform {jax_platform!r} ready ({proc.stdout.strip()} device(s))")
+
+
+def _drive_pool(executor, tuple_list):
+    """Submit every task and drain it, tearing the pool down hard on interrupt.
+
+    Not a ``with`` block: ``Executor.__exit__`` drains every queued task before an
+    ``except`` clause could cancel them. Children must be killed explicitly since
+    they survive SIGINT. See ``_04_create_synthetic_images._drive_pool``.
+    """
+    name_snr_pairs = []
+    try:
+        futures = [executor.submit(calculate_snr, task) for task in tuple_list]
+        for future in tqdm(as_completed(futures), total=len(futures)):
+            name_snr_pairs.append(future.result())
+    except BaseException:
+        logger.warning('Interrupted, shutting down workers...')
+        executor.shutdown(wait=False, cancel_futures=True)
+        for process in list(getattr(executor, '_processes', {}).values()):
+            process.kill()
+        raise
+    else:
+        executor.shutdown(wait=True)
+    return name_snr_pairs
+
+
+def _run_no_jax(pipeline, tuple_list):
+    """Non-JAX path: fork-context process pool."""
+    return _drive_pool(
+        ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(len(tuple_list))),
+        tuple_list,
+    )
+
+
+def _run_jax_cpu(pipeline, tuple_list):
+    """JAX CPU path: spawn-context process pool, one core-pinned worker per CPU id."""
+    workers = pipeline.calculate_process_count(len(tuple_list))
+    logger.info(f'Spawning {workers} JAX-CPU worker(s)')
+
+    ctx = multiprocessing.get_context('spawn')
+    # Each worker pops one CPU id and pins itself before importing jax, which is
+    # what bounds jaxlib's thread pools -- they are sized from the affinity mask.
+    cpu_queue = ctx.Queue()
+    for cpu in range(workers):
+        cpu_queue.put(cpu)
+    return _drive_pool(
+        ProcessPoolExecutor(
+            max_workers=workers,
+            mp_context=ctx,
+            initializer=_jax_worker_init,
+            initargs=(pipeline.config, 'cpu', cpu_queue),
+        ),
+        tuple_list,
+    )
+
+
+def _run_jax_gpu(pipeline, tuple_list):
+    """JAX GPU path: run every exposure sequentially in the main process."""
+    _jax_worker_init(pipeline.config, 'gpu', None)
+    logger.info(f'Running {len(tuple_list)} exposure(s) sequentially on GPU.')
+    return [calculate_snr(task) for task in tqdm(tuple_list)]
+
+
+def _jax_worker_init(config, jax_platform, cpu_queue):
+    """JAX worker setup: pin to a core (CPU path only), then pin the platform.
+
+    Serves both JAX paths: spawn-worker initializer on CPU (``cpu_queue`` holds
+    the core ids to pin to), called directly in the main process on GPU
+    (``cpu_queue`` is None, no pinning).
+    """
+    # Spawned workers do not inherit the parent's logging level or warning filters.
+    PipelineHelper.configure_logging_and_warnings(config)
+
+    # Spawned workers do not inherit the parent's monkeypatch, so re-apply the
+    # mejiro-v2 pickle compatibility shim before any lens is unpickled.
+    PipelineHelper.patch_astropy_for_mejiro_v2_pickles()  # remove after re-pickling inputs under mejiro-v3
+
+    if cpu_queue is not None:
+        os.sched_setaffinity(0, {cpu_queue.get()})
+
+    os.environ['JAX_PLATFORM_NAME'] = jax_platform
+    os.environ['JAX_PLATFORMS'] = jax_platform
+    # Unconditional assignment: setdefault would silently skip if XLA_FLAGS was
+    # inherited from the calling shell. No-op effects for the GPU path.
+    os.environ['XLA_FLAGS'] = ' '.join([
+        '--xla_cpu_multi_thread_eigen=false',
+        '--xla_force_host_platform_device_count=1',
+    ])
+
+    # Silence the cuda plugin's harmless cuInit() traceback on GPU-less hosts.
+    logging.getLogger('jax._src.xla_bridge').setLevel(logging.CRITICAL)
+
+    import jax  # noqa: F401  -- lock in the platform before calculate_snr() imports jaxtronomy
 
 
 def calculate_snr(input):
