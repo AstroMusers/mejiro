@@ -164,8 +164,8 @@ class SyntheticImage:
         # set up pixel grid and coordinates
         x, y, self.ra_at_xy_0, self.dec_at_xy_0, x_at_radec_0, y_at_radec_0, self.Mpix2coord, self.Mcoord2pix = (
             lenstronomy_util.make_grid_with_coordtransform(
-                numPix=self.num_pix,
-                deltapix=self.pixel_scale,
+                num_pix=self.num_pix,
+                delta_pix=self.pixel_scale,
                 subgrid_res=1,
                 left_lower=False,
                 inverse=False))

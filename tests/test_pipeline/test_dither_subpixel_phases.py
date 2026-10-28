@@ -15,7 +15,7 @@ import numpy as np
 import pytest
 from astropy import units as u
 from astropy.coordinates import SkyCoord
-from romanisim import parameters
+from romanisim.models import parameters
 
 from mejiro.pipeline._05_romanisim import (
     _dither_pointings,

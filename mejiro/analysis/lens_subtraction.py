@@ -72,7 +72,7 @@ def fit_sersic(image, pixel_scale, initial_kwargs=None, psf_kernel=None,
     fov = num_pix * pixel_scale
 
     x, y, *_ = lenstronomy_util.make_grid_with_coordtransform(
-        numPix=num_pix, deltapix=pixel_scale, subgrid_res=1,
+        num_pix=num_pix, delta_pix=pixel_scale, subgrid_res=1,
         left_lower=False, inverse=False)
 
     # Shared image-derived seeds (used by both single- and two-component paths)

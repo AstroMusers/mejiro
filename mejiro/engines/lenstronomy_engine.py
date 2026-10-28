@@ -86,7 +86,7 @@ class LenstronomyEngine(Engine):
 
         obs_config.obs['exposure_time'] = exposure_time
 
-        sim_api = SimAPI(numpix=synthetic_image.num_pix,
+        sim_api = SimAPI(num_pix=synthetic_image.num_pix,
                         kwargs_single_band=obs_config.kwargs_single_band(),
                         kwargs_model=strong_lens.kwargs_model)
 

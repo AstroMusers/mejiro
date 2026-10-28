@@ -29,7 +29,7 @@ def test_fit_sersic_roundtrip():
     }
 
     x, y, _, _, _, _, _, _ = lenstronomy_util.make_grid_with_coordtransform(
-        numPix=num_pix, deltapix=pixel_scale, subgrid_res=1,
+        num_pix=num_pix, delta_pix=pixel_scale, subgrid_res=1,
         left_lower=False, inverse=False)
     light_model = LightModel(['SERSIC_ELLIPSE'])
     true_image = light_model.surface_brightness(x, y, [true_kwargs]).reshape(num_pix, num_pix)

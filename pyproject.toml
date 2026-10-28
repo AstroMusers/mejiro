@@ -10,29 +10,31 @@ authors = [
     { name = "Bryce Wedig", email = "b.t.wedig@wustl.edu" },
 ]
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 classifiers = [
-    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Operating System :: OS Independent",
     "Topic :: Scientific/Engineering :: Astronomy"
 ]
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
 dependencies = [
-    "astropy==7.2.0",
-    "galsim==2.7.2",
-    "numpy<2.4.0",  # including this for now because pyhalo==1.4.3 uses np.trapz which is removed in 2.4.0
-    "pandas==2.3.3",
-    "tqdm==4.67.1",
-    "lenstronomy==1.13.3",
-    "pyhalo==1.4.3",
+    "astropy==8.0.2",
+    "galsim==2.8.5",
+    "numpy<2.4.0",  # required by slsim, which still uses np.trapz (removed in numpy 2.4.0)
+    "pandas==3.1.0",
+    "tqdm==4.70.1",
+    "lenstronomy==1.14.2",
+    "pyhalo==1.5.2",
     "mcfit==0.0.22",  # required for pyhalo
-    "slsim==0.1.1",
-    "sncosmo==2.12.1",  # required for slsim
-    "speclite @ git+https://github.com/bryce-wedig/speclite.git@mejiro-v2.0.0",  # required for slsim
-    "skypy @ git+https://github.com/bryce-wedig/skypy.git@mejiro-v2.0.0",  # required for slsim
-    "colossus==1.3.10",  # required for slsim
-    "corner==2.2.3",
+    "slsim @ git+https://github.com/bryce-wedig/slsim.git@9b019373a3ed06144c0fef06fa7a6515a427f468",
+    "sncosmo==2.13.1",  # required for slsim
+    "speclite @ git+https://github.com/bryce-wedig/speclite.git@mejiro",  # required for slsim
+    "skypy @ git+https://github.com/bryce-wedig/skypy.git@mejiro",  # required for slsim
+    "colossus==1.4.0",  # required for slsim
+    "corner==2.3.0",
+    "jax",
+    "jaxtronomy",  # required for slsim
 ]
 
 [project.optional-dependencies]
@@ -44,22 +46,17 @@ dev = [
     "sphinx-rtd-theme",
     "pydeps",
 ]
-jax-cpu = [
-    "jax",
-    "jaxtronomy",
-]
 jax-gpu = [
     "jax[cuda12]",
-    "jaxtronomy",
 ]
 roman = [
-    "stpsf==2.1.0",
-    "romanisim==0.13.0",
-    "romancal==0.22.0",
+    "stpsf==2.3.0",
+    "romanisim==0.14.0",
+    "romancal==1.1.0",
     "roman-technical-information==1.5.0",
 ]
 hwo = [
-    "syotools==1.3.0"
+    "syotools==1.3.5"
 ]
 all = [
     "mejiro[dev,jax-gpu,roman,hwo]"

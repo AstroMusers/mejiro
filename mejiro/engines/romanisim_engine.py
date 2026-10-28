@@ -12,10 +12,10 @@ from astropy.modeling.functional_models import Sersic2D
 from astropy.time import Time
 import asdf
 
-import romanisim.bandpass
+import romanisim.models.bandpass
 import romanisim.image as rsim_image
-import romanisim.wcs as rsim_wcs
-import romanisim.parameters as rsim_params
+import romanisim.models.wcs as rsim_wcs
+import romanisim.models.parameters as rsim_params
 import romanisim.util as rsim_util
 
 from mejiro.engines.engine import Engine
@@ -45,7 +45,7 @@ class RomanISimEngine(Engine):
         sca = synthetic_image.instrument_params['detector']
 
         # AB zeropoint flux [electrons/s]
-        flux_zeropoint = romanisim.bandpass.get_abflux(band, sca)
+        flux_zeropoint = romanisim.models.bandpass.get_abflux(band, sca)
         logger.debug(f"AB zeropoint flux for {band}, SCA{sca}: {abflux:.3e} e/s")
 
         # Exposure time from the MA table

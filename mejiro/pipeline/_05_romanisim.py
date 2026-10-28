@@ -103,8 +103,9 @@ from tqdm import tqdm
 import asdf
 import roman_datamodels as rdm
 
-import romanisim.bandpass
-from romanisim import image, parameters, wcs
+import romanisim.models.bandpass
+from romanisim import image
+from romanisim.models import parameters, wcs
 
 from romancal.associations import asn_from_list
 from romancal.pipeline import MosaicPipeline
@@ -831,7 +832,7 @@ def process_batch_l2(task):
         rng_np = np.random.default_rng(batch_seed)
 
         # get AB flux
-        abflux = romanisim.bandpass.get_abflux(band, sca_num)
+        abflux = romanisim.models.bandpass.get_abflux(band, sca_num)
         logger.info(f'  AB flux: {abflux:.6e} e-/s per maggy, exptime: {exptime:.6f} s')
 
         # 1. tile synthetic images into a 4088x4088 extra_counts array
@@ -966,7 +967,7 @@ def process_batch_l3(task):
         batch_seed = seed + sca_num * 10000 + band_idx * 1000 + batch_idx
         rng_np = np.random.default_rng(batch_seed)
 
-        abflux = romanisim.bandpass.get_abflux(band, sca_num)
+        abflux = romanisim.models.bandpass.get_abflux(band, sca_num)
         logger.info(f'  AB flux: {abflux:.6e} e-/s per maggy, exptime: {exptime:.6f} s')
 
         # rebuild the dither WCSes and overlap sky grid (deterministic; cheap)

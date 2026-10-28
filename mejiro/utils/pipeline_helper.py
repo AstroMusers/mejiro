@@ -276,7 +276,7 @@ class PipelineHelper:
         their depth is what romancal measured on the coadd and ``_05_romanisim`` recorded
         in ``exposure_time.txt`` -- it is not recomputed here.
         """
-        from romanisim import parameters as romanisim_params
+        from romanisim.models import parameters as romanisim_params
 
         with open(os.path.join(step_dir, 'exposure_level.txt')) as f:
             level = f.read().strip()

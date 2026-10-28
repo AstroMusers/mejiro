@@ -94,7 +94,7 @@ def _make_wcs(pointing, sca, band, ma_table_number, read_pattern, date, pa_aper)
         The WCS for this pointing.
     """
     from astropy.time import Time
-    from romanisim import parameters, wcs as romanisim_wcs
+    from romanisim.models import parameters, wcs as romanisim_wcs
 
     meta = copy.deepcopy(parameters.default_parameters_dictionary)
     meta['instrument']['detector'] = f'WFI{sca:02d}'
@@ -251,7 +251,7 @@ def find_source_position(pointings, sca, band, tile_size, ma_table_number,
         ``pixel_offset`` ((opt_dx, opt_dy) tuple).
     """
     import galsim
-    from romanisim import parameters
+    from romanisim.models import parameters
 
     if read_pattern is None:
         read_pattern = parameters.read_pattern[ma_table_number]
@@ -313,7 +313,7 @@ def compute_pixel_positions(source_sky, pointings, sca, band, tile_size,
         List of named tuples with ``cx``, ``cy``, ``on_detector`` for each
         dither step.
     """
-    from romanisim import parameters
+    from romanisim.models import parameters
 
     if read_pattern is None:
         read_pattern = parameters.read_pattern[ma_table_number]

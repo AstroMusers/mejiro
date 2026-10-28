@@ -14,8 +14,7 @@ Install ``mejiro`` from `GitHub <https://github.com/AstroMusers/mejiro>`__. Curr
 The following optional dependencies can be installed for additional features:
 
 - ``dev``: run unit tests and build documentation
-- ``jax-cpu``: ``jaxtronomy`` plus CPU-only ``jax`` for faster survey simulation and ray-shooting on machines without a GPU
-- ``jax-gpu``: ``jaxtronomy`` plus ``jax[cuda12]`` for GPU-accelerated survey simulation and ray-shooting. Requires a CUDA-12-compatible NVIDIA driver on the host (``nvidia-smi`` should run); ``jax-gpu`` will install on a CPU-only machine but JAX will fall back to CPU at runtime with a warning.
+- ``jax-gpu``: ``jax[cuda12]`` for GPU-accelerated survey simulation and ray-shooting (``jax`` and ``jaxtronomy`` are installed by default and run on CPU). Requires a CUDA-12-compatible NVIDIA driver on the host (``nvidia-smi`` should run); ``jax-gpu`` will install on a CPU-only machine but JAX will fall back to CPU at runtime with a warning.
 - ``roman``: simulate Roman PSFs with ``STPSF`` and Roman L2 and L3 data products with ``romanisim`` and ``romancal``
 - ``hwo``: simulate HWO exposures with ``syotools``
 - ``all``: install all optional dependencies (assumes a GPU host; uses ``jax-gpu``)
