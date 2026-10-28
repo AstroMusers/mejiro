@@ -4,15 +4,27 @@ Generates dark matter subhalo realizations for strong lensing systems.
 This script processes previously detected lensing systems, adding dark matter substructure realizations generated using the pyHalo package to each system according to parameters specified in a mejiro configuration YAML file. It supports multiple instruments (Roman, HWO), and outputs updated lens objects and subhalo realizations for downstream analysis.
 
 Usage:
-    python3 _03_generate_subhalos.py --config <config.yaml> [--data_dir <output_dir>]
+    python3 _03_generate_subhalos.py --config <config.yaml> [--sequential] [--resume]
 
 Arguments:
     --config: Path to the YAML configuration file.
-    --data_dir: Optional override for the data directory specified in the config file.
+    --sequential: Process systems sequentially from the start instead of randomly when limit is imposed.
+    --resume: Preserve existing output and skip already-completed items.
 """
-import argparse
 import os
+
+# Single-thread BLAS/OMP in every worker; must happen before numpy imports.
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
+
+import argparse
+import multiprocessing
 import shutil
+import subprocess
+import sys
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from glob import glob
@@ -55,6 +67,10 @@ def main(args):
     use_jax = pipeline.config['jaxtronomy']['use_jax']
     subhalo_config = pipeline.config['subhalos']
 
+    if use_jax:
+        jax_platform = pipeline.config['jaxtronomy']['jax_platform']
+        _verify_jax_platform(jax_platform)
+
     # 'full' pickles the whole realization object; 'lightweight' strips it (~76%
     # of a subhalo'd pickle) since step 04 ray-shoots from the baked-in
     # kwargs_lens, not the realization. Mirrors synthetic_image.serialization.
@@ -82,7 +98,7 @@ def main(args):
         else:
             input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
         count = pipeline.limit
-    logger.info(f'Processing {count} lens(es)')
+    logger.info(f'Processing {count} lens(es)' + (f' with jax_platform={jax_platform!r}' if use_jax else ''))
 
     # add subhalos to a subset of systems
     if subhalo_config['fraction'] < 1.0:
@@ -118,22 +134,132 @@ def main(args):
                                   os.path.join(pipeline.pipeline_dir, 'execution_times.json'))
         return
 
-    # submit tasks to the executor
-    try:
-        with ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(len(filtered_tuple_list))) as executor:
-            futures = {executor.submit(add, task): task for task in filtered_tuple_list}
-
-            for future in tqdm(as_completed(futures), total=len(futures)):
-                future.result()  # get the result to propagate exceptions if any
-    except KeyboardInterrupt:
-        logger.info('Interrupted, shutting down workers...')
-        executor.shutdown(wait=False, cancel_futures=True)
-        raise
+    if not use_jax:
+        _run_no_jax(pipeline, filtered_tuple_list)
+    elif jax_platform == 'gpu':
+        _run_jax_gpu(filtered_tuple_list)
+    else:
+        _run_jax_cpu(pipeline, filtered_tuple_list)
 
     stop = time.time()
     execution_time = util.print_execution_time(start, stop, return_string=True)
     util.write_execution_time(execution_time, SCRIPT_NAME,
                               os.path.join(pipeline.pipeline_dir, 'execution_times.json'))
+
+
+def _verify_jax_platform(jax_platform):
+    """Spawn a one-shot subprocess to check ``jax.devices(jax_platform)`` works.
+
+    Importing jax in *this* process would lock its platform for the rest of the
+    run; we never want that in main, which only orchestrates workers.
+    """
+    code = (
+        "import logging;"
+        "logging.getLogger('jax._src.xla_bridge').setLevel(logging.CRITICAL);"
+        "import os, sys;"
+        f"os.environ['JAX_PLATFORM_NAME']={jax_platform!r};"
+        f"os.environ['JAX_PLATFORMS']={jax_platform!r};"
+        "import jax;"
+        f"devs=jax.devices({jax_platform!r});"
+        "print(len(devs))"
+    )
+    try:
+        proc = subprocess.run(
+            [sys.executable, '-c', code],
+            capture_output=True, text=True, check=False, timeout=120,
+        )
+    except subprocess.TimeoutExpired as e:
+        raise RuntimeError(f'Timed out probing jax platform {jax_platform!r}.') from e
+    if proc.returncode != 0:
+        last = proc.stderr.strip().splitlines()[-1] if proc.stderr.strip() else '(no stderr)'
+        raise RuntimeError(
+            f'JAX platform {jax_platform!r} unavailable on this host: {last}'
+        )
+    logger.info(f"JAX platform {jax_platform!r} ready ({proc.stdout.strip()} device(s))")
+
+
+def _drive_pool(executor, tuple_list):
+    """Submit every task and drain it, tearing the pool down hard on interrupt.
+
+    Not a ``with`` block: ``Executor.__exit__`` drains every queued task before an
+    ``except`` clause could cancel them. Children must be killed explicitly since
+    they survive SIGINT. See ``_04_create_synthetic_images._drive_pool``.
+    """
+    try:
+        futures = {executor.submit(add, task): task for task in tuple_list}
+        for future in tqdm(as_completed(futures), total=len(futures)):
+            future.result()  # get the result to propagate exceptions if any
+    except BaseException:
+        logger.warning('Interrupted, shutting down workers...')
+        executor.shutdown(wait=False, cancel_futures=True)
+        for process in list(getattr(executor, '_processes', {}).values()):
+            process.kill()
+        raise
+    else:
+        executor.shutdown(wait=True)
+
+
+def _run_no_jax(pipeline, tuple_list):
+    """Non-JAX path: fork-context process pool."""
+    _drive_pool(
+        ProcessPoolExecutor(max_workers=pipeline.calculate_process_count(len(tuple_list))),
+        tuple_list,
+    )
+
+
+def _run_jax_cpu(pipeline, tuple_list):
+    """JAX CPU path: spawn-context process pool, one core-pinned worker per CPU id."""
+    workers = pipeline.calculate_process_count(len(tuple_list))
+    logger.info(f'Spawning {workers} JAX-CPU worker(s)')
+
+    ctx = multiprocessing.get_context('spawn')
+    # Each worker pops one CPU id and pins itself before importing jax, which is
+    # what bounds jaxlib's thread pools -- they are sized from the affinity mask.
+    cpu_queue = ctx.Queue()
+    for cpu in range(workers):
+        cpu_queue.put(cpu)
+    _drive_pool(
+        ProcessPoolExecutor(
+            max_workers=workers,
+            mp_context=ctx,
+            initializer=_jax_worker_init,
+            initargs=('cpu', cpu_queue),
+        ),
+        tuple_list,
+    )
+
+
+def _run_jax_gpu(tuple_list):
+    """JAX GPU path: run every system sequentially in the main process."""
+    _jax_worker_init('gpu', None)
+    logger.info(f'Running {len(tuple_list)} system(s) sequentially on GPU.')
+    for task in tqdm(tuple_list):
+        add(task)
+
+
+def _jax_worker_init(jax_platform, cpu_queue):
+    """JAX worker setup: pin to a core (CPU path only), then pin the platform.
+
+    Serves both JAX paths: spawn-worker initializer on CPU (``cpu_queue`` holds
+    the core ids to pin to), called directly in the main process on GPU
+    (``cpu_queue`` is None, no pinning).
+    """
+    if cpu_queue is not None:
+        os.sched_setaffinity(0, {cpu_queue.get()})
+
+    os.environ['JAX_PLATFORM_NAME'] = jax_platform
+    os.environ['JAX_PLATFORMS'] = jax_platform
+    # Unconditional assignment: setdefault would silently skip if XLA_FLAGS was
+    # inherited from the calling shell. No-op effects for the GPU path.
+    os.environ['XLA_FLAGS'] = ' '.join([
+        '--xla_cpu_multi_thread_eigen=false',
+        '--xla_force_host_platform_device_count=1',
+    ])
+
+    # Silence the cuda plugin's harmless cuInit() traceback on GPU-less hosts.
+    logging.getLogger('jax._src.xla_bridge').setLevel(logging.CRITICAL)
+
+    import jax  # noqa: F401  -- lock in the platform before add() imports jaxtronomy
 
 
 def _output_target(pipeline, input_pickle):
@@ -164,8 +290,9 @@ def add(tuple):
         # load the lens
         lens = util.unpickle(input_pickle)
 
-        # set defaults for the realization_kwargs
-        realization_kwargs = subhalo_config["realization_kwargs"]
+        # set defaults for the realization_kwargs (copy: on the GPU path every system
+        # shares one subhalo_config, so mutating it would leak this lens's cone angle)
+        realization_kwargs = dict(subhalo_config["realization_kwargs"])
         if "cone_opening_angle_arcsec" not in realization_kwargs:
             realization_kwargs["cone_opening_angle_arcsec"] = lens.get_einstein_radius() * 3
 
@@ -214,18 +341,12 @@ def add(tuple):
         # util.pickle(os.path.join(subhalo_dir, f'subhalo_realization_{lens.name}.pkl'), realization)
 
         # pickle the lens with subhalos
-        if pipeline.instrument_name == 'roman':
-            sca_string = os.path.dirname(input_pickle).split('/')[-1]
-            pipeline.output_dir = os.path.join(pipeline.output_dir, sca_string)
-        pickle_target = os.path.join(pipeline.output_dir, f'lens_{lens.name}.pkl')
+        output_dir = os.path.dirname(_output_target(pipeline, input_pickle))
+        pickle_target = os.path.join(output_dir, f'lens_{lens.name}.pkl')
         util.pickle(pickle_target, lens)
     else:
         # if not adding subhalos, just copy the input pickle to the output directory
-        if pipeline.instrument_name == 'roman':
-            sca_string = os.path.dirname(input_pickle).split('/')[-1]
-            pipeline.output_dir = os.path.join(pipeline.output_dir, sca_string)
-        target = os.path.join(pipeline.output_dir, os.path.basename(input_pickle))
-        shutil.copy2(input_pickle, target)
+        shutil.copy2(input_pickle, _output_target(pipeline, input_pickle))
 
 
 if __name__ == '__main__':
