@@ -11,9 +11,11 @@ reproducible, unique draws across runs.
 When ``jaxtronomy.use_jax`` is True, lenstronomy ray-shooting (invoked during
 per-candidate SNR computation) is routed through jaxtronomy by flipping
 ``StrongLens.use_jax`` to True on every profile in ``_JAXXED_MODELS`` after
-building each ``GalaxyGalaxy`` via ``from_slsim``. When False, ray-shooting
-stays in pure lenstronomy and workers never import JAX (the spawn pool, BLAS
-threading controls, and CPU affinity pinning below apply either way).
+building each ``GalaxyGalaxy`` via ``from_slsim``, and the flag is passed to
+``LensPop`` so SLSim's own lensing calculations during population draws use
+jaxtronomy too. When False, all ray-shooting stays in pure lenstronomy and
+workers never import JAX (the spawn pool, BLAS threading controls, and CPU
+affinity pinning below apply either way).
 
 With JAX enabled, execution topology is selected from the YAML config's
 ``jaxtronomy.jax_platform``:
@@ -71,8 +73,9 @@ import numpy as np
 from astropy.cosmology import default_cosmology
 from astropy.units import Quantity
 from slsim.Lenses.LensPopulation.lens_pop import LensPop
-import slsim.Sources as sources
-import slsim.Deflectors as deflectors
+from slsim.Deflectors.DeflectorPopulation.compound_lens_halos_galaxies import CompoundLensHalosGalaxies
+from slsim.Deflectors.DeflectorPopulation.galaxy_deflectors import GalaxyDeflectors
+from slsim.Sources.SourcePopulation.galaxies import Galaxies
 from tqdm import tqdm
 
 from mejiro.analysis import snr_calculation
@@ -435,15 +438,15 @@ def run_slsim(tuple):
     # reconstruct the lens population from pre-computed tables
     logger.info('Reconstructing galaxy population from pre-computed tables...')
     if use_slhammocks_pipeline:
-        lens_galaxies = deflectors.CompoundLensHalosGalaxies(
-            halo_galaxy_list=galaxy_data['halo_galaxies'],
+        lens_galaxies = CompoundLensHalosGalaxies(
+            deflector_table=galaxy_data['halo_galaxies'],
             kwargs_cut=kwargs_deflector_cut,
             kwargs_mass2light={},
             cosmo=cosmo,
             sky_area=sky_area,
         )
     else:
-        lens_galaxies = deflectors.AllLensGalaxies(
+        lens_galaxies = GalaxyDeflectors(
             red_galaxy_list=galaxy_data['red_galaxies'],
             blue_galaxy_list=galaxy_data['blue_galaxies'],
             kwargs_cut=kwargs_deflector_cut,
@@ -455,13 +458,13 @@ def run_slsim(tuple):
         "extended_source_type": "catalog_source",
         "extended_source_kwargs": survey_config["catalog_source_kwargs"]
     } if use_real_sources else {}
-    source_galaxies = sources.Galaxies(
+    source_galaxies = Galaxies(
         galaxy_list=galaxy_data['blue_galaxies'],
         kwargs_cut=kwargs_source_cut,
         cosmo=cosmo,
         sky_area=sky_area,
         catalog_type="skypy",
-        source_size=None,
+        size_model=None,
         **real_galaxy_kwargs
     )
     lens_pop = LensPop(
@@ -469,6 +472,7 @@ def run_slsim(tuple):
         source_population=source_galaxies,
         cosmo=cosmo,
         sky_area=sky_area,
+        use_jax=use_jax,
     )
     logger.info('Reconstructed galaxy population')
 

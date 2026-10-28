@@ -164,7 +164,7 @@ Parameters for the survey simulation (population draw, deflector/source cuts, so
    Used in ``_01b_run_survey_simulation.py`` only when ``use_real_sources`` is ``True``.
 
 ``use_slhammocks_pipeline``
-   Boolean. When ``True``, ``_01a_generate_galaxy_tables.py`` also runs ``SLHammocksPipeline`` to draw a dark-matter halo catalog (``halo_galaxies``), and ``_01b_run_survey_simulation.py`` reconstructs the deflector population from ``deflectors.CompoundLensHalosGalaxies`` rather than ``deflectors.AllLensGalaxies``.
+   Boolean. When ``True``, ``_01a_generate_galaxy_tables.py`` also runs ``SLHammocksPipeline`` to draw a dark-matter halo catalog (``halo_galaxies``), and ``_01b_run_survey_simulation.py`` reconstructs the deflector population from ``CompoundLensHalosGalaxies`` rather than ``GalaxyDeflectors``.
 
 ``slhammocks_pipeline_kwargs``
    Dict of keyword arguments forwarded to ``slsim.Pipelines.sl_hammocks_pipeline.SLHammocksPipeline``. See the upstream slsim documentation for accepted keys.
