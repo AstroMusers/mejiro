@@ -34,9 +34,10 @@ class Exposure:
             * ``'galsim'``: **Counts** (= DN for Roman, where gain = 1.0 e-/DN).
               Computed as ``synthetic_image.data * exposure_time`` with sky, Poisson,
               dark, and read noise added, then divided by instrument gain.
-            * ``'romanisim'``: **DN/s** (calibrated level-2 rate image, romanisim
-              gain = 2 e-/DN). Divide by exposure time and multiply by 2 to convert
-              to the galsim-engine electron scale.
+            * ``'romanisim'``: not implemented; raises ``NotImplementedError``. Run
+              pipeline step ``_05_romanisim`` instead, which writes **DN/s**
+              (calibrated level-2 rate image, romanisim gain = 2 e-/DN). Multiply by
+              exposure time and by 2 to convert to the galsim-engine electron scale.
         engine_params : dict, optional
             Engine-specific configuration.
         """
@@ -113,15 +114,7 @@ class Exposure:
             self.noise = np.zeros((self.synthetic_image.num_pix, self.synthetic_image.num_pix))
 
         elif engine == 'romanisim':
-            raise NotImplementedError('romanisim engine not yet implemented')
-            
-            from mejiro.engines.romanisim_engine import RomanISimEngine
-
-            if self.synthetic_image.instrument_name == 'Roman':
-                results, self.noise = RomanISimEngine.get_roman_exposure(synthetic_image, exposure_time, engine_params)
-                
-            else:
-                self.instrument_not_available_error(engine)
+            raise NotImplementedError('romanisim engine not implemented in Exposure; use pipeline step _05_romanisim')
 
         else:
             raise ValueError(f'Engine "{engine}" not recognized')

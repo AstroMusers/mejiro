@@ -6,6 +6,8 @@ Engines
 - GalSim: *Roman*, *HWO*
 - STPSF (PSFs only): *Roman*
 
+`romanisim <https://github.com/spacetelescope/romanisim>`_ is not available as an ``Exposure`` engine. Instead, *Roman* detector simulation with romanisim runs as pipeline step :mod:`mejiro.pipeline._05_romanisim`, selected by setting ``imaging.engine: romanisim`` in the pipeline config.
+
 An engine is specified when generating a simulated exposure, i.e., an instance of ``mejiro.exposure.Exposure``. The engine is specified in the ``engine`` keyword argument, and any specific parameters passed to the engine are specified in the ``engine_params`` dictionary. For example, to simulate a *Roman* image using GalSim:
 
 .. code-block:: python
@@ -76,14 +78,6 @@ To see the available options for each engine, check the default parameters using
 .. ******************
 
 .. .. automodule:: mejiro.engines.pandeia_engine
-..     :members:
-..     :undoc-members:
-..     :show-inheritance:
-
-.. ``romanisim_engine``
-.. ********************
-
-.. .. automodule:: mejiro.engines.romanisim_engine
 ..     :members:
 ..     :undoc-members:
 ..     :show-inheritance:
