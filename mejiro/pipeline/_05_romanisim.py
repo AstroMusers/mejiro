@@ -108,7 +108,6 @@ from romanisim import image, parameters, wcs
 
 from romancal.associations import asn_from_list
 from romancal.pipeline import MosaicPipeline
-from stcal.alignment.util import compute_scale
 
 from mejiro.point_wfi import PointWFI, _make_wcs
 from mejiro.utils import util as mejiro_util
@@ -519,8 +518,12 @@ def _mosaic_pixel_scale(l2_path):
     """
     center = DETECTOR_SIZE // 2
     with rdm.open(l2_path) as m:
-        sky = m.meta.wcs(center, center)
-        return compute_scale(m.meta.wcs, (float(sky[0]), float(sky[1]))) * 3600.0
+        ra, dec = m.meta.wcs([center, center + 1, center], [center, center, center + 1],
+                             with_bounding_box=False)
+    coords = SkyCoord(ra=ra, dec=dec, unit='deg')
+    xscale = coords[0].separation(coords[1]).arcsec
+    yscale = coords[0].separation(coords[2]).arcsec
+    return float(np.sqrt(xscale * yscale))
 
 
 def _extract_cutout(mos_data, cx, cy, tile_size):
