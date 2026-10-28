@@ -25,7 +25,7 @@ dependencies = [
     "pandas==3.1.0",
     "tqdm==4.70.1",
     "lenstronomy==1.14.2",
-    "pyhalo==1.5.2",
+    "pyhalo==1.4.6",  # 1.4.7+ imports lenstronomy profiles (core_collapsed_halo, king) that no lenstronomy release has yet
     "mcfit==0.0.22",  # required for pyhalo
     "slsim @ git+https://github.com/bryce-wedig/slsim.git@9b019373a3ed06144c0fef06fa7a6515a427f468",
     "sncosmo==2.13.1",  # required for slsim
