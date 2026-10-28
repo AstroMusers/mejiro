@@ -40,15 +40,16 @@ These keys sit at the top level of the YAML file.
 
    Used in ``_01b_run_survey_simulation.py`` to toggle the per-candidate progress bars.
 
-``suppress_warnings``
-   Boolean. When ``True``, ``warnings.filterwarnings("ignore")`` is installed in each worker process.
-
-   Used in ``_01a_generate_galaxy_tables.py`` and ``_01b_run_survey_simulation.py`` inside the worker functions; also set globally in ``PipelineHelper`` to suppress ``UserWarning``.
-
 ``logging_level``
-   String passed to ``logging.basicConfig`` (e.g., ``INFO``, ``WARNING``, ``DEBUG``). Defaults to ``INFO`` if absent.
+   String setting the root logger's level (e.g., ``INFO``, ``WARNING``, ``DEBUG``). Defaults to ``INFO`` if absent. All pipeline console output goes through ``logging``, and Python warnings are captured onto the ``py.warnings`` logger at ``WARNING``, so this one key controls what reaches the console. To hide third-party warnings, use ``ERROR``.
 
-   Set in ``PipelineHelper.__init__``.
+   Applied by ``PipelineHelper.configure_logging_and_warnings``, called from ``PipelineHelper.__init__`` and from the spawn-worker initializers, and directly by the standalone ``compact_03_realizations.py`` and ``make_substructure_csv.py``. The following deliberately bypass it:
+
+   - tqdm progress bars write directly to stderr.
+   - ``util.print_execution_time`` logs at level 100, so the execution time always prints.
+   - ``_00_cache_psfs.py`` sets ``mejiro.engines.stpsf_engine`` to ``ERROR``.
+   - The JAX-enabled steps set ``jax._src.xla_bridge`` to ``CRITICAL``.
+   - ``_05_romanisim.py`` drops sub-``ERROR`` records from romancal, romanisim, CRDS, and ``py.warnings``.
 
 ``limit``
    Maximum number of systems each script should process, or ``null`` for no limit.

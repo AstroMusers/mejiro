@@ -247,7 +247,7 @@ def main(args):
     if not use_jax:
         _run_no_jax(pipeline, tuple_list)
     elif jax_platform == 'gpu':
-        _run_jax_gpu(tuple_list, compilation_cache_dir)
+        _run_jax_gpu(pipeline, tuple_list, compilation_cache_dir)
     else:
         _run_jax_cpu(pipeline, tuple_list, compilation_cache_dir)
 
@@ -340,20 +340,20 @@ def _run_jax_cpu(pipeline, tuple_list, compilation_cache_dir):
             max_workers=workers,
             mp_context=ctx,
             initializer=_jax_worker_init,
-            initargs=('cpu', compilation_cache_dir, cpu_queue),
+            initargs=(pipeline.config, 'cpu', compilation_cache_dir, cpu_queue),
         ),
         tuple_list,
     )
 
 
-def _run_jax_gpu(tuple_list, compilation_cache_dir):
+def _run_jax_gpu(pipeline, tuple_list, compilation_cache_dir):
     """JAX GPU path: bucket by lens_model_list signature, run in main process.
 
     All lenses sharing a signature reuse the same JIT-compiled deflection
     kernel, so unpickling the lens (cheap relative to compilation) up front to
     derive the signature is worth it.
     """
-    _jax_worker_init('gpu', compilation_cache_dir, None)
+    _jax_worker_init(pipeline.config, 'gpu', compilation_cache_dir, None)
 
     buckets = defaultdict(list)
     for task in tqdm(tuple_list, desc='Bucketing by lens_model_list'):
@@ -373,13 +373,16 @@ def _run_jax_gpu(tuple_list, compilation_cache_dir):
                 pbar.update(1)
 
 
-def _jax_worker_init(jax_platform, compilation_cache_dir, cpu_queue):
+def _jax_worker_init(config, jax_platform, compilation_cache_dir, cpu_queue):
     """JAX worker setup: pin platform, enable JIT cache, cache JAXXED set.
 
     Serves both JAX paths: spawn-worker initializer on CPU (``cpu_queue`` holds
     the core ids to pin to), called directly in the main process on GPU
     (``cpu_queue`` is None, no pinning).
     """
+    # Spawned workers do not inherit the parent's logging level or warning filters.
+    PipelineHelper.configure_logging_and_warnings(config)
+
     # Spawned workers do not inherit the parent's sys.modules/monkeypatch, so
     # re-apply the mejiro-v2 pickle compatibility shim here before any lens is
     # unpickled.

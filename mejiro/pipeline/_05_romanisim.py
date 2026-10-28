@@ -187,8 +187,6 @@ def _suppress_third_party_logging():
     logging.basicConfig(force=True) has installed the root handler. The Pool workers
     inherit these filters via fork, which is where MosaicPipeline (and its logging) runs.
     """
-    logging.captureWarnings(True)
-
     third_party = _ThirdPartyFilter()
     for handler in logging.getLogger().handlers:
         handler.addFilter(third_party)
@@ -552,7 +550,7 @@ def main(args):
 
     # PipelineHelper's basicConfig carries no timestamp; these runs are long, so re-apply
     logging.basicConfig(
-        level=getattr(logging, config['logging_level'].upper(), logging.INFO),
+        level=getattr(logging, config.get('logging_level', 'INFO').upper(), logging.INFO),
         format='%(asctime)s %(levelname)s %(name)s: %(message)s',
         force=True,
     )

@@ -14,6 +14,7 @@ Arguments:
     --delete:  Delete corrupted files instead of just reporting them.
 """
 import argparse
+import logging
 import os
 import pickle
 import time
@@ -23,6 +24,8 @@ from glob import glob
 from tqdm import tqdm
 
 from mejiro.utils import util
+
+logger = logging.getLogger(__name__)
 
 
 def _check_pickle(path):
@@ -39,7 +42,7 @@ def scan(directory, pattern, delete, workers):
     paths = sorted(glob(search, recursive=True))
 
     if not paths:
-        print(f'No files matching {pattern!r} found under {directory}')
+        logger.info(f'No files matching {pattern!r} found under {directory}')
         return
 
     corrupted = []
@@ -54,21 +57,21 @@ def scan(directory, pattern, delete, workers):
         executor.shutdown(wait=False, cancel_futures=True)
         raise
 
-    print(f'\nScanned {len(paths)} file(s). Found {len(corrupted)} corrupted.')
+    logger.info(f'Scanned {len(paths)} file(s). Found {len(corrupted)} corrupted.')
 
     if not corrupted:
         return
 
     for path, err in corrupted:
-        print(f'  CORRUPTED: {path}  ({type(err).__name__}: {err})')
+        logger.warning(f'CORRUPTED: {path}  ({type(err).__name__}: {err})')
 
     if delete:
         for path, _ in corrupted:
             os.remove(path)
-            print(f'  Deleted: {path}')
-        print(f'Deleted {len(corrupted)} file(s).')
+            logger.info(f'Deleted: {path}')
+        logger.info(f'Deleted {len(corrupted)} file(s).')
     else:
-        print('\nRe-run with --delete to remove these files.')
+        logger.info('Re-run with --delete to remove these files.')
 
 
 if __name__ == '__main__':
@@ -81,6 +84,7 @@ if __name__ == '__main__':
     parser.add_argument('--workers', type=int, default=36,
                         help='Number of parallel worker processes (default: 36).')
     args = parser.parse_args()
+    logging.basicConfig(level=logging.INFO)
     start = time.time()
     scan(args.directory, args.pattern, args.delete, args.workers)
     stop = time.time()

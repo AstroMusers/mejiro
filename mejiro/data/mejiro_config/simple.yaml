@@ -4,7 +4,6 @@ psf_cache_dir: tests/test_data  # /data/bwedig/mejiro/cached_psfs
 dev: True
 nice: 19
 show_progress_bar: True
-suppress_warnings: False
 logging_level: WARNING
 limit: null
 seed: &seed 42

@@ -4,7 +4,6 @@ psf_cache_dir: cached_psfs
 dev: True
 nice: 19
 show_progress_bar: False
-suppress_warnings: True
 logging_level: INFO
 limit: null
 seed: &seed 42

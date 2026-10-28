@@ -64,7 +64,6 @@ import multiprocessing
 import subprocess
 import sys
 import time
-import warnings
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from glob import glob
 
@@ -187,7 +186,7 @@ def main(args):
         logger.info(f'Processing {len(filtered_tuple_list)} run(s) without JAX')
 
     if use_jax and jax_platform == 'gpu':
-        num_detectable += _run_sequential(filtered_tuple_list, compilation_cache_dir, jax_platform)
+        num_detectable += _run_sequential(pipeline, filtered_tuple_list, compilation_cache_dir, jax_platform)
     else:
         num_detectable += _run_spawn_pool(pipeline, filtered_tuple_list, compilation_cache_dir, jax_platform, use_jax)
 
@@ -247,7 +246,7 @@ def _run_spawn_pool(pipeline, tuple_list, compilation_cache_dir, jax_platform, u
             max_workers=workers,
             mp_context=ctx,
             initializer=_worker_init,
-            initargs=(jax_platform, compilation_cache_dir, cpu_queue, use_jax),
+            initargs=(pipeline.config, jax_platform, compilation_cache_dir, cpu_queue, use_jax),
         ) as executor:
             futures = [executor.submit(run_slsim, task) for task in tuple_list]
             for future in tqdm(as_completed(futures), total=len(futures), desc='Runs'):
@@ -260,7 +259,7 @@ def _run_spawn_pool(pipeline, tuple_list, compilation_cache_dir, jax_platform, u
     return num_detectable
 
 
-def _run_sequential(tuple_list, compilation_cache_dir, jax_platform):
+def _run_sequential(pipeline, tuple_list, compilation_cache_dir, jax_platform):
     """GPU path: initialize JAX in main and run runs sequentially.
 
     Unlike step 04 (where lenses are pickled up front and can be bucketed by
@@ -268,7 +267,7 @@ def _run_sequential(tuple_list, compilation_cache_dir, jax_platform):
     just iterate run-by-run and rely on the shared JIT cache to amortize
     compilation across runs.
     """
-    _worker_init(jax_platform, compilation_cache_dir, None, use_jax=True)
+    _worker_init(pipeline.config, jax_platform, compilation_cache_dir, None, use_jax=True)
 
     num_detectable = 0
     for task in tqdm(tuple_list, total=len(tuple_list), desc='Runs'):
@@ -276,9 +275,12 @@ def _run_sequential(tuple_list, compilation_cache_dir, jax_platform):
     return num_detectable
 
 
-def _worker_init(jax_platform, compilation_cache_dir, cpu_queue, use_jax):
+def _worker_init(config, jax_platform, compilation_cache_dir, cpu_queue, use_jax):
     """Spawn worker entry point: pin CPU affinity; when JAX is enabled, also
     pin the JAX platform, enable the JIT cache, and cache the JAXXED set."""
+    # Spawned workers do not inherit the parent's logging level or warning filters.
+    PipelineHelper.configure_logging_and_warnings(config)
+
     # Pin this worker to a single core (Linux only). JAX's CPU runtime sizes
     # its Eigen/dispatch pools from hardware_concurrency(), which XLA_FLAGS
     # cannot cap; sched_setaffinity is what actually bounds load to ~workers
@@ -350,10 +352,6 @@ def run_slsim(tuple):
     # reproducible per-run seeding
     global_seed = config['seed']
     np.random.seed(hash((global_seed, int(run))) % (2**32))
-
-    # suppress warnings
-    if config['suppress_warnings']:
-        warnings.filterwarnings("ignore")
 
     # retrieve configuration parameters
     limit = config['limit']
@@ -538,7 +536,7 @@ def run_slsim(tuple):
         if len(total_lens_population) > 0:
             logger.info(f'Percentage of exceptions: {num_exceptions / len(total_lens_population) * 100:.2f}%')
         else:
-            warnings.warn('No systems in total population. Consider revising the galaxy population.')
+            logger.warning('No systems in total population. Consider revising the galaxy population.')
             return 0
 
         # save other params to CSV

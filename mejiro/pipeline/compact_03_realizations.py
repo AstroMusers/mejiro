@@ -81,13 +81,12 @@ def _inspect_one(path):
 def main(args):
     start = time.time()
 
-    # standalone script (does not go through PipelineHelper), so configure
-    # logging here to surface the progress/summary messages below.
-    logging.basicConfig(level=logging.INFO)
-
     config_path = _resolve_config_path(args.config)
     with open(config_path, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
+
+    # standalone script (does not go through PipelineHelper), so configure logging here
+    PipelineHelper.configure_logging_and_warnings(config)
 
     data_dir = args.data_dir if args.data_dir is not None else config['data_dir']
     pipeline_label = config['pipeline_label']

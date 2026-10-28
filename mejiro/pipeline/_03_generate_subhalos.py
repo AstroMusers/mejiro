@@ -137,7 +137,7 @@ def main(args):
     if not use_jax:
         _run_no_jax(pipeline, filtered_tuple_list)
     elif jax_platform == 'gpu':
-        _run_jax_gpu(filtered_tuple_list)
+        _run_jax_gpu(pipeline, filtered_tuple_list)
     else:
         _run_jax_cpu(pipeline, filtered_tuple_list)
 
@@ -223,27 +223,30 @@ def _run_jax_cpu(pipeline, tuple_list):
             max_workers=workers,
             mp_context=ctx,
             initializer=_jax_worker_init,
-            initargs=('cpu', cpu_queue),
+            initargs=(pipeline.config, 'cpu', cpu_queue),
         ),
         tuple_list,
     )
 
 
-def _run_jax_gpu(tuple_list):
+def _run_jax_gpu(pipeline, tuple_list):
     """JAX GPU path: run every system sequentially in the main process."""
-    _jax_worker_init('gpu', None)
+    _jax_worker_init(pipeline.config, 'gpu', None)
     logger.info(f'Running {len(tuple_list)} system(s) sequentially on GPU.')
     for task in tqdm(tuple_list):
         add(task)
 
 
-def _jax_worker_init(jax_platform, cpu_queue):
+def _jax_worker_init(config, jax_platform, cpu_queue):
     """JAX worker setup: pin to a core (CPU path only), then pin the platform.
 
     Serves both JAX paths: spawn-worker initializer on CPU (``cpu_queue`` holds
     the core ids to pin to), called directly in the main process on GPU
     (``cpu_queue`` is None, no pinning).
     """
+    # Spawned workers do not inherit the parent's logging level or warning filters.
+    PipelineHelper.configure_logging_and_warnings(config)
+
     if cpu_queue is not None:
         os.sched_setaffinity(0, {cpu_queue.get()})
 

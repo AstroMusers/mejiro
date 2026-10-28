@@ -26,7 +26,6 @@ os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
 import argparse
 import time
-import warnings
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from glob import glob
 
@@ -127,10 +126,6 @@ def generate_galaxy_table(tuple):
     # seed for reproducibility
     global_seed = config['seed']
     np.random.seed(hash((global_seed, table_index, 0)) % (2**32))
-
-    # suppress warnings
-    if config['suppress_warnings']:
-        warnings.filterwarnings("ignore")
 
     survey_config = config['survey']
     cosmo = survey_config['cosmo']

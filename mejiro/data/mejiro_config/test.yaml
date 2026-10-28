@@ -6,7 +6,6 @@ psf_cache_dir: tests/test_data
 dev: True
 nice: 19
 show_progress_bar: True
-suppress_warnings: True
 logging_level: WARNING
 limit: 1
 seed: &seed 42

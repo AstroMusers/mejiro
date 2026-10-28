@@ -4,7 +4,6 @@ psf_cache_dir: /grad/bwedig/mejiro/mejiro/data/psfs/jwst
 dev: True
 nice: 19
 show_progress_bar: False
-suppress_warnings: False
 logging_level: WARNING
 limit: null
 seed: &seed 42

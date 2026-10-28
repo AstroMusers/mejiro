@@ -59,9 +59,8 @@ class PipelineHelper:
             config = yaml.load(f, Loader=yaml.SafeLoader)
         self.config = config
 
-        # configure logging level
-        logging_level = config['logging_level']
-        logging.basicConfig(level=getattr(logging, logging_level.upper(), logging.INFO))
+        # configure logging level and warning filters
+        self.configure_logging_and_warnings(config)
 
         # set data directory
         self.data_dir = config['data_dir']
@@ -83,11 +82,6 @@ class PipelineHelper:
 
         # set nice level
         os.nice(config['nice'])
-
-        # suppress warnings
-        if config['suppress_warnings']:
-            import warnings
-            warnings.filterwarnings("ignore", category=UserWarning)
 
         # load instrument
         self.instrument_name = config['instrument'].lower()
@@ -225,6 +219,23 @@ class PipelineHelper:
 
     def validate_instrument(self, instrument_name):
         assert self.instrument_name == instrument_name, f"This method is only for the {instrument_name} instrument."
+
+    @staticmethod
+    def configure_logging_and_warnings(config):
+        """Apply the config's ``logging_level`` to this process and route ``warnings`` through logging.
+
+        Python warnings are captured onto the ``py.warnings`` logger at WARNING, so
+        ``logging_level`` filters them like any other record.
+
+        Fork-context workers inherit both from the parent, but spawn-context workers
+        start from a fresh interpreter, so their initializers must call this too.
+        """
+        level = getattr(logging, config.get('logging_level', 'INFO').upper(), logging.INFO)
+        logging.basicConfig(level=level)
+        # basicConfig is a no-op once the root logger has handlers (e.g., a later step
+        # of Pipeline.run, or a library that installed one at import)
+        logging.getLogger().setLevel(level)
+        logging.captureWarnings(True)
 
     @staticmethod
     def is_romanisim_step(step_name):
