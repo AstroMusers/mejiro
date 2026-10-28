@@ -16,7 +16,7 @@ on [SLSim](https://github.com/LSST-strong-lensing/slsim), [lenstronomy](https://
 
 # Installation
 
-Install `mejiro` by following [these instructions in the documentation](https://mejiro.readthedocs.io/en/latest/getting_started/installation.html).
+Install `mejiro` by following [these instructions in the documentation](https://mejiro.readthedocs.io/en/latest/usage/installation.html).
 
 # Usage
 
