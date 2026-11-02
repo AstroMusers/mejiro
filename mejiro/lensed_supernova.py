@@ -163,8 +163,8 @@ class LensedSupernova(GalaxyGalaxy):
             'light_curves': light_curves,
         }
         if slsim_lens.deflector.deflector_type == "NFW_HERNQUIST":
-            physical_params['main_halo_mass'] = slsim_lens.deflector.halo_properties[0]
-            physical_params['main_halo_concentration'] = slsim_lens.deflector.halo_properties[1]
+            physical_params['main_halo_mass'] = slsim_lens.deflector.mass_properties['halo_mass']
+            physical_params['main_halo_concentration'] = slsim_lens.deflector.mass_properties['concentration']
 
         return LensedSupernova(name=name,
                                coords=coords,

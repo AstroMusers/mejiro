@@ -131,8 +131,8 @@ class GalaxyGalaxy(StrongLens):
             'magnitudes': magnitudes,
         }
         if slsim_gglens.deflector.deflector_type == "NFW_HERNQUIST":
-            physical_params['main_halo_mass'] = slsim_gglens.deflector.halo_properties[0]
-            physical_params['main_halo_concentration'] = slsim_gglens.deflector.halo_properties[1]
+            physical_params['main_halo_mass'] = slsim_gglens.deflector.mass_properties['halo_mass']
+            physical_params['main_halo_concentration'] = slsim_gglens.deflector.mass_properties['concentration']
 
         # record matched source if the source came from a catalog (e.g. COSMOS, COSMOS_WEB):
         # a dict when matching succeeded, or None if the match failed and SLSim fell back to
