@@ -1,10 +1,14 @@
-projects/roman_data_challenge/figures
+
 notebooks/figures
 *.sh
 /archive
 .nfs*
 /dev/**/*.fits
-/dev/**/*.asdf
+/dev/**/*.
+
+# Bryce's folders
+dev/
+projects/
 
 # build
 dist/
