@@ -46,7 +46,7 @@ echo 'Built models.'
 # echo 'GalSim simulations complete.'
 
 echo 'Simulating images...'
-python3 mejiro/pipeline/romanisim_pipeline.py --config $config
+python3 mejiro/pipeline/_05_romanisim.py --config $config
 echo 'romanisim simulations complete.'
 
 echo 'Calculating SNRs...'
@@ -54,5 +54,5 @@ python3 mejiro/pipeline/calculate_snrs.py --config $config
 echo 'SNR calculation complete.'
 
 echo 'Generating h5 file...'
-    python3 mejiro/pipeline/_06_h5_export_romanisim.py --config $config
+python3 mejiro/pipeline/_06_h5_export.py --config $config
 echo 'h5 file generation complete.'
