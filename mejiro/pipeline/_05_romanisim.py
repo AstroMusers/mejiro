@@ -52,17 +52,24 @@ Usage:
         [--dither-pattern <name>] [--sequential] [--max-systems N] [--resume]
 
 Arguments:
-    --config: Path to the YAML configuration file.
-    --data_dir: Parent directory of pipeline output. Overrides data_dir in the config file.
-    --level: 'l2' (default) for single-exposure cutouts, 'l3' for co-added mosaic cutouts.
-    --dither-pattern: Dither pattern name for --level l3 (default BOXGAP4_1); sub-pixel
+    --config
+        Path to the YAML configuration file.
+    --data_dir
+        Parent directory of pipeline output. Overrides data_dir in the config file.
+    --level
+        'l2' (default) for single-exposure cutouts, 'l3' for co-added mosaic cutouts.
+    --dither-pattern
+        Dither pattern name for --level l3 (default BOXGAP4_1); sub-pixel
         patterns from WfiImagingSubpixel.txt (e.g. SUB4) are also accepted. Note the
         number of dither steps sets the effective depth.
-    --sequential: Process systems sequentially from the start instead of randomly when a
+    --sequential
+        Process systems sequentially from the start instead of randomly when a
         limit is imposed.
-    --max-systems: Process only the first N systems (lowest UIDs) across all SCAs, in
+    --max-systems
+        Process only the first N systems (lowest UIDs) across all SCAs, in
         total (unlike config['limit'], which is applied per SCA).
-    --resume: Preserve existing output and skip already-completed batches (those with a
+    --resume
+        Preserve existing output and skip already-completed batches (those with a
         batch_complete_*.txt sentinel). Default is to delete existing output and rebuild
         from scratch. Note the sentinels record neither --level nor --dither-pattern, and
         all variants share the one 05_romanisim/ directory, so only resume with the same
@@ -805,6 +812,9 @@ def main(args):
         # Note a --resume run with no remaining batches returns above without reaching here;
         # the file is already present from the run that produced those batches.
         measured = {r for r in results if r is not None}
+        if not measured:
+            raise RuntimeError(f'All {len(tasks)} batch(es) failed; see the errors logged above. '
+                               f'exposure_time.txt was not written.')
         if len(measured) > 1:
             logger.warning(f'Batches reported differing effective exposure times: {sorted(measured)}')
         mosaic_exptime = max(measured)
@@ -1068,7 +1078,7 @@ def process_batch_l3(task):
             [(f, 'science') for f in l2_files], product_name=product_name,
             with_exptype=True, target='',
         )
-        _, serialized = asn.dump(format='json')
+        _, serialized = asn.dump()
         with open(asn_path, 'w') as f:
             f.write(serialized)
 
