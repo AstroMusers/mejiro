@@ -7,8 +7,8 @@ notebooks/figures
 /dev/**/*.
 
 # Bryce's folders
-dev/
-projects/
+/dev/
+/projects/
 
 # build
 dist/
