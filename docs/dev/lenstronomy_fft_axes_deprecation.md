@@ -1,5 +1,8 @@
 # lenstronomy: `np.fft.rfftn` called with `s=` but `axes=None`
 
+Status: open upstream; accepted warning noise in mejiro.
+Last verified: 2026-11-04, against lenstronomy 1.14.2 (the pinned version): the calls at `ImSim/Numerics/convolution.py:121, 122, 174` are unchanged.
+
 ## Symptom
 
 mejiro's test suite emits **169** copies of this NumPy 2.0 deprecation, split across three lines of

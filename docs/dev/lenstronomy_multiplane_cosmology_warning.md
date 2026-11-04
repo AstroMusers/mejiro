@@ -1,5 +1,8 @@
 # lenstronomy: multi-plane "Cosmology is provided" warning is unconditional
 
+Status: open upstream; accepted warning noise in mejiro.
+Last verified: 2026-11-04, against lenstronomy 1.14.2 (the pinned version): the warning still appears in mejiro's test run.
+
 ## Symptom
 
 Every multi-plane `LensModel` construction emits:
