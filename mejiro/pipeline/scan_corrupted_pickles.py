@@ -3,7 +3,8 @@ Scan a directory for corrupted pickle files and optionally delete them.
 
 Corrupted pickles (e.g. from an interrupted write) raise EOFError when loaded.
 After deleting them, re-running _04_create_synthetic_images.py with the same
-config will regenerate only the missing files thanks to its skip-existing logic.
+config and --resume regenerates only the missing files. (Without --resume, the
+step deletes all of its existing output first.)
 
 Usage:
     python3 scan_corrupted_pickles.py <directory> [--pattern GLOB] [--delete]

@@ -6,6 +6,13 @@ Instruments
 .. note::
     ``mejiro``'s HWO support is currently under development.
 
+For example, to simulate a *JWST* NIRCam exposure with GalSim, using one of the JWST PSFs that ship with ``mejiro``:
+
+.. literalinclude:: ../examples/exposure_galsim_jwst.py
+    :language: python
+
+The other instruments work the same way; see :doc:`synthetic_image` and :doc:`engines` for *Roman*.
+
 ``instrument``
 *******************
 

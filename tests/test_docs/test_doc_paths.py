@@ -15,7 +15,15 @@ import re
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 
-PAGES = sorted((REPO / 'docs' / 'source').rglob('*.rst')) + [
+# outputs.rst names files the pipeline writes (01a/, galaxy_table_<NNNN>.pkl, ...), not files
+# in the repository, so it isn't checked.
+NOT_CHECKED = {REPO / 'docs' / 'source' / 'usage' / 'outputs.rst'}
+
+PAGES = [
+    page
+    for page in sorted((REPO / 'docs' / 'source').rglob('*.rst'))
+    if page not in NOT_CHECKED
+] + [
     REPO / 'README.md',
     REPO / 'docs' / 'README.md',
 ]

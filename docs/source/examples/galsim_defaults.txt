@@ -1,0 +1,9 @@
+{'dark_noise': True,
+ 'detector_effects': True,
+ 'ipc': True,
+ 'min_zodi_factor': 1.5,
+ 'nonlinearity': True,
+ 'poisson_noise': True,
+ 'read_noise': True,
+ 'reciprocity_failure': True,
+ 'sky_background': True}

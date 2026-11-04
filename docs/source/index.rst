@@ -7,7 +7,9 @@ mejiro documentation
 
    usage/installation.rst
    usage/running.rst
+   usage/command_line.rst
    usage/configuration.rst
+   usage/outputs.rst
    
 .. toctree::
    :maxdepth: 1

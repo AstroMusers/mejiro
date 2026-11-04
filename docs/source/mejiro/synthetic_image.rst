@@ -5,19 +5,8 @@ A "synthetic image" is the result of ray-shooting and possibly also convolving w
 
 Generating a synthetic image from a strong lens is the first step in simulating the observed image (the "exposure").
 
-.. code-block:: python
-
-    from mejiro.galaxy_galaxy import SampleGG
-    from mejiro.instruments.roman import Roman
-    from mejiro.synthetic_image import SyntheticImage
-
-    strong_lens = SampleGG()
-
-    synthetic_image = SyntheticImage(strong_lens=strong_lens,
-                                    instrument=Roman(),
-                                    band='F129',
-                                    fov_arcsec=5)
-    synthetic_image.plot()
+.. literalinclude:: ../examples/synthetic_image_roman.py
+    :language: python
 
 This produces the following figure:
 
