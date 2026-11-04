@@ -420,7 +420,7 @@ class GalSimEngine(Engine):
                 'ipc': True,
                 'read_noise': True,
             }
-        elif instrument_name.lower() == 'hwo' or instrument_name.lower() == 'jwst':
+        elif instrument_name.lower() == 'hwo' or instrument_name.lower() == 'jwst' or instrument_name.lower() == 'hst':
             return {
                 # 'rng_seed': 42,
                 'sky_background': True,
@@ -464,7 +464,7 @@ class GalSimEngine(Engine):
                 engine_params['read_noise'] = GalSimEngine.defaults('Roman')['read_noise']
                 logger.debug(f'Using default read_noise: {engine_params["read_noise"]}')
             return engine_params
-        elif instrument_name.lower() == 'hwo' or instrument_name.lower() == 'jwst':
+        elif instrument_name.lower() == 'hwo' or instrument_name.lower() == 'jwst' or instrument_name.lower() == 'hst':
             if 'sky_background' not in engine_params.keys():
                 engine_params['sky_background'] = GalSimEngine.defaults('HWO')['sky_background']
                 logger.debug(f'Using default sky_background: {engine_params["sky_background"]}')
