@@ -78,3 +78,17 @@ Step 6: Export Dataset
 .. automodule:: mejiro.pipeline._06_h5_export
     :members:
     :show-inheritance:
+
+Maintenance: Scan for Corrupted Pickles
+***************************************
+
+.. automodule:: mejiro.pipeline.scan_corrupted_pickles
+    :members:
+    :show-inheritance:
+
+Maintenance: Compact Step 3 Output
+**********************************
+
+.. automodule:: mejiro.pipeline.compact_03_realizations
+    :members:
+    :show-inheritance:

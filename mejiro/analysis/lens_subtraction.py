@@ -1,3 +1,11 @@
+"""Fit and subtract the lensing galaxy's light from a simulated image.
+
+:func:`fit_sersic` fits a Sersic profile to a 2D image, optionally as a bulge + disk pair,
+with a sky pedestal, and convolved with a PSF. :func:`subtract_lens` applies it to an
+:class:`mejiro.exposure.Exposure`, fitting the central lens galaxy and returning the
+residual image with the lens light removed. :func:`plot_lens_subtraction` shows the image,
+the fitted model and the residual side by side.
+"""
 import numpy as np
 from scipy.optimize import minimize
 from scipy.signal import fftconvolve

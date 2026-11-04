@@ -73,14 +73,18 @@ class Pipeline:
         """
         Executes the mejiro pipeline end-to-end.
 
-        The pipeline consists of the following steps:
-            1. Optionally caches PSFs if not in test mode.
-            2. Runs the survey simulation.
-            3. Builds the lens list.
-            4. Generates subhalos.
-            5. Creates synthetic images.
-            6. Creates exposures.
-            7. Exports results to HDF5 format.
+        Runs, in order:
+
+        1. ``_00_cache_psfs``: cache PSFs (skipped in test mode).
+        2. ``_01a_generate_galaxy_tables``: draw the galaxy population tables.
+        3. ``_01b_run_survey_simulation``: find detectable strong lenses.
+        4. ``_02_build_lens_list``: convert them to mejiro ``StrongLens`` objects.
+        5. ``_03_generate_subhalos``: add pyHalo substructure.
+        6. ``_04_create_synthetic_images``: ray-shoot the synthetic images.
+        7. The exposure and export steps, chosen by ``imaging.engine``:
+
+           - ``galsim``: ``_05_galsim``, then ``_06_h5_export``.
+           - ``romanisim``: ``_05_romanisim``, then ``calculate_snrs``, then ``_06_h5_export``.
 
         Returns
         -------
@@ -88,8 +92,8 @@ class Pipeline:
 
         Notes
         -----
-        The method assumes that each script's `main` function accepts `self.args` as its argument.
-        The PSF caching step is skipped if `_test_mode` is True.
+        Each step's ``main`` receives ``self.args``. The steps after ``_05_*`` receive a copy
+        whose ``prev_step`` points at the exposure step (see ``_tail_args``).
         """
         start = time.time()
         if not self._test_mode:
@@ -136,30 +140,30 @@ class Pipeline:
 
     def run_script(self, script_number):
         """
-        Run a specific pipeline script by its number.
+        Run a single pipeline step.
 
         Parameters
         ----------
-        script_number : int
-            The script number to run (0-6).
+        script_number : int or str
+            Which step to run. Integers for the numbered steps, strings for the others:
 
-        Script numbers and their corresponding scripts
-        ---------------------------------------------
-        0 : Cache psfs
-        '1a' : Generate galaxy tables
-        '1b' : Run survey simulation (using pre-computed tables; JAX ray-shooting when jaxtronomy.use_jax)
-        2 : Build lens list
-        3 : Generate subhalos
-        4 : Create synthetic images (JAX ray-shooting when jaxtronomy.use_jax)
-        5 : Create exposures (_05_romanisim when imaging.engine is 'romanisim';
-            its --level/--dither-pattern flags select the L2 or L3 variant, default L2)
-        'snr' : Calculate SNRs (romanisim tail only)
-        6 : Export to HDF5 file
+            - ``0``: ``_00_cache_psfs``, cache PSFs.
+            - ``'1a'``: ``_01a_generate_galaxy_tables``, draw the galaxy population tables.
+            - ``'1b'``: ``_01b_run_survey_simulation``, find detectable lenses (JAX
+              ray-shooting when ``jaxtronomy.use_jax``).
+            - ``2``: ``_02_build_lens_list``, build the lens list.
+            - ``3``: ``_03_generate_subhalos``, add substructure.
+            - ``4``: ``_04_create_synthetic_images``, create synthetic images (JAX
+              ray-shooting when ``jaxtronomy.use_jax``).
+            - ``5``: create exposures, with ``_05_romanisim`` when ``imaging.engine`` is
+              ``'romanisim'`` (using its default level, L2) and ``_05_galsim`` otherwise.
+            - ``'snr'``: ``calculate_snrs``, calculate SNRs (romanisim path only).
+            - ``6``: ``_06_h5_export``, export to an HDF5 file.
 
         Raises
         ------
         ValueError
-            If the script_number is not valid.
+            If ``script_number`` is not one of the values above.
         """
         if script_number == 0:
             script_00_cache_psfs.main(self.args)

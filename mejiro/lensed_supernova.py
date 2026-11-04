@@ -1,3 +1,12 @@
+"""Lensed supernovae: galaxy-galaxy strong lenses whose source hosts a supernova.
+
+:class:`LensedSupernova` extends :class:`mejiro.galaxy_galaxy.GalaxyGalaxy` with the
+supernova's lensed images (as point sources), their time delays and magnifications, and
+per-band light curves. Build one from an SLSim lens with :meth:`LensedSupernova.from_slsim`.
+Before creating a :class:`mejiro.synthetic_image.SyntheticImage`, call
+:meth:`LensedSupernova.set_observation_time` to set the point-source magnitudes for that
+epoch; rendering several epochs gives a time series of images.
+"""
 import numpy as np
 from scipy.interpolate import interp1d
 

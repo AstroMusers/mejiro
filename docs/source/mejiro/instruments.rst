@@ -22,6 +22,14 @@ Instruments
     :undoc-members:
     :show-inheritance:
 
+``point_wfi``
+*************
+
+.. automodule:: mejiro.point_wfi
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 ``jwst``
 ********
 
