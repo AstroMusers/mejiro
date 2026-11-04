@@ -9,7 +9,6 @@ limit: null
 seed: &seed 42
 cores:
   script_00: 1
-  script_01: 16
   script_01a: 16
   script_01b: 16
   script_03: 1
@@ -104,5 +103,4 @@ psf:
   divide_up_detector: 1  # this sets the detector positions, e.g., 5 means 25 positions on each detector
 dataset:
   version: 0.1  # used in the filename of the .h5 file
-  include_psfs: True
   include_synthetic_images: True
