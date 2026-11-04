@@ -374,7 +374,7 @@ Parameters for SNR-based detectability cuts (in ``_01b_run_survey_simulation.py`
    Used in ``_01b_run_survey_simulation.py`` and ``calculate_snrs.py``.
 
 ``snr_detector_position``
-   (Optional.) Tuple ``[x, y]`` giving the detector position used when building the SNR PSF. Defaults to ``(2554, 2554)`` when absent. Choose one of the positions step 00 caches PSFs at (see ``psf.divide_up_detector``; ``1`` gives the detector center, ``(2043, 2043)``), otherwise step 01b computes the PSF with STPSF, which needs STPSF's data files.
+   (Optional.) Tuple ``[x, y]`` giving the detector position used when building the SNR PSF. Defaults to the detector center, ``(2043, 2043)``, when absent. Choose one of the positions step 00 caches PSFs at (see ``psf.divide_up_detector``; ``1`` gives the detector center), otherwise step 01b computes the PSF with STPSF, which needs STPSF's data files.
 
    Used in ``_01b_run_survey_simulation.py``.
 

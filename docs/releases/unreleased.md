@@ -89,8 +89,13 @@ Scripts and output directories that changed:
 - `roman_test.yaml` used `psf.divide_up_detector: 5`, which `roman_util.divide_up_sca` rejects
   (the value must divide the 4088-pixel detector evenly), so step 00 failed. It now uses 2.
 - `simple.yaml` and `roman_test.yaml` set `snr.snr_detector_position` to a position step 00
-  caches PSFs at, so step 01b no longer needs STPSF data for the SNR PSF. Configs that
-  leave it out still default to `(2554, 2554)`.
+  caches PSFs at, so step 01b no longer needs STPSF data for the SNR PSF.
+- **`snr.snr_detector_position` now defaults to the detector center, `(2043, 2043)`,**
+  instead of the off-center `(2554, 2554)`. Only Roman PSFs depend on detector position, and
+  every shipped Roman config sets the key, so the shipped configs are unaffected. But for your
+  own Roman configs that leave it out, the SNR PSF in step 01b changes, so **which lenses pass
+  the SNR cut can change**. To reproduce earlier results, set
+  `snr_detector_position: [2554, 2554]`.
 
 ### Dependencies
 
@@ -105,7 +110,7 @@ Scripts and output directories that changed:
 ### Packaging and documentation
 
 - **The version comes from git tags** (setuptools-scm). Between releases it names the exact
-  commit, e.g. `3.0.1.dev170+ge6eb267c`, so the `mejiro_version` attribute in HDF5 files
+  commit, e.g. `3.0.1.dev12+g1a2b3c4`, so the `mejiro_version` attribute in HDF5 files
   identifies the code that produced them.
 - The documentation was brought back in line with the code: the configuration reference,
   installation (which optional dependencies each use needs), the API reference, instrument
