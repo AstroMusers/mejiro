@@ -14,6 +14,9 @@ build:
     # nodejs: "19"
     # rust: "1.64"
     # golang: "1.19"
+  # graphviz's "dot" draws the module diagram that docs/source/conf.py generates with pydeps
+  apt_packages:
+    - graphviz
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:

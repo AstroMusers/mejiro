@@ -1,9 +1,12 @@
 # Configuration file for the Sphinx documentation builder.
 
 import os
+import shutil
+import subprocess
 import sys
 
-sys.path.insert(0, os.path.abspath('../..'))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, REPO_ROOT)
 
 # -- Project information
 
@@ -47,3 +50,33 @@ html_theme = 'sphinx_rtd_theme'
 
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
+
+
+# -- Module dependency diagram (appendices/structure.rst)
+
+def generate_structure_diagram(app):
+    """Draw the module dependency diagram with pydeps, which needs graphviz's ``dot``.
+
+    The diagram is generated on every build rather than committed, so it can't go out of
+    date. Pipeline scripts are left out to keep it readable.
+    """
+    if shutil.which('dot') is None:
+        # SystemExit passes through Sphinx's error handling, so the build stops with just this
+        # message instead of a crash report asking for a Sphinx bug report.
+        raise SystemExit(
+            "Error: building the docs needs graphviz's 'dot' program to draw the module "
+            "diagram in appendices/structure.rst. Install graphviz (e.g. 'apt install graphviz', "
+            "'brew install graphviz' or 'conda install graphviz') and build again."
+        )
+    out_dir = os.path.join(app.srcdir, '_generated')
+    os.makedirs(out_dir, exist_ok=True)
+    subprocess.run(
+        [sys.executable, '-m', 'pydeps', os.path.join(REPO_ROOT, 'mejiro'),
+         '--only', 'mejiro', '--exclude', 'mejiro.pipeline*', '--noshow',
+         '-o', os.path.join(out_dir, 'mejiro.svg')],
+        check=True, cwd=out_dir,
+    )
+
+
+def setup(app):
+    app.connect('builder-inited', generate_structure_diagram)

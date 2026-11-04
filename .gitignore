@@ -15,6 +15,7 @@ dist/
 
 # docs
 docs/build
+docs/source/_generated/
 
 # egg-info
 *.egg-info/
