@@ -1,5 +1,22 @@
 # pyHalo: unfinished `np.trapz` → `np.trapezoid` migration
 
+Status: open upstream; mejiro still needs `numpy<2.4`.
+Last verified: 2026-11-04, against the pinned `pyhalo==1.4.6` and `slsim` fork.
+
+## Current state
+
+- mejiro now pins `pyhalo==1.4.6`, not 1.4.3. Moving to 1.4.9, which fixes the hot line
+  below, isn't possible yet: pyHalo 1.4.7+ imports lenstronomy profiles
+  (`core_collapsed_halo`, `king`) that no lenstronomy release has (see the comment on the
+  pin in `pyproject.toml`).
+- pyHalo 1.4.6 still calls `np.trapz` at `NFW_core_trunc.py:82, 174, 268`, `TNFW.py:78` and
+  `powerlaw.py:177`.
+- slsim also calls `np.trapz` (`slsim/Halos/halos.py`), so the `numpy<2.4.0` pin is needed
+  for both packages, not only pyHalo.
+
+The rest of this note was written against pyhalo 1.4.3 and 1.4.9, and is kept for its
+analysis and suggested upstream fix.
+
 ## Symptom
 
 Running mejiro's test suite against `pyhalo==1.4.3` produces **4,838** copies of:
@@ -13,7 +30,8 @@ in `scipy.integrate`.
 
 That is 95% of every warning the suite emits. `np.trapz` was deprecated in NumPy 2.0 and **removed
 in NumPy 2.4**, so this is not cosmetic — it is why
-[pyproject.toml](../../pyproject.toml) pins `numpy<2.4.0`:
+[pyproject.toml](../../pyproject.toml) pins `numpy<2.4.0`. When this note was written the
+pin's comment read:
 
 ```toml
 "numpy<2.4.0",  # including this for now because pyhalo==1.4.3 uses np.trapz which is removed in 2.4.0

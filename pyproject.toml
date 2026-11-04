@@ -22,7 +22,7 @@ license-files = ["LICEN[CS]E*"]
 dependencies = [
     "astropy==8.0.2",
     "galsim==2.8.5",
-    "numpy<2.4.0",  # required by slsim, which still uses np.trapz (removed in numpy 2.4.0)
+    "numpy<2.4.0",  # slsim and pyhalo 1.4.6 still use np.trapz, removed in numpy 2.4.0
     "pandas==3.1.0",
     "tqdm==4.70.1",
     "lenstronomy==1.14.2",
