@@ -36,14 +36,6 @@ class LenstronomyEngine(Engine):
                         'coadd_years': None
                     }
                 }
-            elif instrument_name.lower() == 'lsst':
-                engine_params |= {
-                    'obs_config_kwargs': {
-                        'band': 'i', 
-                        'psf_type': 'GAUSSIAN', 
-                        'coadd_years': 10
-                    }
-                }
             else:
                 Engine.instrument_not_supported(instrument_name)
 
@@ -68,9 +60,6 @@ class LenstronomyEngine(Engine):
         elif synthetic_image.instrument_name == 'HST':
             from lenstronomy.SimulationAPI.ObservationConfig import HST
             obs_config = HST.HST(**engine_params['obs_config_kwargs'])
-        elif synthetic_image.instrument_name == 'LSST':
-            from lenstronomy.SimulationAPI.ObservationConfig import LSST
-            obs_config = LSST.LSST(**engine_params['obs_config_kwargs'])
         # elif synthetic_image.instrument_name == 'Euclid':
         #     from lenstronomy.SimulationAPI.ObservationConfig import Euclid
         #     obs_config = Euclid.Euclid(**engine_params['obs_config_kwargs'])
