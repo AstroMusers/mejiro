@@ -1,5 +1,6 @@
 # Configuration file for the Sphinx documentation builder.
 
+import datetime
 import os
 import shutil
 import subprocess
@@ -11,7 +12,7 @@ sys.path.insert(0, REPO_ROOT)
 # -- Project information
 
 project = 'mejiro'
-copyright = '2025, AstroMusers'
+copyright = f'2023-{datetime.date.today().year}, AstroMusers'  # first commit: 2023-10-30
 author = 'Bryce Wedig'
 
 import mejiro

@@ -48,6 +48,10 @@ def mentioned_paths(page):
             yield literal
 
 
+# Placeholders such as docs/releases/vX.Y.Z.md or total_pop_<run_id>.csv aren't real files.
+PLACEHOLDER = re.compile(r'X\.Y\.Z|[<>*{}]')
+
+
 def exists(path, page):
     relative = path.lstrip('/')
     return any((base / relative).exists() for base in [page.parent, *SEARCH_DIRS])
@@ -58,7 +62,8 @@ def test_mentioned_files_exist():
         f'{path} (in {page.relative_to(REPO)})'
         for page in PAGES
         for path in mentioned_paths(page)
-        if not path.startswith(THIRD_PARTY_PREFIXES) and not exists(path, page)
+        if not path.startswith(THIRD_PARTY_PREFIXES) and not PLACEHOLDER.search(path)
+        and not exists(path, page)
     })
     assert not missing, (
         'Docs mention files that no longer exist: ' + ', '.join(missing)
