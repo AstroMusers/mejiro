@@ -404,7 +404,7 @@ PSF cache and generation parameters. Consumed primarily by ``_00_cache_psfs.py``
    Used in ``_00_cache_psfs.py``.
 
 ``divide_up_detector``
-   Integer ``N`` controlling how each detector is divided into an ``N x N`` grid of PSF-evaluation positions (e.g., ``5`` -> 25 positions per detector). Roman-specific; ``psf_config.get('divide_up_detector')`` is ``None`` for HWO.
+   Integer ``N`` controlling how each detector is divided into an ``N x N`` grid of PSF-evaluation positions (e.g., ``4`` -> 16 positions per detector). ``N`` must divide the 4088-pixel detector evenly (1, 2, 4, 7, 8, 14, ...); ``roman_util.divide_up_sca`` raises otherwise. Roman-specific; ``psf_config.get('divide_up_detector')`` is ``None`` for HWO.
 
    Used in ``_00_cache_psfs.py`` (via ``roman_util.divide_up_sca``), in ``_04_create_synthetic_images.py`` to pick a detector position per image, and in ``_05_romanisim.py`` to define the PSF buckets that group tiles within each 4088x4088 detector image (asserted to divide both ``GRID_SIDE`` and ``4088``).
 

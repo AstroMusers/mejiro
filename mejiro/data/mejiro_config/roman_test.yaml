@@ -107,7 +107,7 @@ psf:
   oversamples: [*snr_supersampling_factor, *supersampling_factor]
   num_pixes: [101]  # the first element of this list is used for the pipeline
   detectors: *detectors
-  divide_up_detector: 5  # this sets the detector positions, e.g., 5 means 25 positions on each detector
+  divide_up_detector: 5  # N x N PSF positions per detector, e.g. 4 means 16; N must divide 4088
 dataset:
   version: 0.1  # used in the filename of the .h5 file
   labeled: True  # if False, truth values go in an answer-key CSV instead of the .h5 file
