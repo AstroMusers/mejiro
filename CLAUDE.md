@@ -22,7 +22,10 @@ that happening again. When you change code, update the matching docs in the same
 - **Dependencies, optional extras, or supported Python versions**: update
   `docs/source/usage/installation.rst` (`test_installation_docs.py`).
 - **Code examples in the docs** live in `docs/source/examples/` and are included with
-  `literalinclude`; `test_doc_examples.py` runs them. Don't paste code into `.rst` files.
+  `literalinclude`; `test_doc_examples.py` runs them, so don't paste runnable examples into
+  `.rst` files. The exception is the end-to-end pipeline examples in
+  `docs/source/usage/running.rst`, which are too slow to run as a test
+  (`tests/test_pipeline/test_mejiro_pipeline.py` covers that path instead).
 - **Changes users will notice**: add an entry to `docs/releases/unreleased.md`. Leave released
   notes (`docs/releases/vX.Y.Z.md`) alone.
 - **Notes in `docs/dev/`** start with `Status:` and `Last verified:` lines (see
