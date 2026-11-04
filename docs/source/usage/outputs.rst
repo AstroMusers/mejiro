@@ -54,7 +54,7 @@ The HDF5 dataset
 **Images:** each system group holds one dataset per band in ``synthetic_image.bands``:
 
 - ``exposure_<uid>_<band>``: the simulated exposure. Attributes: ``exposure_time`` (seconds), ``pixel_scale`` (arcsec/pixel), ``fov`` (arcsec), ``units``, ``filter``, ``source_magnitude`` (unlensed), ``lensed_source_magnitude``, ``lens_magnitude``, and ``snr`` if ``calculate_snrs.py`` ran.
-- ``synthetic_image_<uid>_<band>``, when ``dataset.include_synthetic_images`` is ``True``: the noise-free synthetic image, with ``pixel_scale``, ``fov``, ``filter``, the three magnitudes, and ``units``.
+- ``synthetic_image_<uid>_<band>``, when ``dataset.include_synthetic_images`` is ``True``: the noise-free synthetic image, with ``pixel_scale``, ``fov``, ``filter``, the three magnitudes, and ``units``, which is always ``counts/s``: counts per second in each pixel of the dataset's own grid. That grid is finer than the exposure's when ``synthetic_image.oversample`` is greater than 1; see its ``pixel_scale``.
 
 The exposures' units and exposure time depend on the step that made them:
 
@@ -64,6 +64,6 @@ The exposures' units and exposure time depend on the step that made them:
 
 .. note::
 
-   The ``units`` attribute of ``synthetic_image_*`` datasets is currently copied from the matching exposure. Synthetic images themselves are in counts/s (see :doc:`../mejiro/synthetic_image`).
+   Files exported by ``mejiro`` v3.0.0 and later, before this was fixed, give ``synthetic_image_*`` datasets the exposure's ``units`` (``Counts``, ``DN``, ``DN/s`` or ``MJy/sr``). Their pixel values are counts/s all the same; only the label is wrong.
 
 **Answer key:** when ``dataset.labeled`` is ``False``, the truth values are left out of the HDF5 file, and the answer-key CSV has one row per system with the columns ``uid``, ``einstein_radius``, ``substructure_flag`` and ``deflector_only``.

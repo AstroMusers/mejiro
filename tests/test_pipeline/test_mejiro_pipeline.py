@@ -136,6 +136,12 @@ def test_pipeline_run(tmp_path, serialization):
                 (f"galsim exposure_time should be imaging.exposure_time "
                  f"({config['imaging']['exposure_time']}), got {dset.attrs['exposure_time'][0]}")
 
+            # test.yaml sets dataset.include_synthetic_images, and synthetic images are in
+            # counts/s whatever the exposure's units (they used to inherit the exposure's)
+            synth = f['images'][group_name][f'synthetic_image_{uid}_{band}']
+            assert synth.attrs['units'][0] == 'counts/s', \
+                f"synthetic images should be in counts/s, got {synth.attrs['units'][0]}"
+
 def test_no_data_dir():
     try:
         pipeline = Pipeline()

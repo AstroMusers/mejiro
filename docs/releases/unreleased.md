@@ -80,6 +80,12 @@ Scripts and output directories that changed:
   draw is seeded.
 - `simple.yaml` and `roman_test.yaml` set `dataset.labeled`, so step 06 no longer stops with
   `KeyError: 'labeled'` for them.
+- **HDF5 export:** `synthetic_image_*` datasets are now labeled `units = counts/s`. Since
+  v3.0.0 they were given the exposure's units instead (`Counts` or `DN/s` in v3.0.0; `DN`,
+  `DN/s` or `MJy/sr` since), so **existing datasets with synthetic images carry the wrong
+  label**. The pixel values were always counts/s; only the label was wrong. This fix doesn't
+  change the exposure datasets' labels. Step 06 now refuses to export a synthetic
+  image without a magnitude zeropoint, since its pixels wouldn't be in counts/s.
 
 ### Dependencies
 

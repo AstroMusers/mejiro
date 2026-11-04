@@ -624,6 +624,22 @@ def test_oversample_preserves_total_flux():
     assert oversampled.get_maggies() == pytest.approx(native.get_maggies(), rel=0.02)
 
 
+def test_data_is_in_counts_per_second():
+    """``data`` is counts/s per pixel: a deflector-only image sums to the counts/s the lens
+    magnitude implies through the instrument's zeropoint. _06_h5_export labels synthetic
+    images 'counts/s' on this basis, so if this breaks, those labels are wrong."""
+    from lenstronomy.Util import data_util
+
+    lens = SampleGG()
+    synthetic_image = SyntheticImage(strong_lens=lens, instrument=Roman(), band='F129',
+                                     fov_arcsec=41, deflector_only=True)
+    zeropoint = float(np.asarray(synthetic_image.magnitude_zeropoint).ravel()[0])
+    expected = data_util.magnitude2cps(lens.get_lens_magnitude('F129'), zeropoint)
+
+    # A 41" field misses well under 1% of the lens's Sersic light (about 0.4% here).
+    assert np.sum(synthetic_image.data) == pytest.approx(expected, rel=0.01)
+
+
 @pytest.mark.parametrize('bad', [2, 4, 0, -1, 2.5])
 def test_oversample_must_be_a_positive_odd_integer(bad):
     """Even factors would put the oversampled grid center on a subpixel boundary rather
