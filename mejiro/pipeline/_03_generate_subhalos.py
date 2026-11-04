@@ -191,8 +191,10 @@ def _drive_pool(executor, tuple_list):
             future.result()  # get the result to propagate exceptions if any
     except BaseException:
         logger.warning('Interrupted, shutting down workers...')
+        # snapshot the workers first: shutdown() sets _processes to None even with wait=False
+        processes = list((getattr(executor, '_processes', None) or {}).values())
         executor.shutdown(wait=False, cancel_futures=True)
-        for process in list(getattr(executor, '_processes', {}).values()):
+        for process in processes:
             process.kill()
         raise
     else:
