@@ -102,6 +102,7 @@ snr:
   snr_supersampling_factor: &snr_supersampling_factor 1
   snr_threshold: 5
   snr_per_pixel_threshold: 1
+  snr_detector_position: [2043, 2043]  # detector center, where divide_up_detector: 1 caches PSFs
 psf:
   bands: [ F106, F158 ]
   oversamples: [1]  # *snr_supersampling_factor, *supersampling_factor

@@ -86,6 +86,11 @@ Scripts and output directories that changed:
   label**. The pixel values were always counts/s; only the label was wrong. This fix doesn't
   change the exposure datasets' labels. Step 06 now refuses to export a synthetic
   image without a magnitude zeropoint, since its pixels wouldn't be in counts/s.
+- `roman_test.yaml` used `psf.divide_up_detector: 5`, which `roman_util.divide_up_sca` rejects
+  (the value must divide the 4088-pixel detector evenly), so step 00 failed. It now uses 2.
+- `simple.yaml` and `roman_test.yaml` set `snr.snr_detector_position` to a position step 00
+  caches PSFs at, so step 01b no longer needs STPSF data for the SNR PSF. Configs that
+  leave it out still default to `(2554, 2554)`.
 
 ### Dependencies
 
