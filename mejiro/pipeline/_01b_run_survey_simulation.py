@@ -394,12 +394,10 @@ def run_slsim(tuple):
 
     # load filters
     if config['pipeline_label'] == 'all':
-        from mejiro.instruments.hst import HST
         from mejiro.instruments.jwst import JWST
         from mejiro.instruments.roman import Roman
         from mejiro.instruments.hwo import HWO
         speclite_filters = Roman.load_speclite_filters(detector='SCA01')
-        speclite_filters = HST.load_speclite_filters()
         speclite_filters = JWST.load_speclite_filters()
         speclite_filters = HWO.load_speclite_filters()
     elif instrument.name == 'Roman':

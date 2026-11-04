@@ -138,12 +138,10 @@ def generate_galaxy_table(tuple):
 
     # load speclite filters (must be registered before SkyPy can use them)
     if config['pipeline_label'] == 'all':
-        from mejiro.instruments.hst import HST
         from mejiro.instruments.jwst import JWST
         from mejiro.instruments.roman import Roman
         from mejiro.instruments.hwo import HWO
         Roman.load_speclite_filters(detector='SCA01')
-        HST.load_speclite_filters()
         JWST.load_speclite_filters()
         HWO.load_speclite_filters()
     elif instrument.name == 'Roman':
