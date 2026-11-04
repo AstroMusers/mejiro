@@ -5,9 +5,9 @@ class Instrument(ABC):
     """Abstract base class for all instrument implementations.
 
     Defines the common interface shared by all supported telescopes and
-    instruments (Roman, HST, JWST, LSST, HWO). Concrete subclasses must
-    implement the abstract methods for band-specific optical and detector
-    properties.
+    instruments (one subclass per instrument in ``mejiro.instruments``).
+    Concrete subclasses must implement the abstract methods for band-specific
+    optical and detector properties.
     """
 
     def __init__(

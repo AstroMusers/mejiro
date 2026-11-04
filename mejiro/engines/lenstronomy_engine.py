@@ -28,22 +28,6 @@ class LenstronomyEngine(Engine):
                         'survey_mode': 'wide_area'
                     }
                 }
-            elif instrument_name.lower() == 'hst':
-                engine_params |= {
-                    'obs_config_kwargs': {
-                        'band': 'WFC3_F160W', 
-                        'psf_type': 'PIXEL', 
-                        'coadd_years': None
-                    }
-                }
-            elif instrument_name.lower() == 'lsst':
-                engine_params |= {
-                    'obs_config_kwargs': {
-                        'band': 'i', 
-                        'psf_type': 'GAUSSIAN', 
-                        'coadd_years': 10
-                    }
-                }
             else:
                 Engine.instrument_not_supported(instrument_name)
 
@@ -65,12 +49,6 @@ class LenstronomyEngine(Engine):
         if synthetic_image.instrument_name == 'Roman':
             from lenstronomy.SimulationAPI.ObservationConfig import Roman
             obs_config = Roman.Roman(**engine_params['obs_config_kwargs'])
-        elif synthetic_image.instrument_name == 'HST':
-            from lenstronomy.SimulationAPI.ObservationConfig import HST
-            obs_config = HST.HST(**engine_params['obs_config_kwargs'])
-        elif synthetic_image.instrument_name == 'LSST':
-            from lenstronomy.SimulationAPI.ObservationConfig import LSST
-            obs_config = LSST.LSST(**engine_params['obs_config_kwargs'])
         # elif synthetic_image.instrument_name == 'Euclid':
         #     from lenstronomy.SimulationAPI.ObservationConfig import Euclid
         #     obs_config = Euclid.Euclid(**engine_params['obs_config_kwargs'])
