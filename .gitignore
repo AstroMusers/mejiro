@@ -20,6 +20,9 @@ docs/source/_generated/
 # egg-info
 *.egg-info/
 
+# written by setuptools-scm at install time
+mejiro/_version.py
+
 # pytest
 .pytest_cache/
 

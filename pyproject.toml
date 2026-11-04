@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -69,8 +69,10 @@ all = [
 where = ["."]
 include = ["mejiro*"]
 
-[tool.setuptools.dynamic]
-version = {attr = "mejiro.__version__"}
+[tool.setuptools_scm]
+# The version comes from the latest git tag (e.g. v3.0.0) plus the commits since it,
+# e.g. 3.0.1.dev12+g1a2b3c4 between releases. It's written to mejiro/_version.py at install.
+version_file = "mejiro/_version.py"
 
 [project.urls]
 Documentation = "https://mejiro.readthedocs.io/en/latest/index.html"

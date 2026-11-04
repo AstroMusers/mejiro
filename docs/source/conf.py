@@ -16,8 +16,14 @@ author = 'Bryce Wedig'
 
 import mejiro
 
-release = mejiro.__version__
-version = mejiro.__version__
+try:
+    # Read the Docs builds from the source tree without installing mejiro, so there's no
+    # mejiro/_version.py there; ask git for the version directly.
+    from setuptools_scm import get_version
+    release = get_version(root=REPO_ROOT)
+except Exception:
+    release = mejiro.__version__
+version = release
 
 # -- General configuration
 

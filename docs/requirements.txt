@@ -1,3 +1,4 @@
 sphinx==9.1.1
 sphinx-rtd-theme==3.1.0
 pydeps==3.0.9
+setuptools-scm==10.3.4

@@ -35,12 +35,16 @@ UNDOCUMENTED = {
 AUTOMODULE = re.compile(r'^\.\. automodule:: (\S+)', re.MULTILINE)
 
 
+# Generated files that exist only after mejiro is installed (and are gitignored).
+GENERATED = {PACKAGE / '_version.py'}  # written by setuptools-scm
+
+
 def package_modules():
-    """Dotted names of every module in mejiro/ (package ``__init__`` files excluded)."""
+    """Dotted names of every module in mejiro/ (package ``__init__`` and generated files excluded)."""
     return {
         '.'.join(path.relative_to(REPO).with_suffix('').parts)
         for path in PACKAGE.rglob('*.py')
-        if path.name != '__init__.py'
+        if path.name != '__init__.py' and path not in GENERATED
     }
 
 
