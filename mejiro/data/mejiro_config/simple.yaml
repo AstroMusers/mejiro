@@ -110,4 +110,5 @@ psf:
   divide_up_detector: 1  # this sets the detector positions, e.g., 5 means 25 positions on each detector
 dataset:
   version: 0.1  # used in the filename of the .h5 file
+  labeled: True  # if False, truth values go in an answer-key CSV instead of the .h5 file
   include_synthetic_images: True
