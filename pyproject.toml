@@ -55,6 +55,7 @@ roman = [
     "romanisim==0.14.0",
     "romancal==1.1.0",
     "roman-technical-information==1.5.0",
+    "astrocut==1.4.0",
 ]
 hwo = [
     "syotools==1.3.5"
