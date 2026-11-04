@@ -3,7 +3,7 @@ Engines
 
 ``mejiro`` wraps various image simulation packages to provide a consistent interface for simulating images. Each wrapped package is referred to as an "engine." The following engines are currently supported:
 
-- GalSim: *Roman*, *HWO*
+- GalSim: *Roman*, *JWST*, *HWO*
 - STPSF (PSFs only): *Roman*
 
 `romanisim <https://github.com/spacetelescope/romanisim>`_ is not available as an ``Exposure`` engine. Instead, *Roman* detector simulation with romanisim runs as pipeline step :mod:`mejiro.pipeline._05_romanisim`, selected by setting ``imaging.engine: romanisim`` in the pipeline config.

@@ -1,7 +1,7 @@
 Instruments
 ===========
 
-``mejiro`` currently supports simulating the Roman Space Telescope ("Roman"), the James Webb Space Telescope (JWST), and the Habitable Worlds Observatory (HWO). ``mejiro``'s Roman imaging wraps ``GalSim`` and ``STPSF`` with instrument parameters from ``roman-technical-information``, its JWST imaging wraps ``GalSim`` with instrument parameters from ``lenstronomy``, and its HWO imaging wraps ``GalSim`` with instrument parameters from ``hwo-tools`` and ``syotools``.
+``mejiro`` currently supports simulating the Roman Space Telescope ("Roman"), the James Webb Space Telescope (JWST), and the Habitable Worlds Observatory (HWO). ``mejiro``'s Roman imaging wraps ``GalSim`` and ``STPSF`` with instrument parameters from ``roman-technical-information``, its JWST imaging wraps ``GalSim`` and ``STPSF`` with instrument parameters from ``lenstronomy``, and its HWO imaging wraps ``GalSim`` with instrument parameters from ``syotools``.
 
 .. note::
     ``mejiro``'s HWO support is currently under development.

@@ -110,6 +110,21 @@ Controls JAX-based acceleration for ray-shooting and image rendering.
 
 Single string identifying the instrument: ``roman``, ``jwst``, or ``hwo``. Lower-cased and validated against the calling script's ``SUPPORTED_INSTRUMENTS`` by ``PipelineHelper``. Drives loading of the appropriate ``mejiro.instruments`` class (``Roman``, ``JWST``, or ``HWO``).
 
+Not every step supports every instrument. ``PipelineHelper`` raises ``ValueError`` when a step is run with an instrument it doesn't support:
+
+- ``_00_cache_psfs.py``: Roman
+- ``_01a_generate_galaxy_tables.py``: Roman, JWST, HWO
+- ``_01b_run_survey_simulation.py``: Roman, JWST, HWO
+- ``_02_build_lens_list.py``: Roman, JWST, HWO
+- ``_03_generate_subhalos.py``: Roman, HWO
+- ``_04_create_synthetic_images.py``: Roman, JWST, HWO
+- ``_05_galsim.py``: Roman, JWST, HWO
+- ``_05_romanisim.py``: Roman
+- ``calculate_snrs.py``: Roman, HWO
+- ``_06_h5_export.py``: Roman
+
+So ``Pipeline.run()`` only works end to end for Roman: it runs step 00 (unless in test mode) and always finishes with step 06. For JWST and HWO, run the supported steps individually. JWST has no step 03, so run step 04 with ``--prev-step 02`` to read the lenses straight from step 02.
+
 ``survey``
 ----------
 

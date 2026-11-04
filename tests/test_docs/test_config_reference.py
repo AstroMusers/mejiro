@@ -7,7 +7,9 @@ drifting when config keys are added, renamed or dropped. These tests fail when:
 2. a documented key isn't read anywhere in ``mejiro/`` (its name never appears as a
    string in the code), so the page describes a key that no longer does anything;
 3. the ``cores.script_<name>`` keys don't match the pipeline scripts. Those keys are
-   read through an f-string (``f'script_{self.script_name}'``), so check 2 can't see them.
+   read through an f-string (``f'script_{self.script_name}'``), so check 2 can't see them;
+4. the list of which instruments each pipeline step supports (in the ``instrument``
+   section) doesn't match the steps' ``SUPPORTED_INSTRUMENTS``.
 
 If one of these fails, update ``configuration.rst`` (or the configs) to match the code.
 """
@@ -144,4 +146,39 @@ def test_cores_keys_match_pipeline_scripts():
     assert not missing, (
         f'Pipeline scripts that read a cores entry with no documented key in '
         f'{DOC.relative_to(REPO)}: ' + ', '.join(missing)
+    )
+
+
+# "- ``_00_cache_psfs.py``: Roman" -- one line per pipeline script, at column 0
+SUPPORT_LINE = re.compile(r'^- ``(\w+\.py)``: (.+)$', re.MULTILINE)
+
+
+def documented_instrument_support():
+    """Map each pipeline script in the ``instrument`` section's list to its instruments."""
+    return {
+        script: {name.strip().lower() for name in instruments.split(',')}
+        for script, instruments in SUPPORT_LINE.findall(DOC.read_text())
+    }
+
+
+def supported_instruments():
+    """``SUPPORTED_INSTRUMENTS`` of each pipeline script that declares it."""
+    found = {}
+    for path in sorted(PIPELINE.glob('*.py')):
+        for node in ast.parse(path.read_text()).body:
+            if (isinstance(node, ast.Assign)
+                    and any(isinstance(t, ast.Name) and t.id == 'SUPPORTED_INSTRUMENTS' for t in node.targets)):
+                found[path.name] = set(ast.literal_eval(node.value))
+    return found
+
+
+def test_instrument_support_list_matches_pipeline_scripts():
+    documented, actual = documented_instrument_support(), supported_instruments()
+    wrong = sorted(
+        f'{script}: docs say {sorted(documented.get(script, set()))}, code says {sorted(actual.get(script, set()))}'
+        for script in documented.keys() | actual.keys()
+        if documented.get(script) != actual.get(script)
+    )
+    assert not wrong, (
+        f'The instrument support list in {DOC.relative_to(REPO)} is out of date: ' + '; '.join(wrong)
     )

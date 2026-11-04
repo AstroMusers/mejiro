@@ -52,6 +52,7 @@ jax-gpu = [
 ]
 roman = [
     "stpsf==2.3.0",
+    "pysiaf>=0.24",  # imported directly by mejiro/point_wfi.py; stpsf also requires >=0.24
     "romanisim==0.14.0",
     "romancal==1.1.0",
     "roman-technical-information==1.5.0",
