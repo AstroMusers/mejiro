@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -22,7 +22,7 @@ license-files = ["LICEN[CS]E*"]
 dependencies = [
     "astropy==8.0.2",
     "galsim==2.8.5",
-    "numpy<2.4.0",  # required by slsim, which still uses np.trapz (removed in numpy 2.4.0)
+    "numpy<2.4.0",  # slsim and pyhalo 1.4.6 still use np.trapz, removed in numpy 2.4.0
     "pandas==3.1.0",
     "tqdm==4.70.1",
     "lenstronomy==1.14.2",
@@ -52,6 +52,7 @@ jax-gpu = [
 ]
 roman = [
     "stpsf==2.3.0",
+    "pysiaf>=0.24",  # imported directly by mejiro/point_wfi.py; stpsf also requires >=0.24
     "romanisim==0.14.0",
     "romancal==1.1.0",
     "roman-technical-information==1.5.0",
@@ -68,8 +69,10 @@ all = [
 where = ["."]
 include = ["mejiro*"]
 
-[tool.setuptools.dynamic]
-version = {attr = "mejiro.__version__"}
+[tool.setuptools_scm]
+# The version comes from the latest git tag (e.g. v3.0.0) plus the commits since it,
+# e.g. 3.0.1.dev12+g1a2b3c4 between releases. It's written to mejiro/_version.py at install.
+version_file = "mejiro/_version.py"
 
 [project.urls]
 Documentation = "https://mejiro.readthedocs.io/en/latest/index.html"

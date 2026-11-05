@@ -1,5 +1,8 @@
 # pyHalo: duplicate lens-plane redshifts cause `R = 0.00e+00 is too small`
 
+Status: open upstream; worked around in mejiro (`_03_generate_subhalos.py` retries with a nudged lens redshift).
+Last verified: 2026-11-04, against pyhalo 1.4.6 (the pinned version): `Rendering/two_halo.py` still computes `rmin = min(rmax, 0.5)`.
+
 ## Symptom
 
 `pyHalo.preset_models.CDM(...)` (and any other preset that includes the two-halo

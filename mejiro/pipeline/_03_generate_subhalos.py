@@ -4,10 +4,11 @@ Generates dark matter subhalo realizations for strong lensing systems.
 This script processes previously detected lensing systems, adding dark matter substructure realizations generated using the pyHalo package to each system according to parameters specified in a mejiro configuration YAML file. It supports multiple instruments (Roman, HWO), and outputs updated lens objects and subhalo realizations for downstream analysis.
 
 Usage:
-    python3 _03_generate_subhalos.py --config <config.yaml> [--sequential] [--resume]
+    python3 _03_generate_subhalos.py --config <config.yaml> [--data_dir <dir>] [--sequential] [--resume]
 
 Arguments:
     --config: Path to the YAML configuration file.
+    --data_dir: Parent directory of pipeline output. Overrides data_dir in the config file.
     --sequential: Process systems sequentially from the start instead of randomly when limit is imposed.
     --resume: Preserve existing output and skip already-completed items.
 """
@@ -357,6 +358,7 @@ def add(tuple):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Generate dark matter substructure realizations")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    parser.add_argument('--data_dir', type=str, required=False, help='Parent directory of pipeline output. Overrides data_dir in config file if provided.')
     parser.add_argument('--sequential', action='store_true', default=False,
                         help='Process systems sequentially from the start instead of randomly when limit is imposed.')
     parser.add_argument('--resume', action='store_true', default=False, help='Preserve existing output and skip already-completed items. Default is to delete and rebuild from scratch.')

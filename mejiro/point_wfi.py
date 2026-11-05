@@ -1,3 +1,14 @@
+"""Roman Wide Field Instrument (WFI) pointings and dither patterns.
+
+:class:`PointWFI` represents a WFI pointing (target coordinates and position angle, with the
+spacecraft attitude computed by ``pysiaf``) and applies the WFI dither patterns shipped in
+``mejiro/data/roman_dither_patterns/``. The module-level functions find a sky position where
+a source tile lands on a detector in every dithered pointing
+(:func:`find_source_position`), compute where it falls on the detector in each pointing
+(:func:`compute_pixel_positions`), and plot the result (:func:`plot_source_placement`).
+Pipeline step ``_05_romanisim`` uses :class:`PointWFI` and its dither patterns to build the
+dithered pointings for its L2/L3 simulations.
+"""
 import copy
 import logging
 import math

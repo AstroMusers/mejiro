@@ -1,6 +1,14 @@
 Analysis
 ========
 
+``lens_subtraction``
+********************
+
+.. automodule:: mejiro.analysis.lens_subtraction
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 ``lensing``
 ***********
 

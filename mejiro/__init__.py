@@ -18,4 +18,10 @@ _logging.getLogger("jax._src.xla_bridge").setLevel(_logging.CRITICAL)
 _os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
 
 __author__ = "Bryce Wedig"
-__version__ = "3.0.0"
+
+try:
+    # Written by setuptools-scm when mejiro is installed; see [tool.setuptools_scm] in
+    # pyproject.toml. Between releases it names the exact commit, e.g. 3.0.1.dev12+g1a2b3c4.
+    from mejiro._version import version as __version__
+except ImportError:  # a source tree that was never installed
+    __version__ = "0+unknown"

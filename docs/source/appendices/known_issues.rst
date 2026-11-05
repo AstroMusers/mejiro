@@ -1,6 +1,13 @@
 Known Issues
 ============
 
+Problems in ``mejiro``'s dependencies that affect ``mejiro``, with workarounds. Checked against the versions pinned in ``pyproject.toml``.
+
+``pyHalo`` version 1.4.6 does not allow line-of-sight halos beyond redshift 4. This can be fixed by modifying the source code: change the maximum redshift from 4 to 8 in line 113 of ``pyHalo.Cosmology.cosmology.Cosmology._interp_kpc_per_asec()`` in ``pyHalo/Cosmology/cosmology.py``.
+
+Past Issues
+===========
+
 ``pysynphot`` version 2.0.0 uses the deprecated ``numpy`` method ``alltrue`` and will throw warnings. To avoid this, you can modify the source code: replace ``alltrue`` with ``all`` in lines 233 and 234 of ``pysynphot/spectrum.py``.
 
 ``speclite`` version 0.18 calls ``scipy.integrate.trapz`` and ``scipy.integrate.simps`` which were deprecated in favor of ``scipy.integrate.trapezoid`` and ``scipy.integrate.simpson``, respectively. To avoid this, you can modify the source code: replace ``trapz`` with ``trapezoid`` in line 271 and ``scipy.integrate.simps`` with ``scipy.integrate.simpson`` in line 272 of ``speclite/filters.py``.
@@ -12,5 +19,3 @@ Known Issues
     spectrum, wavelength = fs.pad_spectrum(spectrum, wavelength)
 
 This pads the spectrum to allow the calculation of AB maggies for every redshift, spectrum, and filter.
-
-``pyHalo`` version 1.4.3 does not allow line-of-sight halos beyond redshift 4. This can be fixed by modifying the source code: change the maximum redshift from 4 to 8 in line 113 of ``pyHalo.Cosmology.cosmology.Cosmology._interp_kpc_per_asec()`` in ``pyHalo/Cosmology/cosmology.py``.

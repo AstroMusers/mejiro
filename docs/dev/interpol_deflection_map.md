@@ -1,5 +1,8 @@
 # Future work: INTERPOL deflection-map optimization for step 04
 
+Status: proposal, not implemented.
+Last verified: 2026-11-04 (step 04 is still the single consolidated script).
+
 The pipeline previously had a third step-04 variant,
 `_04_create_synthetic_images_interpol.py`, deleted when the step-04 scripts
 were consolidated into `_04_create_synthetic_images.py` (2026-07). This

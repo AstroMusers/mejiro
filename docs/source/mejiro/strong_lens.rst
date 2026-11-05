@@ -16,3 +16,11 @@ Strong Lens
     :members:
     :undoc-members:
     :show-inheritance:
+
+``lensed_supernova``
+********************
+
+.. automodule:: mejiro.lensed_supernova
+    :members:
+    :undoc-members:
+    :show-inheritance:

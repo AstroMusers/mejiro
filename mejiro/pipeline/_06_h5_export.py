@@ -62,6 +62,10 @@ logger = logging.getLogger(__name__)
 
 PREV_SCRIPT_NAME = '05_romanisim'
 SCRIPT_NAME = '06'
+
+# Units of the synthetic_image_* datasets: step 04 renders them in counts/s per pixel
+# (see mejiro.synthetic_image.SyntheticImage), independent of the exposure's units.
+SYNTHETIC_IMAGE_UNITS = 'counts/s'
 SUPPORTED_INSTRUMENTS = ['roman']
 
 
@@ -206,6 +210,7 @@ def main(args):
             # set exposure dataset attributes. Exposures are always on the detector pixel
             # grid; a step-04 image rendered with oversample > 1 is finer than that, so use
             # native_pixel_scale rather than the SyntheticImage's own pixel_scale.
+            dataset_exposure.attrs['units'] = (units, 'Units of pixel values')
             dataset_exposure.attrs['exposure_time'] = (str(exposure_time), 'Exposure time [seconds]')
             dataset_exposure.attrs['pixel_scale'] = (str(synthetic_image.native_pixel_scale), 'Pixel scale [arcsec/pixel]')
             dataset_exposure.attrs['fov'] = (str(round(synthetic_image.native_pixel_scale * exposure_data.shape[0], 2)), 'Field of view [arcsec]')
@@ -217,13 +222,23 @@ def main(args):
                 dataset_synth = group_lens.create_dataset(f'synthetic_image_{str(uid).zfill(8)}_{band}', data=synthetic_image.data)
                 dset_list.append(dataset_synth)
 
-                # set synthetic image dataset attributes
+                # set synthetic image dataset attributes. A synthetic image is in counts/s per
+                # pixel of its own grid (pixel_scale, finer than the exposure's when step 04
+                # used oversample > 1), whatever units the exposure is in. That only holds when
+                # its light was set from magnitudes through the instrument's zeropoint; without
+                # a zeropoint it's in raw lenstronomy amplitude units, so refuse to label it.
+                if synthetic_image.magnitude_zeropoint is None:
+                    raise ValueError(
+                        f'SyntheticImage for system {uid} in band {band} has no magnitude zeropoint, '
+                        f'so its pixels are lenstronomy amplitudes rather than {SYNTHETIC_IMAGE_UNITS}. '
+                        f'Build pipeline lenses from magnitudes.'
+                    )
+                dataset_synth.attrs['units'] = (SYNTHETIC_IMAGE_UNITS, 'Units of pixel values')
                 dataset_synth.attrs['pixel_scale'] = (str(synthetic_image.pixel_scale), 'Pixel scale [arcsec/pixel]')
                 dataset_synth.attrs['fov'] = (str(synthetic_image.fov_arcsec), 'Field of view [arcsec]')
 
             # attributes to set on both
             for dset in dset_list:
-                dset.attrs['units'] = (units, 'Units of pixel values')
                 dset.attrs['filter'] = (band, 'Filter')
                 dset.attrs['source_magnitude'] = (str(lens.get_source_magnitude(band)), 'Unlensed source galaxy magnitude')
                 dset.attrs['lensed_source_magnitude'] = (

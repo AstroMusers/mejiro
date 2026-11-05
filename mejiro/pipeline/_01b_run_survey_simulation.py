@@ -92,6 +92,10 @@ PREV_SCRIPT_NAME = '01a'
 SCRIPT_NAME = '01b'
 SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
 
+# Detector position of the SNR PSF when the config doesn't set snr.snr_detector_position: the
+# detector center, which is where psf.divide_up_detector: 1 caches PSFs.
+DEFAULT_SNR_DETECTOR_POSITION = (2043, 2043)
+
 # Populated per-worker by ``_worker_init`` so run_slsim can flip use_jax without
 # re-importing jaxtronomy for every lens.
 _JAXXED_MODELS_SET = None
@@ -381,7 +385,7 @@ def run_slsim(tuple):
         'compute_mode': snr_supersampling_compute_mode,
     }
     snr_detector = detector
-    _snr_pos = snr_config.get('snr_detector_position', (2554, 2554))  # default to center of detector
+    _snr_pos = snr_config.get('snr_detector_position', DEFAULT_SNR_DETECTOR_POSITION)
     snr_detector_position = (_snr_pos[0], _snr_pos[1])
 
     # set run identifier

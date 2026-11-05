@@ -9,7 +9,6 @@ limit: null
 seed: &seed 42
 cores:
   script_00: 24
-  script_01: 24
   script_01a: 24
   script_01b: 24
   script_03: 24
@@ -103,13 +102,14 @@ snr:
   snr_supersampling_factor: &snr_supersampling_factor 1
   snr_threshold: 20
   snr_per_pixel_threshold: 1
+  snr_detector_position: [1021, 1021]  # one of the divide_up_detector: 2 positions, so step 00 caches its PSF
 psf:
   bands: [ F106, F129, F158 ]
   oversamples: [*snr_supersampling_factor, *supersampling_factor]
   num_pixes: [101]  # the first element of this list is used for the pipeline
   detectors: *detectors
-  divide_up_detector: 5  # this sets the detector positions, e.g., 5 means 25 positions on each detector
+  divide_up_detector: 2  # N x N PSF positions per detector, e.g. 4 means 16; N must divide 4088
 dataset:
   version: 0.1  # used in the filename of the .h5 file
-  include_psfs: True
+  labeled: True  # if False, truth values go in an answer-key CSV instead of the .h5 file
   include_synthetic_images: True

@@ -136,6 +136,12 @@ def test_pipeline_run(tmp_path, serialization):
                 (f"galsim exposure_time should be imaging.exposure_time "
                  f"({config['imaging']['exposure_time']}), got {dset.attrs['exposure_time'][0]}")
 
+            # test.yaml sets dataset.include_synthetic_images, and synthetic images are in
+            # counts/s whatever the exposure's units (they used to inherit the exposure's)
+            synth = f['images'][group_name][f'synthetic_image_{uid}_{band}']
+            assert synth.attrs['units'][0] == 'counts/s', \
+                f"synthetic images should be in counts/s, got {synth.attrs['units'][0]}"
+
 def test_no_data_dir():
     try:
         pipeline = Pipeline()
@@ -156,3 +162,20 @@ def test_pipeline_invalid_script_number(tmp_path):
         assert str(e) == "Script number 10 is not valid. Please choose a number between 0 and 6."
     else:
         assert False, "ValueError was not raised for invalid script number"
+
+
+def test_tail_args_point_later_steps_at_the_exposure_step(tmp_path):
+    # The orchestrator's --prev-step belongs to step 04 (which reads lens pickles from '02'
+    # or '03'), but calculate_snrs and _06_h5_export read the same attribute to find
+    # exposures. _tail_args() must hand those later steps a copy pointing at the exposure
+    # step, and leave the args step 04 uses alone. See docs/dev/prev_step_namespace_collision.md.
+    pipeline = Pipeline(config_file=TEST_CONFIG, data_dir=str(tmp_path), _test_mode=True)
+    assert pipeline.args.prev_step == '03'
+
+    pipeline._engine = 'galsim'
+    assert pipeline._tail_args().prev_step == '05_galsim'
+
+    pipeline._engine = 'romanisim'
+    assert pipeline._tail_args().prev_step == '05_romanisim'
+
+    assert pipeline.args.prev_step == '03', "_tail_args() must not modify the args step 04 uses"

@@ -11,7 +11,6 @@ limit: 1
 seed: &seed 42
 cores:
   script_00: 1
-  script_01: 1
   script_01a: 1
   script_01b: 1
   script_03: 1
@@ -115,5 +114,4 @@ psf:
 dataset:
   version: 0.1
   labeled: True
-  include_psfs: True
   include_synthetic_images: True

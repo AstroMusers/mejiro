@@ -43,7 +43,7 @@ Input comes from step 02 or 03 (``--prev-step``, default 03); outputs land in
 ``<pipeline_dir>/04/`` for consumption by the 05 scripts.
 
 Usage:
-    python3 _04_create_synthetic_images.py --config <config.yaml> [--prev-step {02,03}] [--resume] [--sequential]
+    python3 _04_create_synthetic_images.py --config <config.yaml> [--data_dir <dir>] [--prev-step {02,03}] [--resume] [--sequential]
 """
 import os
 
@@ -539,6 +539,7 @@ def create_synthetic_image(input):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Generate synthetic images")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    parser.add_argument('--data_dir', type=str, required=False, help='Parent directory of pipeline output. Overrides data_dir in config file if provided.')
     parser.add_argument('--prev-step', dest='prev_step', choices=['02', '03'], default='03',
                         help='Pipeline step to read lens pickles from.')
     parser.add_argument('--sequential', action='store_true', default=False,

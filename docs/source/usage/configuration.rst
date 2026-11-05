@@ -1,7 +1,7 @@
 Configuration File Reference
 ============================
 
-The mejiro pipeline is driven entirely by a YAML configuration file. Example configurations live in ``mejiro/data/mejiro_config/`` (e.g., ``simple.yaml``, ``roman_test.yaml``, ``roman_data_challenge_rung_1.yaml``); the recommended starting point is to copy one and edit it.
+The mejiro pipeline is driven entirely by a YAML configuration file. Example configurations live in ``mejiro/data/mejiro_config/`` (e.g., ``simple.yaml``, ``roman_test.yaml``, ``jwst.yaml``, ``hwo.yaml``); the recommended starting point is to copy one and edit it.
 
 This page documents every top-level section and attribute. Units are given only where they are documented in the YAML comments or in the code. Pipeline scripts referenced below all live in ``mejiro/pipeline/``.
 
@@ -13,7 +13,7 @@ These keys sit at the top level of the YAML file.
 ``data_dir``
    Base directory under which all pipeline output is written. Required: if ``null``, the ``--data_dir`` CLI argument must be supplied to override it. The per-pipeline output directory is ``<data_dir>/<pipeline_label>``.
 
-   Used by ``PipelineHelper`` to set ``pipeline_dir`` for every pipeline script, and read directly in ``_05_romanisim.py`` to locate input synthetic images and write romanisim output.
+   Used by ``PipelineHelper`` to set ``pipeline_dir`` for every pipeline script, and read directly by the standalone ``compact_03_realizations.py`` and ``make_substructure_csv.py``.
 
 ``pipeline_label``
    Name of the pipeline run. Used to construct the output directory (``<data_dir>/<pipeline_label>/``) and as a prefix for output filenames. When ``dev: True``, ``_dev`` is appended.
@@ -21,14 +21,14 @@ These keys sit at the top level of the YAML file.
    Used in every pipeline script via ``PipelineHelper``. In ``_01a_generate_galaxy_tables.py`` and ``_01b_run_survey_simulation.py`` the literal value ``all`` triggers loading of every supported instrument's speclite filters.
 
 ``psf_cache_dir``
-   Directory where cached STPSF PSFs are stored as ``.npy`` files. May be a path relative to ``data_dir``, an absolute path, or ``null``. When ``null``, ``PipelineHelper`` defaults to ``mejiro/data/psfs/<instrument>``.
+   Directory where cached STPSF PSFs are stored as ``.npy`` files. May be an absolute path, a relative path, or ``null``. A relative path is resolved against ``data_dir``; if that directory doesn't exist, ``PipelineHelper`` falls back to resolving it against the repository root (this is how ``simple.yaml``'s ``tests/test_data`` works). When ``null``, ``PipelineHelper`` defaults to ``mejiro/data/psfs/<instrument>``.
 
-   Used in ``_00_cache_psfs.py`` as the write target, and in ``_01b_run_survey_simulation.py``, ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, ``_04_jax_create_synthetic_images.py``, ``calculate_snrs.py``, and ``_06_h5_export.py`` as the read target when constructing ``kwargs_psf``.
+   Used in ``_00_cache_psfs.py`` as the write target, and in ``_01b_run_survey_simulation.py``, ``_04_create_synthetic_images.py``, and ``calculate_snrs.py`` as the read target when constructing ``kwargs_psf``.
 
 ``dev``
    Development-mode flag. When ``True``, ``_dev`` is appended to ``pipeline_label`` so dev runs do not overwrite production output.
 
-   Used by ``PipelineHelper`` and explicitly by ``_05_romanisim.py`` to set the pipeline directory.
+   Used by ``PipelineHelper`` to set the pipeline directory, and read directly by the standalone ``compact_03_realizations.py`` and ``make_substructure_csv.py``.
 
 ``nice``
    Process ``nice`` value applied to every pipeline worker. Defaults to ``0`` if absent.
@@ -54,12 +54,12 @@ These keys sit at the top level of the YAML file.
 ``limit``
    Maximum number of systems each script should process, or ``null`` for no limit.
 
-   Used in ``_01b_run_survey_simulation.py`` to cap the number of detectable lenses per run, in ``_02_build_lens_list.py`` to short-circuit the lens-conversion loop, in ``_03_generate_subhalos.py``, ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, ``_04_jax_create_synthetic_images.py``, ``_05_galsim.py``, and ``calculate_snrs.py`` to subsample input pickles (sequentially with ``--sequential``, otherwise via ``np.random.choice``), and in ``_05_romanisim.py`` to subsample lens IDs per SCA.
+   Used in ``_01b_run_survey_simulation.py`` to cap the number of detectable lenses per run, in ``_02_build_lens_list.py`` to short-circuit the lens-conversion loop, in ``_03_generate_subhalos.py``, ``_04_create_synthetic_images.py``, ``_05_galsim.py``, and ``calculate_snrs.py`` to subsample input pickles (sequentially with ``--sequential``, otherwise via ``np.random.choice``), and in ``_05_romanisim.py`` to subsample lens IDs per SCA.
 
 ``seed``
-   Integer global random seed. Defaults to ``42`` when accessed via ``config.get('seed', 42)``.
+   Integer global random seed. Required.
 
-   Used in ``_01a_generate_galaxy_tables.py`` to seed the per-table draw via ``hash((seed, 'table', table_index))``, in ``_01b_run_survey_simulation.py`` for the per-run draw via ``hash((seed, run))``, in ``_03_generate_subhalos.py`` to seed the substructure assignment mask, and in ``_05_romanisim.py`` to derive per-batch RNGs (``batch_seed = seed + sca_num * 10000 + band_idx * 1000 + batch_idx``). Typically also referenced from ``imaging.engine_params.rng_seed`` via a YAML anchor.
+   Used in ``_01a_generate_galaxy_tables.py`` to seed the per-table draw via ``hash((seed, 'table', table_index))``, in ``_01b_run_survey_simulation.py`` for the per-run draw via ``hash((seed, run))``, in ``_03_generate_subhalos.py`` to seed the substructure assignment mask, in ``_04_create_synthetic_images.py`` to choose each system's detector position and whether it is rendered deflector-only (see ``synthetic_image.deflector_only_fraction``), and in ``_05_romanisim.py`` to derive per-batch RNGs (``batch_seed = seed + sca_num * 10000 + band_idx * 1000 + batch_idx``). Typically also referenced from ``imaging.engine_params.rng_seed`` via a YAML anchor.
 
 ``cores``
 -----------
@@ -75,16 +75,13 @@ Per-script worker counts for ``ProcessPoolExecutor``. Each key maps the script n
 ``script_01b``
    Workers for ``_01b_run_survey_simulation.py``.
 
-``script_02``
-   Workers for ``_02_build_lens_list.py`` (single-process in current scripts; included for completeness).
-
 ``script_03``
    Workers for ``_03_generate_subhalos.py``.
 
 ``script_04``
-   Workers for ``_04_create_synthetic_images.py`` (and its interpol/JAX variants).
+   Workers for ``_04_create_synthetic_images.py``.
 
-``script_05``
+``script_05_galsim``
    Workers for ``_05_galsim.py``.
 
 ``script_05_romanisim``
@@ -101,23 +98,32 @@ Controls JAX-based acceleration for ray-shooting and image rendering.
 ``use_jax``
    Boolean. When ``True``, lens objects are built with ``use_jax=True`` so that ``jaxtronomy`` is used in place of ``lenstronomy`` for ray-shooting.
 
-   Used in ``_01b_run_survey_simulation.py``, ``_02_build_lens_list.py``, ``_03_generate_subhalos.py``, ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, and ``_04_jax_create_synthetic_images.py``. In ``_04_create_synthetic_images.py`` it also gates whether ``JAX_PLATFORM_NAME`` is exported into the worker environment.
+   Used in ``_01b_run_survey_simulation.py``, ``_02_build_lens_list.py``, ``_03_generate_subhalos.py``, ``_04_create_synthetic_images.py``, and ``calculate_snrs.py``. In ``_04_create_synthetic_images.py`` it also gates whether ``JAX_PLATFORM_NAME`` is exported into the worker environment.
 
 ``jax_platform``
    String (``cpu`` or ``gpu``) exported as ``JAX_PLATFORM_NAME`` before JAX is imported. Defaults to ``cpu``.
 
-   Used in ``_01b_run_survey_simulation.py``, ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, and ``_04_jax_create_synthetic_images.py``.
-
-``parallel_systems``
-   (Optional; only consumed by ``_04_jax_create_synthetic_images.py``.) Boolean. When ``True``, systems are bucketed by ``lens_model_list`` signature so that the first system in a bucket pays the JIT-warmup cost and the rest reuse the cached compilation. Defaults to ``False``.
-
-``batch_size``
-   (Optional; only consumed by ``_04_jax_create_synthetic_images.py``.) Integer cap on bucket size when ``parallel_systems`` is enabled — useful as a memory ceiling on GPU. Defaults to ``8``.
+   Used in ``_01b_run_survey_simulation.py``, ``_03_generate_subhalos.py``, ``_04_create_synthetic_images.py``, and ``calculate_snrs.py``.
 
 ``instrument``
 --------------
 
 Single string identifying the instrument: ``roman``, ``jwst``, or ``hwo``. Lower-cased and validated against the calling script's ``SUPPORTED_INSTRUMENTS`` by ``PipelineHelper``. Drives loading of the appropriate ``mejiro.instruments`` class (``Roman``, ``JWST``, or ``HWO``).
+
+Not every step supports every instrument. ``PipelineHelper`` raises ``ValueError`` when a step is run with an instrument it doesn't support:
+
+- ``_00_cache_psfs.py``: Roman
+- ``_01a_generate_galaxy_tables.py``: Roman, JWST, HWO
+- ``_01b_run_survey_simulation.py``: Roman, JWST, HWO
+- ``_02_build_lens_list.py``: Roman, JWST, HWO
+- ``_03_generate_subhalos.py``: Roman, HWO
+- ``_04_create_synthetic_images.py``: Roman, JWST, HWO
+- ``_05_galsim.py``: Roman, JWST, HWO
+- ``_05_romanisim.py``: Roman
+- ``calculate_snrs.py``: Roman, HWO
+- ``_06_h5_export.py``: Roman
+
+So ``Pipeline.run()`` only works end to end for Roman: it runs step 00 (unless in test mode) and always finishes with step 06. For JWST and HWO, run the supported steps individually. JWST has no step 03, so run step 04 with ``--prev-step 02`` to read the lenses straight from step 02.
 
 ``survey``
 ----------
@@ -180,9 +186,9 @@ Parameters for the survey simulation (population draw, deflector/source cuts, so
    Used in ``_01b_run_survey_simulation.py`` for SNR-candidate construction and CSV export, and in ``_02_build_lens_list.py`` when calling ``GalaxyGalaxy.from_slsim(..., bands=bands)``.
 
 ``remap_bands``
-   (Optional; only present in the rung-1 challenge configs.) Dict of ``{destination_band: source_band}`` pairs that override which catalog cutout backs each band in ``source_images``. Self-mappings are no-ops; omit a band to leave its default in place.
+   Dict of ``{destination_band: source_band}`` pairs that override which catalog cutout backs each band in ``source_images``. Self-mappings are no-ops; omit a band to leave its default in place. Required when lenses have catalog source images (``source_images`` in their parameters, e.g. with ``use_real_sources: True``); otherwise it can be left out.
 
-   Used in ``_02_build_lens_list.py``: when present, ``slsim_util.remap_source_images`` is called on each constructed lens. Defaults to ``None`` (no remapping).
+   Used in ``_02_build_lens_list.py``, which calls ``slsim_util.remap_source_images`` on each lens that has catalog source images, and raises ``ValueError`` if such a lens appears while ``remap_bands`` is unset or empty.
 
 ``deflector_cut_band``, ``deflector_cut_band_max``
    Band and maximum magnitude used to cut the deflector population before lens drawing. Passed to slsim as ``kwargs_deflector_cut={'band': ..., 'band_max': ...}``.
@@ -225,50 +231,70 @@ Dark-matter substructure parameters. Consumed by ``_03_generate_subhalos.py``.
 ``realization_kwargs``
    Dict forwarded as ``**realization_kwargs`` to the pyHalo preset-model constructor. See the upstream pyHalo documentation for the accepted keys. The example configs include ``log_mlow``, ``log_mhigh``, ``LOS_normalization``, ``concentration_model_subhalos``, ``concentration_model_fieldhalos``, ``shmf_log_slope``, and (Roman-only) ``r_tidal``, ``sigma_sub`` (see Section 3.1 and Section 6.3 of `Gilman et al. 2020 <https://ui.adsabs.harvard.edu/abs/2020MNRAS.491.6077G/abstract>`__).
 
-   Used in ``_03_generate_subhalos.py``. If ``cone_opening_angle_arcsec`` is not present, ``_03_generate_subhalos.py`` injects it as ``lens.get_einstein_radius() * 3``. Also written verbatim as per-system HDF5 attributes in ``_06_h5_export.py`` (each key carries the description ``"See pyHalo documentation"``).
+   Used in ``_03_generate_subhalos.py``. If ``cone_opening_angle_arcsec`` is not present, ``_03_generate_subhalos.py`` injects it as ``lens.get_einstein_radius() * 3``. Also written verbatim as per-system HDF5 attributes in ``_06_h5_export.py`` for systems with substructure when ``dataset.labeled`` is ``True`` (each key carries the description ``"See pyHalo documentation"``).
+
+``serialization``
+   String, ``full`` or ``lightweight``. Required. Selects what ``_03_generate_subhalos.py`` writes for each system that receives substructure:
+
+   - ``full``: pickle the lens together with its pyHalo realization object.
+   - ``lightweight``: drop the realization object before pickling, via ``mejiro.analysis.lensing.strip_realization``. The subhalos are already built into the lens model (``kwargs_lens``), which is all step 04 reads, and the realization object is most of the size of a substructured lens pickle. The substructure flag is kept, so downstream steps still know which systems have substructure.
+
+   Choose ``full`` if anything downstream needs the realization object itself, for example to inspect or plot individual subhalos; it can't be recovered from ``lightweight`` output. Existing ``full`` output can be compacted afterwards with ``compact_03_realizations.py``.
+
+   Used in ``_03_generate_subhalos.py``, which raises ``ValueError`` for any other value.
 
 ``synthetic_image``
 -------------------
 
-Parameters for rendering idealized (PSF-convolved, noise-free) images. Each value here is forwarded to ``mejiro.synthetic_image.SyntheticImage``.
+Parameters for rendering idealized (PSF-convolved, noise-free) images in ``_04_create_synthetic_images.py``. Most values here are forwarded to ``mejiro.synthetic_image.SyntheticImage``.
 
 ``bands``
    List of photometric bands for which to render synthetic images. May be a subset of ``survey.bands``.
 
-   Used in ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, ``_04_jax_create_synthetic_images.py``, ``_05_romanisim.py``, and ``_06_h5_export.py``.
+   Used in ``_04_create_synthetic_images.py``, ``_05_romanisim.py``, and ``_06_h5_export.py``.
 
 ``fov_arcsec``
    Field of view in arcseconds (documented in the ``SyntheticImage`` docstring). Forwarded to ``SyntheticImage(fov_arcsec=...)``.
 
-   Used in ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, and ``_04_jax_create_synthetic_images.py``.
+   Used in ``_04_create_synthetic_images.py``, and in ``_05_romanisim.py`` to size the tiles placed on each detector.
 
 ``supersampling_compute_mode``
    String forwarded to lenstronomy's ``kwargs_numerics`` as ``compute_mode`` (e.g., ``adaptive``).
 
-   Used in ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, and ``_04_jax_create_synthetic_images.py``.
+   Used in ``_04_create_synthetic_images.py``.
 
 ``supersampling_factor``
    Integer supersampling factor forwarded to lenstronomy's ``kwargs_numerics``. Typically referenced via a YAML anchor (``&supersampling_factor``) so ``psf.oversamples`` can include the same value.
 
-   Used in ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, ``_04_jax_create_synthetic_images.py``, and (for HDF5 metadata) ``_06_h5_export.py``.
+   Used in ``_04_create_synthetic_images.py``.
 
 ``pieces``
    Boolean forwarded to ``SyntheticImage(pieces=...)``. When ``True``, lens and source surface brightness are computed and stored separately.
 
-   Used in ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, and ``_04_jax_create_synthetic_images.py``.
+   Used in ``_04_create_synthetic_images.py``.
 
 ``serialization``
-   String selecting the on-disk format for each ``SyntheticImage`` written by step 04. One of:
+   String, ``full`` or ``lightweight``. Required. Selects the on-disk format for each ``SyntheticImage`` written by step 04:
 
-   - ``full`` (default): pickle the entire ``SyntheticImage`` (including the embedded ``StrongLens`` and any pyhalo realization). Required by the galsim path (``_05_galsim.py``) and by analysis scripts that need the full lens model (e.g., ``projects/roman_data_challenge/substructure_snr_histogram.py``).
+   - ``full``: pickle the entire ``SyntheticImage`` (``.pkl``), including the embedded ``StrongLens`` and any pyHalo realization. Required by the galsim path (``_05_galsim.py``) and by analysis that needs the full lens model.
    - ``lightweight``: write a compact ``.npz`` per (system, band) containing the image as ``float32`` plus a JSON metadata blob with only what the romanisim path consumes downstream (redshifts, Einstein radius, per-band magnitudes, detector position, ``magnitude_zeropoint``, etc.). Roughly 20× smaller per (system, band) than ``full``; incompatible with the galsim path. Loaded transparently by ``mejiro.utils.util.load_synthetic_image``, which auto-detects the extension and returns a :class:`mejiro.synthetic_image.LightweightSyntheticImage` shim.
 
-   Used in ``_04_create_synthetic_images.py`` and ``_04_jax_create_synthetic_images.py`` (writers); in ``_05_romanisim.py``, ``_06_h5_export_romanisim.py``, ``projects/roman_data_challenge/rung_1.py``, and ``calculate_snrs.py`` (readers, via the unified loader). ``_05_galsim.py`` raises at startup when ``serialization == 'lightweight'`` because the galsim engine requires the full ``SyntheticImage``.
+   Used in ``_04_create_synthetic_images.py`` (writer, which raises ``ValueError`` for any other value), and read back by ``_05_romanisim.py``, ``calculate_snrs.py``, and ``_06_h5_export.py`` through the unified loader. ``_05_galsim.py`` raises at startup when ``serialization == 'lightweight'`` because the galsim engine requires the full ``SyntheticImage``.
+
+``oversample``
+   (Optional.) Integer, default ``1``. When greater than ``1``, step 04 renders each image on a grid ``oversample`` times finer than the detector pixels, with no detector pixel integral applied. ``_05_romanisim.py`` bins these images to detector pixels at each dither's sub-pixel phase; ``_05_galsim.py`` needs detector-resolution input and raises if ``oversample`` is greater than ``1``. Step 04 then uses the cached PSF kernel at this oversampling as-is, so ``psf.oversamples`` must include the value (step 04 raises if the kernel isn't cached).
+
+   Used in ``_04_create_synthetic_images.py`` and ``_05_galsim.py``.
+
+``deflector_only_fraction``
+   (Optional.) Float in ``[0, 1]``, default ``0.0``. Fraction of systems rendered deflector-only: lens-galaxy light only, with no source and no lensing. The choice is made from ``seed`` and each system's name, so a system is deflector-only in every band and the choice stays the same across ``--resume``. The realized fraction is approximate. ``_06_h5_export.py`` records each system's ``deflector_only`` flag: in the HDF5 file when ``dataset.labeled`` is ``True``, otherwise in the answer key.
+
+   Used in ``_04_create_synthetic_images.py``.
 
 ``exposure``
 ------------
 
-(Roman only.) Romanisim observation metadata. Consumed by ``_05_romanisim.py``.
+(Roman only.) Romanisim observation metadata. Consumed by ``_05_romanisim.py``. ``calculate_snrs.py`` and ``_06_h5_export.py`` also read ``ma_table_number`` to work out the exposure time of romanisim output.
 
 ``ma_table_number``
    Integer Multi-Accumulation (MA) table number. Indexes ``romanisim.parameters.read_pattern`` to determine the read pattern (and hence the total exposure time, ``parameters.read_time * read_pattern[-1][-1]``); also written to ``meta['exposure']['ma_table_number']`` for the simulated observation.
@@ -282,12 +308,12 @@ Parameters for rendering idealized (PSF-convolved, noise-free) images. Each valu
 ``imaging``
 -----------
 
-Parameters for the detector-effects step. Consumed by ``_05_galsim.py`` and ``calculate_snrs.py``.
+Parameters for the detector-effects step. Consumed by ``_05_galsim.py``; also read by ``_01b_run_survey_simulation.py``, ``calculate_snrs.py``, and ``_06_h5_export.py``.
 
 ``exposure_time``
    Exposure time in seconds (documented in the ``Exposure`` docstring). Typically referenced via a YAML anchor (``&exposure_time``) so ``snr.snr_exposure_time`` can reuse it.
 
-   Used in ``_05_galsim.py`` to build each ``Exposure``.
+   Used in ``_05_galsim.py`` to build each ``Exposure``, and in ``_06_h5_export.py`` as the recorded exposure time of galsim exposures.
 
 ``engine``
    String selecting the detector-effects engine, e.g., ``galsim`` (see :doc:`../mejiro/engines` for the available engines).
@@ -298,6 +324,16 @@ Parameters for the detector-effects step. Consumed by ``_05_galsim.py`` and ``ca
    Dict of engine-specific parameters forwarded to the simulation engine. See :class:`mejiro.exposure.Exposure` and the engine modules under :mod:`mejiro.engines` for the accepted keys per engine. For the GalSim Roman engine, the example configs include ``rng_seed``, ``min_zodi_factor``, and boolean toggles ``sky_background``, ``detector_effects``, ``poisson_noise``, ``reciprocity_failure``, ``dark_noise``, ``nonlinearity``, ``ipc``, ``read_noise``.
 
    Used in ``_01b_run_survey_simulation.py`` for the SNR-detection ``Exposure``, in ``_05_galsim.py`` for the production ``Exposure``, and in ``calculate_snrs.py`` for the SNR-rebuild ``Exposure``.
+
+``serialization``
+   String, ``full`` or ``lightweight``. Required. Selects how ``_05_galsim.py`` writes each ``Exposure``:
+
+   - ``full``: pickle the whole ``Exposure`` object (``.pkl``).
+   - ``lightweight``: write a compact ``.npz`` containing the image data, any pieces, and JSON metadata, via ``Exposure.save_lightweight``.
+
+   This is separate from ``synthetic_image.serialization``, which controls step 04's output. ``_05_romanisim.py`` ignores it and always writes ``.npy`` cutouts.
+
+   Used in ``_05_galsim.py`` (writer, which raises ``ValueError`` for any other value), and in ``calculate_snrs.py`` and ``_06_h5_export.py`` to find galsim exposures by file extension (``PipelineHelper.exposure_extension``).
 
 ``snr``
 -------
@@ -335,10 +371,10 @@ Parameters for SNR-based detectability cuts (in ``_01b_run_survey_simulation.py`
 ``snr_per_pixel_threshold``
    Per-pixel SNR threshold passed to ``snr_calculation.get_snr`` and ``Exposure.get_snr``.
 
-   Used in ``_01b_run_survey_simulation.py``, ``_06_h5_export.py``, and ``calculate_snrs.py``.
+   Used in ``_01b_run_survey_simulation.py`` and ``calculate_snrs.py``.
 
 ``snr_detector_position``
-   (Optional.) Tuple ``[x, y]`` giving the detector position used when building the SNR PSF. Defaults to ``(2554, 2554)`` (the detector center) when absent.
+   (Optional.) Tuple ``[x, y]`` giving the detector position used when building the SNR PSF. Defaults to the detector center, ``(2043, 2043)``, when absent. Choose one of the positions step 00 caches PSFs at (see ``psf.divide_up_detector``; ``1`` gives the detector center), otherwise step 01b computes the PSF with STPSF, which needs STPSF's data files.
 
    Used in ``_01b_run_survey_simulation.py``.
 
@@ -360,17 +396,17 @@ PSF cache and generation parameters. Consumed primarily by ``_00_cache_psfs.py``
 ``num_pixes``
    List of PSF array sizes in pixels. **The first element is used by the pipeline** when constructing ``kwargs_psf`` (the additional elements are still pre-computed by ``_00_cache_psfs.py`` so that ad-hoc analysis scripts can request other sizes from the cache).
 
-   Used in ``_00_cache_psfs.py`` to enumerate PSFs to generate, and in ``_01b_run_survey_simulation.py``, ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, ``_04_jax_create_synthetic_images.py``, ``calculate_snrs.py``, and ``_06_h5_export.py`` as ``num_pixes[0]`` for the active PSF.
+   Used in ``_00_cache_psfs.py`` to enumerate PSFs to generate, and in ``_01b_run_survey_simulation.py``, ``_04_create_synthetic_images.py``, and ``calculate_snrs.py`` as ``num_pixes[0]`` for the active PSF.
 
 ``detectors``
    List of detector IDs for which PSFs are pre-computed. Typically references ``*detectors`` so it tracks ``survey.detectors``.
 
-   Used in ``_00_cache_psfs.py`` and ``_06_h5_export.py``.
+   Used in ``_00_cache_psfs.py``.
 
 ``divide_up_detector``
-   Integer ``N`` controlling how each detector is divided into an ``N x N`` grid of PSF-evaluation positions (e.g., ``5`` -> 25 positions per detector). Roman-specific; ``psf_config.get('divide_up_detector')`` is ``None`` for HWO.
+   Integer ``N`` controlling how each detector is divided into an ``N x N`` grid of PSF-evaluation positions (e.g., ``4`` -> 16 positions per detector). ``N`` must divide the 4088-pixel detector evenly (1, 2, 4, 7, 8, 14, ...); ``roman_util.divide_up_sca`` raises otherwise. Roman-specific; ``psf_config.get('divide_up_detector')`` is ``None`` for HWO.
 
-   Used in ``_00_cache_psfs.py`` (via ``roman_util.divide_up_sca``), in ``_04_create_synthetic_images.py``, ``_04_create_synthetic_images_interpol.py``, and ``_04_jax_create_synthetic_images.py`` to pick a random detector position per image, in ``_06_h5_export.py`` to enumerate positions for the PSF HDF5 dataset, and in ``_05_romanisim.py`` to define the PSF buckets that group tiles within each 4088x4088 detector image (asserted to divide both ``GRID_SIDE`` and ``4088``).
+   Used in ``_00_cache_psfs.py`` (via ``roman_util.divide_up_sca``), in ``_04_create_synthetic_images.py`` to pick a detector position per image, and in ``_05_romanisim.py`` to define the PSF buckets that group tiles within each 4088x4088 detector image (asserted to divide both ``GRID_SIDE`` and ``4088``).
 
 ``dataset``
 -----------
@@ -381,10 +417,7 @@ Output-dataset options. Consumed by ``_06_h5_export.py``.
    Dataset version string. Embedded in the HDF5 filename as ``<pipeline_label>_v_<version>.h5`` (with ``.`` replaced by ``_``) and written to the file-level attribute ``dataset_version``.
 
 ``labeled``
-   (Challenge-only attribute, present in the ``roman_data_challenge_*`` configs.) Boolean indicating whether the exported dataset includes ground-truth labels. Read by downstream consumers of the Roman Data Challenge dataset; not consumed by the pipeline scripts in ``mejiro/pipeline/`` themselves.
-
-``include_psfs``
-   Boolean. When ``True``, ``_06_h5_export.py`` adds a ``psfs`` group to the HDF5 file containing cached PSFs for every (detector, position, band) combination.
+   Boolean. Required by ``_06_h5_export.py``, which raises ``KeyError`` if it's missing. When ``True``, ground-truth attributes (main halo mass, Einstein radius, velocity dispersion, substructure, and the deflector-only flag) are written to each system's group in the HDF5 file. When ``False``, they're left out of the HDF5 file, and an answer-key CSV (``<pipeline_label>_answer_key_v_<version>.csv``) with each system's ``uid``, Einstein radius, substructure flag, and deflector-only flag is written next to it.
 
 ``include_synthetic_images``
    Boolean. When ``True``, ``_06_h5_export.py`` writes the band-matched synthetic-image arrays alongside each ``Exposure`` dataset.

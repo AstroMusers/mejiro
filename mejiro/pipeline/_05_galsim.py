@@ -4,7 +4,7 @@ Generates exposures from synthetic images, i.e., apply sky background and detect
 This script processes synthetic images produced in previous pipeline steps, generating exposures for each lensing system using instrument-specific parameters and simulation engines. It reads a mejiro YAML configuration file specifying exposure options. Multiprocessing is used to parallelize exposure creation across available CPU cores.
 
 Usage:
-    python3 _05_galsim.py --config <config.yaml> [--data_dir <output_dir>]
+    python3 _05_galsim.py --config <config.yaml> [--data_dir <dir>] [--sequential] [--resume]
 
 Arguments:
     --config: Path to the YAML configuration file.
@@ -200,6 +200,7 @@ def get_image(input):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Generate exposures.")
     parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    parser.add_argument('--data_dir', type=str, required=False, help='Parent directory of pipeline output. Overrides data_dir in config file if provided.')
     parser.add_argument('--sequential', action='store_true', default=False,
                         help='Process systems sequentially from the start instead of randomly when limit is imposed.')
     parser.add_argument('--resume', action='store_true', default=False,

@@ -3,51 +3,25 @@ Engines
 
 ``mejiro`` wraps various image simulation packages to provide a consistent interface for simulating images. Each wrapped package is referred to as an "engine." The following engines are currently supported:
 
-- GalSim: *Roman*, *HWO*
+- GalSim: *Roman*, *JWST*, *HWO*
 - STPSF (PSFs only): *Roman*
 
 `romanisim <https://github.com/spacetelescope/romanisim>`_ is not available as an ``Exposure`` engine. Instead, *Roman* detector simulation with romanisim runs as pipeline step :mod:`mejiro.pipeline._05_romanisim`, selected by setting ``imaging.engine: romanisim`` in the pipeline config.
 
 An engine is specified when generating a simulated exposure, i.e., an instance of ``mejiro.exposure.Exposure``. The engine is specified in the ``engine`` keyword argument, and any specific parameters passed to the engine are specified in the ``engine_params`` dictionary. For example, to simulate a *Roman* image using GalSim:
 
-.. code-block:: python
-
-    from mejiro.galaxy_galaxy import SampleGG
-    from mejiro.instruments.roman import Roman
-    from mejiro.synthetic_image import SyntheticImage
-    from mejiro.exposure import Exposure
-
-    synthetic_image = SyntheticImage(strong_lens=SampleGG(),
-                                    instrument=Roman(),
-                                    band='F129',
-                                    fov_arcsec=5)
-
-    exposure = Exposure(synthetic_image,
-                        exposure_time=146,
-                        engine='galsim')
+.. literalinclude:: ../examples/exposure_galsim_roman.py
+    :language: python
 
 To see the available options for each engine, check the default parameters using ``GalSimEngine.defaults(instrument_name)``. For example, the default parameters for simulating *Roman* images with GalSim are:
 
-.. code-block:: python
+.. literalinclude:: ../examples/galsim_defaults.py
+    :language: python
 
-    from mejiro.engines.galsim_engine import GalSimEngine
-    from pprint import pprint
+which prints:
 
-    pprint(GalSimEngine.defaults('Roman'))
-
-::
-
-    {
-        'min_zodi_factor': 1.5,
-        'sky_background': True,
-        'detector_effects': True,
-        'poisson_noise': True,
-        'reciprocity_failure': True,
-        'dark_noise': True,
-        'nonlinearity': True,
-        'ipc': True,
-        'read_noise': True,
-    }
+.. literalinclude:: ../examples/galsim_defaults.txt
+    :language: text
 
 
 ``engine``

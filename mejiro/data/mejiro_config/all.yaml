@@ -9,10 +9,8 @@ limit: null
 seed: &seed 42
 cores:
   script_00: 32
-  script_01: 32
   script_01a: 32
   script_01b: 32
-  script_02: 32
 jaxtronomy:
   use_jax: False
   jax_platform: cpu  # cpu or gpu
