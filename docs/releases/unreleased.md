@@ -38,6 +38,10 @@ Scripts and output directories that changed:
   `pipeline_label: all` no longer include HST (WFC3/UVIS) magnitudes.
 - **The Roman Data Challenge configs** (rung 0/1, labeled and unlabeled) are no longer shipped
   in `mejiro/data/mejiro_config/`.
+- **`all.yaml`, `hwo.yaml` and `jwst.yaml` are no longer shipped** in
+  `mejiro/data/mejiro_config/`, and neither are their SkyPy configs in `mejiro/data/skypy/`
+  (`all`, `hwo`, `jwst`, `slhammocks_all`, `slhammocks_hwo` and `slhammocks_jwst`). A config
+  that names one of these SkyPy configs now stops at step 01a with `FileNotFoundError`.
 - The config, script and output-directory changes listed under "Upgrading from v3.0.0".
 
 ### Pipeline
