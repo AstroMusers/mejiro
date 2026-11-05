@@ -6,11 +6,13 @@ pipeline steps and saves name-SNR pairs for downstream filtering or analysis.
 It reads a YAML configuration file specifying SNR calculation parameters and
 supports both sequential and parallel processing modes.
 
-The SNR is rebuilt with a galsim Exposure at snr.snr_exposure_time, except when the input
-came from _05_romanisim: there the exposure time is taken from that step's sidecars instead,
-so the SNR describes the depth of the data actually shipped (an L3 co-add is n_dithers
-deeper than one exposure). The config value is left alone because _01b_run_survey_simulation
-uses it for the detectability cut that fixed dataset membership.
+The SNR is always rebuilt with a galsim Exposure using imaging.engine_params, whatever
+imaging.engine selects for step 05 (romanisim is not an Exposure engine). The exposure time
+is snr.snr_exposure_time, except when the input came from _05_romanisim: there it is taken
+from that step's sidecars instead, so the SNR describes the depth of the data actually
+shipped (an L3 co-add is n_dithers deeper than one exposure). The config value is left alone
+because _01b_run_survey_simulation uses it for the detectability cut that fixed dataset
+membership.
 
 Usage:
     python3 calculate_snrs.py --config <config.yaml> [--data_dir <dir>] [--sequential] [--resume] [--prev-step <step_dir>]
@@ -352,7 +354,7 @@ def _rebuild_snr(pipeline, snr_config, input_pickle, system_name, band, original
     exposure = Exposure(
         synthetic_image,
         exposure_time=snr_config['snr_exposure_time'],
-        engine=pipeline.config['imaging']['engine'],
+        engine='galsim',  # not imaging.engine, which selects step 05's simulator
         # engine_params=original_exposure.engine_params,
         engine_params=pipeline.config['imaging']['engine_params']
     )

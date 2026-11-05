@@ -1,10 +1,10 @@
 # Fork of test.yaml that resolves to a real (throwaway) dataset at /nfsdata1/bwedig/mejiro/scratch.
 # Use this to verify code changes: it is as cheap as test.yaml (limit 1, 1 core, 1 detector, 1 band)
-# but has a real data_dir, so the romanisim scripts -- which take no --data_dir from a config alone and
-# must be invoked standalone -- can be pointed at it instead of at a real dataset.
-# engine: galsim is deliberate, matching every real rung config: imaging.engine selects how Exposure/
-# calculate_snrs rebuild SNR exposures, NOT which detector simulator runs. Setting it to 'romanisim'
-# makes Exposure raise NotImplementedError. Run _05_romanisim.py standalone against this config.
+# but has a real data_dir, so the step scripts, including _05_romanisim.py, can be run against it without
+# --data_dir instead of against a real dataset.
+# imaging.engine selects the step 05 simulator when run through Pipeline: set it to romanisim to run
+# _05_romanisim instead of _05_galsim. Running _05_romanisim.py directly works with either value.
+# engine_params stays GalSim either way, because calculate_snrs always rebuilds SNR exposures with GalSim.
 data_dir: &data_dir /nfsdata1/bwedig/mejiro
 pipeline_label: scratch
 psf_cache_dir: cached_psfs

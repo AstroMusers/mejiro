@@ -96,6 +96,9 @@ Scripts and output directories that changed:
   own Roman configs that leave it out, the SNR PSF in step 01b changes, so **which lenses pass
   the SNR cut can change**. To reproduce earlier results, set
   `snr_detector_position: [2554, 2554]`.
+- `Pipeline.run()` no longer crashes in `calculate_snrs` with `imaging.engine: romanisim`. SNR
+  exposures now always use GalSim, so `imaging.engine_params` must hold GalSim parameters even
+  when `imaging.engine` is `romanisim`.
 
 ### Dependencies
 

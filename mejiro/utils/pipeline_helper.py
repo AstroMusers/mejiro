@@ -241,12 +241,10 @@ class PipelineHelper:
     def is_romanisim_step(step_name):
         """Whether a step-05 variant name is the romanisim one.
 
-        The step directory is the only reliable signal. ``imaging.engine`` is ``'galsim'``
-        in every real rung config even when ``_05_romanisim`` produced the data -- it
-        selects how ``Exposure`` and ``calculate_snrs`` rebuild SNR exposures, not which
-        detector simulator ran (setting it to ``'romanisim'`` makes ``Exposure`` raise
-        ``NotImplementedError``). And the file extension is a serialization detail that
-        both engines may share.
+        The step directory is the only reliable signal. ``imaging.engine`` only tells
+        ``Pipeline`` which step 05 to run, and running ``_05_romanisim.py`` directly ignores
+        it, so the config can say ``'galsim'`` even when ``_05_romanisim`` produced the
+        data. And the file extension is a serialization detail that both engines may share.
         """
         return step_name.startswith('05_romanisim')
 
