@@ -40,8 +40,10 @@ Scripts and output directories that changed:
   in `mejiro/data/mejiro_config/`.
 - **`all.yaml`, `hwo.yaml` and `jwst.yaml` are no longer shipped** in
   `mejiro/data/mejiro_config/`, and neither are their SkyPy configs in `mejiro/data/skypy/`
-  (`all`, `hwo`, `jwst`, `slhammocks_all`, `slhammocks_hwo` and `slhammocks_jwst`). A config
-  that names one of these SkyPy configs now stops at step 01a with `FileNotFoundError`.
+  (`all`, `hwo`, `jwst`, `slhammocks_all`, `slhammocks_hwo` and `slhammocks_jwst`). The
+  SkyPy configs no shipped config used are gone too: `euclid-lsst-roman-like`, `hwo_dev`,
+  `roman_deep`, `roman_dev`, `roman_medium`, `roman_wide` and `roman.yml`. A config that names
+  a removed SkyPy config now stops at step 01a with `FileNotFoundError`.
 - The config, script and output-directory changes listed under "Upgrading from v3.0.0".
 
 ### Pipeline
