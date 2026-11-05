@@ -316,14 +316,14 @@ Parameters for the detector-effects step. Consumed by ``_05_galsim.py``; also re
    Used in ``_05_galsim.py`` to build each ``Exposure``, and in ``_06_h5_export.py`` as the recorded exposure time of galsim exposures.
 
 ``engine``
-   String selecting the detector-effects engine, e.g., ``galsim`` (see :doc:`../mejiro/engines` for the available engines).
+   String selecting the step 05 simulator: ``galsim`` or ``romanisim`` (see :doc:`../mejiro/engines`).
 
-   Used in ``_05_galsim.py`` and in ``calculate_snrs.py`` for the SNR-rebuild path.
+   Used in ``Pipeline`` to choose between ``_05_galsim.py`` and ``_05_romanisim.py``, and in ``_05_galsim.py`` as the ``Exposure`` engine, so run that script only with ``galsim``. ``_05_romanisim.py`` doesn't read it when run directly. The SNR exposures in ``_01b_run_survey_simulation.py`` and ``calculate_snrs.py`` always use GalSim, whatever this is set to.
 
 ``engine_params``
    Dict of engine-specific parameters forwarded to the simulation engine. See :class:`mejiro.exposure.Exposure` and the engine modules under :mod:`mejiro.engines` for the accepted keys per engine. For the GalSim Roman engine, the example configs include ``rng_seed``, ``min_zodi_factor``, and boolean toggles ``sky_background``, ``detector_effects``, ``poisson_noise``, ``reciprocity_failure``, ``dark_noise``, ``nonlinearity``, ``ipc``, ``read_noise``.
 
-   Used in ``_01b_run_survey_simulation.py`` for the SNR-detection ``Exposure``, in ``_05_galsim.py`` for the production ``Exposure``, and in ``calculate_snrs.py`` for the SNR-rebuild ``Exposure``.
+   Used in ``_01b_run_survey_simulation.py`` for the SNR-detection ``Exposure``, in ``_05_galsim.py`` for the production ``Exposure``, and in ``calculate_snrs.py`` for the SNR-rebuild ``Exposure``. The SNR exposures always use GalSim and ``_05_romanisim.py`` doesn't read this key, so it must hold GalSim parameters even when ``engine`` is ``romanisim``.
 
 ``serialization``
    String, ``full`` or ``lightweight``. Required. Selects how ``_05_galsim.py`` writes each ``Exposure``:
