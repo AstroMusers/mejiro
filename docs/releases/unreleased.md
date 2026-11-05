@@ -114,6 +114,10 @@ Scripts and output directories that changed:
 - The "Simplest Example" in the docs now runs: it passes `data_dir` and has the
   `if __name__ == '__main__':` guard that scripts need, because step 01b's workers import the
   script again.
+- `Pipeline.print_metrics()` now reads from the `data_dir` given to `Pipeline`, finds `.npz`
+  exposures as well as `.pkl`, and shows its results at any `logging_level`.
+- `examples/run_mejiro_pipeline.py` now runs `simple.yaml` and takes the output directory as
+  an argument, instead of writing to a hardcoded path.
 
 ### Dependencies
 
