@@ -38,6 +38,12 @@ Scripts and output directories that changed:
   `pipeline_label: all` no longer include HST (WFC3/UVIS) magnitudes.
 - **The Roman Data Challenge configs** (rung 0/1, labeled and unlabeled) are no longer shipped
   in `mejiro/data/mejiro_config/`.
+- **`all.yaml`, `hwo.yaml` and `jwst.yaml` are no longer shipped** in
+  `mejiro/data/mejiro_config/`, and neither are their SkyPy configs in `mejiro/data/skypy/`
+  (`all`, `hwo`, `jwst`, `slhammocks_all`, `slhammocks_hwo` and `slhammocks_jwst`). The
+  SkyPy configs no shipped config used are gone too: `euclid-lsst-roman-like`, `hwo_dev`,
+  `roman_deep`, `roman_dev`, `roman_medium`, `roman_wide` and `roman.yml`. A config that names
+  a removed SkyPy config now stops at step 01a with `FileNotFoundError`.
 - The config, script and output-directory changes listed under "Upgrading from v3.0.0".
 
 ### Pipeline
@@ -68,6 +74,9 @@ Scripts and output directories that changed:
 - NFW halo properties are read from slsim's `mass_properties`.
 - pyHalo realizations are retried with a nudged lens redshift when pyHalo fails on duplicate
   lens-plane redshifts.
+- The Roman PSFs shipped in `mejiro/data/psfs/roman/` were regenerated with STPSF 2.3.0. They
+  differ from the old ones by 2-3% of the peak in most bands, 7% in F087 and 12% in F062, so
+  results that use them can change.
 
 ### Bug fixes
 
@@ -99,6 +108,19 @@ Scripts and output directories that changed:
 - `Pipeline.run()` no longer crashes in `calculate_snrs` with `imaging.engine: romanisim`. SNR
   exposures now always use GalSim, so `imaging.engine_params` must hold GalSim parameters even
   when `imaging.engine` is `romanisim`.
+- **Step 00 now uses the same PSF cache as the later steps.** It used to join `psf_cache_dir`
+  to `data_dir` itself, ignoring the fallback to the repository root and the default for
+  `null`. So `simple.yaml` recomputed its PSFs with STPSF under `<data_dir>/tests/test_data`
+  instead of using the ones in the repository, and `psf_cache_dir: null` crashed with a
+  `TypeError`. New PSFs now go to the resolved directory, which can be `tests/test_data/` in
+  your clone, or `mejiro/data/psfs/<instrument>` for `null`.
+- The "Simplest Example" in the docs now runs: it passes `data_dir` and has the
+  `if __name__ == '__main__':` guard that scripts need, because step 01b's workers import the
+  script again.
+- `Pipeline.print_metrics()` now reads from the `data_dir` given to `Pipeline`, finds `.npz`
+  exposures as well as `.pkl`, and shows its results at any `logging_level`.
+- `examples/run_mejiro_pipeline.py` now runs `simple.yaml` and takes the output directory as
+  an argument, instead of writing to a hardcoded path.
 
 ### Dependencies
 

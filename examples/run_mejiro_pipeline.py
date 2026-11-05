@@ -1,18 +1,18 @@
-import os
+import argparse
 
-import mejiro
 from mejiro.pipeline.mejiro_pipeline import Pipeline
 
 
 def main():
     """
-    Note that the `mejiro` pipeline takes a long time to run, especially when not parallelized. You may find a terminal multiplexer like `tmux` or `screen` useful.
+    Run the pipeline with `simple.yaml`, which takes a few minutes. Configs that simulate more systems take much longer, especially when not parallelized, so you may find a terminal multiplexer like `tmux` or `screen` useful.
     """
-    # specify config file
-    config_file = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'mejiro_config', 'roman_test.yaml')
+    parser = argparse.ArgumentParser(description='Run the mejiro pipeline with simple.yaml')
+    parser.add_argument('data_dir', help='Directory to write the pipeline output to')
+    args = parser.parse_args()
 
-    # run pipeline
-    pipeline = Pipeline(config_file=config_file)
+    # run pipeline; to use your own config, pass it as Pipeline(config_file=...)
+    pipeline = Pipeline(data_dir=args.data_dir)
     pipeline.run()
 
     # the pipeline can be run step-by-step by calling the `run_script()` method; see the docstring for details

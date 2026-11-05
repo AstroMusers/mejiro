@@ -196,15 +196,15 @@ class Pipeline:
         Prints pipeline execution metrics including total execution time and average execution time per system.
         Loads configuration and execution times from files, calculates the total pipeline execution time,
         and prints it in human-readable format (hours, minutes, seconds, and days if applicable). Also computes
-        and prints the average execution time per system based on the number of pickled exposure files found.
+        and prints the average execution time per system based on the number of exposure files found.
         Raises
         ------
         ValueError
-            If no pickled exposures are found in the expected directory.
+            If no exposures are found in the expected directory.
         Notes
         -----
         - Assumes the existence of a configuration file and an execution_times.json file.
-        - The method expects the configuration to specify the data directory and band information.
+        - Reads from the ``data_dir`` given to ``Pipeline``, or the config's if none was given.
         - The method modifies the pipeline label if running in development mode.
         """
         import datetime
@@ -217,7 +217,9 @@ class Pipeline:
         if config['dev']:
             config['pipeline_label'] += '_dev'
 
-        with open(os.path.join(config['data_dir'], config['pipeline_label'], 'execution_times.json'), 'r') as f:
+        pipeline_dir = os.path.join(self.args.data_dir or config['data_dir'], config['pipeline_label'])
+
+        with open(os.path.join(pipeline_dir, 'execution_times.json'), 'r') as f:
             execution_times = json.load(f)
 
         logger.info(execution_times)
@@ -234,16 +236,17 @@ class Pipeline:
             time = (int(h) * 3600) + (int(m) * 60) + int(s)
             total_time += time
 
-        logger.info(
-            f'Total pipeline execution time: {datetime.timedelta(seconds=total_time)}, {total_time} seconds, {total_time / 3600:.2f} hours')
-        
-        data_dir = os.path.join(config['data_dir'], config['pipeline_label'], script_05_galsim.SCRIPT_NAME)
+        # level 100, like util.print_execution_time, so the metrics show at any logging_level
+        logger.log(
+            100, f'Total pipeline execution time: {datetime.timedelta(seconds=total_time)}, {total_time} seconds, {total_time / 3600:.2f} hours')
 
+        exposure_dir = os.path.join(pipeline_dir, script_05_galsim.SCRIPT_NAME)
+
+        # .npz or .pkl, depending on imaging.serialization
         band = config['synthetic_image']['bands'][0]
-        pickles = sorted(glob(os.path.join(data_dir, 'sca*', f'Exposure_*_{band}.pkl')))
-        # pickles = sorted(glob(os.path.join(data_dir, 'Exposure_*.pkl')))
+        exposures = sorted(glob(os.path.join(exposure_dir, 'sca*', f'Exposure_*_{band}.*')))
 
-        if len(pickles) > 0:
-            logger.info(f'Execution time per system: {total_time / len(pickles):.3f} seconds')
+        if len(exposures) > 0:
+            logger.log(100, f'Execution time per system: {total_time / len(exposures):.3f} seconds')
         else:
-            raise ValueError(f'No pickled exposures found in {data_dir}')
+            raise ValueError(f'No exposures found in {exposure_dir}')

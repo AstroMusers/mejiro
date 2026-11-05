@@ -47,8 +47,6 @@ def main(args):
     pipeline = PipelineHelper(args, PREV_SCRIPT_NAME, SCRIPT_NAME, SUPPORTED_INSTRUMENTS)
 
     # retrieve configuration parameters
-    data_dir = pipeline.data_dir
-    psf_cache_dir = pipeline.config['psf_cache_dir']
     psf_config = pipeline.config['psf']
     oversamples = psf_config['oversamples']
     bands = psf_config['bands']
@@ -56,8 +54,8 @@ def main(args):
     detector_positions = roman_util.divide_up_sca(psf_config['divide_up_detector'])
     num_pixes = psf_config['num_pixes']
 
-    # set directory for all output of this script
-    save_dir = os.path.join(data_dir, psf_cache_dir)
+    # use the resolved cache directory, so this step checks the same PSFs the later steps read
+    save_dir = pipeline.psf_cache_dir
     util.create_directory_if_not_exists(save_dir)
     logger.info(f'Saving PSFs to {save_dir}')
 

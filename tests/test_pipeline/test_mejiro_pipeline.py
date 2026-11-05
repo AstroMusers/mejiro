@@ -1,3 +1,4 @@
+import logging
 import os
 
 import h5py
@@ -179,3 +180,21 @@ def test_tail_args_point_later_steps_at_the_exposure_step(tmp_path):
     assert pipeline._tail_args().prev_step == '05_romanisim'
 
     assert pipeline.args.prev_step == '03', "_tail_args() must not modify the args step 04 uses"
+
+
+@pytest.mark.parametrize('extension', ['.npz', '.pkl'])
+def test_print_metrics_reads_the_data_dir_given_to_pipeline(tmp_path, caplog, extension):
+    # simple.yaml leaves data_dir unset, so print_metrics has to use the one passed to Pipeline.
+    # It also logs at WARNING, which print_metrics' results have to get through.
+    pipeline_dir = tmp_path / 'simple_dev'
+    exposure_dir = pipeline_dir / '05_galsim' / 'sca01'
+    exposure_dir.mkdir(parents=True)
+    (pipeline_dir / 'execution_times.json').write_text('{"01a": "0:00:10"}')
+    for uid in ['00000000', '00000001']:
+        (exposure_dir / f'Exposure_simple_{uid}_F106{extension}').touch()
+
+    pipeline = Pipeline(data_dir=str(tmp_path))
+    with caplog.at_level(logging.WARNING):
+        pipeline.print_metrics()
+
+    assert 'Execution time per system: 5.000 seconds' in caplog.text

@@ -28,6 +28,7 @@ UNDOCUMENTED = {
     'mejiro.engines.lenstronomy_engine': 'unreachable: Exposure raises NotImplementedError for this engine',
     'mejiro.engines.pandeia_engine': 'unreachable: Exposure raises NotImplementedError for this engine',
     'mejiro.utils.pipeline_util': 'unused duplicate of PipelineHelper.initialize_instrument_class',
+    'mejiro.data.psfs.generate_psfs': 'maintenance script for the shipped PSFs',
 }
 
 # ".. automodule:: name" at the start of a line; commented-out entries (".. .. automodule::")
