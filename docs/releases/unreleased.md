@@ -99,6 +99,15 @@ Scripts and output directories that changed:
 - `Pipeline.run()` no longer crashes in `calculate_snrs` with `imaging.engine: romanisim`. SNR
   exposures now always use GalSim, so `imaging.engine_params` must hold GalSim parameters even
   when `imaging.engine` is `romanisim`.
+- **Step 00 now uses the same PSF cache as the later steps.** It used to join `psf_cache_dir`
+  to `data_dir` itself, ignoring the fallback to the repository root and the default for
+  `null`. So `simple.yaml` recomputed its PSFs with STPSF under `<data_dir>/tests/test_data`
+  instead of using the ones in the repository, and `psf_cache_dir: null` crashed with a
+  `TypeError`. New PSFs now go to the resolved directory, which can be `tests/test_data/` in
+  your clone, or `mejiro/data/psfs/<instrument>` for `null`.
+- The "Simplest Example" in the docs now runs: it passes `data_dir` and has the
+  `if __name__ == '__main__':` guard that scripts need, because step 01b's workers import the
+  script again.
 
 ### Dependencies
 
