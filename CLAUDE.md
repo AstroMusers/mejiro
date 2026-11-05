@@ -7,8 +7,8 @@ steps in `mejiro/pipeline/`, shipped configs in `mejiro/data/mejiro_config/`, an
 
 ## Keep the docs in sync
 
-The docs drifted badly once; these rules and the tests in `tests/test_docs/` are there to stop
-that happening again. When you change code, update the matching docs in the same change:
+These rules and the tests in `tests/test_docs/` are there to stop the docs from drifting. 
+When you change code, update the matching docs in the same change:
 
 - **Config keys** added, removed or renamed: update `docs/source/usage/configuration.rst`, and
   the shipped configs in `mejiro/data/mejiro_config/` (remove keys nothing reads).

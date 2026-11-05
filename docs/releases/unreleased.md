@@ -116,5 +116,4 @@ Scripts and output directories that changed:
   installation (which optional dependencies each use needs), the API reference, instrument
   support per pipeline step, and known issues. The module diagram is generated at build time.
 - Tests in `tests/test_docs/` now fail when the docs drift from the code: undocumented config
-  keys, missing API pages, stale file references, or install instructions that disagree with
-  `pyproject.toml`.
+  keys, missing API pages, or install instructions that disagree with `pyproject.toml`.
