@@ -74,6 +74,9 @@ Scripts and output directories that changed:
 - NFW halo properties are read from slsim's `mass_properties`.
 - pyHalo realizations are retried with a nudged lens redshift when pyHalo fails on duplicate
   lens-plane redshifts.
+- The Roman PSFs shipped in `mejiro/data/psfs/roman/` were regenerated with STPSF 2.3.0. They
+  differ from the old ones by 2-3% of the peak in most bands, 7% in F087 and 12% in F062, so
+  results that use them can change.
 
 ### Bug fixes
 
