@@ -37,7 +37,7 @@ Each system is named ``<pipeline_label>_<uid>``, where ``<uid>`` is an eight-dig
 
 PSFs cached by step 00 are the exception: they go to ``psf_cache_dir``, not ``<data_dir>/<pipeline_label>/``, named ``<band>_<detector>_<x>_<y>_<oversample>_<num_pix>.npy`` (for JWST, ``<band>_<oversample>_<num_pix>.npy``). See :doc:`configuration` for how a relative or ``null`` ``psf_cache_dir`` is resolved.
 
-To load step 04 and 05 files in Python, use ``mejiro.utils.util.load_synthetic_image`` and ``mejiro.utils.util.load_exposure``, which handle both the ``.pkl`` and ``.npz`` formats.
+To load step 04 and 05 files in Python, use ``mejiro.synthetic_image.load_synthetic_image`` and ``mejiro.exposure.load_exposure``, which handle both the ``.pkl`` and ``.npz`` formats.
 
 The HDF5 dataset
 ----------------

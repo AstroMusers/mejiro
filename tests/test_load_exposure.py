@@ -1,15 +1,15 @@
-"""Loader-level tests for ``mejiro.utils.util.load_exposure``.
+"""Loader-level tests for ``mejiro.exposure.load_exposure``.
 
 These exercise the .pkl/.npz/.npy dispatch and schema-version handling without
 constructing a real Exposure (which pulls in lenstronomy + galsim + sample lenses).
-Mirrors ``tests/test_utils/test_load_synthetic_image.py``.
+Mirrors ``tests/test_load_synthetic_image.py``.
 """
 import json
 
 import numpy as np
 import pytest
 
-from mejiro.exposure import EXPOSURE_LIGHTWEIGHT_SCHEMA_VERSION, LightweightExposure
+from mejiro.exposure import EXPOSURE_LIGHTWEIGHT_SCHEMA_VERSION, LightweightExposure, load_exposure
 from mejiro.utils import util
 
 
@@ -47,7 +47,7 @@ def test_load_exposure_dispatch_pkl(tmp_path):
     path = tmp_path / 'thing.pkl'
     util.pickle(str(path), sentinel)
 
-    loaded = util.load_exposure(str(path))
+    loaded = load_exposure(str(path))
     assert loaded == sentinel
 
 
@@ -58,7 +58,7 @@ def test_load_exposure_dispatch_npz(tmp_path):
     path = tmp_path / 'lightweight.npz'
     _write_lightweight_npz(str(path), data, meta)
 
-    loaded = util.load_exposure(str(path))
+    loaded = load_exposure(str(path))
     assert isinstance(loaded, LightweightExposure)
     np.testing.assert_array_equal(loaded.data, data.astype(np.float32))
     assert loaded.band == 'F129'
@@ -85,7 +85,7 @@ def test_load_exposure_dispatch_npz_with_pieces(tmp_path):
     path = tmp_path / 'pieces.npz'
     _write_lightweight_npz(str(path), data, meta, lens_data=lens, source_data=source)
 
-    loaded = util.load_exposure(str(path))
+    loaded = load_exposure(str(path))
     np.testing.assert_array_equal(loaded.lens_data, lens.astype(np.float32))
     np.testing.assert_array_equal(loaded.source_data, source.astype(np.float32))
 
@@ -96,7 +96,7 @@ def test_load_exposure_dispatch_npy(tmp_path):
     path = tmp_path / 'romanisim.npy'
     np.save(str(path), data)
 
-    loaded = util.load_exposure(str(path))
+    loaded = load_exposure(str(path))
     assert isinstance(loaded, LightweightExposure)
     np.testing.assert_array_equal(loaded.data, data)
     # bare arrays carry no metadata or pieces
@@ -115,7 +115,7 @@ def test_load_exposure_rejects_unknown_schema(tmp_path):
     _write_lightweight_npz(str(path), np.zeros((3, 3)), meta)
 
     with pytest.raises(ValueError, match='schema_version'):
-        util.load_exposure(str(path))
+        load_exposure(str(path))
 
 
 def test_load_exposure_rejects_missing_schema(tmp_path):
@@ -126,4 +126,4 @@ def test_load_exposure_rejects_missing_schema(tmp_path):
     _write_lightweight_npz(str(path), np.zeros((3, 3)), meta)
 
     with pytest.raises(ValueError, match='schema_version'):
-        util.load_exposure(str(path))
+        load_exposure(str(path))

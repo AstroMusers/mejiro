@@ -1018,62 +1018,6 @@ def unpickle(path):
                 return _pickle.load(results_file)
 
 
-def load_synthetic_image(path):
-    """Load a SyntheticImage written by step 04, in either pickle or lightweight format.
-
-    Auto-detects the on-disk format from the file extension:
-
-    - ``.pkl`` → returns the full :class:`mejiro.synthetic_image.SyntheticImage`
-      via :func:`unpickle`.
-    - ``.npz`` → returns a :class:`mejiro.synthetic_image.LightweightSyntheticImage`
-      (a shim exposing only the attributes/methods consumed by the romanisim
-      path).
-
-    Parameters
-    ----------
-    path : str
-        Path to the on-disk synthetic image file.
-
-    Returns
-    -------
-    SyntheticImage or LightweightSyntheticImage
-    """
-    if path.endswith('.npz'):
-        from mejiro.synthetic_image import LightweightSyntheticImage
-        return LightweightSyntheticImage.load(path)
-    return unpickle(path)
-
-
-def load_exposure(path):
-    """Load an Exposure written by step 05, in whichever on-disk format it used.
-
-    Auto-detects the format from the file extension:
-
-    - ``.npz`` → a :class:`mejiro.exposure.LightweightExposure` (galsim lightweight
-      serialization: ``data`` plus optional ``lens_data`` / ``source_data`` pieces
-      and a JSON metadata blob).
-    - ``.npy`` → a data-only :class:`mejiro.exposure.LightweightExposure` (romanisim
-      writes bare cutout arrays with no metadata or pieces).
-    - ``.pkl`` → the full :class:`mejiro.exposure.Exposure` via :func:`unpickle`.
-
-    Parameters
-    ----------
-    path : str
-        Path to the on-disk exposure file.
-
-    Returns
-    -------
-    Exposure or LightweightExposure
-    """
-    if path.endswith('.npz'):
-        from mejiro.exposure import LightweightExposure
-        return LightweightExposure.load(path)
-    if path.endswith('.npy'):
-        from mejiro.exposure import LightweightExposure
-        return LightweightExposure.from_npy(path)
-    return unpickle(path)
-
-
 def unpickle_all(dir_path, prefix="", suffix="", limit=None):
     """
     Load and unpickle all files in a directory.

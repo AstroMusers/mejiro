@@ -182,7 +182,7 @@ class Exposure:
         read the pieces, exposure time, band, etc.). The heavy galsim ``Image``
         objects and the summed ``noise`` array are intentionally dropped --
         nothing reads them back from disk. Loaders should use
-        :func:`mejiro.utils.util.load_exposure`, which returns a
+        :func:`load_exposure`, which returns a
         :class:`LightweightExposure` for ``.npz`` paths.
 
         Parameters
@@ -372,3 +372,31 @@ class LightweightExposure:
         if savepath is not None:
             plt.savefig(savepath)
         plt.show()
+
+
+def load_exposure(path):
+    """Load an Exposure written by step 05, in whichever on-disk format it used.
+
+    Auto-detects the format from the file extension:
+
+    - ``.npz`` → a :class:`LightweightExposure` (galsim lightweight
+      serialization: ``data`` plus optional ``lens_data`` / ``source_data`` pieces
+      and a JSON metadata blob).
+    - ``.npy`` → a data-only :class:`LightweightExposure` (romanisim
+      writes bare cutout arrays with no metadata or pieces).
+    - ``.pkl`` → the full :class:`Exposure` via :func:`mejiro.utils.util.unpickle`.
+
+    Parameters
+    ----------
+    path : str
+        Path to the on-disk exposure file.
+
+    Returns
+    -------
+    Exposure or LightweightExposure
+    """
+    if path.endswith('.npz'):
+        return LightweightExposure.load(path)
+    if path.endswith('.npy'):
+        return LightweightExposure.from_npy(path)
+    return util.unpickle(path)
