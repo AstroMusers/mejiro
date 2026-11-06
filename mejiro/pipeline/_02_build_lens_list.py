@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 from mejiro.galaxy_galaxy import GalaxyGalaxy
 from mejiro.utils import util
-from mejiro.utils.pipeline_helper import PipelineHelper
+from mejiro.pipeline.pipeline_helper import PipelineHelper
 from mejiro.utils.slsim_util import remap_source_images
 
 import logging

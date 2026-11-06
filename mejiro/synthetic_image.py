@@ -316,7 +316,7 @@ class SyntheticImage:
         Stores the image as ``float32`` plus a JSON metadata blob carrying only
         the scalars that downstream consumers (``_05_romanisim``,
         ``_06_h5_export``, ``calculate_snrs``) actually read. The full ``StrongLens`` and lenstronomy plumbing are not
-        persisted; loaders should use :func:`mejiro.utils.util.load_synthetic_image`,
+        persisted; loaders should use :func:`load_synthetic_image`,
         which returns a :class:`LightweightSyntheticImage` for ``.npz`` paths.
 
         Parameters
@@ -715,3 +715,28 @@ class LightweightSyntheticImage:
         if savepath is not None:
             plt.savefig(savepath)
         plt.show()
+
+
+def load_synthetic_image(path):
+    """Load a SyntheticImage written by step 04, in either pickle or lightweight format.
+
+    Auto-detects the on-disk format from the file extension:
+
+    - ``.pkl`` → returns the full :class:`mejiro.synthetic_image.SyntheticImage`
+      via :func:`mejiro.utils.util.unpickle`.
+    - ``.npz`` → returns a :class:`mejiro.synthetic_image.LightweightSyntheticImage`
+      (a shim exposing only the attributes/methods consumed by the romanisim
+      path).
+
+    Parameters
+    ----------
+    path : str
+        Path to the on-disk synthetic image file.
+
+    Returns
+    -------
+    SyntheticImage or LightweightSyntheticImage
+    """
+    if path.endswith('.npz'):
+        return LightweightSyntheticImage.load(path)
+    return util.unpickle(path)

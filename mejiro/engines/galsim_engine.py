@@ -16,8 +16,9 @@ class GalSimEngine(Engine):
 
     @staticmethod
     def get_roman_exposure(synthetic_image, exposure_time, engine_params={}):
-        from mejiro.instruments.roman import Roman
-        roman = Roman()
+        # a fresh instrument, not the one on synthetic_image: that one may have been unpickled from
+        # another environment, where the paths it stores don't exist
+        roman = type(synthetic_image.instrument)()
 
         # set engine params
         if not engine_params:
@@ -220,8 +221,8 @@ class GalSimEngine(Engine):
         if sky_level.unit != 'ct / pix':
             raise ValueError(f"Minimum zodiacal light is not in units of counts/pixel: {sky_level.unit}")
 
-        # add stray light contribution
-        sky_level *= (1. + instrument.stray_light_fraction)
+        # add stray light contribution (not in place: sky_level is the instrument's stored value)
+        sky_level = sky_level * (1. + instrument.stray_light_fraction)
 
         # get thermal background in this band in counts/pixel/sec
         thermal_bkg = instrument.get_thermal_background(band)
@@ -240,10 +241,9 @@ class GalSimEngine(Engine):
 
     @staticmethod
     def get_exposure(synthetic_image, exposure_time, engine_params={}):
-        # import instrument dynamically based on instrument name
-        import importlib
-        module = importlib.import_module(f'mejiro.instruments.{synthetic_image.instrument_name.lower()}')
-        instrument = getattr(module, synthetic_image.instrument_name)()
+        # a fresh instrument, not the one on synthetic_image: that one may have been unpickled from
+        # another environment, where the paths it stores don't exist
+        instrument = type(synthetic_image.instrument)()
 
         # set engine params
         if not engine_params:

@@ -46,6 +46,7 @@ dev = [
     "sphinx",
     "sphinx-rtd-theme",
     "pydeps",
+    "import-linter==2.15",
 ]
 jax-gpu = [
     "jax[cuda12]",
@@ -73,6 +74,83 @@ include = ["mejiro*"]
 # The version comes from the latest git tag (e.g. v3.0.0) plus the commits since it,
 # e.g. 3.0.1.dev12+g1a2b3c4 between releases. It's written to mejiro/_version.py at install.
 version_file = "mejiro/_version.py"
+
+[tool.importlinter]
+# The import rules. docs/source/appendices/structure.rst states them in words: keep the two in sync.
+# Run `lint-imports` from the repository root. Imports inside functions count; importlib calls can't
+# be seen.
+root_package = "mejiro"
+include_external_packages = true  # the one-backend contracts name third-party packages
+
+[[tool.importlinter.contracts]]
+id = "layers"
+name = "Modules import only from their own layer or lower ones"
+type = "layers"
+containers = ["mejiro"]
+exhaustive = true  # every new top-level module has to be given a layer here
+exhaustive_ignores = ["_version"]
+layers = [
+    "pipeline",
+    "exposure : galaxy_galaxy : lensed_supernova : plots : point_wfi : strong_lens : style : synthetic_image",
+    "instruments",
+    "engines : analysis : cosmo",
+    "utils",
+]
+
+[[tool.importlinter.contracts]]
+id = "engines-independent"
+name = "Engines don't import each other"
+type = "independence"
+modules = [
+    "mejiro.engines.galsim_engine",
+    "mejiro.engines.lenstronomy_engine",
+    "mejiro.engines.pandeia_engine",
+    "mejiro.engines.stpsf_engine",
+]
+
+[[tool.importlinter.contracts]]
+id = "instruments-independent"
+name = "Instruments don't import each other"
+type = "independence"
+modules = [
+    "mejiro.instruments.hwo",
+    "mejiro.instruments.jwst",
+    "mejiro.instruments.roman",
+]
+
+[[tool.importlinter.contracts]]
+id = "galsim-engine-backend"
+name = "galsim_engine imports no other engine's backend"
+type = "forbidden"
+source_modules = ["mejiro.engines.galsim_engine"]
+forbidden_modules = ["lenstronomy", "pandeia", "stpsf"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+id = "lenstronomy-engine-backend"
+name = "lenstronomy_engine imports no other engine's backend"
+type = "forbidden"
+source_modules = ["mejiro.engines.lenstronomy_engine"]
+forbidden_modules = ["galsim", "pandeia", "stpsf"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+id = "pandeia-engine-backend"
+name = "pandeia_engine imports no other engine's backend"
+type = "forbidden"
+source_modules = ["mejiro.engines.pandeia_engine"]
+# lenstronomy is left out on purpose: this engine uses it for magnitude conversions and Roman's
+# zeropoints. The exception goes away if the engine is removed or those move elsewhere.
+forbidden_modules = ["galsim", "stpsf"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+id = "stpsf-engine-backend"
+name = "stpsf_engine imports no other engine's backend"
+type = "forbidden"
+source_modules = ["mejiro.engines.stpsf_engine"]
+forbidden_modules = ["galsim", "lenstronomy", "pandeia"]
+allow_indirect_imports = true
 
 [project.urls]
 Documentation = "https://mejiro.readthedocs.io/en/latest/index.html"

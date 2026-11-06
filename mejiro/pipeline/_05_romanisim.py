@@ -118,8 +118,9 @@ from romancal.associations import asn_from_list
 from romancal.pipeline import MosaicPipeline
 
 from mejiro.point_wfi import PointWFI, _make_wcs
+from mejiro.synthetic_image import load_synthetic_image
 from mejiro.utils import util as mejiro_util
-from mejiro.utils.pipeline_helper import PipelineHelper
+from mejiro.pipeline.pipeline_helper import PipelineHelper
 
 logger = logging.getLogger(__name__)
 
@@ -212,7 +213,7 @@ def _load_pickle(pickle_path):
     # unified loader — kept as a single entry point so the ThreadPool below
     # doesn't need to branch on extension.
     try:
-        return mejiro_util.load_synthetic_image(pickle_path)
+        return load_synthetic_image(pickle_path)
     except EOFError:
         raise EOFError(f'Corrupted SyntheticImage file: {pickle_path}')
 

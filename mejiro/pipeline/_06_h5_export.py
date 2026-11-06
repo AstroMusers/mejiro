@@ -6,7 +6,7 @@ corresponding SyntheticImage files from step 04, and writes them to an HDF5 file
 relevant metadata. The input step is given by --prev-step, and it determines both the file
 format and the pixel units:
 
-    - exposure data: read via util.load_exposure -- bare arrays from 05_romanisim/sca*/Exposure_*.npy,
+    - exposure data: read via load_exposure -- bare arrays from 05_romanisim/sca*/Exposure_*.npy,
       or the .data of the lightweight .npz / full .pkl Exposure written to 05_galsim/sca*/
     - exposure_time: for galsim, config['imaging']['exposure_time']. For romanisim, L2 is one
       exposure deep so it comes from config['exposure']['ma_table_number'] via romanisim
@@ -55,8 +55,10 @@ from tqdm import tqdm
 import logging
 
 import mejiro
+from mejiro.exposure import load_exposure
+from mejiro.synthetic_image import load_synthetic_image
 from mejiro.utils import util
-from mejiro.utils.pipeline_helper import PipelineHelper
+from mejiro.pipeline.pipeline_helper import PipelineHelper
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +161,7 @@ def main(args):
         synth_by_band = synth_index[uid]
         synth_files = sorted(synth_by_band.values())
 
-        synthetic_image = util.load_synthetic_image(synth_files[0])
+        synthetic_image = load_synthetic_image(synth_files[0])
         lens = synthetic_image.strong_lens
 
         if not labeled:
@@ -197,10 +199,10 @@ def main(args):
             sca_string = f'sca{str(synthetic_image.instrument_params["detector"]).zfill(2)}'
             exposure_path = os.path.join(pipeline.input_dir, sca_string,
                                          f'Exposure_{pipeline.name}_{uid}_{band}{extension}')
-            exposure_data = util.load_exposure(exposure_path).data
+            exposure_data = load_exposure(exposure_path).data
 
             # load the SyntheticImage for this band
-            synthetic_image = util.load_synthetic_image(synth_by_band[band])
+            synthetic_image = load_synthetic_image(synth_by_band[band])
             lens = synthetic_image.strong_lens
 
             # create datasets

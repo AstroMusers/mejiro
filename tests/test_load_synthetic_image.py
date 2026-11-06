@@ -1,4 +1,4 @@
-"""Loader-level tests for ``mejiro.utils.util.load_synthetic_image``.
+"""Loader-level tests for ``mejiro.synthetic_image.load_synthetic_image``.
 
 These exercise the .pkl/.npz dispatch and schema-version handling without
 constructing a real SyntheticImage (which pulls in lenstronomy + sample lenses).
@@ -11,6 +11,7 @@ import pytest
 from mejiro.synthetic_image import (
     LIGHTWEIGHT_SCHEMA_VERSION,
     LightweightSyntheticImage,
+    load_synthetic_image,
 )
 from mejiro.utils import util
 
@@ -57,7 +58,7 @@ def test_load_synthetic_image_dispatch_pkl(tmp_path):
     path = tmp_path / 'thing.pkl'
     util.pickle(str(path), sentinel)
 
-    loaded = util.load_synthetic_image(str(path))
+    loaded = load_synthetic_image(str(path))
     assert loaded == sentinel
 
 
@@ -68,7 +69,7 @@ def test_load_synthetic_image_dispatch_npz(tmp_path):
     path = tmp_path / 'lightweight.npz'
     _write_lightweight_npz(str(path), data, meta)
 
-    loaded = util.load_synthetic_image(str(path))
+    loaded = load_synthetic_image(str(path))
     assert isinstance(loaded, LightweightSyntheticImage)
     np.testing.assert_array_equal(loaded.data, data.astype(np.float32))
     assert loaded.band == meta['band']
@@ -91,7 +92,7 @@ def test_load_synthetic_image_has_realization_sentinel(tmp_path):
     path = tmp_path / 'with_sub.npz'
     _write_lightweight_npz(str(path), np.zeros((3, 3)), meta)
 
-    loaded = util.load_synthetic_image(str(path))
+    loaded = load_synthetic_image(str(path))
     assert loaded.strong_lens.realization is not None
 
 
@@ -104,7 +105,7 @@ def test_load_synthetic_image_rejects_unknown_schema(tmp_path):
     _write_lightweight_npz(str(path), np.zeros((3, 3)), meta)
 
     with pytest.raises(ValueError, match='schema_version'):
-        util.load_synthetic_image(str(path))
+        load_synthetic_image(str(path))
 
 
 def test_load_synthetic_image_rejects_missing_schema(tmp_path):
@@ -115,7 +116,7 @@ def test_load_synthetic_image_rejects_missing_schema(tmp_path):
     _write_lightweight_npz(str(path), np.zeros((3, 3)), meta)
 
     with pytest.raises(ValueError, match='schema_version'):
-        util.load_synthetic_image(str(path))
+        load_synthetic_image(str(path))
 
 
 def test_load_synthetic_image_round_trips_oversample(tmp_path):
@@ -128,7 +129,7 @@ def test_load_synthetic_image_round_trips_oversample(tmp_path):
     path = tmp_path / 'oversampled.npz'
     _write_lightweight_npz(str(path), np.zeros((365, 365)), meta)
 
-    loaded = util.load_synthetic_image(str(path))
+    loaded = load_synthetic_image(str(path))
     assert loaded.oversample == 5
     # what the exposures built from this image will actually be on
     assert loaded.native_pixel_scale == pytest.approx(0.11)
@@ -144,7 +145,7 @@ def test_load_synthetic_image_accepts_schema_v1_as_unoversampled(tmp_path):
     path = tmp_path / 'v1.npz'
     _write_lightweight_npz(str(path), np.zeros((73, 73)), meta)
 
-    loaded = util.load_synthetic_image(str(path))
+    loaded = load_synthetic_image(str(path))
     assert loaded.oversample == 1
     assert loaded.native_pixel_scale == pytest.approx(meta['pixel_scale'])
     assert loaded.native_num_pix == meta['num_pix']

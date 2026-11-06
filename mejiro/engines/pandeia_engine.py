@@ -1,12 +1,12 @@
 import logging
 import numpy as np
+from lenstronomy.SimulationAPI.ObservationConfig.Roman import Roman
 from lenstronomy.Util import data_util
 from pandeia.engine.calc_utils import build_default_calc, build_default_source
 from pandeia.engine.perform_calculation import perform_calculation
 from tqdm import tqdm
 
 from mejiro.engines.engine import Engine
-from mejiro.instruments.roman import Roman
 
 logger = logging.getLogger(__name__)
 

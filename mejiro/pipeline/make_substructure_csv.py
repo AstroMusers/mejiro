@@ -11,7 +11,7 @@ import numpy as np
 from mejiro.analysis import lensing
 from mejiro.plots import corner
 from mejiro.utils import util
-from mejiro.utils.pipeline_helper import PipelineHelper
+from mejiro.pipeline.pipeline_helper import PipelineHelper
 
 logger = logging.getLogger(__name__)
 

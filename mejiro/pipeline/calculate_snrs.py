@@ -47,9 +47,9 @@ from tqdm import tqdm
 import logging
 
 from mejiro.exposure import Exposure
-from mejiro.synthetic_image import SyntheticImage
+from mejiro.synthetic_image import SyntheticImage, load_synthetic_image
 from mejiro.utils import util
-from mejiro.utils.pipeline_helper import PipelineHelper
+from mejiro.pipeline.pipeline_helper import PipelineHelper
 
 logger = logging.getLogger(__name__)
 
@@ -316,7 +316,7 @@ def _rebuild_snr(pipeline, snr_config, input_pickle, system_name, band, original
         synth_pickle_path = os.path.join(synth_dir, f'SyntheticImage_{system_name}_{band}.npz')
 
     lens = util.unpickle(lens_pickle_path)
-    old_synthetic_image = util.load_synthetic_image(synth_pickle_path)
+    old_synthetic_image = load_synthetic_image(synth_pickle_path)
     instrument_params = old_synthetic_image.instrument_params
 
     supersampling_factor = snr_config['snr_supersampling_factor']

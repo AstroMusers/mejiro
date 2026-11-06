@@ -14,7 +14,7 @@ from pyHalo.preset_models import preset_model_from_name
 from mejiro.analysis import lensing
 from mejiro.galaxy_galaxy import Sample1, SampleGG, SampleSL2S, SampleBELLS
 from mejiro.instruments.roman import Roman
-from mejiro.synthetic_image import LightweightStrongLens, SyntheticImage
+from mejiro.synthetic_image import LightweightStrongLens, SyntheticImage, load_synthetic_image
 from mejiro.utils import util
 
 
@@ -125,7 +125,7 @@ def test_sentinel_makes_save_lightweight_report_has_realization(tmp_path):
     path = str(tmp_path / 'si.npz')
     si.save_lightweight(path)
 
-    loaded = util.load_synthetic_image(path)
+    loaded = load_synthetic_image(path)
     assert loaded.strong_lens.realization is not None
 
 

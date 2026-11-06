@@ -2,6 +2,7 @@ import galsim
 import numpy as np
 
 from mejiro.engines import galsim_engine
+from mejiro.engines.galsim_engine import GalSimEngine
 from mejiro.exposure import Exposure
 from mejiro.instruments.jwst import JWST
 from mejiro.galaxy_galaxy import SampleGG
@@ -163,3 +164,14 @@ def test_jwst_read_noise_off():
                         engine_params=engine_params)
 
     # TODO checks on the images
+
+
+def test_sky_background_leaves_instrument_unchanged():
+    instrument = JWST()
+    sky_level = instrument.get_sky_level('F200W').copy()
+
+    first = GalSimEngine.get_sky_background(instrument, 'F200W', 1000, 10, 0.03)
+    second = GalSimEngine.get_sky_background(instrument, 'F200W', 1000, 10, 0.03)
+
+    assert instrument.get_sky_level('F200W') == sky_level
+    assert np.array_equal(first.array, second.array)

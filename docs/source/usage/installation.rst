@@ -44,7 +44,7 @@ Which optional dependencies do I need?
 
 The optional dependencies:
 
-- ``dev``: run unit tests and build documentation (``pytest``, ``sphinx``, ``jupyter``).
+- ``dev``: run unit tests, check the import rules and build documentation (``pytest``, ``import-linter``, ``sphinx``, ``jupyter``).
 - ``jax-gpu``: ``jax[cuda12]`` for GPU-accelerated survey simulation and ray-shooting (``jax`` and ``jaxtronomy`` are installed by default and run on CPU). Requires a CUDA-12-compatible NVIDIA driver on the host (``nvidia-smi`` should run); ``jax-gpu`` will install on a CPU-only machine but JAX will fall back to CPU at runtime with a warning.
 - ``roman``: ``STPSF`` for Roman and JWST PSFs, ``romanisim`` and ``romancal`` for Roman L2 and L3 data products, ``roman-technical-information`` for Roman instrument parameters, ``pysiaf`` for Roman WFI pointing geometry, and ``astrocut`` for image cutouts.
 - ``hwo``: ``syotools`` for HWO telescope and camera models.

@@ -19,6 +19,8 @@ When you change code, update the matching docs in the same change:
 - **Modules** added, removed or renamed: add or remove the `automodule` entry in
   `docs/source/mejiro/`, or list the module in `UNDOCUMENTED` in `test_api_coverage.py` with the
   reason.
+- **Import rules** changed in `pyproject.toml`: update the rules in
+  `docs/source/appendices/structure.rst` to match. A new top-level module needs a layer there.
 - **Dependencies, optional extras, or supported Python versions**: update
   `docs/source/usage/installation.rst` (`test_installation_docs.py`).
 - **Code examples in the docs** live in `docs/source/examples/` and are included with
@@ -34,6 +36,7 @@ When you change code, update the matching docs in the same change:
 ## Checks
 
 - Docs guards (fast, no heavy dependencies): `pytest tests/test_docs --noconftest`
+- Import rules (fast, no heavy dependencies beyond `import-linter`): `lint-imports`
 - Full test suite (needs `pip install -e ".[dev,roman]"`): `pytest`. CI skips the HWO tests;
   see `.github/workflows/python-app.yml`.
 - Docs build (needs graphviz): `pip install -r docs/requirements.txt`, then

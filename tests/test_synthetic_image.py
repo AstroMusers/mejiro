@@ -5,7 +5,7 @@ from pyHalo.preset_models import preset_model_from_name
 
 from mejiro.instruments.roman import Roman
 from mejiro.galaxy_galaxy import Sample1, Sample2, SampleGG, SampleSL2S, SampleBELLS
-from mejiro.synthetic_image import SyntheticImage
+from mejiro.synthetic_image import SyntheticImage, load_synthetic_image
 from mejiro.engines.stpsf_engine import STPSFEngine
 from mejiro.utils import lenstronomy_util, util
 
@@ -526,7 +526,7 @@ def test_save_lightweight_roundtrip(tmp_path, has_realization, deflector_only):
     path = str(tmp_path / 'roundtrip.npz')
     orig.save_lightweight(path)
 
-    loaded = util.load_synthetic_image(path)
+    loaded = load_synthetic_image(path)
     assert isinstance(loaded, LightweightSyntheticImage)
 
     np.testing.assert_array_equal(loaded.data, orig.data.astype(np.float32))
@@ -566,7 +566,7 @@ def test_lightweight_strong_lens_band_assertion(tmp_path):
     path = str(tmp_path / 'band_assert.npz')
     orig.save_lightweight(path)
 
-    loaded = util.load_synthetic_image(path)
+    loaded = load_synthetic_image(path)
     with pytest.raises(ValueError, match='F062'):
         loaded.strong_lens.get_lens_magnitude('F062')
 
@@ -674,7 +674,7 @@ def test_oversample_round_trips_through_lightweight(tmp_path):
     path = str(tmp_path / 'oversampled.npz')
     si.save_lightweight(path)
 
-    loaded = util.load_synthetic_image(path)
+    loaded = load_synthetic_image(path)
     assert loaded.oversample == 3
     assert loaded.num_pix == si.num_pix
     assert loaded.native_num_pix == si.native_num_pix

@@ -4,7 +4,7 @@ import pytest
 import galsim
 import numpy as np
 
-from mejiro.exposure import Exposure, LightweightExposure
+from mejiro.exposure import Exposure, LightweightExposure, load_exposure
 from mejiro.synthetic_image import SyntheticImage
 from mejiro.galaxy_galaxy import Sample1, SampleGG
 from mejiro.instruments.roman import Roman
@@ -165,13 +165,13 @@ def _build_small_exposure(pieces):
 
 @pytest.mark.parametrize('pieces', [False, True])
 def test_save_lightweight_roundtrip(tmp_path, pieces):
-    """Exposure.save_lightweight + util.load_exposure preserves the data array,
+    """Exposure.save_lightweight + load_exposure preserves the data array,
     the pieces (iff pieces=True), and the scalar metadata consumers read."""
     orig = _build_small_exposure(pieces)
     path = str(tmp_path / 'roundtrip.npz')
     orig.save_lightweight(path)
 
-    loaded = util.load_exposure(path)
+    loaded = load_exposure(path)
     assert isinstance(loaded, LightweightExposure)
 
     np.testing.assert_array_equal(loaded.data, orig.data.astype(np.float32))
@@ -201,7 +201,7 @@ def test_lightweight_exposure_get_snr(tmp_path):
     orig = _build_small_exposure(pieces=True)
     path = str(tmp_path / 'pieces.npz')
     orig.save_lightweight(path)
-    loaded = util.load_exposure(path)
+    loaded = load_exposure(path)
     snr = loaded.get_snr()
     assert snr is not None and snr > 0
 
@@ -209,7 +209,7 @@ def test_lightweight_exposure_get_snr(tmp_path):
     orig_np = _build_small_exposure(pieces=False)
     path_np = str(tmp_path / 'nopieces.npz')
     orig_np.save_lightweight(path_np)
-    loaded_np = util.load_exposure(path_np)
+    loaded_np = load_exposure(path_np)
     with pytest.raises(ValueError):
         loaded_np.get_snr()
 
@@ -229,13 +229,13 @@ def test_lightweight_file_size(tmp_path):
 
 def test_full_pickle_roundtrip_via_load_exposure(tmp_path):
     """The 'full' serialization branch (imaging.serialization: full) pickles the
-    whole Exposure; util.load_exposure must round-trip it back with .data intact.
+    whole Exposure; load_exposure must round-trip it back with .data intact.
     Covers the .pkl path since every shipped config now defaults to lightweight."""
     orig = _build_small_exposure(pieces=True)
     path = str(tmp_path / 'full.pkl')
     util.pickle(path, orig)
 
-    loaded = util.load_exposure(path)
+    loaded = load_exposure(path)
     assert isinstance(loaded, Exposure)
     np.testing.assert_array_equal(loaded.data, orig.data)
     np.testing.assert_array_equal(loaded.source_data, orig.source_data)
