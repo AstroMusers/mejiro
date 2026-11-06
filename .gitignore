@@ -25,6 +25,7 @@ mejiro/_version.py
 
 # pytest
 .pytest_cache/
+.import_linter_cache/
 
 # coverage
 htmlcov/

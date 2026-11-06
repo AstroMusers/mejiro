@@ -45,6 +45,11 @@ Scripts and output directories that changed:
   `roman_deep`, `roman_dev`, `roman_medium`, `roman_wide` and `roman.yml`. A config that names
   a removed SkyPy config now stops at step 01a with `FileNotFoundError`.
 - The config, script and output-directory changes listed under "Upgrading from v3.0.0".
+- **Some helpers moved so that `mejiro.utils` no longer depends on the rest of `mejiro`:**
+  `mejiro.utils.util.load_synthetic_image` is now `mejiro.synthetic_image.load_synthetic_image`,
+  `mejiro.utils.util.load_exposure` is now `mejiro.exposure.load_exposure`, and
+  `mejiro.utils.pipeline_helper` is now `mejiro.pipeline.pipeline_helper`. The unused
+  `mejiro.utils.pipeline_util` is removed.
 
 ### Pipeline
 
@@ -131,6 +136,9 @@ Scripts and output directories that changed:
 - `numpy<2.4` is still required (slsim and pyhalo 1.4.6 use `np.trapz`).
 - The `roman` extra now installs `roman-technical-information` from pip (no manual download
   or environment variable), and declares `pysiaf` and `astrocut`.
+- Added `import-linter` to the `dev` extra. CI runs `lint-imports` to check the import rules in
+  `pyproject.toml`, which the [structure page](https://mejiro.readthedocs.io/en/latest/appendices/structure.html)
+  describes.
 
 ### Packaging and documentation
 
