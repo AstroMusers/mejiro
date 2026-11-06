@@ -70,7 +70,7 @@ import numpy as np
 from tqdm import tqdm
 
 from mejiro.utils import roman_util, util
-from mejiro.utils.pipeline_helper import PipelineHelper
+from mejiro.pipeline.pipeline_helper import PipelineHelper
 
 import logging
 logger = logging.getLogger(__name__)

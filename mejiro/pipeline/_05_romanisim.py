@@ -119,7 +119,7 @@ from romancal.pipeline import MosaicPipeline
 
 from mejiro.point_wfi import PointWFI, _make_wcs
 from mejiro.utils import util as mejiro_util
-from mejiro.utils.pipeline_helper import PipelineHelper
+from mejiro.pipeline.pipeline_helper import PipelineHelper
 
 logger = logging.getLogger(__name__)
 

@@ -92,3 +92,11 @@ Maintenance: Compact Step 3 Output
 .. automodule:: mejiro.pipeline.compact_03_realizations
     :members:
     :show-inheritance:
+
+Pipeline Helper
+***************
+
+.. automodule:: mejiro.pipeline.pipeline_helper
+    :members:
+    :undoc-members:
+    :show-inheritance:

@@ -83,7 +83,7 @@ from mejiro.exposure import Exposure
 from mejiro.galaxy_galaxy import GalaxyGalaxy
 from mejiro.synthetic_image import SyntheticImage
 from mejiro.utils import roman_util, slsim_util, util
-from mejiro.utils.pipeline_helper import PipelineHelper
+from mejiro.pipeline.pipeline_helper import PipelineHelper
 
 logger = logging.getLogger(__name__)
 

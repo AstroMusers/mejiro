@@ -23,7 +23,7 @@ import logging
 
 from mejiro.exposure import Exposure
 from mejiro.utils import roman_util, util
-from mejiro.utils.pipeline_helper import PipelineHelper
+from mejiro.pipeline.pipeline_helper import PipelineHelper
 
 logger = logging.getLogger(__name__)
 

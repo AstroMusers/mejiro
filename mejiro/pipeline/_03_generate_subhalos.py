@@ -36,7 +36,7 @@ from tqdm import tqdm
 
 from mejiro.analysis import lensing
 from mejiro.utils import util
-from mejiro.utils.pipeline_helper import PipelineHelper
+from mejiro.pipeline.pipeline_helper import PipelineHelper
 
 import logging
 logger = logging.getLogger(__name__)

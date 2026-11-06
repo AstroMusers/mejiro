@@ -49,7 +49,7 @@ import logging
 from mejiro.exposure import Exposure
 from mejiro.synthetic_image import SyntheticImage
 from mejiro.utils import util
-from mejiro.utils.pipeline_helper import PipelineHelper
+from mejiro.pipeline.pipeline_helper import PipelineHelper
 
 logger = logging.getLogger(__name__)
 
