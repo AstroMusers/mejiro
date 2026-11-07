@@ -27,7 +27,7 @@ To build docs locally:
 
 8. Update docstrings for any new or changed public API
 9. Build docs locally and check for errors: `sphinx-build -W --keep-going docs/source docs/build`
-10. Check `docs/releases/unreleased.md` covers the release, then rename it `docs/releases/vX.Y.Z.md` (and start a new, empty `docs/releases/unreleased.md`)
+10. Check `docs/releases/unreleased.md` covers the release, then rename it `docs/releases/vX.Y.Z.md` (and start a new, empty `docs/releases/unreleased.md`). If it holds the "Upgrading from v3.0.0" section, update `UPGRADE_NOTES` in `mejiro/pipeline/config_schema.py` to the new name
 11. Update `CITATION.cff` with the new version number and release date
 
 #### Versioning
