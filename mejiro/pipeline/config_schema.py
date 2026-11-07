@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 # Where the error message for an invalid config sends people with a v3.0.0 config. Update this
 # when unreleased.md is renamed at a release; test_config_reference.py checks it.
-UPGRADE_NOTES = 'docs/releases/unreleased.md'
+UPGRADE_NOTES = 'docs/releases/v4.0.0.md'
 
 # Step name (a script's SCRIPT_NAME, as passed to PipelineHelper) -> script filename. The last
 # three aren't numbered steps, but they read config keys too.

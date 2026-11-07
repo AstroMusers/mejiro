@@ -25,5 +25,5 @@ identifiers:
 repository-code: 'https://github.com/AstroMusers/mejiro'
 url: 'https://mejiro.readthedocs.io/en/latest/'
 license: MIT
-version: v3.0.0
-date-released: '2026-05-22'
+version: v4.0.0
+date-released: '2026-11-07'
