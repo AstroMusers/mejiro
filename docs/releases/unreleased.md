@@ -155,11 +155,18 @@ Scripts and output directories that changed:
 
 ### Dependencies
 
-- Upgraded: lenstronomy 1.13.3 → 1.14.2, galsim 2.7.2 → 2.8.5, pyhalo 1.4.3 → 1.4.6, stpsf
-  2.1.0 → 2.3.0, romanisim 0.13.0 → 0.14.0, romancal 0.22.0 → 1.1.0, colossus 1.3.10 →
-  1.4.0, sncosmo 2.12.1 → 2.13.1. slsim, speclite and skypy are pinned to forks.
+- Upgraded: astropy 7.2.0 → 8.0.2, pandas 2.3.3 → 3.1.1, lenstronomy 1.13.3 → 1.14.3,
+  galsim 2.7.2 → 2.8.5, pyhalo 1.4.3 → 1.4.6, stpsf 2.1.0 → 2.3.0, romanisim 0.13.0 → 0.14.0,
+  romancal 0.22.0 → 1.1.0, colossus 1.3.10 → 1.4.0, sncosmo 2.12.1 → 2.13.1, corner 2.2.3 →
+  2.3.0, tqdm 4.67.1 → 4.70.1. slsim moved from the 0.1.1 release to a commit on a fork, and
+  speclite and skypy are pinned to forks as before.
+- `jax` and `jaxtronomy` are now required dependencies instead of the `jax` extra, which is
+  gone. GPU support is the new `jax-gpu` extra (`jax[cuda12]`), so replace `.[jax]` with
+  `.[jax-gpu]` in install commands.
 - pyhalo stays at 1.4.6: 1.4.7+ needs lenstronomy profiles that no release has yet.
 - `numpy<2.4` is still required (slsim and pyhalo 1.4.6 use `np.trapz`).
+- romanisim stays at 0.14.0, because romancal 1.1.0, the latest release, requires
+  `romanisim<0.15`.
 - The `roman` extra now installs `roman-technical-information` from pip (no manual download
   or environment variable), and declares `pysiaf` and `astrocut`.
 - Added `import-linter` to the `dev` extra. CI runs `lint-imports` to check the import rules in

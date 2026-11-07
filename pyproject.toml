@@ -23,12 +23,12 @@ dependencies = [
     "astropy==8.0.2",
     "galsim==2.8.5",
     "numpy<2.4.0",  # slsim and pyhalo 1.4.6 still use np.trapz, removed in numpy 2.4.0
-    "pandas==3.1.0",
+    "pandas==3.1.1",
     "tqdm==4.70.1",
-    "lenstronomy==1.14.2",
+    "lenstronomy==1.14.3",
     "pyhalo==1.4.6",  # 1.4.7+ imports lenstronomy profiles (core_collapsed_halo, king) that no lenstronomy release has yet
     "mcfit==0.0.22",  # required for pyhalo
-    "slsim @ git+https://github.com/bryce-wedig/slsim.git@9b019373a3ed06144c0fef06fa7a6515a427f468",
+    "slsim @ git+https://github.com/bryce-wedig/slsim.git@ab4faf673b9b7fa413957138758382ba9d0302b4",
     "sncosmo==2.13.1",  # required for slsim
     "speclite @ git+https://github.com/bryce-wedig/speclite.git@mejiro",  # required for slsim
     "skypy @ git+https://github.com/bryce-wedig/skypy.git@mejiro",  # required for slsim
