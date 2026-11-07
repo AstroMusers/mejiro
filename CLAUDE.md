@@ -49,8 +49,8 @@ When you change code, update the matching docs in the same change:
 
 - The version comes from git tags via setuptools-scm (`mejiro/_version.py` is generated);
   don't hardcode it.
-- `simple.yaml` and `test.yaml` deliberately leave `data_dir` unset: `test_no_data_dir` relies
-  on that, and the other tests pass a temporary `data_dir`.
+- `simple.yaml`, `test.yaml` and `roman_test.yaml` deliberately leave `data_dir` unset:
+  `test_no_data_dir` relies on that, and the other tests pass a temporary `data_dir`.
 - The HST and LSST instruments live on the `feature/hst` and `feature/lsst` branches, not on
   `main`.
 - `config_schema.py` must import with only the standard library: Read the Docs imports it with

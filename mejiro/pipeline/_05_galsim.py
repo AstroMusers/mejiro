@@ -112,15 +112,18 @@ def main(args):
             f'{len(input_pickles)} remaining.'
         )
 
-    # limit the number of systems to process, if limit imposed
-    count = len(input_pickles)
-    if pipeline.limit is not None and pipeline.limit < count:
-        logger.info(f'Limiting to {pipeline.limit} image(s)')
+    # limit the number of systems to process, if limit imposed. There's one image per band, and
+    # step 06 expects every band of a system, so keep each system's images together.
+    systems = sorted({_system_name(input_pickle) for input_pickle in input_pickles})
+    if pipeline.limit is not None and pipeline.limit < len(systems):
+        logger.info(f'Limiting to {pipeline.limit} system(s)')
         if args.sequential:
-            input_pickles = input_pickles[:pipeline.limit]
+            kept = systems[:pipeline.limit]
         else:
-            input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
-        count = pipeline.limit
+            kept = np.random.choice(systems, pipeline.limit, replace=False)
+        kept = set(kept)
+        input_pickles = [p for p in input_pickles if _system_name(p) in kept]
+    count = len(input_pickles)
     logger.info(f'Processing {count} image(s)')
 
     # tuple the parameters
@@ -147,6 +150,11 @@ def main(args):
     execution_time = util.print_execution_time(start, stop, return_string=True)
     util.write_execution_time(execution_time, SCRIPT_NAME,
                               os.path.join(pipeline.pipeline_dir, 'execution_times.json'))
+
+
+def _system_name(input_pickle):
+    """The system a ``SyntheticImage_<name>_<band>`` pickle belongs to."""
+    return os.path.basename(input_pickle).rsplit('_', 1)[0]
 
 
 def get_image(input):
