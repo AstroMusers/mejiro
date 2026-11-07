@@ -12,7 +12,11 @@ Configs written for v3.0.0 need these changes (see the
   (each `full` or `lightweight`). All three are required.
 - Add `dataset.labeled` (`True` to write truth values into the HDF5 file, `False` for a
   separate answer-key CSV). Step 06 requires it.
-- Rename `cores.script_05` to `cores.script_05_galsim`. `cores.script_01` is no longer used.
+- Rename `cores.script_05` to `cores.script_05_galsim`.
+- Remove `cores.script_01`, `cores.script_02`, `dataset.include_psfs` and `suppress_warnings`.
+  Nothing reads them any more, and unrecognized keys are now errors.
+- Set `nice`, `survey.num_galaxy_tables`, `survey.speed_factor` and `jaxtronomy.jax_platform`
+  if your config leaves them out. They no longer have defaults.
 
 Scripts and output directories that changed:
 
@@ -45,6 +49,13 @@ Scripts and output directories that changed:
   `roman_deep`, `roman_dev`, `roman_medium`, `roman_wide` and `roman.yml`. A config that names
   a removed SkyPy config now stops at step 01a with `FileNotFoundError`.
 - The config, script and output-directory changes listed under "Upgrading from v3.0.0".
+- **Configs are validated when a step starts.** A missing required key, a value of the wrong
+  type or an unrecognized key stops the step with a `ConfigError`, which lists every problem,
+  instead of a `KeyError` partway through. Any key the schema doesn't know is rejected, so
+  **remove stale keys from your configs**. `Pipeline.run()` checks the config for every step
+  before the first one starts. A `ConfigError` is a `ValueError`.
+- **`pipeline_label: all` no longer loads every instrument's filters.** That code is disabled,
+  so `all` is now an ordinary label.
 - **Some helpers moved so that `mejiro.utils` no longer depends on the rest of `mejiro`:**
   `mejiro.utils.util.load_synthetic_image` is now `mejiro.synthetic_image.load_synthetic_image`,
   `mejiro.utils.util.load_exposure` is now `mejiro.exposure.load_exposure`, and
@@ -150,3 +161,6 @@ Scripts and output directories that changed:
   support per pipeline step, and known issues. The module diagram is generated at build time.
 - Tests in `tests/test_docs/` now fail when the docs drift from the code: undocumented config
   keys, missing API pages, or install instructions that disagree with `pyproject.toml`.
+- The config schema is defined in code (`mejiro.pipeline.config_schema`), which holds every
+  key's type, default and description. The configuration reference is generated from it, and
+  it now states which steps require each key.

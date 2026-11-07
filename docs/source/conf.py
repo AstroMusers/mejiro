@@ -8,6 +8,7 @@ import sys
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.insert(0, REPO_ROOT)
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '_ext'))
 
 # -- Project information
 
@@ -34,7 +35,8 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.mathjax',  # autodocs with math
     'sphinx.ext.autosectionlabel',
-    'sphinx.ext.viewcode'  # link to source code
+    'sphinx.ext.viewcode',  # link to source code
+    'config_reference',  # generate usage/configuration.rst's reference from the schema (_ext/)
 ]
 
 autosectionlabel_prefix_document = True

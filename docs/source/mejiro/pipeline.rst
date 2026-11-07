@@ -93,6 +93,13 @@ Maintenance: Compact Step 3 Output
     :members:
     :show-inheritance:
 
+Config Schema
+*************
+
+.. automodule:: mejiro.pipeline.config_schema
+    :members: ConfigError, Key, Section, Need, apply_defaults, validate, validate_steps
+    :show-inheritance:
+
 Pipeline Helper
 ***************
 

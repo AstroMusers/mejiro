@@ -76,17 +76,14 @@ def main(args):
     # of a subhalo'd pickle) since step 04 ray-shoots from the baked-in
     # kwargs_lens, not the realization. Mirrors synthetic_image.serialization.
     serialization = subhalo_config['serialization']
-    if serialization not in ('full', 'lightweight'):
-        raise ValueError(
-            f"subhalos.serialization must be 'full' or 'lightweight', got {serialization!r}"
-        )
 
     # set input and output directories
     if pipeline.instrument_name == 'roman':
         input_pickles = pipeline.retrieve_roman_pickles(prefix='lens', suffix='', extension='.pkl')
         pipeline.create_roman_sca_output_directories()
-    elif pipeline.instrument_name == 'hwo':
-        input_pickles = pipeline.retrieve_hwo_pickles(prefix='lens', suffix='', extension='.pkl')
+    # TODO: PipelineHelper has no retrieve_hwo_pickles, so deal with this when fixing the HWO config
+    # elif pipeline.instrument_name == 'hwo':
+    #     input_pickles = pipeline.retrieve_hwo_pickles(prefix='lens', suffix='', extension='.pkl')
     else:
         raise ValueError(f'Unknown instrument {pipeline.instrument_name}. Supported instruments are {SUPPORTED_INSTRUMENTS}.')
 

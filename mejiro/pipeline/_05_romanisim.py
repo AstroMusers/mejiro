@@ -559,7 +559,7 @@ def main(args):
 
     # PipelineHelper's basicConfig carries no timestamp; these runs are long, so re-apply
     logging.basicConfig(
-        level=getattr(logging, config.get('logging_level', 'INFO').upper(), logging.INFO),
+        level=getattr(logging, config['logging_level'].upper(), logging.INFO),
         format='%(asctime)s %(levelname)s %(name)s: %(message)s',
         force=True,
     )

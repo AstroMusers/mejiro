@@ -3,7 +3,6 @@ import copy
 import logging
 import os
 import time
-import yaml
 
 import mejiro
 from mejiro.utils import util
@@ -20,7 +19,9 @@ from mejiro.pipeline import (
     _06_h5_export as script_06_h5_export,
     _05_romanisim as script_05_romanisim,
     calculate_snrs as script_calculate_snrs,
+    config_schema,
 )
+from mejiro.pipeline.pipeline_helper import PipelineHelper, load_config
 
 class Pipeline:
     """
@@ -62,8 +63,8 @@ class Pipeline:
         self._test_mode = _test_mode
 
         # load config so dispatch flags are available
-        with open(self.config_file, 'r') as f:
-            self.config = yaml.load(f, Loader=yaml.SafeLoader)
+        self.config = load_config(self.config_file)
+        config_schema.validate(self.config, 'pipeline', source=self.config_file)
 
         # imaging.engine selects the exposure/export tail; step 04 reads
         # jaxtronomy.use_jax itself.
@@ -95,6 +96,7 @@ class Pipeline:
         Each step's ``main`` receives ``self.args``. The steps after ``_05_*`` receive a copy
         whose ``prev_step`` points at the exposure step (see ``_tail_args``).
         """
+        self._validate_run()
         start = time.time()
         if not self._test_mode:
             script_00_cache_psfs.main(self.args)
@@ -106,6 +108,29 @@ class Pipeline:
         self._run_exposure_export_tail()
         stop = time.time()
         util.print_execution_time(start, stop)
+
+    def _validate_run(self):
+        """Check the config for every step ``run`` will execute, before the first one starts.
+
+        Each step validates the config for itself too, but a key that only step 06 needs
+        shouldn't take a full run to find out about.
+        """
+        PipelineHelper.resolve_data_dir(self.config, self.args.data_dir)
+
+        scripts = [script_01a_generate_galaxy_tables, script_01b_run_survey_simulation,
+                   script_02_build_lens_list, script_03_generate_subhalos,
+                   script_04_create_synthetic_images]
+        if not self._test_mode:
+            scripts.insert(0, script_00_cache_psfs)
+        steps = [(script.SCRIPT_NAME, None) for script in scripts]
+
+        exposure_step = self._tail_args().prev_step
+        steps.append((exposure_step, None))
+        if self._engine == 'romanisim':
+            steps.append((script_calculate_snrs.SCRIPT_NAME, exposure_step))
+        steps.append((script_06_h5_export.SCRIPT_NAME, exposure_step))
+
+        config_schema.validate_steps(self.config, steps, level=self.args.level, source=self.config_file)
 
     def _run_exposure_export_tail(self):
         """Run the exposure and HDF5-export steps for the configured ``imaging.engine``.

@@ -1,7 +1,6 @@
 import logging
 import os
 import time
-import yaml
 from glob import glob
 from tqdm import tqdm
 
@@ -11,7 +10,8 @@ import numpy as np
 from mejiro.analysis import lensing
 from mejiro.plots import corner
 from mejiro.utils import util
-from mejiro.pipeline.pipeline_helper import PipelineHelper
+from mejiro.pipeline import config_schema
+from mejiro.pipeline.pipeline_helper import PipelineHelper, load_config
 
 logger = logging.getLogger(__name__)
 
@@ -21,15 +21,16 @@ import pickle
 import pandas as pd
 repo_root = os.path.dirname(os.path.dirname(mejiro.__file__))
 config_file = os.path.join(repo_root, 'projects', 'roman_data_challenge', 'roman_data_challenge_rung_1.yaml')
-with open(config_file, 'r') as f:
-    config = yaml.load(f, Loader=yaml.SafeLoader)
+config = load_config(config_file)
 PipelineHelper.configure_logging_and_warnings(config)
+config_schema.validate(config, 'make_substructure_csv', source=config_file)
+data_dir = PipelineHelper.resolve_data_dir(config)
 
 if config['dev']:
     config['pipeline_label'] += '_dev'
 
-input_dir = os.path.join(config['data_dir'], config['pipeline_label'], '03')
-output_dir = os.path.join(config['data_dir'], config['pipeline_label'])
+input_dir = os.path.join(data_dir, config['pipeline_label'], '03')
+output_dir = os.path.join(data_dir, config['pipeline_label'])
 
 start = time.time()
 
