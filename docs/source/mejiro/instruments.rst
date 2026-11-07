@@ -1,10 +1,10 @@
 Instruments
 ===========
 
-``mejiro`` currently supports simulating the Roman Space Telescope ("Roman"), the James Webb Space Telescope (JWST), and the Habitable Worlds Observatory (HWO). ``mejiro``'s Roman imaging wraps ``GalSim`` and ``STPSF`` with instrument parameters from ``roman-technical-information``, its JWST imaging wraps ``GalSim`` and ``STPSF`` with instrument parameters from ``lenstronomy``, and its HWO imaging wraps ``GalSim`` with instrument parameters from ``syotools``.
+``mejiro`` currently supports simulating the Roman Space Telescope ("Roman"), the James Webb Space Telescope (JWST), the Hubble Space Telescope (HST), and the Habitable Worlds Observatory (HWO). ``mejiro``'s Roman imaging wraps ``GalSim`` and ``STPSF`` with instrument parameters from ``roman-technical-information``, its JWST imaging wraps ``GalSim`` and ``STPSF`` with instrument parameters from ``lenstronomy``, its HST imaging wraps ``GalSim`` with Gaussian PSFs and WFC3/UVIS zeropoints computed with ``stsynphot``, and its HWO imaging wraps ``GalSim`` with instrument parameters from ``syotools``.
 
 .. note::
-    ``mejiro``'s HWO support is currently under development.
+    ``mejiro``'s HST and HWO support is currently under development. HST's sky level is a placeholder.
 
 For example, to simulate a *JWST* NIRCam exposure with GalSim, using one of the JWST PSFs that ship with ``mejiro``:
 
@@ -41,6 +41,14 @@ The other instruments work the same way; see :doc:`synthetic_image` and :doc:`en
 ********
 
 .. automodule:: mejiro.instruments.jwst
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+``hst``
+*******
+
+.. automodule:: mejiro.instruments.hst
     :members:
     :undoc-members:
     :show-inheritance:

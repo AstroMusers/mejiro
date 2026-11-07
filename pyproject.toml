@@ -113,6 +113,7 @@ id = "instruments-independent"
 name = "Instruments don't import each other"
 type = "independence"
 modules = [
+    "mejiro.instruments.hst",
     "mejiro.instruments.hwo",
     "mejiro.instruments.jwst",
     "mejiro.instruments.roman",
