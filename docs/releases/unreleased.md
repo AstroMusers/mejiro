@@ -37,9 +37,12 @@ Scripts and output directories that changed:
   are supported; CI tests 3.13.
 - **The `romanisim` `Exposure` engine is removed**; `Exposure(engine='romanisim')` raises
   `NotImplementedError`. Roman L2/L3 simulation runs as pipeline step `_05_romanisim`.
-- **The HST and LSST instrument classes moved off `main`** to the `feature/hst` and
-  `feature/lsst` branches while they're unfinished. Populations drawn with
-  `pipeline_label: all` no longer include HST (WFC3/UVIS) magnitudes.
+- **The HST instrument class moved off `main`** to the `feature/hst` branch while it's
+  unfinished. Populations drawn with `pipeline_label: all` no longer include HST (WFC3/UVIS)
+  magnitudes.
+- **The LSST instrument is reworked** (see "Pipeline"). It no longer has the `lenstronomy`
+  engine, and its parameters, including the sky level it was missing, come from lenstronomy's
+  LSST observation config.
 - **The Roman Data Challenge configs** (rung 0/1, labeled and unlabeled) are no longer shipped
   in `mejiro/data/mejiro_config/`.
 - **`all.yaml`, `hwo.yaml` and `jwst.yaml` are no longer shipped** in
@@ -64,6 +67,10 @@ Scripts and output directories that changed:
 
 ### Pipeline
 
+- **LSST runs through the pipeline**, in steps 01a, 01b, 02, 04 and 05_galsim, with
+  `instrument: lsst`. There's a new `lsst.yaml` config and an `lsst` SkyPy config, with the
+  u, g, r, i, z and y bands. LSST has no step 03, so run step 04 with `--prev-step 02`. PSFs are
+  Gaussians with each band's median seeing.
 - **Lightweight serialization** to cut disk use: step 03 can drop the pyHalo realization
   object (`subhalos.serialization`), step 04 can write `.npz` synthetic images
   (`synthetic_image.serialization`), and step 05 (GalSim) can write `.npz` exposures

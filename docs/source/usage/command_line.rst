@@ -45,7 +45,7 @@ The steps
    Add dark-matter substructure with pyHalo. Roman and HWO only.
 
 ``_04_create_synthetic_images.py``
-   Ray-shoot the synthetic images. Also takes ``--prev-step {02,03}`` (default ``03``): the step to read lenses from. Use ``02`` to skip substructure, or for JWST, which has no step 03.
+   Ray-shoot the synthetic images. Also takes ``--prev-step {02,03}`` (default ``03``): the step to read lenses from. Use ``02`` to skip substructure, or for JWST and LSST, which have no step 03.
 
 ``_05_galsim.py``
    Simulate exposures with GalSim.
