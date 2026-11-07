@@ -1,7 +1,7 @@
 Configuration File Reference
 ============================
 
-The mejiro pipeline is driven entirely by a YAML configuration file. Example configurations live in ``mejiro/data/mejiro_config/`` (``simple.yaml``, ``test.yaml``, ``roman_test.yaml``); the recommended starting point is to copy one and edit it.
+The mejiro pipeline is driven entirely by a YAML configuration file. Example configurations live in ``mejiro/data/mejiro_config/`` (``simple.yaml``, ``test.yaml``, ``roman_test.yaml``, ``hst.yaml``); the recommended starting point is to copy one and edit it.
 
 This page documents every top-level section and attribute. Units are given only where they are documented in the YAML comments or in the code. Pipeline scripts referenced below all live in ``mejiro/pipeline/``.
 

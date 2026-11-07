@@ -225,6 +225,7 @@ class PipelineHelper:
         class_map = {
             "hwo": "HWO",
             "jwst": "JWST",
+            "hst": "HST",
             "roman": "Roman"
         }
 
