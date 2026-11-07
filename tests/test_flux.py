@@ -11,7 +11,7 @@ from lenstronomy.Util import data_util
 def _make_noiseless_exposure(strong_lens, psf_cache_dir, band='F129', exposure_time=146, pieces=True):
     """Helper to create a noiseless exposure for flux testing."""
     detector = 'SCA01'
-    detector_position = (2048, 2048)
+    detector_position = (2043, 2043)
 
     kwargs_psf = STPSFEngine.get_roman_psf_kwargs(
         band, detector, detector_position, oversample=5, num_pix=101,

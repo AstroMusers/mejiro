@@ -358,7 +358,7 @@ class GalSimEngine(Engine):
 
 
     @staticmethod
-    def get_roman_psf(band, detector=1, detector_position=(2048, 2048), pupil_bin=1):
+    def get_roman_psf(band, detector=1, detector_position=(2043, 2043), pupil_bin=1):
         """
         Generate a Point Spread Function (PSF) for the Roman Space Telescope using GalSim. Note that mejiro's preferred package for generating Roman PSFs is `STPSF`.
 
@@ -369,7 +369,7 @@ class GalSimEngine(Engine):
         detector : int, optional
             The Roman detector number (SCA), by default 1.
         detector_position : tuple of float, optional
-            The position on the detector in pixels, by default (2048, 2048).
+            The position on the detector in pixels, by default (2043, 2043).
         pupil_bin : int, optional
             The binning factor for the pupil plane, by default 1.
 

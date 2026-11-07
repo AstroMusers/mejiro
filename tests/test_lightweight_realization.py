@@ -119,7 +119,7 @@ def test_sentinel_makes_save_lightweight_report_has_realization(tmp_path):
         instrument=Roman(),
         band='F129',
         fov_arcsec=5,
-        instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+        instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
     )
     si.strong_lens.realization = lensing.LIGHTWEIGHT_REALIZATION
     path = str(tmp_path / 'si.npz')

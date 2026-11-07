@@ -49,7 +49,7 @@ def stpsf_kernel(test_data_dir):
     A bare PSF is the hardest case for this operator: the core is the most undersampled
     structure the pipeline ever puts on the detector grid.
     """
-    kernel = np.load(os.path.join(test_data_dir, 'F129_1_2048_2048_5_101.npy'))
+    kernel = np.load(os.path.join(test_data_dir, 'F129_1_2043_2043_5_101.npy'))
     n = (kernel.shape[0] // OV) * OV  # trim to an exact multiple of the oversample
     kernel = kernel[:n, :n].astype(np.float64)
     return kernel / kernel.sum()

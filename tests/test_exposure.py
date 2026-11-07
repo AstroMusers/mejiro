@@ -18,7 +18,7 @@ def test_exposure_with_galsim_engine(strong_lens, test_data_dir):
 
     band = 'F129'
     detector = 'SCA01'
-    detector_position = (2048, 2048)
+    detector_position = (2043, 2043)
 
     kwargs_psf = STPSFEngine.get_roman_psf_kwargs(band, detector, detector_position, oversample=5, num_pix=101, check_cache=True, psf_cache_dir=test_data_dir)
 
@@ -82,7 +82,7 @@ def test_noiseless_exposure_aperture_photometry(sample_gg, test_data_dir):
     """
     band = 'F129'
     detector = 'SCA01'
-    detector_position = (2048, 2048)
+    detector_position = (2043, 2043)
     exposure_time = 146
 
     kwargs_psf = STPSFEngine.get_roman_psf_kwargs(
@@ -150,7 +150,7 @@ def _build_small_exposure(pieces):
         instrument=Roman(),
         band='F129',
         fov_arcsec=2,
-        instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+        instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
         kwargs_numerics={},
         kwargs_psf={},
         pieces=pieces,

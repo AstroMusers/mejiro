@@ -128,6 +128,14 @@ Scripts and output directories that changed:
   own Roman configs that leave it out, the SNR PSF in step 01b changes, so **which lenses pass
   the SNR cut can change**. To reproduce earlier results, set
   `snr_detector_position: [2554, 2554]`.
+- **`Roman.get_psf_kwargs` now defaults to `detector_position=(2043, 2043)`**, the detector
+  center as `roman_util.divide_up_sca(1)` and the configs have it, instead of `(2044, 2044)`.
+  The Roman PSFs shipped in `mejiro/data/psfs/roman/` were regenerated there
+  (`<band>_1_2043_2043_1_41.npy`), so a config with `psf_cache_dir: null` and
+  `divide_up_detector: 1` finds them. Pass `detector_position=(2044, 2044)` to get the old
+  position back. `Roman.default_params()`, which a `SyntheticImage` uses when it's given no
+  `instrument_params`, and `GalSimEngine.get_roman_psf` move to `(2043, 2043)` too, from
+  `(2048, 2048)`.
 - `Pipeline.run()` no longer crashes in `calculate_snrs` with `imaging.engine: romanisim`. SNR
   exposures now always use GalSim, so `imaging.engine_params` must hold GalSim parameters even
   when `imaging.engine` is `romanisim`.

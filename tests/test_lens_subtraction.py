@@ -65,7 +65,7 @@ def test_subtract_lens_on_exposure(sample_gg, test_data_dir):
     """
     band = 'F129'
     detector = 'SCA01'
-    detector_position = (2048, 2048)
+    detector_position = (2043, 2043)
 
     kwargs_psf = STPSFEngine.get_roman_psf_kwargs(
         band, detector, detector_position, oversample=5, num_pix=101,

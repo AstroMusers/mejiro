@@ -34,7 +34,7 @@ def test_band_specific_source_image():
                    instrument=Roman(),
                    band='F106',
                    fov_arcsec=5,
-                   instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                   instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                    kwargs_numerics={},
                    kwargs_psf={},
                    pieces=False)
@@ -48,7 +48,7 @@ def test_magnitudes(strong_lens):
                                      instrument=Roman(),
                                      band='F129',
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                                      kwargs_numerics={},
                                      kwargs_psf={},
                                      pieces=False)
@@ -59,7 +59,7 @@ def test_lenstronomy_amplitudes(strong_lens):
                                      instrument=Roman(),
                                      band='F129',
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                                      kwargs_numerics={},
                                      kwargs_psf={},
                                      pieces=False)
@@ -73,7 +73,7 @@ def test_kwargs_numerics(strong_lens):
                                      instrument=roman,
                                      band='F129',
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                                      # none provided
                                      kwargs_psf={},
                                      pieces=False)
@@ -88,7 +88,7 @@ def test_kwargs_numerics(strong_lens):
                                      instrument=roman,
                                      band='F129',
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                                      kwargs_numerics=kwargs_numerics,
                                      kwargs_psf={},
                                      pieces=False)
@@ -104,7 +104,7 @@ def test_kwargs_numerics(strong_lens):
                                      instrument=roman,
                                      band='F129',
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                                      kwargs_numerics=kwargs_numerics,
                                      kwargs_psf={},
                                      pieces=False)
@@ -118,7 +118,7 @@ def test_kwargs_numerics(strong_lens):
                                      instrument=roman,
                                      band='F129',
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                                      kwargs_numerics=kwargs_numerics,
                                      kwargs_psf={},
                                      pieces=False)
@@ -134,7 +134,7 @@ def test_kwargs_numerics(strong_lens):
                                      instrument=roman,
                                      band='F129',
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                                      kwargs_numerics=kwargs_numerics,
                                      kwargs_psf={},
                                      pieces=False)
@@ -146,7 +146,7 @@ def test_build_adaptive_grid(strong_lens):
                                      instrument=Roman(),
                                      band='F129',
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                                      kwargs_numerics={},
                                      kwargs_psf={},
                                      pieces=False)
@@ -177,7 +177,7 @@ def test_get_image_positions():
                                      instrument=Roman(),
                                      band='F129',
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                                      kwargs_numerics={},
                                      kwargs_psf={},
                                      pieces=False)
@@ -200,7 +200,7 @@ def test_fov_flux():
         strong_lens=SampleGG(),
         instrument=Roman(),
         band='F129',
-        instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+        instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
         kwargs_numerics={},
         kwargs_psf={},
         pieces=False,
@@ -217,7 +217,7 @@ def test_plot():
                                      instrument=Roman(),
                                      band='F129',
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                                      kwargs_numerics={},
                                      kwargs_psf={},
                                      pieces=False)
@@ -230,7 +230,7 @@ def test_overplot_subhalos():
                                          instrument=Roman(),
                                          band='F129',
                                          fov_arcsec=5,
-                                         instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                                         instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                                          kwargs_numerics={},
                                          kwargs_psf={},
                                          pieces=False)
@@ -251,7 +251,7 @@ def test_synthetic_image_data_content(strong_lens):
                                      instrument=Roman(),
                                      band='F129',
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                                      kwargs_numerics={},
                                      kwargs_psf={},
                                      pieces=False)
@@ -276,7 +276,7 @@ def test_synthetic_image_data_pieces(strong_lens):
                                      instrument=Roman(),
                                      band='F129',
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                                      kwargs_numerics={},
                                      kwargs_psf={},
                                      pieces=True)
@@ -301,7 +301,7 @@ def test_synthetic_image_deflector_only(strong_lens):
         instrument=Roman(),
         band='F129',
         fov_arcsec=5,
-        instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+        instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
         kwargs_numerics={},
         kwargs_psf={},
     )
@@ -327,7 +327,7 @@ def test_synthetic_image_aperture_photometry(strong_lens):
                                      instrument=Roman(),
                                      band='F129',
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                                      kwargs_numerics={},
                                      kwargs_psf={},
                                      pieces=False)
@@ -371,7 +371,7 @@ def test_synthetic_image_psf_convolution_changes_image():
         instrument=Roman(),
         band='F129',
         fov_arcsec=5,
-        instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+        instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
         kwargs_numerics={},
         pieces=False,
     )
@@ -426,7 +426,7 @@ def test_roman_psf_varies_with_detector_position(test_data_dir):
     """
     band = 'F129'
     detector = 'SCA01'
-    pos_a = (2048, 2048)
+    pos_a = (2043, 2043)
     pos_b = (200, 200)
 
     # Skip cleanly if the second cached PSF hasn't been generated yet,
@@ -503,7 +503,7 @@ def _build_lightweight_test_image(has_realization=False, deflector_only=False):
         instrument=Roman(),
         band='F129',
         fov_arcsec=5,
-        instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+        instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
         kwargs_numerics={},
         kwargs_psf={},
         pieces=False,
@@ -536,7 +536,7 @@ def test_save_lightweight_roundtrip(tmp_path, has_realization, deflector_only):
     assert loaded.num_pix == orig.num_pix
     assert loaded.instrument_name == orig.instrument_name
     assert loaded.instrument_params['detector'] == 1
-    assert tuple(loaded.instrument_params['detector_position']) == (2048, 2048)
+    assert tuple(loaded.instrument_params['detector_position']) == (2043, 2043)
     assert loaded.deflector_only == deflector_only
 
     assert loaded.get_flux() == pytest.approx(float(np.sum(orig.data.astype(np.float32))), rel=1e-6)
@@ -594,7 +594,7 @@ def test_oversample_scales_the_grid_and_keeps_it_odd():
     bins ``oversample x oversample`` blocks back down. Sizing the grid directly at the fine
     scale would not give that: set_odd_num_pix(5, 0.11/5) is 229, not 5 * 45."""
     common = dict(strong_lens=Sample1(), instrument=Roman(), band='F129', fov_arcsec=5,
-                  instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                  instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                   kwargs_numerics={}, kwargs_psf={}, pieces=False)
 
     native = SyntheticImage(**common)
@@ -615,7 +615,7 @@ def test_oversample_preserves_total_flux():
     """lenstronomy returns flux per pixel, so the total is scale-invariant. If this drifts,
     every downstream electron count drifts with it."""
     common = dict(strong_lens=Sample1(), instrument=Roman(), band='F129', fov_arcsec=5,
-                  instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                  instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                   kwargs_numerics={}, kwargs_psf={}, pieces=False)
 
     native = SyntheticImage(**common)
@@ -646,7 +646,7 @@ def test_oversample_must_be_a_positive_odd_integer(bad):
     than at the center of the central native pixel."""
     with pytest.raises(ValueError, match='oversample'):
         SyntheticImage(strong_lens=Sample1(), instrument=Roman(), band='F129', fov_arcsec=5,
-                       instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                       instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                        kwargs_numerics={}, kwargs_psf={}, pieces=False, oversample=bad)
 
 
@@ -654,12 +654,12 @@ def test_oversample_rejects_a_kernel_lenstronomy_would_degrade(test_data_dir):
     """Guards the coupling between the grid and the kernel: lenstronomy box-averages any
     kernel supplied with point_source_supersampling_factor > 1, folding in a detector pixel
     response that an oversampled grid has not applied yet."""
-    kernel = np.load(os.path.join(test_data_dir, 'F129_1_2048_2048_5_101.npy'))
+    kernel = np.load(os.path.join(test_data_dir, 'F129_1_2043_2043_5_101.npy'))
     kwargs_psf = lenstronomy_util.get_pixel_psf_kwargs(kernel, 5, degrade=True)
 
     with pytest.raises(ValueError, match='point_source_supersampling_factor=1'):
         SyntheticImage(strong_lens=Sample1(), instrument=Roman(), band='F129', fov_arcsec=5,
-                       instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                       instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                        kwargs_numerics={}, kwargs_psf=kwargs_psf, pieces=False, oversample=5)
 
 
@@ -668,7 +668,7 @@ def test_oversample_round_trips_through_lightweight(tmp_path):
     survive serialization."""
     si = SyntheticImage(
         strong_lens=Sample1(), instrument=Roman(), band='F129', fov_arcsec=5,
-        instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+        instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
         kwargs_numerics={}, kwargs_psf={}, pieces=False, oversample=3,
     )
     path = str(tmp_path / 'oversampled.npz')
@@ -691,12 +691,12 @@ def test_oversampled_render_bins_back_to_the_native_grid(test_data_dir):
     """
     from mejiro.pipeline._05_romanisim import bin_to_native
 
-    kernel = np.load(os.path.join(test_data_dir, 'F129_1_2048_2048_5_101.npy'))
+    kernel = np.load(os.path.join(test_data_dir, 'F129_1_2043_2043_5_101.npy'))
     kernel = kernel[165:340, 165:340].copy()  # 175x175 = 35 native px
     kernel /= kernel.sum()
 
     common = dict(strong_lens=Sample1(), instrument=Roman(), band='F129', fov_arcsec=5,
-                  instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                  instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                   pieces=False)
     # a fresh kwargs_numerics per call: SyntheticImage caches supersampled_indexes into it
     def numerics():

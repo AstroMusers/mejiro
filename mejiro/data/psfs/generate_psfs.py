@@ -19,7 +19,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 ROMAN_BANDS = ['F062', 'F087', 'F106', 'F129', 'F146', 'F158', 'F184', 'F213']
 ROMAN_DETECTOR = 1
-ROMAN_DETECTOR_POSITION = (2044, 2044)
+ROMAN_DETECTOR_POSITION = (2043, 2043)  # the detector center, as divide_up_sca(1) computes it
 
 JWST_BANDS = ['F115W', 'F150W', 'F200W', 'F277W', 'F356W', 'F444W']
 
