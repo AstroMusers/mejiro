@@ -90,7 +90,7 @@ logger = logging.getLogger(__name__)
 
 PREV_SCRIPT_NAME = '01a'
 SCRIPT_NAME = '01b'
-SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
+SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo', 'lsst']
 
 # Populated per-worker by ``_worker_init`` so run_slsim can flip use_jax without
 # re-importing jaxtronomy for every lens.
@@ -387,7 +387,7 @@ def run_slsim(tuple):
     # set run identifier
     if instrument.name == 'Roman':
         run_id = f'{run}_{roman_util.get_sca_string(detector).lower()}'
-    elif instrument.name == 'HWO' or instrument.name == 'JWST':
+    elif instrument.name == 'HWO' or instrument.name == 'JWST' or instrument.name == 'LSST':
         run_id = str(run).zfill(4)
     else:
         raise ValueError(f"Run identifier not implemented for {instrument.name}.")
@@ -405,7 +405,7 @@ def run_slsim(tuple):
         detector_string = roman_util.get_sca_string(detector).lower()
         filter_args = {'detector': detector_string}
         speclite_filters = instrument.load_speclite_filters(**filter_args)
-    elif instrument.name == 'HWO' or instrument.name == 'JWST':
+    elif instrument.name == 'HWO' or instrument.name == 'JWST' or instrument.name == 'LSST':
         filter_args = {}
         speclite_filters = instrument.load_speclite_filters(**filter_args)
     else:

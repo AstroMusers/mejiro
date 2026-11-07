@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 PREV_SCRIPT_NAME = '01b'
 SCRIPT_NAME = '02'
-SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
+SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo', 'lsst']
 
 
 def main(args):
@@ -69,7 +69,7 @@ def main(args):
         scas = [int(d[3:]) for d in parsed_names]
         scas = sorted(set([str(sca).zfill(2) for sca in scas]))
         logger.info(f'Found SCA(s): {scas}')
-    elif pipeline.instrument_name == 'hwo' or pipeline.instrument_name == 'jwst':
+    elif pipeline.instrument_name == 'hwo' or pipeline.instrument_name == 'jwst' or pipeline.instrument_name == 'lsst':
         pass
     else:
         raise ValueError(f'Unknown instrument {pipeline.instrument_name}. Supported instruments are {SUPPORTED_INSTRUMENTS}.')
@@ -106,7 +106,7 @@ def main(args):
                 if uid == pipeline.limit:
                     break
 
-    elif pipeline.instrument_name == 'hwo' or pipeline.instrument_name == 'jwst':
+    elif pipeline.instrument_name == 'hwo' or pipeline.instrument_name == 'jwst' or pipeline.instrument_name == 'lsst':
         for pickled_list in tqdm(detectable_gglens_pickles, desc="Runs", position=1, leave=False):
             gglenses = util.unpickle(pickled_list)
 

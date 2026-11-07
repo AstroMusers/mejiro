@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 PREV_SCRIPT_NAME = None
 SCRIPT_NAME = '01a'
-SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
+SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo', 'lsst']
 
 
 def main(args):
@@ -147,7 +147,7 @@ def generate_galaxy_table(tuple):
     #     HWO.load_speclite_filters()
     if instrument.name == 'Roman':
         instrument.load_speclite_filters(detector=detector_string)
-    elif instrument.name == 'HWO' or instrument.name == 'JWST':
+    elif instrument.name == 'HWO' or instrument.name == 'JWST' or instrument.name == 'LSST':
         instrument.load_speclite_filters()
 
     # load SkyPy config file
@@ -155,7 +155,7 @@ def generate_galaxy_table(tuple):
     if instrument.name == 'Roman':
         skypy_config = os.path.join(cache_dir,
                                     f'{survey_config["skypy_config"]}_{detector_string}.yml')
-    elif instrument.name == 'HWO' or instrument.name == 'JWST':
+    elif instrument.name == 'HWO' or instrument.name == 'JWST' or instrument.name == 'LSST':
         skypy_config = os.path.join(cache_dir, survey_config['skypy_config'] + '.yml')
     if not os.path.exists(skypy_config):
         raise FileNotFoundError(f'SkyPy configuration file {skypy_config} not found.')
@@ -173,7 +173,7 @@ def generate_galaxy_table(tuple):
         if instrument.name == 'Roman':
             slhammocks_config = os.path.join(cache_dir,
                                              f'{slhammocks_pipeline_kwargs["skypy_config"]}_{detector_string}.yml')
-        elif instrument.name == 'HWO' or instrument.name == 'JWST':
+        elif instrument.name == 'HWO' or instrument.name == 'JWST' or instrument.name == 'LSST':
             slhammocks_config = os.path.join(cache_dir, slhammocks_pipeline_kwargs["skypy_config"] + '.yml')
         if not os.path.exists(slhammocks_config):
             raise FileNotFoundError(f'SLHammocks configuration file {slhammocks_config} not found.')

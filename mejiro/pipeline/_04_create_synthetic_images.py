@@ -77,7 +77,7 @@ logger = logging.getLogger(__name__)
 
 
 SCRIPT_NAME = '04'
-SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
+SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo', 'lsst']
 
 # Populated per-worker by ``_jax_worker_init`` so create_synthetic_image can
 # flip use_jax without re-importing jaxtronomy for every lens. Stays None on
