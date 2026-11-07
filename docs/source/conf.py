@@ -57,6 +57,15 @@ autodoc_mock_imports = ['numpy', 'pandas', 'PIL', 'astropy', 'galsim', 'stpsf', 
 
 html_theme = 'sphinx_rtd_theme'
 
+# -- Link check (the weekly docs-linkcheck workflow)
+
+# These sites answer automated requests with 403 or 405, so linkcheck can't tell a working link
+# from a broken one. Oxford University Press (MNRAS) DOIs redirect to academic.oup.com.
+linkcheck_ignore = [
+    r'https://doi\.org/10\.1093/',
+    r'https://ui\.adsabs\.harvard\.edu/',
+]
+
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
 

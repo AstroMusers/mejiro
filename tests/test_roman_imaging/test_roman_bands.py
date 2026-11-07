@@ -16,12 +16,12 @@ def test_data_dir():
 
 @pytest.mark.parametrize("band", ['F062', 'F087', 'F106', 'F129', 'F146', 'F158', 'F184', 'F213'])
 def test_band(band, test_data_dir):
-    kwargs_psf = STPSFEngine.get_roman_psf_kwargs(band, 'SCA01', (2048, 2048), oversample=5, num_pix=101, check_cache=True, psf_cache_dir=test_data_dir)
+    kwargs_psf = STPSFEngine.get_roman_psf_kwargs(band, 'SCA01', (2043, 2043), oversample=5, num_pix=101, check_cache=True, psf_cache_dir=test_data_dir)
 
     synthetic_image = SyntheticImage(strong_lens=SampleGG(),
                                      instrument=Roman(),
                                      band=band,
-                                     instrument_params={'detector': 1, 'detector_position': (2048, 2048)},
+                                     instrument_params={'detector': 1, 'detector_position': (2043, 2043)},
                                      kwargs_psf=kwargs_psf)
 
     exposure = Exposure(synthetic_image,

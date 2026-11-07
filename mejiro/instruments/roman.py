@@ -100,7 +100,7 @@ class Roman(Instrument):
             self.psf_fwhm = util.return_qtable(os.path.join(self.roman_technical_information_path, FILTER_PARAMS_PATH))
         return self.psf_fwhm[self.psf_fwhm['filter'] == band]['PSF_FWHM']
 
-    def get_psf_kwargs(self, band, detector=1, detector_position=(2044, 2044), oversample=5, num_pix=101, check_cache=True, psf_cache_dir=None, require_cached=False, degrade=True):
+    def get_psf_kwargs(self, band, detector=1, detector_position=(2043, 2043), oversample=5, num_pix=101, check_cache=True, psf_cache_dir=None, require_cached=False, degrade=True):
         from mejiro.engines.stpsf_engine import STPSFEngine
         return STPSFEngine.get_roman_psf_kwargs(band, roman_util.get_sca_int(detector), detector_position, oversample, num_pix, check_cache, psf_cache_dir, require_cached=require_cached, degrade=degrade)
     
@@ -142,7 +142,7 @@ class Roman(Instrument):
     def default_params():
         return {
             'detector': 1,
-            'detector_position': (2048, 2048)
+            'detector_position': (2043, 2043)
         }
     
     @staticmethod

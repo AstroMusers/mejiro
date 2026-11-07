@@ -58,7 +58,7 @@ def test_CDM(strong_lens):
                                      instrument=Roman(),
                                      band='F129',
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                                      pieces=False)
     _assert_synthetic_image_data_sane(synthetic_image)
 
@@ -106,7 +106,7 @@ def test_WDM(strong_lens):
                                      instrument=Roman(),
                                      band='F129',
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                                      pieces=False)
     _assert_synthetic_image_data_sane(synthetic_image)
 
@@ -136,7 +136,7 @@ def test_SIDM(strong_lens):
                                      instrument=Roman(),
                                      band='F129',
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                                      pieces=False)
     _assert_synthetic_image_data_sane(synthetic_image)
 
@@ -161,7 +161,7 @@ def test_ULDM(strong_lens):
                                      instrument=Roman(),
                                      band='F129',
                                      fov_arcsec=5,
-                                     instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+                                     instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
                                      pieces=False)
     _assert_synthetic_image_data_sane(synthetic_image)
 
@@ -175,7 +175,7 @@ def test_substructure_changes_image():
         instrument=Roman(),
         band='F129',
         fov_arcsec=5,
-        instrument_params={'detector': 'SCA01', 'detector_position': (2048, 2048)},
+        instrument_params={'detector': 'SCA01', 'detector_position': (2043, 2043)},
         kwargs_numerics={},
         kwargs_psf={},
         pieces=False,

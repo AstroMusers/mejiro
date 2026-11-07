@@ -24,7 +24,7 @@ JWST_BANDS = ['F115W', 'F150W', 'F200W', 'F277W', 'F356W', 'F444W']
 # (band, detector, detector position, oversample, num_pix)
 ROMAN_PSFS = [
     # tests that build their own PSF, e.g. test_flux.py and test_roman_bands.py
-    *[(band, 1, (2048, 2048), 5, 101) for band in ROMAN_BANDS],
+    *[(band, 1, (2043, 2043), 5, 101) for band in ROMAN_BANDS],
     # test_roman_psf_varies_with_detector_position compares this with the F129 PSF above
     ('F129', 1, (200, 200), 5, 101),
     # the psf section of simple.yaml, which test.yaml's is a subset of
