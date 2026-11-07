@@ -1,66 +1,58 @@
-data_dir: &data_dir /data/bwedig/mejiro  # where output data should be written
+# Small multi-detector pipeline run for CI, in tests/test_pipeline/test_mejiro_pipeline.py::test_roman_test_pipeline_run.
+# test.yaml covers one detector and one PSF position; this one covers several of each, in three bands.
+data_dir: &data_dir null
 pipeline_label: roman_test
-psf_cache_dir: cached_psfs
+psf_cache_dir: tests/test_data
 dev: True
 nice: 19
 show_progress_bar: False
 logging_level: INFO
-limit: null
+limit: 2
 seed: &seed 42
 cores:
-  script_00: 24
-  script_01a: 24
-  script_01b: 24
-  script_03: 24
-  script_04: 24
-  script_05_galsim: 24
-  script_05_romanisim: 12
+  script_00: 1
+  script_01a: 2
+  script_01b: 2
+  script_03: 2
+  script_04: 2
+  script_05_galsim: 2
+  script_05_romanisim: 1
   script_snr: 1
 jaxtronomy: 
   use_jax: False
   jax_platform: cpu  # cpu or gpu
 instrument: roman
 survey:
-  runs: 24 # 90
-  num_galaxy_tables: 24  # number of independent galaxy tables for _01a; higher = more intrinsic diversity
-  speed_factor: 1  # set >1 for faster but less complete population draws in _01b
-  area: 0.5
-  skypy_config: lsst-like_triple_SF
+  runs: 2  # one run per detector
+  num_galaxy_tables: 2  # number of independent galaxy tables for _01a; higher = more intrinsic diversity
+  speed_factor: 4  # set >1 for faster but less complete population draws in _01b
+  area: 0.1
+  skypy_config: lsst-like_triple_SF_test
   write_to_csv: False
   total_population: False
-  use_real_sources: True
-  catalog_source_kwargs:
-    catalog_path: /data/bwedig/COSMOS
-    catalog_type: COSMOS
-    sersic_fallback: True
-    max_scale: 1
-  use_slhammocks_pipeline: True
-  slhammocks_pipeline_kwargs:
-    skypy_config: slhammocks
-    slhammocks_config: null
-    loghm_min: 11
-    loghm_max: 15
-  detectors: &detectors [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]  # 
-  bands: [F062, F087, F106, F129, F158, F184, F213, F146]  # SkyPy will calculate magnitudes for each of these bands; they'll be stored in the physical_params attribute of the strong_lens
+  use_real_sources: False
+  use_slhammocks_pipeline: False
+  detectors: &detectors [1, 18]
+  bands: [F106, F129, F158]  # SkyPy will calculate magnitudes for each of these bands; they'll be stored in the physical_params attribute of the strong_lens
   deflector_cut_band: F129
-  deflector_cut_band_max: 27
+  deflector_cut_band_max: 23
   deflector_z_min: 0.01
-  deflector_z_max: 5.0
+  deflector_z_max: 2.0
   source_cut_band: F129
-  source_cut_band_max: 29
+  source_cut_band_max: 24
   source_z_min: 0.01
-  source_z_max: 8.0
+  source_z_max: 3.0
   min_image_separation: 0.3  # arcseconds
   max_image_separation: 10.0  # arcseconds
   mag_arc_limit_band: F129
-  mag_arc_limit: 27
-  magnification: 3
+  mag_arc_limit: 24
+  magnification: 1.5
 subhalos:
   fraction: 1.  # fraction of systems to add substructure to
   pyhalo_model: CDM
   serialization: full  # 'full' keeps the pyHalo realization object in 03 pickles; 'lightweight' strips it (see analysis.lensing.strip_realization)
   realization_kwargs:
-    log_mlow: 6
+    log_mlow: 9
     log_mhigh: 12
     LOS_normalization: 1.
     concentration_model_subhalos: LUDLOW2016

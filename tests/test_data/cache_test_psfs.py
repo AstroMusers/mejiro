@@ -14,6 +14,7 @@ from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 
 from mejiro.engines.stpsf_engine import STPSFEngine
+from mejiro.utils.roman_util import divide_up_sca
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -28,6 +29,11 @@ ROMAN_PSFS = [
     ('F129', 1, (200, 200), 5, 101),
     # the psf section of simple.yaml, which test.yaml's is a subset of
     *[(band, detector, (2043, 2043), 1, 73) for band in ['F106', 'F158'] for detector in [1, 18]],
+    # the psf section of roman_test.yaml
+    *[(band, detector, position, 1, 101)
+      for band in ['F106', 'F129', 'F158']
+      for detector in [1, 18]
+      for position in divide_up_sca(2)],
 ]
 
 # (band, oversample, num_pix)

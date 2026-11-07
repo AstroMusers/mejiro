@@ -118,6 +118,9 @@ Scripts and output directories that changed:
   (the value must divide the 4088-pixel detector evenly), so step 00 failed. It now uses 2.
 - `simple.yaml` and `roman_test.yaml` set `snr.snr_detector_position` to a position step 00
   caches PSFs at, so step 01b no longer needs STPSF data for the SNR PSF.
+- `roman_test.yaml` is now a small run for CI: two detectors and four PSF positions in three
+  bands, with its PSFs in `tests/test_data`. It no longer needs a COSMOS catalog, and it leaves
+  `data_dir` unset, so pass one. To start a new config, copy `simple.yaml` instead.
 - **`snr.snr_detector_position` now defaults to the detector center, `(2043, 2043)`,**
   instead of the off-center `(2554, 2554)`. Only Roman PSFs depend on detector position, and
   every shipped Roman config sets the key, so the shipped configs are unaffected. But for your

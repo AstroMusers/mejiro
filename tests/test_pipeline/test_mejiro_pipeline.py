@@ -7,9 +7,10 @@ import yaml
 
 import mejiro
 from mejiro.pipeline.mejiro_pipeline import Pipeline
-from mejiro.utils import util
+from mejiro.utils import roman_util, util
 
 TEST_CONFIG = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'mejiro_config', 'test.yaml')
+ROMAN_TEST_CONFIG = os.path.join(os.path.dirname(mejiro.__file__), 'data', 'mejiro_config', 'roman_test.yaml')
 
 
 @pytest.mark.parametrize('serialization', ['full', 'lightweight'])
@@ -142,6 +143,48 @@ def test_pipeline_run(tmp_path, serialization):
             synth = f['images'][group_name][f'synthetic_image_{uid}_{band}']
             assert synth.attrs['units'][0] == 'counts/s', \
                 f"synthetic images should be in counts/s, got {synth.attrs['units'][0]}"
+
+
+def test_roman_test_pipeline_run(tmp_path):
+    # test_pipeline_run covers one detector, one PSF position and one band. This covers several
+    # of each, and the PSFs it reads are cached in tests/test_data, so CI needs no STPSF data.
+    with open(ROMAN_TEST_CONFIG) as f:
+        config = yaml.safe_load(f)
+
+    pipeline = Pipeline(config_file=ROMAN_TEST_CONFIG, data_dir=str(tmp_path), _test_mode=True)
+    pipeline.run()
+
+    pipeline_dir = tmp_path / "roman_test_dev"
+
+    # steps 01b and 02 run every detector; `limit` only cuts the lenses down from step 03 on
+    for detector in config['survey']['detectors']:
+        sca = f"sca{detector:02d}"
+        assert list((pipeline_dir / "01b").glob(f"detectable_gglenses_*_{sca}.pkl")), \
+            f"step 01b wrote no lenses for {sca}"
+        assert list((pipeline_dir / "02" / sca).glob("lens_roman_test_*.pkl")), \
+            f"step 02 wrote no lenses for {sca}"
+
+    # every system that reaches step 06 has an exposure and a synthetic image in every band
+    h5_files = list((pipeline_dir / "06").glob("roman_test_v_0_1.h5"))
+    assert len(h5_files) == 1, f"Expected 1 HDF5 file, found {len(h5_files)}"
+
+    positions = set(roman_util.divide_up_sca(config['psf']['divide_up_detector']))
+    with h5py.File(h5_files[0], 'r') as f:
+        groups = list(f['images'])
+        assert len(groups) == config['limit'], f"Expected {config['limit']} systems, found {len(groups)}"
+
+        for group_name in groups:
+            group = f['images'][group_name]
+            uid = group_name.split('_')[-1]
+            position = (int(group.attrs['detector_position_x'][0]), int(group.attrs['detector_position_y'][0]))
+            assert position in positions, f"{group_name} is at {position}, which has no cached PSF"
+
+            for band in config['synthetic_image']['bands']:
+                exposure = group[f'exposure_{uid}_{band}']
+                assert exposure.attrs['units'][0] == 'DN', f"{group_name} {band} exposure isn't in DN"
+                assert float(exposure.attrs['exposure_time'][0]) == float(config['imaging']['exposure_time'])
+                assert group[f'synthetic_image_{uid}_{band}'].shape == exposure.shape
+
 
 def test_no_data_dir():
     try:
