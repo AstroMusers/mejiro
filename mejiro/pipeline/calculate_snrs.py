@@ -117,15 +117,18 @@ def main(args):
         logger.info(f"SNR exposure time from {prev_script_name}: "
                     f"{snr_config['snr_exposure_time']:.4f} s")
 
-    # limit the number of systems to process, if limit imposed
-    count = len(input_pickles)
-    if pipeline.limit is not None and pipeline.limit < count:
-        logger.info(f'Limiting to {pipeline.limit} lens(es)')
+    # limit the number of systems to process, if limit imposed. There's one exposure per band,
+    # so keep each system's exposures together and every system gets an SNR in every band.
+    systems = sorted({_system_name(input_pickle) for input_pickle in input_pickles})
+    if pipeline.limit is not None and pipeline.limit < len(systems):
+        logger.info(f'Limiting to {pipeline.limit} system(s)')
         if args.sequential:
-            input_pickles = input_pickles[:pipeline.limit]
+            kept = systems[:pipeline.limit]
         else:
-            input_pickles = list(np.random.choice(input_pickles, pipeline.limit, replace=False))
-        count = pipeline.limit
+            kept = np.random.choice(systems, pipeline.limit, replace=False)
+        kept = set(kept)
+        input_pickles = [p for p in input_pickles if _system_name(p) in kept]
+    count = len(input_pickles)
     logger.info(f'Processing {count} exposure(s)' + (f' with jax_platform={jax_platform!r}' if use_jax else ''))
 
     # tuple the parameters
@@ -144,6 +147,11 @@ def main(args):
     execution_time = util.print_execution_time(start, stop, return_string=True)
     util.write_execution_time(execution_time, SCRIPT_NAME,
                               os.path.join(pipeline.pipeline_dir, 'execution_times.json'))
+
+
+def _system_name(input_pickle):
+    """The system an ``Exposure_<name>_<band>`` file belongs to."""
+    return os.path.basename(input_pickle).rsplit('_', 1)[0]
 
 
 def _verify_jax_platform(jax_platform):

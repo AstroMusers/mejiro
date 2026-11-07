@@ -103,7 +103,8 @@ Scripts and output directories that changed:
 - `_05_galsim` skips corrupted `SyntheticImage` pickles instead of crashing.
 - `_05_galsim` applies `limit` to systems, as documented, instead of to images. It used to keep
   `limit` images across all bands, so step 06 crashed on the missing ones when
-  `synthetic_image.bands` had more than one band.
+  `synthetic_image.bands` had more than one band. `calculate_snrs` now does the same, so a
+  limited run gets an SNR in every band of each system it keeps.
 - Galaxy-table seeding is deterministic across processes, and step 04's detector-position
   draw is seeded.
 - `simple.yaml` and `roman_test.yaml` set `dataset.labeled`, so step 06 no longer stops with
