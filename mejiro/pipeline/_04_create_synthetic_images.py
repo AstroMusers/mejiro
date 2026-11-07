@@ -153,10 +153,6 @@ def main(args):
     # 'full' pickles the entire SyntheticImage (current default); 'lightweight'
     # writes a compact .npz used by the romanisim path only.
     serialization = synthetic_image_config['serialization']
-    if serialization not in ('full', 'lightweight'):
-        raise ValueError(
-            f"synthetic_image.serialization must be 'full' or 'lightweight', got {serialization!r}"
-        )
     output_ext = '.npz' if serialization == 'lightweight' else '.pkl'
 
     if use_jax:
@@ -215,7 +211,7 @@ def main(args):
         count = pipeline.limit
     logger.info(f'Processing {count} lens(es)' + (f' with jax_platform={jax_platform!r}' if use_jax else ''))
 
-    oversample = synthetic_image_config.get('oversample', 1)
+    oversample = synthetic_image_config['oversample']
     if oversample > 1:
         logger.info(
             f'Rendering at oversample={oversample}: outputs are at 1/{oversample} of the '
@@ -234,7 +230,7 @@ def main(args):
         input_pickles.sort(key=os.path.getsize, reverse=True)
 
     seed = pipeline.config['seed']
-    deflector_only_fraction = synthetic_image_config.get('deflector_only_fraction', 0.0)
+    deflector_only_fraction = synthetic_image_config['deflector_only_fraction']
     if deflector_only_fraction:
         logger.info(
             f'Rendering ~{deflector_only_fraction * 100:.0f}% of systems as deflector-only '
@@ -444,7 +440,7 @@ def create_synthetic_image(input):
     supersampling_compute_mode = synthetic_image_config['supersampling_compute_mode']
     supersampling_factor = synthetic_image_config['supersampling_factor']
     pieces = synthetic_image_config['pieces']
-    oversample = synthetic_image_config.get('oversample', 1)
+    oversample = synthetic_image_config['oversample']
     num_pix = psf_config['num_pixes'][0]
 
     lens = util.unpickle(input_pickle)

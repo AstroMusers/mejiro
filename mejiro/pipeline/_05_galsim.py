@@ -59,10 +59,6 @@ def main(args):
     # Exposure.save_lightweight; 'full' pickles the whole Exposure object. This is
     # distinct from synthetic_image.serialization below, which governs the step-04 INPUT.
     output_serialization = imaging_config['serialization']
-    if output_serialization not in ('full', 'lightweight'):
-        raise ValueError(
-            f"imaging.serialization must be 'full' or 'lightweight', got {output_serialization!r}"
-        )
     output_ext = '.npz' if output_serialization == 'lightweight' else '.pkl'
 
     # The galsim engine needs the full SyntheticImage (lens model, PSF, pixel
@@ -79,7 +75,7 @@ def main(args):
     # An oversampled step-04 image has no detector pixel integral applied and is on a
     # finer grid than the detector; the galsim engine assumes detector-resolution input
     # and would silently produce an exposure at the wrong scale.
-    oversample = pipeline.config['synthetic_image'].get('oversample', 1)
+    oversample = pipeline.config['synthetic_image']['oversample']
     if oversample > 1:
         raise ValueError(
             f"_05_galsim requires detector-resolution input but "

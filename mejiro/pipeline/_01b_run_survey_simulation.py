@@ -92,10 +92,6 @@ PREV_SCRIPT_NAME = '01a'
 SCRIPT_NAME = '01b'
 SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
 
-# Detector position of the SNR PSF when the config doesn't set snr.snr_detector_position: the
-# detector center, which is where psf.divide_up_detector: 1 caches PSFs.
-DEFAULT_SNR_DETECTOR_POSITION = (2043, 2043)
-
 # Populated per-worker by ``_worker_init`` so run_slsim can flip use_jax without
 # re-importing jaxtronomy for every lens.
 _JAXXED_MODELS_SET = None
@@ -385,7 +381,7 @@ def run_slsim(tuple):
         'compute_mode': snr_supersampling_compute_mode,
     }
     snr_detector = detector
-    _snr_pos = snr_config.get('snr_detector_position', DEFAULT_SNR_DETECTOR_POSITION)
+    _snr_pos = snr_config['snr_detector_position']
     snr_detector_position = (_snr_pos[0], _snr_pos[1])
 
     # set run identifier
@@ -397,14 +393,15 @@ def run_slsim(tuple):
         raise ValueError(f"Run identifier not implemented for {instrument.name}.")
 
     # load filters
-    if config['pipeline_label'] == 'all':
-        from mejiro.instruments.jwst import JWST
-        from mejiro.instruments.roman import Roman
-        from mejiro.instruments.hwo import HWO
-        speclite_filters = Roman.load_speclite_filters(detector='SCA01')
-        speclite_filters = JWST.load_speclite_filters()
-        speclite_filters = HWO.load_speclite_filters()
-    elif instrument.name == 'Roman':
+    # Disabled: no config uses pipeline_label: all any more. Kept in case it comes back.
+    # if config['pipeline_label'] == 'all':
+    #     from mejiro.instruments.jwst import JWST
+    #     from mejiro.instruments.roman import Roman
+    #     from mejiro.instruments.hwo import HWO
+    #     speclite_filters = Roman.load_speclite_filters(detector='SCA01')
+    #     speclite_filters = JWST.load_speclite_filters()
+    #     speclite_filters = HWO.load_speclite_filters()
+    if instrument.name == 'Roman':
         detector_string = roman_util.get_sca_string(detector).lower()
         filter_args = {'detector': detector_string}
         speclite_filters = instrument.load_speclite_filters(**filter_args)

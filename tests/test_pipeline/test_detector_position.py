@@ -67,5 +67,5 @@ def test_tracks_the_position_list_it_is_given():
 def test_snr_psf_defaults_to_the_detector_center():
     """Without snr.snr_detector_position, step 01b builds the SNR PSF at the detector center,
     where divide_up_detector: 1 caches PSFs. (It used to default to an off-center (2554, 2554).)"""
-    from mejiro.pipeline._01b_run_survey_simulation import DEFAULT_SNR_DETECTOR_POSITION
-    assert DEFAULT_SNR_DETECTOR_POSITION == roman_util.divide_up_sca(1)[0]
+    from mejiro.pipeline.config_schema import KEYS
+    assert KEYS['snr.snr_detector_position'].default == roman_util.divide_up_sca(1)[0]

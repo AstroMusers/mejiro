@@ -58,7 +58,7 @@ def main(args):
     use_jax = pipeline.config['jaxtronomy']['use_jax']
     scas = pipeline.config['survey']['detectors']
     bands = pipeline.config['survey']['bands']
-    remap_bands = pipeline.config['survey'].get('remap_bands')  # only required when lenses have catalog source images
+    remap_bands = pipeline.config['survey']['remap_bands']  # only required when lenses have catalog source images
 
     # tell script where the output of previous script is
     detectable_gglens_pickles = sorted(glob(pipeline.input_dir + '/detectable_gglenses_*.pkl'))

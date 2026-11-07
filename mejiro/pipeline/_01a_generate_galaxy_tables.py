@@ -137,14 +137,15 @@ def generate_galaxy_table(tuple):
         detector_string = roman_util.get_sca_string(detector).lower()
 
     # load speclite filters (must be registered before SkyPy can use them)
-    if config['pipeline_label'] == 'all':
-        from mejiro.instruments.jwst import JWST
-        from mejiro.instruments.roman import Roman
-        from mejiro.instruments.hwo import HWO
-        Roman.load_speclite_filters(detector='SCA01')
-        JWST.load_speclite_filters()
-        HWO.load_speclite_filters()
-    elif instrument.name == 'Roman':
+    # Disabled: no config uses pipeline_label: all any more. Kept in case it comes back.
+    # if config['pipeline_label'] == 'all':
+    #     from mejiro.instruments.jwst import JWST
+    #     from mejiro.instruments.roman import Roman
+    #     from mejiro.instruments.hwo import HWO
+    #     Roman.load_speclite_filters(detector='SCA01')
+    #     JWST.load_speclite_filters()
+    #     HWO.load_speclite_filters()
+    if instrument.name == 'Roman':
         instrument.load_speclite_filters(detector=detector_string)
     elif instrument.name == 'HWO' or instrument.name == 'JWST':
         instrument.load_speclite_filters()
@@ -166,9 +167,10 @@ def generate_galaxy_table(tuple):
     if use_slhammocks_pipeline:
         slhammocks_pipeline_kwargs = dict(survey_config['slhammocks_pipeline_kwargs'])
         cache_dir = os.path.join(module_path, 'data', 'skypy', 'slhammocks')
-        if config['pipeline_label'] == 'all':
-            slhammocks_config = os.path.join(cache_dir, 'slhammocks_all.yml')
-        elif instrument.name == 'Roman':
+        # Disabled: no config uses pipeline_label: all any more. Kept in case it comes back.
+        # if config['pipeline_label'] == 'all':
+        #     slhammocks_config = os.path.join(cache_dir, 'slhammocks_all.yml')
+        if instrument.name == 'Roman':
             slhammocks_config = os.path.join(cache_dir,
                                              f'{slhammocks_pipeline_kwargs["skypy_config"]}_{detector_string}.yml')
         elif instrument.name == 'HWO' or instrument.name == 'JWST':

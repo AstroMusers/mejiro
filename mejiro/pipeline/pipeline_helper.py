@@ -5,9 +5,29 @@ from glob import glob
 import logging
 
 import mejiro
+from mejiro.pipeline import config_schema
 from mejiro.utils import util
 
 logger = logging.getLogger(__name__)
+
+
+def resolve_config_path(path):
+    """Add the ``.yaml`` or ``.yml`` extension to a config path, if it was left out."""
+    if path.endswith(('.yaml', '.yml')):
+        return path
+    if os.path.exists(path + '.yaml'):
+        return path + '.yaml'
+    if os.path.exists(path + '.yml'):
+        return path + '.yml'
+    raise ValueError("The configuration file must be a YAML file with extension '.yaml' or '.yml'.")
+
+
+def load_config(path):
+    """Read a pipeline config and fill in the schema's defaults. Doesn't validate it."""
+    with open(resolve_config_path(path), 'r') as f:
+        config = yaml.load(f, Loader=yaml.SafeLoader)
+    return config_schema.apply_defaults(config)
+
 
 def _mejiro_v2_cosmology_setstate(self, state):
     """``__setstate__`` for astropy cosmologies pickled under ``mejiro-v2``.
@@ -45,31 +65,21 @@ class PipelineHelper:
         self.script_name = script_name
         self.supported_instruments = supported_instruments
 
-        # ensure the configuration file has a .yaml or .yml extension
-        if not args.config.endswith(('.yaml', '.yml')):
-            if os.path.exists(args.config + '.yaml'):
-                args.config += '.yaml'
-            elif os.path.exists(args.config + '.yml'):
-                args.config += '.yml'
-            else:
-                raise ValueError("The configuration file must be a YAML file with extension '.yaml' or '.yml'.")
-
         # read configuration file
-        with open(args.config, 'r') as f:
-            config = yaml.load(f, Loader=yaml.SafeLoader)
+        args.config = resolve_config_path(args.config)
+        config = load_config(args.config)
         self.config = config
 
         # configure logging level and warning filters
         self.configure_logging_and_warnings(config)
 
+        # stop on a bad config before anything is created or deleted
+        config_schema.validate(config, script_name, prev_step=prev_script_name,
+                               level=getattr(args, 'level', None), source=args.config)
+
         # set data directory
-        self.data_dir = config['data_dir']
-        if hasattr(args, 'data_dir') and args.data_dir is not None:
-            logger.warning(f'Overriding data_dir in config file ({self.data_dir}) with provided data_dir ({args.data_dir})')
-            self.data_dir = args.data_dir
-        elif self.data_dir is None:
-            raise ValueError("data_dir must be specified either in the config file or via the --data_dir argument.")
-        
+        self.data_dir = self.resolve_data_dir(config, getattr(args, 'data_dir', None))
+
         # get attributes from config
         self.dev = config['dev']
         self.show_progress_bar = config['show_progress_bar']
@@ -119,6 +129,16 @@ class PipelineHelper:
         util.create_directory_if_not_exists(self.output_dir)
         if delete_existing_output:
             util.clear_directory(self.output_dir)
+
+    @staticmethod
+    def resolve_data_dir(config, data_dir=None):
+        """The data directory: the ``--data_dir`` argument if given, otherwise the config's."""
+        if data_dir is not None:
+            logger.warning(f"Overriding data_dir in config file ({config['data_dir']}) with provided data_dir ({data_dir})")
+            return data_dir
+        if config['data_dir'] is None:
+            raise ValueError("data_dir must be specified either in the config file or via the --data_dir argument.")
+        return config['data_dir']
 
     def step_dir(self, step):
         """Absolute path to a pipeline step's directory."""
@@ -230,7 +250,8 @@ class PipelineHelper:
         Fork-context workers inherit both from the parent, but spawn-context workers
         start from a fresh interpreter, so their initializers must call this too.
         """
-        level = getattr(logging, config.get('logging_level', 'INFO').upper(), logging.INFO)
+        # str() so a value of the wrong type reaches validation, which reports it properly
+        level = getattr(logging, str(config['logging_level']).upper(), logging.INFO)
         logging.basicConfig(level=level)
         # basicConfig is a no-op once the root logger has handlers (e.g., a later step
         # of Pipeline.run, or a library that installed one at import)
@@ -239,14 +260,8 @@ class PipelineHelper:
 
     @staticmethod
     def is_romanisim_step(step_name):
-        """Whether a step-05 variant name is the romanisim one.
-
-        The step directory is the only reliable signal. ``imaging.engine`` only tells
-        ``Pipeline`` which step 05 to run, and running ``_05_romanisim.py`` directly ignores
-        it, so the config can say ``'galsim'`` even when ``_05_romanisim`` produced the
-        data. And the file extension is a serialization detail that both engines may share.
-        """
-        return step_name.startswith('05_romanisim')
+        """See :func:`mejiro.pipeline.config_schema.is_romanisim_step`."""
+        return config_schema.is_romanisim_step(step_name)
 
     @staticmethod
     def exposure_extension(step_name, serialization=None):

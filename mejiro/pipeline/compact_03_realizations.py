@@ -26,26 +26,15 @@ import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from glob import glob
 
-import yaml
 from tqdm import tqdm
 
 from mejiro.analysis import lensing
 from mejiro.utils import util
-from mejiro.pipeline.pipeline_helper import PipelineHelper
+from mejiro.pipeline import config_schema
+from mejiro.pipeline.pipeline_helper import PipelineHelper, load_config
 
 import logging
 logger = logging.getLogger(__name__)
-
-
-def _resolve_config_path(config):
-    """Accept a path or a bare name, appending .yaml/.yml when needed (mirrors PipelineHelper)."""
-    if config.endswith(('.yaml', '.yml')):
-        return config
-    if os.path.exists(config + '.yaml'):
-        return config + '.yaml'
-    if os.path.exists(config + '.yml'):
-        return config + '.yml'
-    raise ValueError("The configuration file must be a YAML file with extension '.yaml' or '.yml'.")
 
 
 def _worker_init():
@@ -81,14 +70,14 @@ def _inspect_one(path):
 def main(args):
     start = time.time()
 
-    config_path = _resolve_config_path(args.config)
-    with open(config_path, 'r') as f:
-        config = yaml.load(f, Loader=yaml.SafeLoader)
+    config = load_config(args.config)
 
-    # standalone script (does not go through PipelineHelper), so configure logging here
+    # standalone script (does not go through PipelineHelper), so configure logging and
+    # validate the config here
     PipelineHelper.configure_logging_and_warnings(config)
+    config_schema.validate(config, 'compact_03', source=args.config)
 
-    data_dir = args.data_dir if args.data_dir is not None else config['data_dir']
+    data_dir = PipelineHelper.resolve_data_dir(config, args.data_dir)
     pipeline_label = config['pipeline_label']
     if config['dev']:
         pipeline_label += '_dev'
