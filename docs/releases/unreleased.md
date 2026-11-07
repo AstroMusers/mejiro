@@ -101,6 +101,9 @@ Scripts and output directories that changed:
   rendered at their true sub-pixel position.
 - `_05_romanisim` raises when every batch fails, instead of continuing silently.
 - `_05_galsim` skips corrupted `SyntheticImage` pickles instead of crashing.
+- `_05_galsim` applies `limit` to systems, as documented, instead of to images. It used to keep
+  `limit` images across all bands, so step 06 crashed on the missing ones when
+  `synthetic_image.bands` had more than one band.
 - Galaxy-table seeding is deterministic across processes, and step 04's detector-position
   draw is seeded.
 - `simple.yaml` and `roman_test.yaml` set `dataset.labeled`, so step 06 no longer stops with
