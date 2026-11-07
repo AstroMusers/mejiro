@@ -115,6 +115,7 @@ type = "independence"
 modules = [
     "mejiro.instruments.hwo",
     "mejiro.instruments.jwst",
+    "mejiro.instruments.lsst",
     "mejiro.instruments.roman",
 ]
 
