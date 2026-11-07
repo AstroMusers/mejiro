@@ -5,6 +5,8 @@ Problems in ``mejiro``'s dependencies that affect ``mejiro``, with workarounds. 
 
 ``pyHalo`` version 1.4.6 does not allow line-of-sight halos beyond redshift 4. This can be fixed by modifying the source code: change the maximum redshift from 4 to 8 in line 113 of ``pyHalo.Cosmology.cosmology.Cosmology._interp_kpc_per_asec()`` in ``pyHalo/Cosmology/cosmology.py``.
 
+HWO image simulation fails with ``syotools`` version 1.3.5 and the ``hwo_sci_eng`` version 0.1.9 it installs. ``hwo_sci_eng`` now reads its data from a ``json/`` directory under ``SCI_ENG_DIR``, and ``syotools``' ``Camera.derived_bandpass`` no longer carries a unit, so ``HWO()`` raises an ``AttributeError`` when it calculates zeropoints. See `issue #13 <https://github.com/AstroMusers/mejiro/issues/13>`__ for workarounds.
+
 Past Issues
 ===========
 
