@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 PREV_SCRIPT_NAME = '04'
 SCRIPT_NAME = '05_galsim'
-SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo']
+SUPPORTED_INSTRUMENTS = ['roman', 'jwst', 'hwo', 'hst']
 
 
 def main(args):
@@ -87,7 +87,7 @@ def main(args):
     if pipeline.instrument_name == 'roman':
         input_pickles = pipeline.retrieve_roman_pickles(prefix='SyntheticImage', suffix='', extension='.pkl')
         pipeline.create_roman_sca_output_directories()
-    elif pipeline.instrument_name == 'hwo' or pipeline.instrument_name == 'jwst':
+    elif pipeline.instrument_name == 'hwo' or pipeline.instrument_name == 'jwst' or pipeline.instrument_name == 'hst':
         input_pickles = pipeline.retrieve_pickles(prefix='SyntheticImage', suffix='', extension='.pkl')
     else:
         raise ValueError(f'Unknown instrument {pipeline.instrument_name}. Supported instruments are {SUPPORTED_INSTRUMENTS}.')

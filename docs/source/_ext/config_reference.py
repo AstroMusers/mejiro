@@ -18,7 +18,7 @@ from mejiro.pipeline.config_schema import EVERY_STEP, SCHEMA, STEPS, Need
 
 PIPELINE_DIR = pathlib.Path(__file__).resolve().parents[3] / 'mejiro' / 'pipeline'
 
-INSTRUMENT_NAMES = {'roman': 'Roman', 'jwst': 'JWST', 'hwo': 'HWO'}
+INSTRUMENT_NAMES = {'roman': 'Roman', 'jwst': 'JWST', 'hwo': 'HWO', 'hst': 'HST'}
 
 
 def supported_instruments():

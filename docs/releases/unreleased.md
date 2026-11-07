@@ -37,9 +37,11 @@ Scripts and output directories that changed:
   are supported; CI tests 3.13.
 - **The `romanisim` `Exposure` engine is removed**; `Exposure(engine='romanisim')` raises
   `NotImplementedError`. Roman L2/L3 simulation runs as pipeline step `_05_romanisim`.
-- **The HST and LSST instrument classes moved off `main`** to the `feature/hst` and
-  `feature/lsst` branches while they're unfinished. Populations drawn with
-  `pipeline_label: all` no longer include HST (WFC3/UVIS) magnitudes.
+- **The LSST instrument class moved off `main`** to the `feature/lsst` branch while it's
+  unfinished.
+- **The HST instrument is reworked** (see "Pipeline"). It no longer has the `lenstronomy` engine,
+  and its zeropoints are fixed values instead of being computed with `stsynphot`. Populations
+  drawn with `pipeline_label: all` no longer include HST (WFC3/UVIS) magnitudes.
 - **The Roman Data Challenge configs** (rung 0/1, labeled and unlabeled) are no longer shipped
   in `mejiro/data/mejiro_config/`.
 - **`all.yaml`, `hwo.yaml` and `jwst.yaml` are no longer shipped** in
@@ -64,6 +66,11 @@ Scripts and output directories that changed:
 
 ### Pipeline
 
+- **HST (WFC3/UVIS) runs through the pipeline**, in steps 01a, 01b, 02, 04 and 05_galsim, with
+  `instrument: hst`. There's a new `hst.yaml` config and an `hst` SkyPy config, with the F438W,
+  F475W, F606W and F814W bands. HST has no step 03, so run step 04 with `--prev-step 02`. PSFs
+  are Gaussians, and the sky level is a placeholder. The zeropoints are stored in
+  `mejiro.instruments.hst`, so `stsynphot` and STScI's throughput tables are no longer needed.
 - **Lightweight serialization** to cut disk use: step 03 can drop the pyHalo realization
   object (`subhalos.serialization`), step 04 can write `.npz` synthetic images
   (`synthetic_image.serialization`), and step 05 (GalSim) can write `.npz` exposures

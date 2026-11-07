@@ -383,14 +383,14 @@ SCHEMA = (
     Section(
         title='``instrument``',
         intro="""
-        Drives loading of the appropriate ``mejiro.instruments`` class (``Roman``, ``JWST``, or
-        ``HWO``).
+        Drives loading of the appropriate ``mejiro.instruments`` class (``Roman``, ``JWST``,
+        ``HST``, or ``HWO``).
         """,
         keys=(
             Key('instrument', STR, required_by=(EVERY_STEP,),
                 description="""
-                Identifies the instrument: ``roman``, ``jwst``, or ``hwo``. Lower-cased and
-                validated against the calling script's ``SUPPORTED_INSTRUMENTS`` by
+                Identifies the instrument: ``roman``, ``jwst``, ``hst``, or ``hwo``. Lower-cased
+                and validated against the calling script's ``SUPPORTED_INSTRUMENTS`` by
                 ``PipelineHelper``.
                 """),
         ),
@@ -401,9 +401,9 @@ SCHEMA = (
         {instrument_support}
 
         So ``Pipeline.run()`` only works end to end for Roman: it runs step 00 (unless in test
-        mode) and always finishes with step 06. For JWST and HWO, run the supported steps
-        individually. JWST has no step 03, so run step 04 with ``--prev-step 02`` to read the
-        lenses straight from step 02.
+        mode) and always finishes with step 06. For JWST, HST and HWO, run the supported steps
+        individually. JWST and HST have no step 03, so run step 04 with ``--prev-step 02`` to read
+        the lenses straight from step 02.
         """,
     ),
     Section(
