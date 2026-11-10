@@ -1,72 +1,89 @@
+"""
+Write a CSV of each system's substructure flag from existing step 03 output.
+
+Usage:
+    python3 make_substructure_csv.py --config <config.yaml> [--data_dir <output_dir>]
+
+Arguments:
+    --config: Path to the YAML configuration file.
+    --data_dir: Optional override for the data directory specified in the config file.
+"""
+import argparse
 import logging
 import os
 import time
 from glob import glob
+
+import pandas as pd
 from tqdm import tqdm
 
-import matplotlib.pyplot as plt
-import numpy as np
-
 from mejiro.analysis import lensing
-from mejiro.plots import corner
 from mejiro.utils import util
 from mejiro.pipeline import config_schema
 from mejiro.pipeline.pipeline_helper import PipelineHelper, load_config
 
 logger = logging.getLogger(__name__)
 
-# read configuration file
-import mejiro
-import pickle
-import pandas as pd
-repo_root = os.path.dirname(os.path.dirname(mejiro.__file__))
-config_file = os.path.join(repo_root, 'projects', 'roman_data_challenge', 'roman_data_challenge_rung_1.yaml')
-config = load_config(config_file)
-PipelineHelper.configure_logging_and_warnings(config)
-config_schema.validate(config, 'make_substructure_csv', source=config_file)
-data_dir = PipelineHelper.resolve_data_dir(config)
 
-if config['dev']:
-    config['pipeline_label'] += '_dev'
+def main(args):
+    start = time.time()
 
-input_dir = os.path.join(data_dir, config['pipeline_label'], '03')
-output_dir = os.path.join(data_dir, config['pipeline_label'])
+    config = load_config(args.config)
 
-start = time.time()
+    # standalone script (does not go through PipelineHelper), so configure logging and
+    # validate the config here
+    PipelineHelper.configure_logging_and_warnings(config)
+    config_schema.validate(config, 'make_substructure_csv', source=args.config)
 
-lens_pickles = sorted(glob(os.path.join(input_dir, 'sca*', 'lens_*.pkl')))
-logger.info(f'Found {len(lens_pickles)} system(s) in {input_dir}')
+    data_dir = PipelineHelper.resolve_data_dir(config, args.data_dir)
 
-# calculate and implement limit, if specified
-if config['limit'] is not None:
-    lens_pickles = lens_pickles[:config['limit']]
-    logger.info(f'Limiting to {len(lens_pickles)} systems')
+    if config['dev']:
+        config['pipeline_label'] += '_dev'
 
-rows = []
-for path in tqdm(lens_pickles):
-    lens = util.unpickle(path)
-    realization = lens.realization
+    input_dir = os.path.join(data_dir, config['pipeline_label'], '03')
+    output_dir = os.path.join(data_dir, config['pipeline_label'])
 
-    system_id = lens.name
+    lens_pickles = sorted(glob(os.path.join(input_dir, 'sca*', 'lens_*.pkl')))
+    logger.info(f'Found {len(lens_pickles)} system(s) in {input_dir}')
 
-    if realization is None:
-        # no substructure
-        substructure_flag = None
-    elif hasattr(lens, 'substructure_flag'):
-        # lightweight serialization: realization stripped, flag stored at 03 time
-        substructure_flag = lens.substructure_flag
-    else:
-        # full serialization: derive the flag from the realization object
-        substructure_flag = lensing.substructure_flag(realization)
+    # calculate and implement limit, if specified
+    if config['limit'] is not None:
+        lens_pickles = lens_pickles[:config['limit']]
+        logger.info(f'Limiting to {len(lens_pickles)} systems')
 
-    rows.append({"id": system_id, "substructure_flag": substructure_flag})
+    rows = []
+    for path in tqdm(lens_pickles):
+        lens = util.unpickle(path)
+        realization = lens.realization
 
-df = pd.DataFrame(rows, columns=["id", "substructure_flag"])
-logger.info(f'\n{df.head()}')
+        system_id = lens.name
 
-csv_path = os.path.join(output_dir, "substructure_flags.csv")
-df.to_csv(csv_path, index=False)
-logger.info(f"Wrote {len(df)} rows to {csv_path}")
+        if realization is None:
+            # no substructure
+            substructure_flag = None
+        elif hasattr(lens, 'substructure_flag'):
+            # lightweight serialization: realization stripped, flag stored at 03 time
+            substructure_flag = lens.substructure_flag
+        else:
+            # full serialization: derive the flag from the realization object
+            substructure_flag = lensing.substructure_flag(realization)
 
-stop = time.time()
-util.print_execution_time(start, stop)
+        rows.append({"id": system_id, "substructure_flag": substructure_flag})
+
+    df = pd.DataFrame(rows, columns=["id", "substructure_flag"])
+    logger.info(f'\n{df.head()}')
+
+    csv_path = os.path.join(output_dir, "substructure_flags.csv")
+    df.to_csv(csv_path, index=False)
+    logger.info(f"Wrote {len(df)} rows to {csv_path}")
+
+    stop = time.time()
+    util.print_execution_time(start, stop)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Write a CSV of each system's substructure flag from step 03 output")
+    parser.add_argument('--config', type=str, required=True, help='Name of the yaml configuration file.')
+    parser.add_argument('--data_dir', type=str, default=None, help='Optional override for the data directory in the config.')
+    args = parser.parse_args()
+    main(args)
