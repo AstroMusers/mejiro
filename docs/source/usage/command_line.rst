@@ -83,3 +83,6 @@ Maintenance tools
 
 ``compact_03_realizations.py --config ...``
    Strip the pyHalo realization objects from existing step 03 output, as ``subhalos.serialization: lightweight`` would have. Takes ``--data_dir``, ``--workers`` and ``--dry-run``.
+
+``make_substructure_csv.py --config ...``
+   Write ``substructure_flags.csv`` (see :doc:`outputs`) from existing step 03 output: one row per system with its ``id`` and ``substructure_flag``. Takes ``--data_dir``.

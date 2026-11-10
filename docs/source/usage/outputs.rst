@@ -31,6 +31,8 @@ All output goes under ``<data_dir>/<pipeline_label>/`` (``<pipeline_label>_dev/`
    * - ``06/``
      - The dataset, ``<pipeline_label>_v_<version>.h5`` (``dataset.version``, with ``.`` replaced by ``_``). When ``dataset.labeled`` is ``False``, also ``<pipeline_label>_answer_key_v_<version>.csv``.
 
+``make_substructure_csv.py`` (see :doc:`command_line`) writes ``substructure_flags.csv`` directly under ``<data_dir>/<pipeline_label>/``, with the columns ``id`` and ``substructure_flag``. The flag is empty for systems without substructure.
+
 For Roman, the files from steps 02 to 05 are split into one subdirectory per detector (``sca01/`` to ``sca18/``); for other instruments they sit directly in the step's directory.
 
 Each system is named ``<pipeline_label>_<uid>``, where ``<uid>`` is an eight-digit ID assigned in step 02, e.g. ``simple_00000042``.
