@@ -57,18 +57,22 @@ reference redshift retain their previous calculation. `get_image_positions()`
 uses the first source component's redshift. Native point-source rendering
 through `kwargs_ps` still uses the reference plane.
 
-These extended-source scenes need a Chalcedon checkout with
+The pinned Chalcedon revision does not yet support distinct source planes.
+Those scenes need a newer Chalcedon checkout with
 `ImageModel(source_redshift_list=...)` and source-redshift-aware ray shooting
-and image solving. Install the matching local checkouts together. Mejiro raises
+and image solving. Mejiro raises
 an explicit error for a distinct-source-plane Lenstronomy comparison because
 that path has no corresponding source-plane mapping. Ordinary single-source
 Lenstronomy comparisons remain available. Detector simulation is a separate
 step and requires the corresponding telescope and detector dependencies.
 
-Install Chalcedon and Mejiro from local checkouts:
+The published newer Chalcedon revision declares an older TDpy revision than
+Mejiro, so installing that revision with dependency resolution currently
+conflicts. With the other required dependencies installed, use matching local
+source checkouts for distinct-source-plane scenes:
 
 ```bash
-python -m pip install -e /path/to/chalcedon -e /path/to/mejiro
+export PYTHONPATH="/path/to/mejiro:/path/to/chalcedon:/path/to/tdpy:$PYTHONPATH"
 ```
 
 Replace each `/path/to/...` value with the location of that repository.

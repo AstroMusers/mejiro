@@ -502,7 +502,7 @@ class StrongLens(ABC):
         if main_halo_mass is None:
             lens_stellar_mass = self.physical_params.get('lens_stellar_mass', None)
             if lens_stellar_mass is not None:
-                main_halo_mass = cosmo.stellar_to_main_halo_mass(stellar_mass=lens_stellar_mass, z=self.z_lens, sample=True)
+                main_halo_mass = cosmo.stellar_to_main_halo_mass(stellar_mass=lens_stellar_mass, z=self.z_lens)
             else:
                 raise ValueError("Could not find `main_halo_mass` or `lens_stellar_mass` in physical_params")
         return main_halo_mass

@@ -11,11 +11,11 @@ def test_init():
     assert hst.name == 'HST'
     assert hst.bands == ['F438W', 'F475W', 'F606W', 'F814W']
     assert isinstance(hst.engines, list) and len(hst.engines) > 0
-    assert 'lenstronomy' in hst.versions
+    assert hst.versions == {}
 
     # direct attributes
     assert hst.gain == 2.5
-    assert hst.stray_light_fraction == 0.1
+    assert hst.stray_light_fraction is None
     assert isinstance(hst.dark_current, dict) and len(hst.dark_current) > 0
     assert isinstance(hst.read_noise, dict) and len(hst.read_noise) > 0
     assert isinstance(hst.psf_fwhm, dict) and len(hst.psf_fwhm) > 0
@@ -47,8 +47,10 @@ def test_get_thermal_background_is_zero_for_uvis_bands():
 
 def test_get_sky_level():
     hst = HST()
-    assert hst.get_sky_level('F438W') == Quantity(0.25, 'ct / pix')
-    assert hst.get_sky_level('F814W') == Quantity(0.25, 'ct / pix')
+    assert hst.sky_level['F438W'] is None
+    assert hst.sky_level['F814W'] is None
+    with pytest.raises(NotImplementedError, match='sky level is not configured'):
+        hst.get_sky_level('F438W')
 
 
 def test_get_dark_current_and_read_noise():

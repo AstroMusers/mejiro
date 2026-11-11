@@ -219,7 +219,7 @@ else:
     cps_array = []
     for i in tqdm(range(npix)):
         flux_mjy_per_sr = bkg_dict[i]
-        cps = convert_to_cps(wavelength_microns, flux_mjy_per_sr, verbose=False)
+        cps = convert_to_cps(wavelength_microns, flux_mjy_per_sr)
         cps_array.append(cps)
     
     np.save(bkg_file, np.array(cps_array))

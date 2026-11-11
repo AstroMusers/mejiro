@@ -1,4 +1,5 @@
 import builtins
+from types import SimpleNamespace
 import numpy as np
 import pytest
 from astropy.cosmology import Planck18
@@ -110,6 +111,22 @@ def test_native_image_uses_each_extended_source_redshift(monkeypatch):
     np.testing.assert_allclose(positions[1], [0.0], atol=1e-7)
     with pytest.raises(NotImplementedError, match='Distinct source planes'):
         SyntheticImage(lens, Detector(), 'test', backend='lenstronomy')
+
+
+def test_distinct_source_planes_reject_older_chalcedon_before_rendering(monkeypatch):
+    import mejiro.synthetic_image as synthetic_image
+
+    class OlderImageModel:
+        def __init__(self, data_class, psf_class, lens_model_class, source_model_class,
+                     lens_light_model_class, point_source_class=None, kwargs_numerics=None):
+            raise AssertionError('The older image model must not be constructed')
+
+    backend = SimpleNamespace(ImageModel=OlderImageModel)
+    monkeypatch.setattr(synthetic_image, 'get_backend', lambda name: backend)
+    lens = SimpleNamespace(backend='chalcedon', has_distinct_source_planes=True)
+
+    with pytest.raises(ImportError, match='source_redshift_list'):
+        synthetic_image.SyntheticImage(lens, object(), 'test')
 
 
 def test_builtin_analytic_sample_uses_native_model(monkeypatch):

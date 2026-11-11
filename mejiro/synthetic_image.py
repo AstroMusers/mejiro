@@ -5,6 +5,7 @@ import numpy as np
 import time
 import warnings
 from copy import deepcopy
+from inspect import Parameter, signature
 from mejiro.lensing import get_backend, validate_backend
 
 logger = logging.getLogger(__name__)
@@ -130,6 +131,11 @@ class SyntheticImage:
                                  or selected_backend == 'chalcedon' and strong_lens.has_distinct_source_planes),
                 )
         backend_models = get_backend(selected_backend)
+        if selected_backend == 'chalcedon' and strong_lens.has_distinct_source_planes:
+            parameters = signature(backend_models.ImageModel).parameters
+            if ('source_redshift_list' not in parameters
+                    and not any(parameter.kind == Parameter.VAR_KEYWORD for parameter in parameters.values())):
+                raise ImportError('Distinct source planes require Chalcedon ImageModel(source_redshift_list=...)')
         Coordinates, PixelGrid = backend_models.Coordinates, backend_models.PixelGrid
         PSF, ImageModel = backend_models.PSF, backend_models.ImageModel
         data_util, lensing_util = backend_models.data_util, backend_models.util
