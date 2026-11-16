@@ -27,3 +27,10 @@ Add to this file as changes land on `main`; rename it to `vX.Y.Z.md` at the next
 - The `roman` extra now requires `asdf-astropy>=0.11.0`. Older versions can't read the
   transforms in current CRDS reference files, so romanisim couldn't build the distortion WCS
   from them.
+
+### Packaging and documentation
+
+- New page: [Running on the Roman Research Nexus](https://mejiro.readthedocs.io/en/latest/usage/roman_research_nexus.html),
+  covering installing `mejiro` in its own Nexus kernel, using the Nexus's CRDS cache and STPSF
+  data, running the tests (including `pytest --run-crds`, which checks the CRDS setup), and
+  injecting lenses into the SOC's HLWAS simulations.

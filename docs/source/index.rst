@@ -6,6 +6,7 @@ mejiro documentation
    :caption: Usage
 
    usage/installation.rst
+   usage/roman_research_nexus.rst
    usage/running.rst
    usage/command_line.rst
    usage/configuration.rst

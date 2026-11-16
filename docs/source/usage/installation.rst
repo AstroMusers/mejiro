@@ -11,6 +11,8 @@ Install ``mejiro`` from `GitHub <https://github.com/AstroMusers/mejiro>`__. Curr
     conda activate mejiro
     pip install -e ".[roman]"
 
+To install on the Roman Research Nexus, which needs a few extra steps, see :doc:`roman_research_nexus`.
+
 Most uses need the ``roman`` optional dependency, as the table below shows. On its own, ``pip install -e .`` installs the core packages but can't simulate images for any instrument. Keep the quotes around ``".[roman]"``: they stop zsh (the default shell on macOS) from treating the square brackets as a pattern, and they work in bash too.
 
 Which optional dependencies do I need?
