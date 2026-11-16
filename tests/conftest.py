@@ -9,11 +9,29 @@ import pytest
 import mejiro
 
 
+def pytest_addoption(parser):
+    parser.addoption(
+        '--run-crds', action='store_true', default=False,
+        help='Also run the tests marked crds, which download reference files from CRDS into '
+             'CRDS_PATH (CRDS_PATH and CRDS_SERVER_URL must be set).')
+
+
 def pytest_configure(config):
     # pytest runs as a multi-threaded process; forking from it risks deadlocks in
     # child workers (Python 3.12+ DeprecationWarning). forkserver pre-starts a
     # single-threaded server so all subprocess forks originate from a clean context.
     multiprocessing.set_start_method('forkserver', force=True)
+    config.addinivalue_line(
+        'markers', 'crds: needs CRDS and downloads reference files; run with --run-crds')
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption('--run-crds'):
+        return
+    skip = pytest.mark.skip(reason='needs CRDS; run with --run-crds')
+    for item in items:
+        if item.get_closest_marker('crds') is not None:
+            item.add_marker(skip)
 
 
 @pytest.fixture(scope='session')

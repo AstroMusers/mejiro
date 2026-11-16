@@ -42,6 +42,10 @@ When you change code, update the matching docs in the same change:
 - Import rules (fast, no heavy dependencies beyond `import-linter`): `lint-imports`
 - Full test suite (needs `pip install -e ".[dev,roman]"`): `pytest`. CI skips the HWO tests;
   see `.github/workflows/python-app.yml`.
+- CRDS tests (opt-in; need `CRDS_PATH` and `CRDS_SERVER_URL`, and download a few GB of
+  reference files): `pytest --run-crds tests/test_pipeline/test_romanisim_crds.py`. Plain
+  `pytest` skips them, and so does CI. `--noconftest` turns the skip off, so don't combine it
+  with these.
 - Docs build (needs graphviz): `pip install -r docs/requirements.txt`, then
   `sphinx-build -W --keep-going docs/source docs/build`
 

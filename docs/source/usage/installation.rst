@@ -11,6 +11,8 @@ Install ``mejiro`` from `GitHub <https://github.com/AstroMusers/mejiro>`__. Curr
     conda activate mejiro
     pip install -e ".[roman]"
 
+To install on the Roman Research Nexus, which needs a few extra steps, see :doc:`roman_research_nexus`.
+
 Most uses need the ``roman`` optional dependency, as the table below shows. On its own, ``pip install -e .`` installs the core packages but can't simulate images for any instrument. Keep the quotes around ``".[roman]"``: they stop zsh (the default shell on macOS) from treating the square brackets as a pattern, and they work in bash too.
 
 Which optional dependencies do I need?
@@ -46,7 +48,7 @@ The optional dependencies:
 
 - ``dev``: run unit tests, check the import rules and build documentation (``pytest``, ``import-linter``, ``sphinx``, ``jupyter``).
 - ``jax-gpu``: ``jax[cuda12]`` for GPU-accelerated survey simulation and ray-shooting (``jax`` and ``jaxtronomy`` are installed by default and run on CPU). Requires a CUDA-12-compatible NVIDIA driver on the host (``nvidia-smi`` should run); ``jax-gpu`` will install on a CPU-only machine but JAX will fall back to CPU at runtime with a warning.
-- ``roman``: ``STPSF`` for Roman and JWST PSFs, ``romanisim`` and ``romancal`` for Roman L2 and L3 data products, ``roman-technical-information`` for Roman instrument parameters, ``pysiaf`` for Roman WFI pointing geometry, and ``astrocut`` for image cutouts.
+- ``roman``: ``STPSF`` for Roman and JWST PSFs, ``romanisim`` and ``romancal`` for Roman L2 and L3 data products, ``roman-technical-information`` for Roman instrument parameters, ``pysiaf`` for Roman WFI pointing geometry, ``astrocut`` for image cutouts, and ``asdf-astropy`` 0.11 or later, which current CRDS reference files need.
 - ``hwo``: ``syotools`` for HWO telescope and camera models.
 - ``all``: install all optional dependencies (assumes a GPU host; uses ``jax-gpu``).
 

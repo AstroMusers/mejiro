@@ -79,7 +79,77 @@ def _parse_dither_file(filepath):
     return patterns
 
 
-def _make_wcs(pointing, sca, band, ma_table_number, read_pattern, date, pa_aper):
+def _romanisim_metadata(pointing, sca, band, ma_table_number, date, pa_aper=0.0,
+                        read_pattern=None, usecrds=False):
+    """Build the romanisim metadata for one exposure, with its read pattern and exposure time.
+
+    Shared by :func:`_make_wcs` and pipeline step ``_05_romanisim``, so the WCS used to place
+    sources on the detector is the one romanisim simulates with.
+
+    Parameters
+    ----------
+    pointing : astropy.coordinates.SkyCoord
+        Boresight sky position.
+    sca : int
+        SCA number (1-18).
+    band : str
+        Filter name (e.g. 'F158').
+    ma_table_number : int
+        Multi-accumulation table number.
+    date : str
+        Observation date as an ISO-8601 string.
+    pa_aper : float, optional
+        Position angle of the aperture in degrees. Default is 0.0, romanisim's default.
+    read_pattern : list, optional
+        Read pattern. If None, ``romanisim.parameters.read_pattern[ma_table_number]``.
+        Ignored when ``usecrds`` is True.
+    usecrds : bool, optional
+        If False (default), the read pattern and frame time are romanisim's built-in
+        ``parameters.read_pattern`` and ``parameters.read_time``. If True, both come from the
+        CRDS MA-table reference file, which ``romanisim.ris_make_utils.set_metadata`` loads
+        into ``parameters.ma_table_reference`` (``romanisim.image.simulate`` needs it there
+        when ``usecrds=True``), and the frame time is also written to
+        ``meta['exposure']['frame_time']``. Needs ``CRDS_PATH`` and ``CRDS_SERVER_URL``.
+
+    Returns
+    -------
+    meta : dict
+        romanisim metadata, ready for ``romanisim.image.simulate`` or
+        ``romanisim.models.wcs.get_wcs``.
+    read_pattern : list of list of int
+        The read pattern in ``meta``.
+    exptime : float
+        Open-shutter exposure time [s], ``frame_time * read_pattern[-1][-1]``.
+    """
+    from astropy.time import Time
+    from romanisim.models import parameters, wcs as romanisim_wcs
+
+    if usecrds:
+        from romanisim import ris_make_utils
+
+        meta = ris_make_utils.set_metadata(date=Time(date).isot, bandpass=band, sca=sca,
+                                           ma_table_number=ma_table_number, usecrds=True)
+        ma_table = parameters.ma_table_reference['roman']['science_tables'][f'SCI{ma_table_number:04d}']
+        frame_time = float(ma_table['frame_time'])
+        # plain ints, so the pattern pickles into worker tasks without the open ASDF file
+        read_pattern = [[int(read) for read in resultant] for resultant in meta['exposure']['read_pattern']]
+        meta['exposure']['read_pattern'] = read_pattern
+        meta['exposure']['frame_time'] = frame_time
+    else:
+        if read_pattern is None:
+            read_pattern = parameters.read_pattern[ma_table_number]
+        frame_time = parameters.read_time
+        meta = copy.deepcopy(parameters.default_parameters_dictionary)
+        meta['instrument']['detector'] = f'WFI{sca:02d}'
+        meta['instrument']['optical_element'] = band
+        meta['exposure']['ma_table_number'] = ma_table_number
+        meta['exposure']['read_pattern'] = read_pattern
+        meta['exposure']['start_time'] = Time(date)
+    romanisim_wcs.fill_in_parameters(meta, pointing, boresight=True, pa_aper=pa_aper)
+    return meta, read_pattern, frame_time * read_pattern[-1][-1]
+
+
+def _make_wcs(pointing, sca, band, ma_table_number, read_pattern, date, pa_aper, usecrds=False):
     """Build a romanisim/galsim WCS for a single pointing.
 
     Parameters
@@ -93,28 +163,27 @@ def _make_wcs(pointing, sca, band, ma_table_number, read_pattern, date, pa_aper)
     ma_table_number : int
         Multi-accumulation table number.
     read_pattern : list
-        Read pattern from romanisim parameters.
+        Read pattern from romanisim parameters. Ignored when ``usecrds`` is True.
     date : str
         Observation date string.
     pa_aper : float
         Position angle of the aperture in degrees.
+    usecrds : bool, optional
+        If False (default), galsim's Roman WCS model. If True, the WCS built from the CRDS
+        distortion reference file, which is what ``romanisim.image.simulate(usecrds=True)``
+        attaches to its images. See :func:`_romanisim_metadata`.
 
     Returns
     -------
-    galsim.GSFitsWCS
-        The WCS for this pointing.
+    galsim.CelestialWCS
+        The WCS for this pointing: a ``galsim.GSFitsWCS``, or with ``usecrds`` romanisim's
+        gWCS wrapper.
     """
-    from astropy.time import Time
-    from romanisim.models import parameters, wcs as romanisim_wcs
+    from romanisim.models import wcs as romanisim_wcs
 
-    meta = copy.deepcopy(parameters.default_parameters_dictionary)
-    meta['instrument']['detector'] = f'WFI{sca:02d}'
-    meta['instrument']['optical_element'] = band
-    meta['exposure']['ma_table_number'] = ma_table_number
-    meta['exposure']['read_pattern'] = read_pattern
-    meta['exposure']['start_time'] = Time(date)
-    romanisim_wcs.fill_in_parameters(meta, pointing, boresight=True, pa_aper=pa_aper)
-    return romanisim_wcs.get_wcs(meta, usecrds=False)
+    meta, _, _ = _romanisim_metadata(pointing, sca, band, ma_table_number, date, pa_aper=pa_aper,
+                                     read_pattern=read_pattern, usecrds=usecrds)
+    return romanisim_wcs.get_wcs(meta, usecrds=usecrds)
 
 
 class PointWFI:

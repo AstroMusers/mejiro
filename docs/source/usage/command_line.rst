@@ -57,6 +57,8 @@ The steps
    - ``--dither-pattern``: the dither pattern for ``--level l3`` (default ``BOXGAP4_1``). Sub-pixel patterns such as ``SUB4`` are also accepted; see ``mejiro/data/roman_dither_patterns/``.
    - ``--max-systems N``: process only the first ``N`` systems (lowest IDs) across all detectors.
 
+   With ``exposure.usecrds: true`` in the config, the detector model comes from CRDS reference files rather than romanisim's built-in defaults (see :doc:`configuration` and :doc:`roman_research_nexus`).
+
 ``calculate_snrs.py``
    Calculate each system's signal-to-noise ratio. Roman and HWO only.
 

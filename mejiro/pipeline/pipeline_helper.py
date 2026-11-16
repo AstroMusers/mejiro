@@ -284,20 +284,24 @@ class PipelineHelper:
         """Exposure time [s] and pixel units of the cutouts a _05_romanisim run left in ``step_dir``.
 
         Both ``--level`` variants write to the same directory, so the level comes from the
-        ``exposure_level.txt`` sidecar. L2 cutouts are one exposure deep in DN/s, so the
-        time is the MA table's. L3 cutouts come from the region every dither covers, so
-        their depth is what romancal measured on the coadd and ``_05_romanisim`` recorded
-        in ``exposure_time.txt`` -- it is not recomputed here.
+        ``exposure_level.txt`` sidecar. The time comes from the ``exposure_time.txt`` sidecar:
+        for L2 (one exposure deep, in DN/s) the MA table's exposure time, which under
+        ``exposure.usecrds`` comes from the CRDS MA-table reference; for L3 the depth romancal
+        measured on the coadd, since the cutouts come from the region every dither covers.
+        Neither is recomputed here. L2 runs from before ``exposure_time.txt`` was written for
+        L2 fall back to romanisim's built-in MA table, which is what they used.
         """
-        from romanisim.models import parameters as romanisim_params
-
         with open(os.path.join(step_dir, 'exposure_level.txt')) as f:
             level = f.read().strip()
-        if level == 'l2':
+        units = 'DN/s' if level == 'l2' else 'MJy/sr'
+        exposure_time_path = os.path.join(step_dir, 'exposure_time.txt')
+        if level == 'l2' and not os.path.exists(exposure_time_path):
+            from romanisim.models import parameters as romanisim_params
+
             read_pattern = romanisim_params.read_pattern[ma_table_number]
-            return romanisim_params.read_time * read_pattern[-1][-1], 'DN/s'
-        with open(os.path.join(step_dir, 'exposure_time.txt')) as f:
-            return float(f.read().strip()), 'MJy/sr'
+            return romanisim_params.read_time * read_pattern[-1][-1], units
+        with open(exposure_time_path) as f:
+            return float(f.read().strip()), units
 
     @staticmethod
     def patch_astropy_for_mejiro_v2_pickles():
