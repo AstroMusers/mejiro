@@ -81,6 +81,7 @@ exposure:
   coordinates:
     ra: 150.
     dec: 2.
+  usecrds: false  # true to take romanisim's detector reference files from CRDS
 imaging:
   exposure_time: &exposure_time 10000
   engine: galsim

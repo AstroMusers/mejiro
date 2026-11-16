@@ -8,16 +8,18 @@ format and the pixel units:
 
     - exposure data: read via load_exposure -- bare arrays from 05_romanisim/sca*/Exposure_*.npy,
       or the .data of the lightweight .npz / full .pkl Exposure written to 05_galsim/sca*/
-    - exposure_time: for galsim, config['imaging']['exposure_time']. For romanisim, L2 is one
-      exposure deep so it comes from config['exposure']['ma_table_number'] via romanisim
-      parameters, while an L3 co-add's depth is what romancal measured on the mosaic and
-      _05_romanisim recorded in exposure_time.txt -- it is n_dithers deep, so deriving it
-      from the MA table alone would under-report it by that factor.
+    - exposure_time: for galsim, config['imaging']['exposure_time']. For romanisim, the
+      exposure_time.txt sidecar _05_romanisim writes: for L2 the MA table's exposure time
+      (from CRDS under config['exposure']['usecrds']), for an L3 co-add the depth romancal
+      measured on the mosaic -- it is n_dithers deep, so deriving it from the MA table alone
+      would under-report it by that factor.
     - units: galsim writes DN (counts; Roman gain is 1.0 e-/DN). romanisim writes L2 in DN/s
       and L3 in MJy/sr; since both levels land in the same directory, the level is read from
       the exposure_level.txt sidecar that _05_romanisim writes.
     - lens and synthetic image metadata: from the SyntheticImage files in step 04
     - SNR: read from name_snr_pairs.pkl produced by calculate_snrs.py (optional)
+    - crds_context: the CRDS context _05_romanisim took its detector reference files from,
+      from its crds_context.txt sidecar; 'none' when it ran without CRDS (or for galsim)
 
 Both romanisim values come from PipelineHelper.romanisim_exposure_metadata, and the choice
 of branch is keyed on the step that wrote the input (PipelineHelper.is_romanisim_step), not
@@ -151,6 +153,12 @@ def main(args):
     f.attrs['romanisim_version'] = (romanisim.__version__, 'romanisim version')
     f.attrs['stpsf_version'] = (stpsf.__version__, 'STPSF version')
     f.attrs['romancal'] = (romancal.__version__, 'romancal version')
+    crds_context_path = os.path.join(pipeline.input_dir, 'crds_context.txt')
+    crds_context = 'none'
+    if os.path.exists(crds_context_path):
+        with open(crds_context_path) as crds_file:
+            crds_context = crds_file.read().strip()
+    f.attrs['crds_context'] = (crds_context, 'CRDS context of the detector reference files, or none')
 
     group_images = f.create_group('images')
 

@@ -254,3 +254,60 @@ class TestComputePixelPositions:
         )
         for pos in positions:
             assert pos.on_detector, f'Dither at pixel ({pos.cx}, {pos.cy}) is off detector'
+
+
+@pytest.mark.skipif(not HAS_ROMANISIM, reason='romanisim not installed')
+@pytest.mark.skipif(not HAS_GALSIM, reason='galsim not installed')
+class TestRomanisimMetadata:
+    """``_romanisim_metadata(usecrds=False)`` must build exactly the metadata ``_make_wcs`` and
+    ``_05_romanisim`` built inline before it existed, so the default (no-CRDS) pipeline output
+    is unchanged."""
+
+    SCA, BAND, MA_TABLE, DATE = 7, 'F129', 17, '2027-04-15T00:00:00'
+
+    @pytest.fixture
+    def pointing(self):
+        from astropy.coordinates import SkyCoord
+        from astropy import units as u
+        return SkyCoord(ra=150.0 * u.deg, dec=2.0 * u.deg)
+
+    def _legacy_meta(self, pointing):
+        import copy
+        from astropy.time import Time
+        from romanisim.models import parameters, wcs as romanisim_wcs
+
+        meta = copy.deepcopy(parameters.default_parameters_dictionary)
+        meta['instrument']['detector'] = f'WFI{self.SCA:02d}'
+        meta['instrument']['optical_element'] = self.BAND
+        meta['exposure']['ma_table_number'] = self.MA_TABLE
+        meta['exposure']['read_pattern'] = parameters.read_pattern[self.MA_TABLE]
+        meta['exposure']['start_time'] = Time(self.DATE)
+        romanisim_wcs.fill_in_parameters(meta, pointing, boresight=True, pa_aper=0.0)
+        return meta
+
+    def test_matches_legacy_construction(self, pointing):
+        from romanisim.models import parameters
+        from mejiro.point_wfi import _romanisim_metadata
+
+        legacy = self._legacy_meta(pointing)
+        meta, read_pattern, exptime = _romanisim_metadata(pointing, self.SCA, self.BAND, self.MA_TABLE, self.DATE)
+
+        assert read_pattern == parameters.read_pattern[self.MA_TABLE]
+        assert exptime == parameters.read_time * read_pattern[-1][-1]
+        assert meta['instrument'] == legacy['instrument']
+        assert meta['wcsinfo'] == legacy['wcsinfo']
+        assert meta['pointing'] == legacy['pointing']
+        assert meta['exposure']['read_pattern'] == legacy['exposure']['read_pattern']
+        assert meta['exposure']['start_time'].isot == legacy['exposure']['start_time'].isot
+
+    def test_make_wcs_unchanged(self, pointing):
+        from romanisim.models import parameters, wcs as romanisim_wcs
+        from mejiro.point_wfi import _make_wcs
+
+        legacy = romanisim_wcs.get_wcs(self._legacy_meta(pointing), usecrds=False)
+        new = _make_wcs(pointing, self.SCA, self.BAND, self.MA_TABLE,
+                        parameters.read_pattern[self.MA_TABLE], self.DATE, 0.0)
+        for x, y in [(0, 0), (2043, 2043), (4087, 0), (0, 4087), (4087, 4087)]:
+            a = legacy.toWorld(galsim.PositionD(x, y))
+            b = new.toWorld(galsim.PositionD(x, y))
+            assert a.distanceTo(b).deg * 3600 < 1e-9

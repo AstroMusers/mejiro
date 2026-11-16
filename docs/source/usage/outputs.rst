@@ -25,7 +25,7 @@ All output goes under ``<data_dir>/<pipeline_label>/`` (``<pipeline_label>_dev/`
    * - ``05_galsim/``
      - Exposures from ``_05_galsim.py``: ``Exposure_<name>_<band>.pkl``, or ``.npz`` with ``imaging.serialization: lightweight``.
    * - ``05_romanisim/``
-     - Exposure cutouts from ``_05_romanisim.py``: ``Exposure_<name>_<band>.npy``. Also ``exposure_level.txt`` (``l2`` or ``l3``), ``exposure_time.txt`` (``--level l3`` only: the co-added depth in seconds), and per-batch progress files. L3 runs keep intermediate mosaics under ``<data_dir>/_scratch/``.
+     - Exposure cutouts from ``_05_romanisim.py``: ``Exposure_<name>_<band>.npy``. Also ``exposure_level.txt`` (``l2`` or ``l3``), ``exposure_time.txt`` (in seconds: for ``--level l2`` the single-exposure time, for ``--level l3`` the co-added depth), ``crds_context.txt`` (with ``exposure.usecrds``: the CRDS context of the reference files), and per-batch progress files. L3 runs keep intermediate mosaics under ``<data_dir>/_scratch/``.
    * - ``snr/``
      - ``name_snr_pairs.pkl``: each system's SNR, from ``calculate_snrs.py``.
    * - ``06/``
@@ -46,7 +46,7 @@ The HDF5 dataset
 
 ``_06_h5_export.py`` writes one HDF5 file. Most attributes are stored as a two-element array, ``(value, description)``.
 
-**File attributes:** ``author`` (``user@host``), ``created``, ``dataset_version``, ``mejiro_version``, ``lenstronomy_version``, ``slsim_version``, ``romanisim_version``, ``stpsf_version``, and ``romancal`` (the romancal version).
+**File attributes:** ``author`` (``user@host``), ``created``, ``dataset_version``, ``mejiro_version``, ``lenstronomy_version``, ``slsim_version``, ``romanisim_version``, ``stpsf_version``, ``romancal`` (the romancal version), and ``crds_context`` (the CRDS context of ``_05_romanisim.py``'s reference files with ``exposure.usecrds``, otherwise ``none``).
 
 **Systems:** the ``images`` group holds one group per system, ``strong_lens_<uid>``, with these attributes:
 
@@ -61,7 +61,7 @@ The HDF5 dataset
 The exposures' units and exposure time depend on the step that made them:
 
 - ``_05_galsim.py``: ``DN``, with ``imaging.exposure_time``.
-- ``_05_romanisim.py --level l2``: ``DN/s``, with the exposure time of the MA table in ``exposure.ma_table_number``.
+- ``_05_romanisim.py --level l2``: ``DN/s``, with the exposure time of the MA table in ``exposure.ma_table_number`` (from the CRDS MA-table reference with ``exposure.usecrds``).
 - ``_05_romanisim.py --level l3``: ``MJy/sr``, with the co-added depth.
 
 .. note::

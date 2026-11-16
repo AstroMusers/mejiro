@@ -744,7 +744,9 @@ SCHEMA = (
                 Multi-Accumulation (MA) table number. Indexes ``romanisim.parameters.read_pattern``
                 to determine the read pattern (and hence the total exposure time,
                 ``parameters.read_time * read_pattern[-1][-1]``); also written to
-                ``meta['exposure']['ma_table_number']`` for the simulated observation.
+                ``meta['exposure']['ma_table_number']`` for the simulated observation. With
+                ``exposure.usecrds``, the read pattern and frame time come from this table's
+                entry in the CRDS MA-table reference file instead.
                 """),
             Key('exposure.date', DATE, required_by=('05_romanisim',),
                 description="""
@@ -763,6 +765,19 @@ SCHEMA = (
                 Pointing declination. ``_05_romanisim.py`` constructs
                 ``SkyCoord(ra=ra * u.deg, dec=dec * u.deg)``, so the value is interpreted in
                 degrees.
+                """),
+            Key('exposure.usecrds', BOOL, default=False, read_by=('05_romanisim',),
+                description="""
+                Where romanisim's detector model comes from. ``False``: romanisim's built-in
+                scalar defaults (dark current, gain, read noise, saturation), galsim's Roman WCS,
+                and its built-in MA tables. ``True``: CRDS reference files for all of these, plus
+                the flat field, linearity, IPC, and the distortion WCS, so ``CRDS_PATH`` and
+                ``CRDS_SERVER_URL`` must be set (they are on the Roman Research Nexus). The
+                exposure time then comes from the CRDS MA table, the lenses get the detector's
+                relative QE, and ``--level l3`` places them with the CRDS-distortion WCS. The
+                reference files are downloaded into ``CRDS_PATH`` before the batches start; they
+                can come to several GB per detector. The context used is recorded in
+                ``05_romanisim/crds_context.txt`` and in the HDF5 dataset.
                 """),
         ),
     ),

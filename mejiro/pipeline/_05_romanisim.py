@@ -36,9 +36,31 @@ complete. Output lands in ``<data_dir>/<pipeline_label>/05_romanisim/sca##/`` in
 Every invocation writes to ``05_romanisim/`` regardless of ``--level`` or
 ``--dither-pattern``: the step directory names the step, not the flags it was run with.
 Two sidecars in that directory are what let the tail steps tell the variants apart:
-``exposure_level.txt`` (``l2``/``l3``, always written) and, for ``--level l3`` only,
-``exposure_time.txt`` (the co-added depth in seconds). ``calculate_snrs`` and
-``_06_h5_export`` read both via ``PipelineHelper.romanisim_exposure_metadata``.
+``exposure_level.txt`` (``l2``/``l3``) and ``exposure_time.txt`` (for ``--level l2`` the
+single-exposure time, for ``--level l3`` the co-added depth, in seconds), both always
+written. ``calculate_snrs`` and ``_06_h5_export`` read both via
+``PipelineHelper.romanisim_exposure_metadata``.
+
+``exposure.usecrds`` (default ``False``) chooses where romanisim's detector model comes from.
+With ``False``, romanisim uses its built-in scalar defaults (dark, gain, read noise,
+saturation, ...), galsim's Roman WCS, and its built-in MA tables. With ``True``, all of these
+come from CRDS reference files (``CRDS_PATH`` and ``CRDS_SERVER_URL`` must be set), and three
+things follow so the lenses stay consistent with the detector:
+
+    - the read pattern and frame time, hence the exposure time used to convert the lenses to
+      electrons, come from the CRDS MA-table reference (``_romanisim_metadata``), and each
+      worker sets ``romanisim.parameters.read_time`` to that frame time so romanisim's read
+      times and ramp fit agree with it (``_use_crds_reference_data``);
+    - ``--level l3`` places tiles with the CRDS-distortion WCS, the one romanisim attaches to
+      its L2s and MosaicPipeline resamples with (``_make_wcs(usecrds=True)``);
+    - the tiled lens electrons are multiplied by the relative QE romanisim applies to its own
+      sources (``romanisim.image.flat_to_qe`` of the CRDS flat, gain, and pixel area) before
+      the Poisson draw: romanisim adds ``extra_counts`` after its QE step, but its ramp fit
+      still divides by the flat.
+
+The parent process downloads every reference file the batches need before starting the
+workers, so they don't all fetch the same multi-GB files at once, and records the CRDS
+context in ``crds_context.txt``.
 Trade-off of sub-pixel patterns (those in WfiImagingSubpixel.txt, e.g. SUB4):
 every exposure puts a system on nearly the same pixels, so fixed-pattern detector effects
 (flat error, hot pixels) stay correlated across the stack instead of averaging down the
@@ -71,11 +93,12 @@ Arguments:
     --resume
         Preserve existing output and skip already-completed batches (those with a
         batch_complete_*.txt sentinel). Default is to delete existing output and rebuild
-        from scratch. Note the sentinels record neither --level nor --dither-pattern, and
-        all variants share the one 05_romanisim/ directory, so only resume with the same
-        --level and --dither-pattern the original run used -- otherwise the resumed run
-        will mix incompatible products. The default (non---resume) wipe is what keeps a
-        run with different flags from silently mixing with an earlier one.
+        from scratch. Note the sentinels record neither --level, --dither-pattern nor
+        exposure.usecrds, and all variants share the one 05_romanisim/ directory, so only
+        resume with the same --level, --dither-pattern and exposure.usecrds the original run
+        used -- otherwise the resumed run will mix incompatible products. The default
+        (non---resume) wipe is what keeps a run with different flags from silently mixing
+        with an earlier one.
 """
 import os
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -100,7 +123,7 @@ from multiprocessing import Pool
 import galsim
 import matplotlib.pyplot as plt
 import numpy as np
-from astropy import table, time as astro_time, units as u
+from astropy import table, units as u
 from astropy.coordinates import SkyCoord
 from matplotlib.collections import PatchCollection
 from matplotlib.colors import LogNorm
@@ -117,7 +140,7 @@ from romanisim.models import parameters, wcs
 from romancal.associations import asn_from_list
 from romancal.pipeline import MosaicPipeline
 
-from mejiro.point_wfi import PointWFI, _make_wcs
+from mejiro.point_wfi import PointWFI, _make_wcs, _romanisim_metadata
 from mejiro.synthetic_image import load_synthetic_image
 from mejiro.utils import util as mejiro_util
 from mejiro.pipeline.pipeline_helper import PipelineHelper
@@ -359,7 +382,8 @@ def plot_dither_overlap(wcses, source_skies, tile_size, pattern_name, sca_num, b
     plt.close(fig)
 
 
-def compute_overlap_skygrid(pointings, sca, band, ma_table_number, read_pattern, date, tile_size):
+def compute_overlap_skygrid(pointings, sca, band, ma_table_number, read_pattern, date, tile_size,
+                            usecrds=False):
     """Build the grid of source sky positions that land on-detector in every dither.
 
     Mirrors :func:`mejiro.point_wfi.find_source_position` but, instead of returning a single
@@ -368,14 +392,15 @@ def compute_overlap_skygrid(pointings, sca, band, ma_table_number, read_pattern,
     dither footprints. ``pitch`` is ``tile_size + DISTORTION_GUARD``.
 
     Returns a tuple ``(wcses, source_skies)`` where ``wcses`` are the per-dither galsim
-    WCSes and ``source_skies`` is a list of galsim.CelestialCoord tile-center positions
+    WCSes (the CRDS-distortion WCS when ``usecrds``, matching what romanisim simulates
+    with) and ``source_skies`` is a list of galsim.CelestialCoord tile-center positions
     (row-major).
     """
     half_tile = tile_size // 2
     pitch = tile_size + DISTORTION_GUARD
 
     wcses = [
-        _make_wcs(pt, sca, band, ma_table_number, read_pattern, date, PA_APER)
+        _make_wcs(pt, sca, band, ma_table_number, read_pattern, date, PA_APER, usecrds=usecrds)
         for pt in pointings
     ]
 
@@ -548,6 +573,147 @@ def _extract_cutout(mos_data, cx, cy, tile_size):
     return out
 
 
+def _sky_parity(pixel_to_radec, x, y):
+    """Sign (+1 or -1) of the determinant of d(east, north) / d(x, y) at pixel (x, y).
+
+    ``pixel_to_radec(x, y)`` returns ``(ra, dec)`` in degrees. A conventional north-up,
+    east-left image has parity -1.
+    """
+    ra0, dec0 = pixel_to_radec(x, y)
+    ra_x, dec_x = pixel_to_radec(x + 1, y)
+    ra_y, dec_y = pixel_to_radec(x, y + 1)
+    cos_dec = math.cos(math.radians(dec0))
+    east_x = ((ra_x - ra0 + 180) % 360 - 180) * cos_dec
+    east_y = ((ra_y - ra0 + 180) % 360 - 180) * cos_dec
+    det = east_x * (dec_y - dec0) - east_y * (dec_x - dec0)
+    return 1 if det > 0 else -1
+
+
+def _galsim_pixel_to_radec(imwcs):
+    """Wrap a galsim WCS as ``(x, y) -> (ra, dec)`` in degrees, for :func:`_sky_parity`."""
+    def pixel_to_radec(x, y):
+        cc = imwcs.toWorld(galsim.PositionD(x, y))
+        return cc.ra.deg, cc.dec.deg
+    return pixel_to_radec
+
+
+def _use_crds_reference_data(frame_time):
+    """Set up romanisim in this process to simulate with CRDS reference files.
+
+    ``romanisim.image.gather_reference_data`` only asks CRDS for the reference types whose
+    ``parameters.reference_data`` entry is None, and otherwise uses the scalar default (dark,
+    gain, read noise, saturation), so every entry is set to None.
+
+    ``parameters.read_time`` is set to the CRDS MA table's ``frame_time``. romanisim 0.14 takes
+    the exposure time it accumulates counts over from the MA table (``frame_time`` times the
+    last read), but its read times and ramp fit (``l1.read_pattern_to_tij``,
+    ``ramp.read_pattern_to_tbar``) use ``parameters.read_time``. When the two differ, every
+    slope in the L2 comes out scaled by ``frame_time / read_time`` (1.63 for MA table 17 in
+    context ``roman_0078.pmap``).
+
+    Workers are recycled after one batch (``maxtasksperchild=1``), so neither change outlives
+    the batch that needs it.
+    """
+    for reftype in parameters.reference_data:
+        parameters.reference_data[reftype] = None
+    parameters.read_time = frame_time
+
+
+def _romanisim_image_model(meta, usecrds):
+    """The ``ImageModel`` romanisim builds from ``meta`` in ``image.simulate``.
+
+    Mirrors the first lines of ``romanisim.image.simulate``, so CRDS lookups made from it
+    select the same reference files the simulation does.
+    """
+    from roman_datamodels.datamodels import ImageModel
+    from romanisim import util as romanisim_util
+
+    image_mod = ImageModel.create_fake_data()
+    image_mod.meta['wcs'] = None
+    for key in parameters.default_parameters_dictionary.keys():
+        image_mod.meta[key].update(parameters.default_parameters_dictionary[key])
+    for key in meta.keys():
+        image_mod.meta[key].update(meta[key])
+    romanisim_util.add_more_metadata(image_mod.meta, usecrds=usecrds)
+    return image_mod
+
+
+def _crds_reftypes():
+    """CRDS reference types ``image.simulate(usecrds=True)`` reads, besides the flat."""
+    return sorted((set(parameters.reference_data) | {'distortion'}) - {'photom', 'flat'})
+
+
+def _prefetch_crds_references(sca_bands, coord, ma_table_number, date):
+    """Download every CRDS reference file the batches will read, in the parent process.
+
+    Without this, every worker that starts at once fetches the same multi-GB dark and
+    linearity files into ``CRDS_PATH`` at the same time.
+    """
+    import crds
+
+    for sca_num, band in sca_bands:
+        meta, _, _ = _romanisim_metadata(coord, sca_num, band, ma_table_number, date,
+                                         pa_aper=PA_APER, usecrds=True)
+        params = _romanisim_image_model(meta, usecrds=True).get_crds_parameters()
+        logger.info(f'  Fetching CRDS references for SCA {sca_num:02d}, {band}...')
+        try:
+            crds.getreferences(params, reftypes=_crds_reftypes(), observatory='roman')
+        except Exception as e:
+            raise RuntimeError(
+                f'exposure.usecrds is True, but CRDS could not provide the reference files for '
+                f'SCA {sca_num:02d}, {band}. Check that CRDS_PATH and CRDS_SERVER_URL are set '
+                f'(see the Roman Research Nexus page of the docs).') from e
+        try:
+            # romanisim falls back to a flat of 1 when there is none (e.g. for the grism)
+            crds.getreferences(params, reftypes=['flat'], observatory='roman')
+        except crds.core.exceptions.CrdsLookupError:
+            pass
+
+
+def _crds_qe_inputs(meta):
+    """Flat, gain, and pixel area for ``meta``'s detector, as ``image.simulate`` gets them.
+
+    Returns ``(flat, gain, area)``: the CRDS flat (1 if CRDS has none, as romanisim does),
+    the CRDS gain [electron/DN] with its border pixels removed, and the pixel area
+    [arcsec^2] from the CRDS-distortion WCS. These are the inputs to
+    ``romanisim.image.flat_to_qe``.
+    """
+    import crds
+    from romanisim.models import Gain
+
+    image_mod = _romanisim_image_model(meta, usecrds=True)
+    params = image_mod.get_crds_parameters()
+
+    gain = Gain(usecrds=True, reffiles=crds.getreferences(params, reftypes=['gain'], observatory='roman')).gain
+
+    flat = 1
+    try:
+        flat_file = crds.getreferences(params, reftypes=['flat'], observatory='roman')['flat']
+        if not flat_file.startswith('NOT FOUND'):
+            with rdm.open(flat_file) as flat_model:
+                flat = np.array(flat_model.data[...], dtype=np.float64)
+    except crds.core.exceptions.CrdsLookupError:
+        pass
+
+    # romanisim takes the pixel area from the sky image: makeSkyImage scales the sky
+    # level by each pixel's area, so a sky level of 1 leaves the area
+    imwcs = wcs.get_wcs(image_mod, usecrds=True)
+    sky = galsim.ImageF(DETECTOR_SIZE, DETECTOR_SIZE, wcs=imwcs, xmin=0, ymin=0)
+    imwcs.makeSkyImage(sky, 1.0)
+    return flat, gain, sky.array
+
+
+def _apply_relative_qe(electrons, flat, gain, area):
+    """Scale an electron image by the relative QE romanisim applies to its own sources.
+
+    romanisim multiplies sky and sources by ``flat_to_qe(flat, gain, area)`` (median 1)
+    before adding ``extra_counts``, and its ramp fit then divides by the flat. Applying the
+    same QE to the lens electrons here makes them come out of the L2 the way a romanisim
+    source would.
+    """
+    return electrons * image.flat_to_qe(flat, gain, area=area)
+
+
 def main(args):
     start = time.time()
 
@@ -578,9 +744,20 @@ def main(args):
         date = date.isoformat()
     coord = SkyCoord(ra=config['exposure']['coordinates']['ra'] * u.deg,
                      dec=config['exposure']['coordinates']['dec'] * u.deg)
+    usecrds = config['exposure']['usecrds']
 
-    read_pattern = parameters.read_pattern[ma_table_number]
-    exptime = parameters.read_time * read_pattern[-1][-1]
+    if usecrds:
+        import crds
+
+        # CRDS picks the MA-table reference by date alone, so any detector and band will do
+        _, read_pattern, exptime = _romanisim_metadata(coord, 1, bands[0], ma_table_number, date,
+                                                       pa_aper=PA_APER, usecrds=True)
+        crds_context = crds.get_context_name('roman')
+        logger.info(f'Detector reference files from CRDS (exposure.usecrds): context {crds_context}, '
+                    f'cache {os.environ.get("CRDS_PATH")}')
+    else:
+        read_pattern = parameters.read_pattern[ma_table_number]
+        exptime = parameters.read_time * read_pattern[-1][-1]
     logger.info(f'Total (single-exposure) exposure time (MA table {ma_table_number}): {exptime:.1f} s')
 
     # tile size follows the synthetic-image FOV (Roman pixel scale is band-independent)
@@ -654,6 +831,12 @@ def main(args):
     # rewritten under --resume so it always describes what is actually in the directory.
     with open(os.path.join(pipeline.output_dir, 'exposure_level.txt'), 'w') as f:
         f.write(args.level)
+    if args.level == 'l2':
+        # L3 records the depth romancal measures on the coadds instead, after the batches run.
+        # Written for L2 too because under exposure.usecrds the MA table comes from CRDS, so
+        # the tail steps can't recompute it from romanisim's built-in tables.
+        with open(os.path.join(pipeline.output_dir, 'exposure_time.txt'), 'w') as f:
+            f.write(repr(exptime))
 
     if args.level == 'l2':
         logger.info(f'Tile size: {tile_size}x{tile_size} ({pixel_scale * tile_size:.2f} arcsec)')
@@ -749,11 +932,12 @@ def main(args):
                     tasks.append((
                         batch_items, sca_num, band, batch_idx, n_batches, sca_output_dir,
                         exptime, seed, ma_table_number, date, coord,
-                        band_idx, threads_per_worker, tile_size,
+                        band_idx, threads_per_worker, tile_size, usecrds,
                     ))
             else:
                 # capacity = number of overlap-grid slots available for this SCA/band
-                wcses, source_skies = compute_overlap_skygrid(pointings, sca_num, band, ma_table_number, read_pattern, date, tile_size)
+                wcses, source_skies = compute_overlap_skygrid(pointings, sca_num, band, ma_table_number,
+                                                              read_pattern, date, tile_size, usecrds=usecrds)
                 capacity = len(source_skies)
 
                 # drawn before the capacity check so an empty overlap region is diagnosable
@@ -775,7 +959,7 @@ def main(args):
                     tasks.append((
                         batch_pickles, sca_num, band, batch_idx, n_batches, sca_output_dir,
                         exptime, seed, ma_table_number, date, read_pattern, pointings,
-                        band_idx, threads_per_worker, tile_size, scratch_dir,
+                        band_idx, threads_per_worker, tile_size, scratch_dir, usecrds,
                     ))
 
     # resume: skip batches whose completion sentinel already exists (the sca/band/batch
@@ -794,6 +978,14 @@ def main(args):
         stop = time.time()
         logger.info(f'Total execution time: {mejiro_util.print_execution_time(start, stop, return_string=True)}')
         return
+
+    if usecrds:
+        sca_bands = sorted({(t[1], t[2]) for t in tasks})
+        logger.info(f'Fetching CRDS reference files for {len(sca_bands)} detector/band combination(s)...')
+        _prefetch_crds_references(sca_bands, coord, ma_table_number, date)
+        # _06_h5_export records this, so a dataset says which reference files made it
+        with open(os.path.join(pipeline.output_dir, 'crds_context.txt'), 'w') as f:
+            f.write(crds_context)
 
     logger.info(f'Submitting {len(tasks)} batch(es) with {num_workers} workers')
 
@@ -831,11 +1023,16 @@ def main(args):
 def process_batch_l2(task):
     (batch_items, sca_num, band, batch_idx, n_batches,
     sca_output_dir, exptime, seed, ma_table_number, date, coord,
-    band_idx, threads_per_worker, tile_size) = task
+    band_idx, threads_per_worker, tile_size, usecrds) = task
 
     try:
         n_images = len(batch_items)
         logger.info(f'SCA {sca_num:02d}, {band}, batch {batch_idx + 1}/{n_batches}: {n_images} images')
+
+        meta, _, _ = _romanisim_metadata(coord, sca_num, band, ma_table_number, date,
+                                         pa_aper=PA_APER, usecrds=usecrds)
+        if usecrds:
+            _use_crds_reference_data(meta['exposure']['frame_time'])
 
         # per-batch deterministic RNGs
         batch_seed = seed + sca_num * 10000 + band_idx * 1000 + batch_idx
@@ -901,18 +1098,14 @@ def process_batch_l2(task):
         plt.savefig(os.path.join(sca_output_dir, f'sca{sca_num:02d}_{band}_batch{batch_idx}_tiled.png'), dpi=1200)
         plt.close()
 
-        # 2. add Poisson noise
+        # 2. apply the detector's relative QE (CRDS only; see the module docstring), then
+        #    add Poisson noise
+        if usecrds:
+            counts = _apply_relative_qe(counts, *_crds_qe_inputs(meta))
         realized = rng_np.poisson(counts).astype(np.int32)
         extra_counts = galsim.ImageI(realized)
 
-        # 3. set up romanisim metadata with the correct SCA
-        meta = deepcopy(parameters.default_parameters_dictionary)
-        meta['instrument']['detector'] = f'WFI{sca_num:02d}'
-        meta['instrument']['optical_element'] = band
-        meta['exposure']['ma_table_number'] = ma_table_number
-        meta['exposure']['read_pattern'] = parameters.read_pattern[ma_table_number]
-        meta['exposure']['start_time'] = astro_time.Time(date)
-        wcs.fill_in_parameters(meta, coord, boresight=True)
+        # 3. the romanisim metadata for this SCA was built at the top of the batch
 
         # 4. create empty source table
         source_catalog = table.Table({
@@ -930,7 +1123,7 @@ def process_batch_l2(task):
         logger.info(f'  Running romanisim for SCA {sca_num:02d}, {band} batch {batch_idx}...')
         im, extras = image.simulate(
             meta, source_catalog,
-            usecrds=False,
+            usecrds=usecrds,
             psftype='galsim',
             level=2,
             rng=rng,
@@ -966,7 +1159,7 @@ def process_batch_l2(task):
 def process_batch_l3(task):
     (batch_pickles, sca_num, band, batch_idx, n_batches, sca_output_dir,
      exptime, seed, ma_table_number, date, read_pattern, pointings,
-     band_idx, threads_per_worker, tile_size, scratch_dir) = task
+     band_idx, threads_per_worker, tile_size, scratch_dir, usecrds) = task
 
     # per-batch working directory for L2/asn/coadd artifacts, on scratch
     batch_dir = os.path.join(scratch_dir, f'sca{sca_num:02d}_{band}_batch{batch_idx}')
@@ -978,11 +1171,17 @@ def process_batch_l3(task):
         batch_seed = seed + sca_num * 10000 + band_idx * 1000 + batch_idx
         rng_np = np.random.default_rng(batch_seed)
 
+        if usecrds:
+            meta, _, _ = _romanisim_metadata(pointings[0], sca_num, band, ma_table_number, date,
+                                             pa_aper=PA_APER, usecrds=True)
+            _use_crds_reference_data(meta['exposure']['frame_time'])
+
         abflux = romanisim.models.bandpass.get_abflux(band, sca_num)
         logger.info(f'  AB flux: {abflux:.6e} e-/s per maggy, exptime: {exptime:.6f} s')
 
         # rebuild the dither WCSes and overlap sky grid (deterministic; cheap)
-        wcses, source_skies = compute_overlap_skygrid(pointings, sca_num, band, ma_table_number, read_pattern, date, tile_size)
+        wcses, source_skies = compute_overlap_skygrid(pointings, sca_num, band, ma_table_number,
+                                                      read_pattern, date, tile_size, usecrds=usecrds)
         source_skies = source_skies[:n_images]  # system k -> grid slot k
 
         # 1. load synthetic images and reduce each to one detector-resolution electron tile
@@ -1031,21 +1230,22 @@ def process_batch_l3(task):
 
         # 2. build and simulate the dithered L2 exposures
         l2_files = []
+        qe = None
         for d, dithered_coord in enumerate(pointings):
             counts = np.zeros((DETECTOR_SIZE, DETECTOR_SIZE), dtype=np.float64)
             for e, cx, cy in placements[d]:
                 _place_tile(counts, e, cx, cy, tile_size)
 
+            meta, _, _ = _romanisim_metadata(dithered_coord, sca_num, band, ma_table_number, date,
+                                             pa_aper=PA_APER, read_pattern=read_pattern, usecrds=usecrds)
+
+            if usecrds:
+                # every dither is the same detector and band, so one QE map serves them all
+                if qe is None:
+                    qe = _apply_relative_qe(np.ones_like(counts), *_crds_qe_inputs(meta))
+                counts = counts * qe
             realized = rng_np.poisson(np.clip(counts, 0, None)).astype(np.int32)
             extra_counts = galsim.ImageI(realized)
-
-            meta = deepcopy(parameters.default_parameters_dictionary)
-            meta['instrument']['detector'] = f'WFI{sca_num:02d}'
-            meta['instrument']['optical_element'] = band
-            meta['exposure']['ma_table_number'] = ma_table_number
-            meta['exposure']['read_pattern'] = read_pattern
-            meta['exposure']['start_time'] = astro_time.Time(date)
-            wcs.fill_in_parameters(meta, dithered_coord, boresight=True, pa_aper=PA_APER)
 
             source_catalog = table.Table({
                 'ra': np.array([], dtype='f8'), 'dec': np.array([], dtype='f8'),
@@ -1056,7 +1256,7 @@ def process_batch_l3(task):
 
             logger.info(f'  Running romanisim for dither {d}...')
             im, _ = image.simulate(
-                meta, source_catalog, usecrds=False, psftype='galsim', level=2,
+                meta, source_catalog, usecrds=usecrds, psftype='galsim', level=2,
                 rng=galsim.UniformDeviate(batch_seed + d), crparam=dict(), extra_counts=extra_counts,
             )
 
@@ -1125,6 +1325,15 @@ def process_batch_l3(task):
             # the depth of each one. coadd_info.exposure_time is the mean over covered
             # pixels, diluted by the partially covered edges no cutout ever samples.
             mosaic_exptime = float(mos.meta.coadd_info.max_exposure_time)
+            mos_parity = _sky_parity(
+                lambda x, y: tuple(float(v) for v in mos_wcs(x, y, with_bounding_box=False)),
+                mos_data.shape[1] // 2, mos_data.shape[0] // 2)
+
+        # The resample rotation lines the mosaic's y axis up with the detector's, but it
+        # can't change parity: when the two differ (as they do for galsim's Roman WCS), the
+        # mosaic x axis runs opposite to the detector's, so flip back to the input orientation.
+        detector_parity = _sky_parity(_galsim_pixel_to_radec(wcses[0]), DETECTOR_SIZE // 2, DETECTOR_SIZE // 2)
+        flip_x = mos_parity != detector_parity
 
         # diagnostic PNG of the mosaic
         plt.imshow(mos_data, norm=LogNorm(), origin='lower')
@@ -1137,9 +1346,8 @@ def process_batch_l3(task):
         for pickle_path, sky in zip(batch_pickles, source_skies):
             mx, my = mos_wcs.world_to_pixel(_cc_to_skycoord(sky))
             cutout = _extract_cutout(mos_data, int(round(float(mx))), int(round(float(my))), tile_size)
-            # the mosaic x axis is antiparallel to the detector x axis (the resample
-            # rotation cannot fix the parity mismatch), so flip to the input orientation
-            np.save(os.path.join(sca_output_dir, exposure_cutout_name(pickle_path)), np.fliplr(cutout))
+            np.save(os.path.join(sca_output_dir, exposure_cutout_name(pickle_path)),
+                    np.fliplr(cutout) if flip_x else cutout)
 
         logger.info(f'  Saved {n_images} L3 cutouts to {sca_output_dir}')
 

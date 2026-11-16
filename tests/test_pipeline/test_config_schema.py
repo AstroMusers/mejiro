@@ -323,6 +323,7 @@ def test_remap_bands_is_silent_when_set(config, caplog):
     ('synthetic_image', 'deflector_only_fraction', 0.0),
     ('snr', 'snr_detector_position', (2043, 2043)),
     ('survey', 'remap_bands', None),
+    ('exposure', 'usecrds', False),  # added after v4.0.0; configs without it keep romanisim's defaults
 ])
 def test_default_matches_the_old_get(config, section, key, default):
     mapping = config[section] if section else config
@@ -336,7 +337,7 @@ def test_defaults_are_the_only_ones():
     defaults = {name for name, key in config_schema.KEYS.items() if key.has_default}
     assert defaults == {'logging_level', 'synthetic_image.oversample',
                         'synthetic_image.deflector_only_fraction', 'snr.snr_detector_position',
-                        'survey.remap_bands'}
+                        'survey.remap_bands', 'exposure.usecrds'}
 
 
 @pytest.mark.parametrize('section, key', [(None, 'nice'), ('survey', 'num_galaxy_tables'),
